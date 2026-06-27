@@ -68,6 +68,14 @@ Career Catalyst should eventually help:
 - Draft cover letters and outreach messages.
 - Generate interview preparation notes.
 
+## Critical Resume Export Invariants
+
+- Styled DOCX may use tables.
+- ATS DOCX must never use tables.
+- Platforms & Technologies must always come from `data/platforms.yml`.
+- AI Workflow Design and Process Automation must never be dropped from the AI, Automation & Operational Systems category.
+- Do not use LibreOffice, soffice, or PDF rendering in export tests.
+
 ## Not Yet
 
 Sprint 0 does not build:

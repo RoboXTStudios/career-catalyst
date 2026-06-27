@@ -33,6 +33,14 @@ The `exports/` folder is reserved for future generated assets:
 - `exports/messages/` for generated outreach.
 - `exports/interview/` for generated interview prep.
 
+## Critical Resume Export Invariants
+
+- Styled DOCX may use tables.
+- ATS DOCX must never use tables.
+- Platforms & Technologies must always come from `data/platforms.yml`.
+- AI Workflow Design and Process Automation must never be dropped from the AI, Automation & Operational Systems category.
+- Do not use LibreOffice, soffice, or PDF rendering in export tests.
+
 ## Future CLI Layer
 
 A future CLI may provide commands for loading candidate data, analyzing job descriptions, generating Markdown outputs, and exporting documents.

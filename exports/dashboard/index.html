@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Career Catalyst Dashboard</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --background: #f3f5f6;
+      --surface: #ffffff;
+      --border: #d9dee2;
+      --ink: #20272d;
+      --muted: #68737d;
+      --accent: #176b5b;
+      --accent-soft: #e5f2ef;
+      --gold: #8b5d12;
+      --gold-soft: #f7edd7;
+      --red: #9d3941;
+      --red-soft: #fae9eb;
+      --blue: #2f5d8a;
+      --blue-soft: #e8f0f8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--background);
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 15px;
+      line-height: 1.45;
+    }
+    a { color: inherit; }
+    .site-header {
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .header-inner, .page {
+      width: min(1180px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+    .header-inner {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-height: 88px;
+      padding: 16px 0;
+    }
+    .brand-mark {
+      display: grid;
+      flex: 0 0 42px;
+      width: 42px;
+      height: 42px;
+      place-items: center;
+      border-radius: 6px;
+      background: var(--accent);
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .eyebrow {
+      margin: 0 0 2px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    h1 { margin: 0; font-size: 24px; line-height: 1.2; }
+    .page { padding: 30px 0 48px; }
+    h2 { margin: 0; font-size: 18px; }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .summary-card, .application-card {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface);
+    }
+    .summary-card { min-height: 96px; padding: 16px; }
+    .summary-value { display: block; font-size: 26px; font-weight: 700; line-height: 1; }
+    .summary-label { display: block; margin-top: 8px; color: var(--muted); font-size: 13px; }
+    .packages { margin-top: 34px; }
+    .section-heading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .section-count { color: var(--muted); font-size: 13px; }
+    .application-list { display: grid; gap: 14px; }
+    .application-card { padding: 20px; }
+    .application-heading {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .application-title { min-width: 0; }
+    .company { margin: 0 0 4px; color: var(--accent); font-size: 13px; font-weight: 700; }
+    h3 { margin: 0; font-size: 19px; line-height: 1.3; overflow-wrap: anywhere; }
+    .badges { display: flex; flex: 0 0 auto; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 25px;
+      border-radius: 999px;
+      padding: 3px 9px;
+      background: #eef1f3;
+      color: #4c5963;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .status-drafted, .status-reviewed { background: var(--gold-soft); color: var(--gold); }
+    .status-applied, .status-follow_up { background: var(--blue-soft); color: var(--blue); }
+    .status-interviewing { background: var(--accent-soft); color: var(--accent); }
+    .status-rejected { background: var(--red-soft); color: var(--red); }
+    .status-paused { background: #eef1f3; color: #4c5963; }
+    .priority { border: 1px solid #e1c891; background: #ffffff; color: var(--gold); }
+    .metadata {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 24px;
+      margin: 15px 0 0;
+      padding-top: 13px;
+      border-top: 1px solid #e8ebed;
+    }
+    .meta-item { display: flex; gap: 6px; min-width: 0; }
+    dt { color: var(--muted); font-size: 13px; font-weight: 700; }
+    dd { margin: 0; font-size: 13px; overflow-wrap: anywhere; }
+    .tracker-row { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 12px; margin-top: 12px; }
+    .tracker-label { color: var(--muted); font-size: 13px; font-weight: 700; }
+    .tracker-row p { margin: 0; }
+    .materials { margin-top: 16px; }
+    h4 { margin: 0 0 8px; font-size: 13px; }
+    .file-links { display: flex; flex-wrap: wrap; gap: 7px; }
+    .file-link {
+      display: inline-flex;
+      align-items: center;
+      min-height: 32px;
+      border: 1px solid #c9d1d6;
+      border-radius: 5px;
+      padding: 6px 10px;
+      background: #ffffff;
+      color: #34414a;
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .file-link:hover, .file-link:focus-visible { border-color: var(--accent); color: var(--accent); }
+    .empty-links, .empty-state { margin: 0; color: var(--muted); }
+    .unassigned { margin-top: 28px; }
+    .unassigned h2 { margin-bottom: 12px; }
+    @media (max-width: 900px) {
+      .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 620px) {
+      .header-inner, .page { width: min(100% - 24px, 1180px); }
+      .page { padding-top: 22px; }
+      h1 { font-size: 21px; }
+      .summary-grid { grid-template-columns: 1fr; }
+      .summary-card { min-height: 82px; }
+      .application-card { padding: 16px; }
+      .application-heading { display: block; }
+      .badges { justify-content: flex-start; margin-top: 10px; }
+      .tracker-row { grid-template-columns: 1fr; gap: 2px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand-mark" aria-hidden="true">CC</div>
+      <div>
+        <p class="eyebrow">Career Catalyst Dashboard</p>
+        <h1>Trisha Lynch Application Tracker</h1>
+      </div>
+    </div>
+  </header>
+  <main class="page">
+    <section aria-labelledby="summary-heading">
+      <h2 id="summary-heading">Workspace Summary</h2>
+      <div class="summary-grid"><div class="summary-card"><span class="summary-value">3</span><span class="summary-label">Total job files</span></div><div class="summary-card"><span class="summary-value">2</span><span class="summary-label">Total resumes generated</span></div><div class="summary-card"><span class="summary-value">5</span><span class="summary-label">Total DOCX files</span></div><div class="summary-card"><span class="summary-value">8</span><span class="summary-label">Total messages generated</span></div><div class="summary-card"><span class="summary-value">2</span><span class="summary-label">Total strategy packs generated</span></div></div>
+    </section>
+    <section class="packages" aria-labelledby="packages-heading">
+      <div class="section-heading">
+        <h2 id="packages-heading">Application Packages</h2>
+        <span class="section-count">3 tracked roles</span>
+      </div>
+      <div class="application-list"><article class="application-card"><div class="application-heading"><div class="application-title"><p class="company">Sony Interactive Entertainment / PlayStation</p><h3>Head of Global Creative and Product Development Operations</h3></div><div class="badges"><span class="badge status-drafted">Drafted</span><span class="badge priority">High priority</span></div></div><dl class="metadata"><div class="meta-item"><dt>Location</dt><dd>United States, Remote / San Mateo, CA collaboration</dd></div><div class="meta-item"><dt>Salary</dt><dd>$184,100-$276,100 USD</dd></div><div class="meta-item"><dt>Source</dt><dd>Official Greenhouse</dd></div></dl><div class="tracker-row"><span class="tracker-label">Notes</span><p>Strong creative operations, product development operations, entertainment, workflow, and cross-functional leadership fit.</p></div><div class="tracker-row"><span class="tracker-label">Next action</span><p>Review styled resume and cover letter before applying.</p></div><div class="materials"><h4>Application materials</h4><div class="file-links"><a class="file-link" href="../../jobs/playstation_head_global_creative_product_dev_ops.md" target="_blank" rel="noopener">Job Description</a><a class="file-link" href="../markdown/Trisha_Lynch_executive_operations_Sony_Interactive_Entertainment_PlayStation_Resume.md" target="_blank" rel="noopener">Tailored Markdown Resume</a><a class="file-link" href="../docx/Trisha_Lynch_executive_operations_Sony_Interactive_Entertainment_PlayStation_Resume_Styled.docx" target="_blank" rel="noopener">Styled DOCX</a><a class="file-link" href="../docx/Trisha_Lynch_executive_operations_Sony_Interactive_Entertainment_PlayStation_Resume_ATS.docx" target="_blank" rel="noopener">ATS DOCX</a><a class="file-link" href="../messages/Trisha_Lynch_Sony_Interactive_Entertainment_PlayStation_Role_Cover_Letter.md" target="_blank" rel="noopener">Cover Letter</a><a class="file-link" href="../messages/Trisha_Lynch_Sony_Interactive_Entertainment_PlayStation_Role_Recruiter_Message.md" target="_blank" rel="noopener">Recruiter Message</a><a class="file-link" href="../messages/Trisha_Lynch_Sony_Interactive_Entertainment_PlayStation_Role_Hiring_Manager_Message.md" target="_blank" rel="noopener">Hiring Manager Message</a><a class="file-link" href="../messages/Trisha_Lynch_Sony_Interactive_Entertainment_PlayStation_Role_Application_Note.md" target="_blank" rel="noopener">Application Note</a><a class="file-link" href="../strategy_packs/Trisha_Lynch_Sony_Interactive_Entertainment_PlayStation_Role_Strategy_Pack.md" target="_blank" rel="noopener">Strategy Pack</a></div></div></article><article class="application-card"><div class="application-heading"><div class="application-title"><p class="company">Crunchyroll</p><h3>Director, Enterprise Strategy &amp; Initiatives</h3></div><div class="badges"></div></div><dl class="metadata"><div class="meta-item"><dt>Location</dt><dd>Los Angeles, CA</dd></div><div class="meta-item"><dt>Salary</dt><dd>$183,000 - $228,000</dd></div></dl><div class="materials"><h4>Application materials</h4><div class="file-links"><a class="file-link" href="../../jobs/sample_job_description.md" target="_blank" rel="noopener">Job Description</a><a class="file-link" href="../markdown/Trisha_Lynch_executive_operations_Crunchyroll_Resume.md" target="_blank" rel="noopener">Tailored Markdown Resume</a><a class="file-link" href="../docx/Trisha_Lynch_executive_operations_Crunchyroll_Resume_Styled.docx" target="_blank" rel="noopener">Styled DOCX</a><a class="file-link" href="../docx/Trisha_Lynch_executive_operations_Crunchyroll_Resume_ATS.docx" target="_blank" rel="noopener">ATS DOCX</a><a class="file-link" href="../messages/Trisha_Lynch_Crunchyroll_Director_Enterprise_Strategy_Initiatives_Cover_Letter.md" target="_blank" rel="noopener">Cover Letter</a><a class="file-link" href="../messages/Trisha_Lynch_Crunchyroll_Director_Enterprise_Strategy_Initiatives_Recruiter_Message.md" target="_blank" rel="noopener">Recruiter Message</a><a class="file-link" href="../messages/Trisha_Lynch_Crunchyroll_Director_Enterprise_Strategy_Initiatives_Hiring_Manager_Message.md" target="_blank" rel="noopener">Hiring Manager Message</a><a class="file-link" href="../messages/Trisha_Lynch_Crunchyroll_Director_Enterprise_Strategy_Initiatives_Application_Note.md" target="_blank" rel="noopener">Application Note</a><a class="file-link" href="../strategy_packs/Trisha_Lynch_Crunchyroll_Director_Enterprise_Strategy_Initiatives_Strategy_Pack.md" target="_blank" rel="noopener">Strategy Pack</a></div></div></article><article class="application-card"><div class="application-heading"><div class="application-title"><p class="company">Sony Interactive Entertainment / PlayStation</p><h3>Director, Ad Operations &amp; Technology</h3></div><div class="badges"></div></div><dl class="metadata"><div class="meta-item"><dt>Location</dt><dd>San Mateo, CA hybrid. Fully remote may be considered.</dd></div><div class="meta-item"><dt>Salary</dt><dd>$224,400-$336,600 USD</dd></div></dl><div class="materials"><h4>Application materials</h4><div class="file-links"><a class="file-link" href="../../jobs/playstation_director_ad_ops_technology.md" target="_blank" rel="noopener">Job Description</a></div></div></article></div>
+    </section>
+    
+  </main>
+</body>
+</html>

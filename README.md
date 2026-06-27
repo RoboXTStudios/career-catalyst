@@ -111,6 +111,64 @@ ATS DOCX:
 
 Platforms & Technologies are controlled by `data/platforms.yml`. Styled and ATS exports must use this canonical file so important positioning language such as AI Workflow Design and Process Automation is preserved.
 
+## Sprint 6 Commands
+
+Generate a cover letter:
+
+```bash
+python3 scripts/cli.py cover-letter jobs/sample_job_description.md
+```
+
+Generate a recruiter message:
+
+```bash
+python3 scripts/cli.py message recruiter jobs/sample_job_description.md
+```
+
+Generate a hiring manager message:
+
+```bash
+python3 scripts/cli.py message hiring-manager jobs/sample_job_description.md
+```
+
+Generate a short application portal note:
+
+```bash
+python3 scripts/cli.py application-note jobs/sample_job_description.md
+```
+
+Generated messages are drafts and should be reviewed before sending. Materials are grounded in structured career data and parsed job details; contacts, referrals, personal relationships, and unsupported company-specific claims must not be invented.
+
+## Voice Calibration
+
+Career Catalyst uses `config/voice.yml` to guide generated application materials. The target voice is warm, human, confident, strategic, and grounded. Generated materials should sound like a thoughtful senior operator, not a corporate template.
+
+## Sprint 7 Commands
+
+Generate a Standout Strategy Pack:
+
+```bash
+python3 scripts/cli.py strategy-pack jobs/sample_job_description.md
+```
+
+Strategy packs are designed to help Trisha stand out beyond resume tailoring. They are grounded in the job description and structured career data, and can support interview preparation, hiring manager outreach, application notes, and follow-up messages. Each pack should be reviewed before use.
+
+## Sprint 8 Commands
+
+Generate the local application dashboard:
+
+```bash
+python3 scripts/cli.py dashboard
+```
+
+Open the generated dashboard in the default browser:
+
+```bash
+open exports/dashboard/index.html
+```
+
+The dashboard is a local static HTML file that groups generated application materials by job. It links to resumes, messages, cover letters, application notes, and strategy packs without using a server or external services. Application status can be updated manually in `data/application_tracker.yml`.
+
 ## What Comes Next
 
-Later sprints can add PDF export, cover letter generation, interview prep generation, and carefully verified company or job-source workflows.
+Later sprints can add interview prep generation and carefully verified company or job-source workflows.

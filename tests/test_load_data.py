@@ -40,6 +40,12 @@ class LoadDataTests(unittest.TestCase):
         self.assertIn("platforms", loaded["data"])
         self.assertIn("platform_categories", loaded["data"]["platforms"])
 
+    def test_voice_configuration_is_required_and_loaded(self):
+        loaded = load_all_yaml(PROJECT_ROOT)
+
+        self.assertIn("config/voice.yml", REQUIRED_CONFIG_FILES)
+        self.assertEqual(loaded["config"]["voice"]["voice_name"], "Warm Executive Operator")
+
     def test_missing_file_error_is_handled_cleanly(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             with self.assertRaises(MissingRequiredFileError) as context:

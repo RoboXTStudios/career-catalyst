@@ -1,0 +1,28 @@
+voice_name: "Warm Executive Operator"
+
+tone:
+  - warm
+  - human
+  - confident
+  - strategic
+  - grounded
+  - slightly enthusiastic
+
+avoid:
+  - "I am writing to express my interest"
+  - "I believe I would be a strong fit"
+  - "leveraging my experience"
+  - "dynamic professional"
+  - "proven track record"
+  - "synergies"
+  - "thrilled"
+  - "perfect fit"
+  - "rockstar"
+  - "ninja"
+
+rules:
+  - "No em dashes"
+  - "Do not invent relationships or referrals"
+  - "Show warmth through specificity"
+  - "Keep confidence calm and earned"
+  - "Avoid keyword stuffing"

@@ -6,6 +6,11 @@ from pathlib import Path
 from typing import Any, List, Optional
 
 if __package__:
+    from .generate_dashboard import DashboardGenerationError, generate_dashboard
+    from .generate_application_note import generate_application_note
+    from .generate_cover_letter import ApplicationMaterialError, generate_cover_letter
+    from .generate_messages import generate_message
+    from .generate_strategy_pack import StrategyPackError, generate_strategy_pack
     from .export_docx import (
         ATS_MODE,
         STYLED_MODE,
@@ -24,6 +29,11 @@ if __package__:
     from .score_match import score_job_match
     from .tailor_resume import ResumeTailoringError, tailor_resume
 else:
+    from generate_dashboard import DashboardGenerationError, generate_dashboard
+    from generate_application_note import generate_application_note
+    from generate_cover_letter import ApplicationMaterialError, generate_cover_letter
+    from generate_messages import generate_message
+    from generate_strategy_pack import StrategyPackError, generate_strategy_pack
     from export_docx import (
         ATS_MODE,
         STYLED_MODE,
@@ -248,6 +258,77 @@ def export_docx_command(mode_or_file: str, file_path: Optional[str] = None) -> i
     return 0
 
 
+def _print_material_result(result: dict[str, Any], success_message: str) -> None:
+    print(f"Job title: {result.get('job_title') or 'Not found'}")
+    print(f"Company: {result.get('company') or 'Not found'}")
+    print(f"Match score: {result.get('match_score')}")
+    print(f"Output file path: {result.get('output_path')}")
+    print(success_message)
+
+
+def cover_letter_command(file_path: str) -> int:
+    try:
+        result = generate_cover_letter(file_path, PROJECT_ROOT)
+    except (DataLoadError, JobParseError, ApplicationMaterialError, OSError) as error:
+        print(f"Could not generate cover letter: {error}", file=sys.stderr)
+        return 1
+
+    _print_material_result(result, "Cover letter generated successfully.")
+    return 0
+
+
+def message_command(message_type: str, file_path: str) -> int:
+    try:
+        result = generate_message(message_type, file_path, PROJECT_ROOT)
+    except (DataLoadError, JobParseError, ApplicationMaterialError, OSError) as error:
+        print(f"Could not generate message: {error}", file=sys.stderr)
+        return 1
+
+    label = "Recruiter" if message_type == "recruiter" else "Hiring manager"
+    _print_material_result(result, f"{label} message generated successfully.")
+    return 0
+
+
+def application_note_command(file_path: str) -> int:
+    try:
+        result = generate_application_note(file_path, PROJECT_ROOT)
+    except (DataLoadError, JobParseError, ApplicationMaterialError, OSError) as error:
+        print(f"Could not generate application note: {error}", file=sys.stderr)
+        return 1
+
+    _print_material_result(result, "Application note generated successfully.")
+    return 0
+
+
+def strategy_pack_command(file_path: str) -> int:
+    try:
+        result = generate_strategy_pack(file_path, PROJECT_ROOT)
+    except (DataLoadError, JobParseError, StrategyPackError, OSError) as error:
+        print(f"Could not generate strategy pack: {error}", file=sys.stderr)
+        return 1
+
+    print(f"Job title: {result.get('job_title') or 'Not found'}")
+    print(f"Company: {result.get('company') or 'Not found'}")
+    print(f"Match score: {result.get('match_score')}")
+    print(f"Match band: {result.get('match_band')}")
+    print(f"Output file path: {result.get('output_path')}")
+    print("Strategy pack generated successfully.")
+    return 0
+
+
+def dashboard_command() -> int:
+    try:
+        result = generate_dashboard(PROJECT_ROOT)
+    except DashboardGenerationError as error:
+        print(f"Could not create dashboard: {error}", file=sys.stderr)
+        return 1
+
+    print("Dashboard created")
+    print(f"Output path: {result.get('output_path')}")
+    print(f"Open: open {result.get('relative_output_path')}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Career Catalyst CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -270,6 +351,28 @@ def build_parser() -> argparse.ArgumentParser:
         nargs="?",
         help="Path to a tailored Markdown resume when an export mode is provided",
     )
+    cover_letter_parser = subparsers.add_parser(
+        "cover-letter",
+        help="Generate a grounded cover letter",
+    )
+    cover_letter_parser.add_argument("file_path", help="Path to a local job description")
+    message_parser = subparsers.add_parser(
+        "message",
+        help="Generate a recruiter or hiring manager message",
+    )
+    message_parser.add_argument("message_type", choices=("recruiter", "hiring-manager"))
+    message_parser.add_argument("file_path", help="Path to a local job description")
+    application_note_parser = subparsers.add_parser(
+        "application-note",
+        help="Generate a short application portal note",
+    )
+    application_note_parser.add_argument("file_path", help="Path to a local job description")
+    strategy_pack_parser = subparsers.add_parser(
+        "strategy-pack",
+        help="Generate a grounded Standout Strategy Pack",
+    )
+    strategy_pack_parser.add_argument("file_path", help="Path to a local job description")
+    subparsers.add_parser("dashboard", help="Generate the local static dashboard")
     return parser
 
 
@@ -288,6 +391,16 @@ def main(argv: Optional[List[str]] = None) -> int:
         return tailor_resume_command(args.resume_profile, args.file_path)
     if args.command == "export-docx":
         return export_docx_command(args.mode_or_file, args.file_path)
+    if args.command == "cover-letter":
+        return cover_letter_command(args.file_path)
+    if args.command == "message":
+        return message_command(args.message_type, args.file_path)
+    if args.command == "application-note":
+        return application_note_command(args.file_path)
+    if args.command == "strategy-pack":
+        return strategy_pack_command(args.file_path)
+    if args.command == "dashboard":
+        return dashboard_command()
 
     return 1
 

@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.0.13 - Sprint 8
+
+- Added local static HTML dashboard.
+- Added application package view across resumes, messages, and strategy packs.
+- Added application tracker data file.
+- Added dashboard CLI command.
+- Added dashboard tests.
+
+## 0.0.12 - Sprint 7
+
+- Added Standout Strategy Pack generation.
+- Added Role Opportunity Brief.
+- Added Why Trisha value proposition.
+- Added 30/60/90-day plan.
+- Added Strategic POV Note.
+- Added interview talking points and smart interview questions.
+- Added strategy-pack CLI command.
+- Added tests for strategy pack generation.
+
+## 0.0.11 - Sprint 6.1
+
+- Improved application material voice and warmth.
+- Added warm executive operator tone guidance.
+- Added voice configuration file.
+- Reduced robotic phrasing in cover letters and messages.
+- Added tests for banned phrases, length limits, and tone safeguards.
+
+## 0.0.10 - Sprint 6
+
+- Added cover letter generation.
+- Added recruiter message generation.
+- Added hiring manager message generation.
+- Added application note generation.
+- Added application material CLI commands.
+- Added tests for generated application materials.
+
 ## 0.0.9 - Sprint 5.3
 
 - Added canonical platforms data source.
