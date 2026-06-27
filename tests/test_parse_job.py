@@ -1,0 +1,74 @@
+import tempfile
+import unittest
+from pathlib import Path
+
+from scripts.parse_job import (
+    MissingJobDescriptionError,
+    load_job_description,
+    parse_job_description,
+)
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+SAMPLE_JOB = PROJECT_ROOT / "jobs" / "sample_job_description.md"
+
+
+class ParseJobTests(unittest.TestCase):
+    def test_job_description_file_loads(self):
+        text = load_job_description(SAMPLE_JOB)
+
+        self.assertIn("Crunchyroll", text)
+        self.assertIn("Director, Enterprise Strategy & Initiatives", text)
+
+    def test_parser_returns_dictionary(self):
+        parsed = parse_job_description(SAMPLE_JOB)
+
+        self.assertIsInstance(parsed, dict)
+        self.assertEqual(parsed["job_title"], "Director, Enterprise Strategy & Initiatives")
+        self.assertEqual(parsed["company"], "Crunchyroll")
+        self.assertEqual(parsed["location"], "Los Angeles, CA")
+        self.assertEqual(parsed["salary_range"], "$183,000 - $228,000")
+        self.assertEqual(parsed["employment_type"], "Full-time")
+
+    def test_parser_extracts_keywords(self):
+        parsed = parse_job_description(SAMPLE_JOB)
+
+        self.assertIn("enterprise strategy", parsed["keywords"])
+        self.assertIn("cross-functional", parsed["keywords"])
+        self.assertGreater(len(parsed["keywords"]), 0)
+
+    def test_parser_extracts_responsibilities_and_qualifications(self):
+        parsed = parse_job_description(SAMPLE_JOB)
+
+        self.assertGreater(len(parsed["responsibilities"]), 0)
+        self.assertGreater(len(parsed["qualifications"]), 0)
+
+    def test_parser_handles_missing_optional_fields_gracefully(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            job_file = Path(temp_dir) / "minimal_job.txt"
+            job_file.write_text(
+                "Role: Operations Lead\n\nLead planning, process improvement, and stakeholder alignment.",
+                encoding="utf-8",
+            )
+
+            parsed = parse_job_description(job_file)
+
+        self.assertEqual(parsed["job_title"], "Operations Lead")
+        self.assertIsNone(parsed["company"])
+        self.assertIsNone(parsed["location"])
+        self.assertIsNone(parsed["salary_range"])
+        self.assertIsNone(parsed["employment_type"])
+        self.assertIsNone(parsed["source_url"])
+        self.assertIsInstance(parsed["keywords"], list)
+
+    def test_parser_raises_helpful_error_for_missing_file(self):
+        missing_path = PROJECT_ROOT / "jobs" / "missing_job_description.md"
+
+        with self.assertRaises(MissingJobDescriptionError) as context:
+            parse_job_description(missing_path)
+
+        self.assertIn("Job description file not found", str(context.exception))
+
+
+if __name__ == "__main__":
+    unittest.main()

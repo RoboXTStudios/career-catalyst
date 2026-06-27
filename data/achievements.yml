@@ -1,0 +1,37 @@
+achievements:
+  - id: omg23_advancement
+    theme: Career progression
+    statement: "Advanced from Campaign Manager to Group Director while supporting major Disney entertainment brands and campaigns."
+    evidence:
+      - "Partnered with Disney Studios, Disney+, FX, Searchlight Pictures, National Geographic, Disney Branded Television, and Corporate Brand Management."
+  - id: cross_functional_leadership
+    theme: Cross-functional leadership
+    statement: "Led cross-functional teams of 60+ across Marketing Operations, Creative Management, Analytics, and Ad Operations."
+    evidence:
+      - "Supported theatrical, streaming, and television campaign delivery."
+  - id: enterprise_campaign_delivery
+    theme: Campaign operations
+    statement: "Directed operational execution for multimillion-dollar entertainment marketing campaigns."
+    evidence:
+      - "Supported theatrical releases, streaming launches, and franchise marketing initiatives."
+  - id: disney_plus_launch_support
+    theme: Streaming launch operations
+    statement: "Helped operationalize the Disney+ launch through onboarding, QA, measurement readiness, platform coordination, and execution workflows."
+    evidence:
+      - "Connected campaign operations, platform readiness, and quality assurance."
+  - id: workflow_governance
+    theme: Process excellence
+    statement: "Introduced scalable workflows, governance practices, and execution standards across marketing, technology, analytics, and creative teams."
+    evidence:
+      - "Improved consistency across complex entertainment marketing operations."
+  - id: multiverse_editorial
+    theme: Editorial leadership
+    statement: "Created and served as Managing Editor of Multiverse, an internal editorial publication reaching 400+ employees."
+    evidence:
+      - "Spotlighted creativity, innovation, culture, and employee storytelling."
+  - id: campaignos_ai_operations
+    theme: AI operations
+    statement: "Designed and developed an AI-powered operations platform that standardizes workflow governance, automates quality assurance, reduces operational risk, and enables cross-functional teams to execute consistently at scale."
+    evidence:
+      - "Built schema-driven workflows, validation frameworks, and operational reporting that reduce manual effort while improving consistency, visibility, and decision-making."
+      - "Applied nearly two decades of enterprise entertainment operations experience to solve recurring organizational challenges through AI, automation, and product thinking."

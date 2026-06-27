@@ -1,0 +1,26 @@
+projects:
+  - name: CampaignOS
+    role: Founder & Product Lead
+    timeframe: 2026-Present
+    category: AI operations platform
+    summary: "Designed and developed an AI-powered operations platform that standardizes workflow governance, automates quality assurance, reduces operational risk, and enables cross-functional teams to execute consistently at scale."
+    highlights:
+      - "Built schema-driven workflows, validation frameworks, and operational reporting that reduce manual effort while improving consistency, visibility, and decision-making."
+      - "Applied nearly two decades of enterprise entertainment operations experience to solve recurring organizational challenges through AI, automation, and product thinking."
+  - name: Substack Writer
+    role: Writer
+    timeframe: 2026-Present
+    category: Editorial project
+    summary: "Publishes essays exploring creativity, technology, music, AI, grief, and life after corporate leadership through an editorial lens."
+    highlights:
+      - "Develops personal voice and public thought leadership."
+  - name: OMG23 Multiverse Newsletter
+    role: Creator & Managing Editor
+    timeframe: 2023-2026
+    category: Internal editorial publication
+    summary: "Internal culture publication spanning creativity, innovation, music, and emerging media."
+    highlights:
+      - "Developed editorial voice."
+      - "Built recurring content strategy."
+      - "Created contributor framework."
+      - "Reached 400+ employees."
