@@ -1,3 +1,6 @@
+<!-- career-catalyst-job-title: Head of Global Creative and Product Development Operations -->
+<!-- career-catalyst-company: Sony Interactive Entertainment / PlayStation -->
+
 # Trisha Lynch
 
 Marketing & Business Operations Leader | AI Systems | Process Excellence | Cross-Functional Strategy

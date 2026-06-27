@@ -263,6 +263,8 @@ def _print_material_result(result: dict[str, Any], success_message: str) -> None
     print(f"Company: {result.get('company') or 'Not found'}")
     print(f"Match score: {result.get('match_score')}")
     print(f"Output file path: {result.get('output_path')}")
+    if result.get("txt_output_path"):
+        print(f"Plain text output path: {result.get('txt_output_path')}")
     print(success_message)
 
 

@@ -398,6 +398,9 @@ def _render_markdown(
     development = _professional_development(career_data)
 
     lines = [
+        f"<!-- career-catalyst-job-title: {parsed_job.get('job_title') or 'Role'} -->",
+        f"<!-- career-catalyst-company: {parsed_job.get('company') or 'Company'} -->",
+        "",
         f"# {candidate.get('name', 'Trisha Lynch')}",
         "",
         candidate.get("headline", ""),

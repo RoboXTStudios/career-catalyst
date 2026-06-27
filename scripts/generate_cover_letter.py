@@ -5,11 +5,13 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 try:
+    from .filename_utils import build_upload_filename
     from .load_data import load_all_yaml
     from .parse_job import parse_job_description
     from .score_match import score_job_match
     from .text_cleanup import cleanup_repeated_words
 except ImportError:
+    from filename_utils import build_upload_filename
     from load_data import load_all_yaml
     from parse_job import parse_job_description
     from score_match import score_job_match
@@ -41,11 +43,6 @@ def load_generation_context(
         "parsed_job": parse_job_description(resolved_job_path),
         "match_report": score_job_match(job_path, root),
     }
-
-
-def _slug(value: Optional[str], fallback: str) -> str:
-    slug = re.sub(r"[^A-Za-z0-9]+", "_", value or "").strip("_")
-    return slug or fallback
 
 
 def _word_count(text: str) -> int:
@@ -80,13 +77,25 @@ def save_material(
         )
 
     parsed_job = context["parsed_job"]
-    company_slug = _slug(parsed_job.get("company"), "Company")
-    role_slug = _slug(parsed_job.get("job_title"), "Role")
+    personal_brand = context["career_data"]["data"].get("personal_brand", {})
+    candidate = personal_brand.get("candidate", {})
+    candidate_name = (
+        str(candidate.get("name") or "Trisha Lynch")
+        if isinstance(candidate, dict)
+        else "Trisha Lynch"
+    )
+    filename = build_upload_filename(
+        candidate_name,
+        str(parsed_job.get("job_title") or "Role"),
+        str(parsed_job.get("company") or "Company"),
+        suffix,
+        "md",
+    )
     output_path = (
         context["root"]
         / "exports"
         / "messages"
-        / f"Trisha_Lynch_{company_slug}_{role_slug}_{suffix}.md"
+        / filename
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(content.rstrip() + "\n", encoding="utf-8")
@@ -314,10 +323,19 @@ def generate_cover_letter(
 ) -> Dict[str, Any]:
     """Generate and save a concise Markdown cover letter."""
     context = load_generation_context(job_path, project_root)
-    return save_material(
+    result = save_material(
         context,
         "Cover_Letter",
         _cover_letter_content(context),
         minimum_words=250,
         maximum_words=400,
     )
+    markdown_path = Path(result["output_path"])
+    markdown = markdown_path.read_text(encoding="utf-8")
+    plain_text = re.sub(r"^#{1,6}\s+", "", markdown, flags=re.MULTILINE)
+    plain_text = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", plain_text)
+    plain_text = plain_text.replace("**", "")
+    text_path = markdown_path.with_suffix(".txt")
+    text_path.write_text(plain_text, encoding="utf-8")
+    result["txt_output_path"] = str(text_path)
+    return result

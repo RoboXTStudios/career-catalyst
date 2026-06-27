@@ -1,3 +1,6 @@
+<!-- career-catalyst-job-title: Director, Enterprise Strategy & Initiatives -->
+<!-- career-catalyst-company: Crunchyroll -->
+
 # Trisha Lynch
 
 Marketing & Business Operations Leader | AI Systems | Process Excellence | Cross-Functional Strategy

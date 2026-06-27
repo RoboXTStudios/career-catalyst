@@ -6,7 +6,8 @@ from pathlib import Path
 from urllib.parse import unquote
 
 from scripts.cli import main
-from scripts.generate_dashboard import generate_dashboard
+from scripts.generate_dashboard import _asset_label, _package_for_asset, generate_dashboard
+from scripts.load_data import load_yaml_file
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -53,12 +54,47 @@ class GenerateDashboardTests(unittest.TestCase):
         self.assertNotIn(str(PROJECT_ROOT), self.content)
 
     def test_dashboard_contains_playstation_tracker_package(self):
+        tracker = load_yaml_file("data/application_tracker.yml", PROJECT_ROOT)
+        playstation_status = tracker["applications"][0]["status"]
+
         self.assertIn("Sony Interactive Entertainment / PlayStation", self.content)
         self.assertIn(
             "Head of Global Creative and Product Development Operations",
             self.content,
         )
-        self.assertIn("Drafted", self.content)
+        self.assertIn(playstation_status, self.content)
+
+    def test_dashboard_recognizes_old_and_new_material_filenames(self):
+        expected_labels = {
+            "exports/messages/Trisha_Lynch_PlayStation_Role_Cover_Letter.md": "Cover Letter",
+            "exports/messages/TrishaLynch_HeadGlobalCreativeOps_PlayStation_CoverLetter.md": "Cover Letter",
+            "exports/docx/Trisha_Lynch_PlayStation_Resume_Styled.docx": "Styled DOCX",
+            "exports/docx/TrishaLynch_HeadGlobalCreativeOps_PlayStation_Styled.docx": "Styled DOCX",
+            "exports/strategy_packs/Trisha_Lynch_PlayStation_Role_Strategy_Pack.md": "Strategy Pack",
+            "exports/strategy_packs/TrishaLynch_HeadGlobalCreativeOps_PlayStation_StrategyPack.md": "Strategy Pack",
+        }
+        for path, label in expected_labels.items():
+            self.assertEqual(_asset_label(Path(path)), label)
+
+    def test_dashboard_matches_short_and_legacy_names_to_same_package(self):
+        package = {
+            "company": "Sony Interactive Entertainment / PlayStation",
+            "role": "Head of Global Creative and Product Development Operations",
+            "tracker": {"status": "Drafted"},
+        }
+        packages = [package]
+        paths = (
+            Path(
+                "exports/messages/Trisha_Lynch_Sony_Interactive_Entertainment_"
+                "PlayStation_Role_Cover_Letter.md"
+            ),
+            Path(
+                "exports/messages/TrishaLynch_HeadGlobalCreativeOps_"
+                "PlayStation_CoverLetter.md"
+            ),
+        )
+        for path in paths:
+            self.assertIs(_package_for_asset(path, packages), package)
 
     def test_dashboard_cli_command_succeeds(self):
         output = io.StringIO()

@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 try:
+    from .filename_utils import build_upload_filename
     from .generate_cover_letter import (
         _achievement,
         _campaignos_is_relevant,
@@ -12,12 +13,12 @@ try:
         _join_human,
         _position,
         _project,
-        _slug,
         _word_count,
         load_generation_context,
     )
     from .text_cleanup import cleanup_repeated_words
 except ImportError:
+    from filename_utils import build_upload_filename
     from generate_cover_letter import (
         _achievement,
         _campaignos_is_relevant,
@@ -26,7 +27,6 @@ except ImportError:
         _join_human,
         _position,
         _project,
-        _slug,
         _word_count,
         load_generation_context,
     )
@@ -370,13 +370,25 @@ def generate_strategy_pack(
     _validate_strategy_pack(context, content)
 
     parsed_job = context["parsed_job"]
-    company_slug = _slug(parsed_job.get("company"), "Company")
-    role_slug = _slug(parsed_job.get("job_title"), "Role")
+    personal_brand = context["career_data"]["data"].get("personal_brand", {})
+    candidate = personal_brand.get("candidate", {})
+    candidate_name = (
+        str(candidate.get("name") or "Trisha Lynch")
+        if isinstance(candidate, dict)
+        else "Trisha Lynch"
+    )
+    filename = build_upload_filename(
+        candidate_name,
+        str(parsed_job.get("job_title") or "Role"),
+        str(parsed_job.get("company") or "Company"),
+        "Strategy_Pack",
+        "md",
+    )
     output_path = (
         context["root"]
         / "exports"
         / "strategy_packs"
-        / f"Trisha_Lynch_{company_slug}_{role_slug}_Strategy_Pack.md"
+        / filename
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(content.rstrip() + "\n", encoding="utf-8")

@@ -17,7 +17,7 @@ class StrategyPackTests(unittest.TestCase):
 
     def test_strategy_pack_file_is_generated(self):
         self.assertTrue(self.output_path.is_file())
-        self.assertTrue(self.output_path.name.endswith("_Strategy_Pack.md"))
+        self.assertTrue(self.output_path.name.endswith("_StrategyPack.md"))
 
     def test_strategy_pack_is_not_empty(self):
         self.assertGreater(self.output_path.stat().st_size, 0)

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.0.16 - Sprint 8.3
+
+- Added upload-friendly filename generation.
+- Shortened DOCX resume export filenames.
+- Shortened application material filenames.
+- Added company and role filename shortening helpers.
+- Added plain text cover letter export support.
+- Updated dashboard file linking for shortened filenames.
+- Added tests for filename safety and upload-friendly exports.
+
 ## 0.0.15 - Sprint 8.2
 
 - Polished cover letter paragraph structure.

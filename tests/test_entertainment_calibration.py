@@ -75,6 +75,55 @@ class EntertainmentCalibrationTests(unittest.TestCase):
         self.assertEqual(cover_letter.count(full_name), 1)
         self.assertIn("systems mindset I developed at OMG23", cover_letter)
 
+    def test_playstation_outputs_use_upload_friendly_filenames(self):
+        expected_names = {
+            "cover_letter": "TrishaLynch_HeadGlobalCreativeOps_PlayStation_CoverLetter.md",
+            "recruiter": "TrishaLynch_HeadGlobalCreativeOps_PlayStation_RecruiterMessage.md",
+            "hiring_manager": "TrishaLynch_HeadGlobalCreativeOps_PlayStation_HiringManagerMessage.md",
+            "application_note": "TrishaLynch_HeadGlobalCreativeOps_PlayStation_ApplicationNote.md",
+            "strategy_pack": "TrishaLynch_HeadGlobalCreativeOps_PlayStation_StrategyPack.md",
+        }
+        for result_name, expected_name in expected_names.items():
+            self.assertEqual(
+                Path(self.results[result_name]["output_path"]).name,
+                expected_name,
+            )
+
+        self.assertEqual(
+            Path(self.styled_result["output_path"]).name,
+            "TrishaLynch_HeadGlobalCreativeOps_PlayStation_Styled.docx",
+        )
+        self.assertEqual(
+            Path(self.ats_result["output_path"]).name,
+            "TrishaLynch_HeadGlobalCreativeOps_PlayStation_ATS.docx",
+        )
+
+    def test_playstation_cover_letter_has_plain_text_export(self):
+        markdown_path = Path(self.results["cover_letter"]["output_path"])
+        text_path = Path(self.results["cover_letter"]["txt_output_path"])
+
+        self.assertEqual(
+            text_path.name,
+            "TrishaLynch_HeadGlobalCreativeOps_PlayStation_CoverLetter.txt",
+        )
+        self.assertTrue(text_path.is_file())
+        self.assertEqual(
+            markdown_path.read_text(encoding="utf-8"),
+            text_path.read_text(encoding="utf-8"),
+        )
+
+    def test_upload_filenames_have_no_unsafe_characters(self):
+        output_paths = [Path(result["output_path"]) for result in self.results.values()]
+        output_paths.extend(
+            [
+                Path(self.results["cover_letter"]["txt_output_path"]),
+                Path(self.styled_result["output_path"]),
+                Path(self.ats_result["output_path"]),
+            ]
+        )
+        for output_path in output_paths:
+            self.assertIsNone(re.search(r"[/,()&\s]", output_path.name))
+
     def test_cover_letter_experience_paragraph_is_concise(self):
         cover_letter = self.contents["cover_letter"]
         experience_paragraph = cover_letter.split("\n\n")[2]
@@ -143,6 +192,7 @@ class EntertainmentCalibrationTests(unittest.TestCase):
         output_paths = [Path(result["output_path"]) for result in self.results.values()]
         output_paths.extend(
             [
+                Path(self.results["cover_letter"]["txt_output_path"]),
                 Path(self.styled_result["output_path"]),
                 Path(self.ats_result["output_path"]),
             ]

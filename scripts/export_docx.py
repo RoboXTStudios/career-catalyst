@@ -14,9 +14,13 @@ from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor, Twips
 
 try:
+    from .filename_utils import build_upload_filename, short_company_name
     from .load_data import DataLoadError, load_yaml_file
+    from .parse_job import JobParseError, parse_job_description
 except ImportError:
+    from filename_utils import build_upload_filename, short_company_name
     from load_data import DataLoadError, load_yaml_file
+    from parse_job import JobParseError, parse_job_description
 
 
 PathInput = Union[str, Path]
@@ -43,6 +47,78 @@ class MissingMarkdownFileError(DocxExportError):
 def _resolve_path(file_path: PathInput, project_root: Path) -> Path:
     path = Path(file_path)
     return path if path.is_absolute() else project_root / path
+
+
+def _filename_key(value: str) -> str:
+    return "".join(re.findall(r"[a-z0-9]+", value.lower()))
+
+
+def _source_matches_company(source_path: Path, company: str) -> bool:
+    source_key = _filename_key(source_path.stem)
+    company_keys = (
+        _filename_key(company),
+        _filename_key(short_company_name(company)),
+    )
+    return any(key and key in source_key for key in company_keys)
+
+
+def _legacy_resume_context(source_path: Path, project_root: Path) -> Dict[str, str]:
+    tracker_path = project_root / "data" / "application_tracker.yml"
+    if tracker_path.is_file():
+        try:
+            tracker = load_yaml_file("data/application_tracker.yml", project_root)
+        except DataLoadError:
+            tracker = {}
+        for application in tracker.get("applications", []):
+            if not isinstance(application, dict):
+                continue
+            company = str(application.get("company") or "")
+            role = str(application.get("role") or "")
+            if company and role and _source_matches_company(source_path, company):
+                return {"company": company, "job_title": role}
+
+    job_matches = []
+    jobs_directory = project_root / "jobs"
+    if jobs_directory.is_dir():
+        for job_path in sorted(jobs_directory.iterdir()):
+            if (
+                not job_path.is_file()
+                or job_path.name.lower() == "readme.md"
+                or job_path.suffix.lower() not in {".md", ".txt"}
+            ):
+                continue
+            try:
+                parsed = parse_job_description(job_path)
+            except JobParseError:
+                continue
+            company = str(parsed.get("company") or "")
+            role = str(parsed.get("job_title") or "")
+            if company and role and _source_matches_company(source_path, company):
+                job_matches.append({"company": company, "job_title": role})
+    if len(job_matches) == 1:
+        return job_matches[0]
+    return {"company": "Company", "job_title": "Role"}
+
+
+def _resume_context(markdown: str, source_path: Path, project_root: Path) -> Dict[str, str]:
+    metadata: Dict[str, str] = {}
+    for line in markdown.splitlines():
+        match = re.match(
+            r"^<!--\s*career-catalyst-(job-title|company):\s*(.+?)\s*-->$",
+            line.strip(),
+            flags=re.IGNORECASE,
+        )
+        if match:
+            metadata[match.group(1).lower().replace("-", "_")] = match.group(2).strip()
+
+    candidate_match = re.search(r"^#\s+(.+?)\s*$", markdown, flags=re.MULTILINE)
+    metadata["candidate_name"] = candidate_match.group(1).strip() if candidate_match else "Trisha Lynch"
+
+    if not metadata.get("job_title") or not metadata.get("company"):
+        legacy = _legacy_resume_context(source_path, project_root)
+        metadata.setdefault("job_title", legacy["job_title"])
+        metadata.setdefault("company", legacy["company"])
+    return metadata
 
 
 def _load_platform_categories(project_root: Path) -> List[Dict[str, Any]]:
@@ -472,6 +548,9 @@ def _parse_markdown(markdown: str) -> List[Dict[str, str]]:
         if not line:
             flush_paragraph()
             continue
+        if re.match(r"^<!--\s*career-catalyst-(?:job-title|company):", line, re.IGNORECASE):
+            flush_paragraph()
+            continue
         if line.startswith("# "):
             flush_paragraph()
             blocks.append({"type": "h1", "text": line[2:].strip()})
@@ -662,9 +741,22 @@ def _add_markdown_content(
         index += 1
 
 
-def _output_path(source_path: Path, project_root: Path, mode: str) -> Path:
+def _output_path(
+    markdown: str,
+    source_path: Path,
+    project_root: Path,
+    mode: str,
+) -> Path:
+    context = _resume_context(markdown, source_path, project_root)
     suffix = "Styled" if mode == STYLED_MODE else "ATS"
-    return project_root / "exports" / "docx" / f"{source_path.stem}_{suffix}.docx"
+    filename = build_upload_filename(
+        context["candidate_name"],
+        context["job_title"],
+        context["company"],
+        suffix,
+        "docx",
+    )
+    return project_root / "exports" / "docx" / filename
 
 
 def _export_docx(
@@ -709,7 +801,7 @@ def _export_docx(
         platform_categories,
     )
 
-    output_path = _output_path(source_path, root, mode)
+    output_path = _output_path(markdown, source_path, root, mode)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     try:
         document.save(str(output_path))

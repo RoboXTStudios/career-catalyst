@@ -28,13 +28,21 @@ class ExportDocxTests(unittest.TestCase):
     def test_styled_export_creates_docx(self):
         result = export_styled_docx(MARKDOWN_RESUME, PROJECT_ROOT)
 
-        self.assertTrue(result["output_path"].endswith("_Resume_Styled.docx"))
+        self.assertTrue(
+            result["output_path"].endswith(
+                "TrishaLynch_DirectorEnterpriseStrategy_Crunchyroll_Styled.docx"
+            )
+        )
         self.assertTrue(Path(result["output_path"]).is_file())
 
     def test_ats_export_creates_docx(self):
         result = export_ats_docx(MARKDOWN_RESUME, PROJECT_ROOT)
 
-        self.assertTrue(result["output_path"].endswith("_Resume_ATS.docx"))
+        self.assertTrue(
+            result["output_path"].endswith(
+                "TrishaLynch_DirectorEnterpriseStrategy_Crunchyroll_ATS.docx"
+            )
+        )
         self.assertTrue(Path(result["output_path"]).is_file())
 
     def test_both_output_files_are_not_empty(self):
@@ -137,7 +145,7 @@ class ExportDocxTests(unittest.TestCase):
                 PROJECT_ROOT
                 / "exports"
                 / "docx"
-                / "Trisha_Lynch_executive_operations_Crunchyroll_Resume_Styled.docx"
+                / "TrishaLynch_DirectorEnterpriseStrategy_Crunchyroll_Styled.docx"
             ).is_file()
         )
 

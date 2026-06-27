@@ -8,9 +8,11 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 from urllib.parse import quote
 
 if __package__:
+    from .filename_utils import short_company_name, short_role_name
     from .load_data import DataLoadError, load_yaml_file
     from .parse_job import JobParseError, parse_job_description
 else:
+    from filename_utils import short_company_name, short_role_name
     from load_data import DataLoadError, load_yaml_file
     from parse_job import JobParseError, parse_job_description
 
@@ -141,19 +143,30 @@ def _asset_label(path: Path) -> Optional[str]:
 
     if parent == "markdown" and name.endswith("_resume.md"):
         return "Tailored Markdown Resume"
-    if parent == "docx" and name.endswith("_resume_styled.docx"):
+    if parent == "docx" and name.endswith("_styled.docx"):
         return "Styled DOCX"
-    if parent == "docx" and name.endswith("_resume_ats.docx"):
+    if parent == "docx" and name.endswith("_ats.docx"):
         return "ATS DOCX"
-    if parent == "messages" and name.endswith("_cover_letter.md"):
+    if parent == "messages" and (
+        name.endswith("_cover_letter.md") or name.endswith("_coverletter.md")
+    ):
         return "Cover Letter"
-    if parent == "messages" and name.endswith("_recruiter_message.md"):
+    if parent == "messages" and (
+        name.endswith("_recruiter_message.md") or name.endswith("_recruitermessage.md")
+    ):
         return "Recruiter Message"
-    if parent == "messages" and name.endswith("_hiring_manager_message.md"):
+    if parent == "messages" and (
+        name.endswith("_hiring_manager_message.md")
+        or name.endswith("_hiringmanagermessage.md")
+    ):
         return "Hiring Manager Message"
-    if parent == "messages" and name.endswith("_application_note.md"):
+    if parent == "messages" and (
+        name.endswith("_application_note.md") or name.endswith("_applicationnote.md")
+    ):
         return "Application Note"
-    if parent == "strategy_packs" and name.endswith("_strategy_pack.md"):
+    if parent == "strategy_packs" and (
+        name.endswith("_strategy_pack.md") or name.endswith("_strategypack.md")
+    ):
         return "Strategy Pack"
     return None
 
@@ -163,13 +176,29 @@ def _package_for_asset(
 ) -> Optional[Dict[str, Any]]:
     file_key = _slug(path.stem)
     candidates = [
-        package for package in packages if _slug(package["company"]) in file_key
+        package
+        for package in packages
+        if any(
+            key in file_key
+            for key in (
+                _slug(package["company"]),
+                _slug(short_company_name(package["company"])),
+            )
+        )
     ]
     if not candidates:
         return None
 
     exact_role_matches = [
-        package for package in candidates if _slug(package["role"]) in file_key
+        package
+        for package in candidates
+        if any(
+            key in file_key
+            for key in (
+                _slug(package["role"]),
+                _slug(short_role_name(package["role"])),
+            )
+        )
     ]
     if len(exact_role_matches) == 1:
         return exact_role_matches[0]
@@ -194,7 +223,12 @@ def _attach_assets(root: Path, packages: List[Dict[str, Any]]) -> List[Tuple[str
             if package is None:
                 unassigned.append((label, path))
                 continue
-            package["files"][label] = path
+            existing_path = package["files"].get(label)
+            if existing_path is None or (
+                path.name.startswith("TrishaLynch_")
+                and not existing_path.name.startswith("TrishaLynch_")
+            ):
+                package["files"][label] = path
     return unassigned
 
 

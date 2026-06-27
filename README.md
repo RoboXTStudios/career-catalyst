@@ -177,6 +177,14 @@ Disney Studios Theatrical includes Pixar, Lucasfilm, Marvel, 20th Century Studio
 
 Generated materials should not overemphasize Networks or make Corporate Brand Management the central headline. Corporate Brand Management should be framed as franchise/IP and brand management support where relevant.
 
+## Upload-Friendly Filenames
+
+Career Catalyst exports application materials using concise filenames designed for applicant portals.
+
+Example: `TrishaLynch_HeadGlobalCreativeOps_PlayStation_Styled.docx`
+
+Styled files are intended for human reviewers. ATS files are intended for applicant tracking systems.
+
 ## What Comes Next
 
 Later sprints can add interview prep generation and carefully verified company or job-source workflows.

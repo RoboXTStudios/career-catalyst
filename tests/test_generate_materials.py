@@ -45,25 +45,36 @@ class GenerateMaterialsTests(unittest.TestCase):
         path = Path(self.results["cover_letter"]["output_path"])
 
         self.assertTrue(path.is_file())
-        self.assertTrue(path.name.endswith("_Cover_Letter.md"))
+        self.assertTrue(path.name.endswith("_CoverLetter.md"))
+
+    def test_cover_letter_plain_text_file_is_generated(self):
+        markdown_path = Path(self.results["cover_letter"]["output_path"])
+        text_path = Path(self.results["cover_letter"]["txt_output_path"])
+
+        self.assertTrue(text_path.is_file())
+        self.assertTrue(text_path.name.endswith("_CoverLetter.txt"))
+        self.assertEqual(
+            markdown_path.read_text(encoding="utf-8"),
+            text_path.read_text(encoding="utf-8"),
+        )
 
     def test_recruiter_message_file_is_generated(self):
         path = Path(self.results["recruiter"]["output_path"])
 
         self.assertTrue(path.is_file())
-        self.assertTrue(path.name.endswith("_Recruiter_Message.md"))
+        self.assertTrue(path.name.endswith("_RecruiterMessage.md"))
 
     def test_hiring_manager_message_file_is_generated(self):
         path = Path(self.results["hiring_manager"]["output_path"])
 
         self.assertTrue(path.is_file())
-        self.assertTrue(path.name.endswith("_Hiring_Manager_Message.md"))
+        self.assertTrue(path.name.endswith("_HiringManagerMessage.md"))
 
     def test_application_note_file_is_generated(self):
         path = Path(self.results["application_note"]["output_path"])
 
         self.assertTrue(path.is_file())
-        self.assertTrue(path.name.endswith("_Application_Note.md"))
+        self.assertTrue(path.name.endswith("_ApplicationNote.md"))
 
     def test_generated_files_are_not_empty(self):
         for result in self.results.values():
