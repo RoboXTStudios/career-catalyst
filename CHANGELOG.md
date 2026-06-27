@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.17 - Sprint 8.4
+
+- Added Google/YouTube-specific positioning.
+- Added long-term hands-on Google advertising product familiarity.
+- Calibrated Google/YouTube materials toward GTM operations, product activation, and large advertiser execution.
+- Added safeguards against implying Google employment or internal access.
+- Added tests for Google/YouTube positioning.
+
 ## 0.0.16 - Sprint 8.3
 
 - Added upload-friendly filename generation.

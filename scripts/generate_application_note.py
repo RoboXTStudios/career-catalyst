@@ -9,12 +9,14 @@ try:
         load_generation_context,
         save_material,
     )
+    from .role_context import is_google_youtube_role
 except ImportError:
     from generate_cover_letter import (
         _position,
         load_generation_context,
         save_material,
     )
+    from role_context import is_google_youtube_role
 
 
 PathInput = Union[str, Path]
@@ -28,6 +30,18 @@ def _application_note_content(context: Dict[str, Any]) -> str:
     role_reference = f"The {role} role" if role else "This opportunity"
     position = _position(career_data, "OMG23")
     position_company = str(position.get("company") or "OMG23 / OMD Entertainment").split(",")[0]
+
+    if is_google_youtube_role(parsed_job):
+        return (
+            "This Google opportunity caught my attention because it connects YouTube product "
+            "activation, GTM operations, and large advertiser execution. I bring long-term hands-on "
+            "experience with Google advertising products, including YouTube, dating back to the "
+            "early 2000s. I have translated platform capabilities into campaign execution, "
+            "measurement readiness, and operational workflows across large entertainment advertisers. "
+            "That foundation aligns with Brand Auction activation, seller enablement, senior stakeholder "
+            "alignment, and product feedback loops. CampaignOS adds a current proof point for my "
+            "operational systems thinking."
+        )
 
     return (
         f"{role_reference} at {company} caught my attention because it connects creative operations, "

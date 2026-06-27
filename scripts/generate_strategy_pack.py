@@ -17,6 +17,7 @@ try:
         load_generation_context,
     )
     from .text_cleanup import cleanup_repeated_words
+    from .role_context import google_claim_violations, is_google_youtube_role
 except ImportError:
     from filename_utils import build_upload_filename
     from generate_cover_letter import (
@@ -31,6 +32,7 @@ except ImportError:
         load_generation_context,
     )
     from text_cleanup import cleanup_repeated_words
+    from role_context import google_claim_violations, is_google_youtube_role
 
 
 PathInput = Union[str, Path]
@@ -67,6 +69,8 @@ def _job_functions(parsed_job: Dict[str, Any]) -> List[str]:
 
 
 def _organization_context(parsed_job: Dict[str, Any]) -> str:
+    if is_google_youtube_role(parsed_job):
+        return "a large advertiser and platform activation ecosystem"
     keywords = {str(keyword).lower() for keyword in parsed_job.get("keywords", [])}
     if {"streaming entertainment", "fandom", "global teams"}.issubset(keywords):
         return "a global streaming entertainment and fandom organization"
@@ -93,6 +97,26 @@ def _role_opportunity_brief(context: Dict[str, Any]) -> str:
     functions = _job_functions(parsed_job)
     function_text = _join_human(functions) if functions else "multiple business functions"
     organization_context = _organization_context(parsed_job)
+
+    if is_google_youtube_role(parsed_job):
+        return (
+            f"Based on the job description, the {role} role sits between YouTube Brand Auction "
+            "product priorities and go-to-market execution across a large advertiser ecosystem. "
+            f"{company} is asking this leader to turn YouTube activation opportunities, including "
+            "AI-powered campaign types, into regional strategies that sellers can understand and "
+            "customers can adopt. The operational challenge is to align Product Go-To-Market, "
+            "Americas Large Customer Sales, sector video leads, and YouTube partners around shared "
+            "objectives without losing market nuance.\n\n"
+            "The role matters because product activation depends on more than awareness. Sellers need "
+            "clear value propositions, training, communications, and feedback channels, while senior "
+            "stakeholders need visibility into adoption, revenue goals, product gaps, and market-level "
+            "signals. The job description points to Brand Auction commercialization, seller enablement, "
+            "cross-functional forums, operational excellence, product feedback loops, and alignment to "
+            "business forecasts and objectives. A thoughtful first move would be to understand how "
+            "activation priorities currently travel from product teams to sector leads and sellers, "
+            "then identify where clearer ownership, feedback, or operating rhythms could improve "
+            "execution."
+        )
 
     if _is_creative_product_operations_role(parsed_job):
         return (
@@ -145,6 +169,35 @@ def _why_trisha(context: Dict[str, Any]) -> str:
     workflow = _achievement(career_data, "workflow_governance")
     campaignos = _project(career_data, "CampaignOS")
 
+    if is_google_youtube_role(context["parsed_job"]):
+        google_familiarity = _achievement(
+            career_data,
+            "google_youtube_platform_familiarity",
+        )
+        value = (
+            "Trisha brings more than 20 years of strategy, marketing operations, and digital media "
+            "experience across large entertainment advertisers. "
+            f"{_as_third_person(google_familiarity)} Her background includes translating Google and "
+            "YouTube platform capabilities into campaign execution, measurement readiness, and "
+            "operational workflows, connecting brand objectives with practical activation at scale.\n\n"
+            f"At {position_company}, she progressed from Campaign Manager to Group Director and led "
+            "cross-functional teams of 60+ across creative management, marketing operations, media, "
+            "analytics, technology, and campaign operations. Disney Studios Theatrical and Disney "
+            "Streaming/DSS campaigns provide evidence of her ability to operate across premium "
+            "advertiser complexity, align senior stakeholders, and turn platform capabilities into "
+            "consistent execution. Her experience with workflow governance, measurement readiness, "
+            "and operational standards maps directly to GTM operations, seller enablement, and product "
+            "feedback loops."
+        )
+        if campaignos:
+            value += (
+                "\n\nCampaignOS is a supporting proof point for her operational systems thinking. "
+                "She designed the AI-powered platform to standardize workflow governance, quality "
+                "assurance, validation, and reporting, showing how she turns recurring execution "
+                "problems into scalable systems."
+            )
+        return value
+
     value = (
         "Trisha brings more than 20 years of enterprise entertainment marketing and business "
         "operations experience, with a career built around helping complex teams move from strategy "
@@ -170,6 +223,31 @@ def _why_trisha(context: Dict[str, Any]) -> str:
 
 
 def _thirty_sixty_ninety_plan(context: Dict[str, Any]) -> str:
+    if is_google_youtube_role(context["parsed_job"]):
+        return """#### First 30 Days: Listen, Map, and Understand
+
+- Meet partners across Product Go-To-Market, YouTube, Americas Large Customer Sales, sector video leads, measurement, and regional operations.
+- Review Brand Auction activation priorities, AI-powered campaign types, seller materials, adoption goals, and existing business review rhythms.
+- Map how product updates, market feedback, activation guidance, and customer signals move between product teams, sector leads, and sellers.
+- Understand where large advertisers encounter friction across value proposition, campaign activation, measurement readiness, or adoption.
+- Confirm how leaders define success across activation, revenue contribution, seller readiness, customer outcomes, and feedback quality.
+
+#### Days 31-60: Prioritize, Align, and Improve
+
+- Separate isolated market issues from recurring activation, communication, enablement, or product-feedback gaps.
+- Align senior stakeholders on a focused set of activation priorities with clear owners, audiences, milestones, and measures.
+- Strengthen seller enablement with concise guidance that connects YouTube capabilities to advertiser objectives and practical execution.
+- Establish a useful feedback loop for product gaps, market signals, adoption barriers, and customer needs.
+- Test lightweight improvements to activation forums, communications, or reporting with the teams closest to sellers and customers.
+
+#### Days 61-90: Operationalize, Scale, and Measure
+
+- Turn effective activation practices into repeatable GTM operating rhythms across sectors while preserving necessary market nuance.
+- Improve visibility into adoption, risks, product updates, seller readiness, and feedback without adding unnecessary reporting.
+- Formalize decision and escalation paths across product, sales, measurement, and regional stakeholders.
+- Define practical measures for activation progress, enablement effectiveness, feedback quality, and advertiser adoption.
+- Prepare a longer-term roadmap for scalable YouTube Brand Auction activation across AI-powered campaign types."""
+
     if _is_creative_product_operations_role(context["parsed_job"]):
         return """#### First 30 Days: Listen, Map, and Understand
 
@@ -221,6 +299,32 @@ def _thirty_sixty_ninety_plan(context: Dict[str, Any]) -> str:
 
 
 def _strategic_pov_note(context: Dict[str, Any]) -> str:
+    if is_google_youtube_role(context["parsed_job"]):
+        return (
+            "#### How I Think About This Role\n\n"
+            "Product activation becomes real when platform priorities are translated into a clear "
+            "customer value proposition, practical seller guidance, measurable campaign execution, "
+            "and a feedback loop that product teams can use. GTM operations should connect those "
+            "elements. It should help sellers understand what is changing, why it matters for large "
+            "advertisers, and how to activate it without creating unnecessary process.\n\n"
+            "My perspective comes from long-term hands-on experience with Google advertising "
+            "products, including YouTube, dating back to the early 2000s. I have seen platform "
+            "capabilities evolve while the practical operating questions remain consistent: Is the "
+            "campaign ready to launch? Is measurement configured? Do teams understand the objective, "
+            "dependencies, and value proposition? Can market feedback reach the right product and "
+            "business partners in a form they can act on?\n\n"
+            "For YouTube Brand Auction and AI-powered campaign types, strong activation requires "
+            "alignment across product, sales, measurement, sector leads, and customers. The goal is "
+            "not simply broad awareness. It is consistent adoption supported by useful enablement, "
+            "clear operating rhythms, and decision-ready visibility into progress and friction. Large "
+            "advertisers also need enough flexibility to connect platform capabilities to distinct "
+            "brand objectives and market conditions.\n\n"
+            "CampaignOS is a supporting example of how I approach these systems questions. I built it "
+            "to make workflows, validation, quality assurance, and reporting more consistent. In this "
+            "role, I would bring the same practical discipline to activation strategy, seller "
+            "enablement, stakeholder alignment, and product feedback loops."
+        )
+
     campaignos_relevant = _campaignos_is_relevant(context)
     campaignos_text = ""
     if campaignos_relevant:
@@ -253,6 +357,38 @@ def _strategic_pov_note(context: Dict[str, Any]) -> str:
 
 
 def _interview_talking_points(context: Dict[str, Any]) -> List[Tuple[str, str]]:
+    if is_google_youtube_role(context["parsed_job"]):
+        return [
+            (
+                "Long-term Google and YouTube platform fluency",
+                "I bring hands-on experience with Google advertising products, including YouTube, dating back to the early 2000s and grounded in real campaign activation needs.",
+            ),
+            (
+                "Translating product priorities into execution",
+                "I can discuss how platform capabilities become campaign workflows, measurement readiness, activation guidance, and repeatable operating practices.",
+            ),
+            (
+                "Operating across large advertiser complexity",
+                "Disney Studios Theatrical and Disney Streaming/DSS work gave me experience aligning premium brand objectives, media execution, measurement, technology, and operational delivery at scale.",
+            ),
+            (
+                "Building useful GTM operating rhythms",
+                "I focus on clear ownership, milestones, decision paths, stakeholder forums, and reporting that helps teams act rather than adding process for its own sake.",
+            ),
+            (
+                "Strengthening seller enablement",
+                "I understand that activation guidance must connect product value to customer objectives, execution realities, measurement, and market nuance.",
+            ),
+            (
+                "Creating actionable product feedback loops",
+                "My systems work emphasizes turning recurring friction, adoption barriers, and market signals into structured feedback that teams can prioritize.",
+            ),
+            (
+                "Applying operational systems thinking",
+                "CampaignOS is a supporting proof point for how I use workflow governance, validation, quality assurance, and reporting to improve consistency and visibility.",
+            ),
+        ]
+
     campaignos_point = (
         "CampaignOS shows how I approach recurring operational problems: map the workflow, build "
         "validation and quality into the process, and improve visibility without adding noise."
@@ -290,6 +426,17 @@ def _interview_talking_points(context: Dict[str, Any]) -> List[Tuple[str, str]]:
 
 
 def _smart_questions(context: Dict[str, Any]) -> List[str]:
+    if is_google_youtube_role(context["parsed_job"]):
+        return [
+            "Which YouTube Brand Auction products or AI-powered campaign types most need stronger activation across Americas Large Customer Sales today?",
+            "Where does the current path from product priority to seller readiness create the most friction or loss of context?",
+            "How do sector video leads, Product Go-To-Market, YouTube, and sales teams currently align activation strategies and resolve tradeoffs?",
+            "What product feedback from large advertisers is most valuable, and how is it captured, prioritized, and returned to product teams?",
+            "Which seller enablement formats are working well, and where do sellers still need clearer value propositions or activation guidance?",
+            "How are adoption goals, revenue signals, customer outcomes, and market nuance balanced in business reviews and activation decisions?",
+            "By the end of 90 days, what evidence would show that this person is improving activation, stakeholder alignment, and feedback quality?",
+        ]
+
     if _is_creative_product_operations_role(context["parsed_job"]):
         return [
             "Where does the current concept-to-production process create the most friction for creative, product development, and licensing teams?",
@@ -340,6 +487,12 @@ def _validate_strategy_pack(context: Dict[str, Any], content: str) -> None:
         raise StrategyPackError("Strategy packs must not contain em dashes.")
     if "placeholder" in content.lower():
         raise StrategyPackError("Strategy packs must not contain placeholder text.")
+    if is_google_youtube_role(context["parsed_job"]):
+        violations = google_claim_violations(content)
+        if violations:
+            raise StrategyPackError(
+                f"Strategy pack contains unsupported Google relationship claim: {violations[0]}"
+            )
 
     lowered = content.lower()
     banned = list(PACK_BANNED_PHRASES) + list(context.get("voice", {}).get("avoid", []))

@@ -15,6 +15,7 @@ try:
         load_generation_context,
         save_material,
     )
+    from .role_context import is_google_youtube_role
 except ImportError:
     from generate_cover_letter import (
         ApplicationMaterialError,
@@ -27,6 +28,7 @@ except ImportError:
         load_generation_context,
         save_material,
     )
+    from role_context import is_google_youtube_role
 
 
 PathInput = Union[str, Path]
@@ -43,6 +45,22 @@ def _recruiter_content(context: Dict[str, Any]) -> str:
     position_company = str(position.get("company") or "OMG23 / OMD Entertainment").split(",")[0]
     entertainment_scope = _entertainment_scope(career_data)
     campaignos = _project(career_data, "CampaignOS")
+
+    if is_google_youtube_role(parsed_job):
+        message = (
+            f"I'm reaching out about {role_reference} at {company}. It stands out because it "
+            "connects YouTube product activation, GTM operations, and large advertiser execution. "
+            "I bring long-term hands-on experience with Google advertising products, including "
+            "YouTube, dating back to the early 2000s. I have translated Google and YouTube platform "
+            "capabilities into campaign execution, measurement readiness, and operational workflows "
+            "across large entertainment advertisers. CampaignOS is a current proof point for how I "
+            "turn recurring operational needs into scalable systems."
+        )
+        question = (
+            "If you're the right person to speak with, I would be glad to share more. If not, would "
+            "you mind pointing me in the right direction?"
+        )
+        return "\n\n".join(["Hello,", message, question, "Best,\n\nTrisha Lynch"])
 
     message = (
         f"I'm reaching out about {role_reference} at {company}. It stands out because it "
@@ -70,6 +88,33 @@ def _hiring_manager_content(context: Dict[str, Any]) -> str:
 
     campaignos = _project(career_data, "CampaignOS")
     entertainment_scope = _entertainment_scope(career_data)
+
+    if is_google_youtube_role(parsed_job):
+        opening = (
+            f"{role_reference} at {company} stood out because it brings YouTube product activation, "
+            "GTM operations, seller enablement, and large advertiser execution together. Translating "
+            "platform priorities into clear activation strategies, feedback loops, and measurable "
+            "execution is work I find meaningful."
+        )
+        experience = (
+            "I bring long-term hands-on experience with Google advertising products, including "
+            "YouTube, dating back to the early 2000s. Across large entertainment advertisers, I have "
+            "connected brand objectives, campaign operations, measurement readiness, and platform "
+            "activation while aligning marketing, media, analytics, technology, and senior stakeholders. "
+            "Disney Studios Theatrical and Disney Streaming/DSS work provides evidence of the scale "
+            "and operational rigor behind that experience."
+        )
+        project = (
+            "CampaignOS adds a current systems proof point: I designed the platform to standardize "
+            "workflow governance, quality assurance, validation, and operational visibility."
+        )
+        close = (
+            "I would welcome the chance to learn how the team is approaching YouTube Brand Auction, "
+            "AI-powered campaign types, and seller activation, and to share how I could contribute."
+        )
+        return "\n\n".join(
+            ["Hello,", opening, experience, project, close, "Best,\n\nTrisha Lynch"]
+        )
 
     opening = (
         f"{role_reference} at {company} stood out because it brings {_job_focus(parsed_job)} "

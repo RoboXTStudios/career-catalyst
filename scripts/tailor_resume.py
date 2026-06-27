@@ -7,11 +7,13 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 try:
     from .load_data import load_all_yaml
     from .parse_job import parse_job_description
+    from .role_context import is_google_youtube_role
     from .score_match import score_job_match
     from .text_cleanup import cleanup_repeated_words
 except ImportError:
     from load_data import load_all_yaml
     from parse_job import parse_job_description
+    from role_context import is_google_youtube_role
     from score_match import score_job_match
     from text_cleanup import cleanup_repeated_words
 
@@ -63,6 +65,17 @@ PROFILE_PRIORITIES = {
         "operational reporting",
     ),
 }
+
+GOOGLE_YOUTUBE_COMPETENCIES = (
+    "YouTube Product Activation",
+    "GTM Operations",
+    "Large Advertiser Campaign Operations",
+    "Brand Auction & Video Activation",
+    "Seller Enablement",
+    "Senior Stakeholder Alignment",
+    "Product Feedback Loops",
+    "Operational Excellence",
+)
 
 PROJECT_RELEVANCE_TERMS = {
     "OMG23 Multiverse Newsletter": (
@@ -192,6 +205,8 @@ def _select_core_competencies(
         ranked.append((score, -index, skill))
 
     selected = [skill for _score, _index, skill in sorted(ranked, reverse=True) if _score > 0]
+    if is_google_youtube_role(parsed_job):
+        selected = list(GOOGLE_YOUTUBE_COMPETENCIES) + selected
     if len(selected) < 8:
         selected.extend(skills)
     return _dedupe(selected)[:12]
@@ -211,10 +226,12 @@ def _profile_summary(
     match_report: Dict[str, Any],
     competencies: Sequence[str],
     resume_profile: str,
+    parsed_job: Dict[str, Any],
 ) -> str:
     personal_brand = career_data["data"]["personal_brand"]
     career_profile = personal_brand["career_profile"]
-    profile_summary = career_profile.get("profile_summaries", {}).get(resume_profile)
+    profile_key = "google_youtube_operations" if is_google_youtube_role(parsed_job) else resume_profile
+    profile_summary = career_profile.get("profile_summaries", {}).get(profile_key)
     if profile_summary:
         return str(profile_summary)
 
@@ -275,6 +292,18 @@ def _select_experience_bullets(
     )
     keywords = [str(keyword) for keyword in parsed_job.get("keywords", [])]
     priorities = PROFILE_PRIORITIES[resume_profile] + sample_priorities
+    if is_google_youtube_role(parsed_job):
+        priorities += (
+            "google advertising products",
+            "google and youtube",
+            "youtube",
+            "product activation",
+            "measurement readiness",
+            "large entertainment advertisers",
+            "platform activation",
+            "stakeholder alignment",
+            "operational excellence",
+        )
 
     ranked = []
     for index, bullet in enumerate(_dedupe(candidate_bullets)):
@@ -409,7 +438,13 @@ def _render_markdown(
         "",
         "## Profile",
         "",
-        _profile_summary(career_data, match_report, competencies, resume_profile),
+        _profile_summary(
+            career_data,
+            match_report,
+            competencies,
+            resume_profile,
+            parsed_job,
+        ),
         "",
         "## Core Competencies",
         "",
@@ -466,7 +501,14 @@ def _render_markdown(
                 "",
             ]
         )
-        lines.extend(f"- {highlight}" for highlight in earlier_position.get("highlights", []))
+        earlier_highlights = earlier_position.get("highlights", [])
+        if not is_google_youtube_role(parsed_job):
+            earlier_highlights = [
+                highlight
+                for highlight in earlier_highlights
+                if "Google advertising products" not in str(highlight)
+            ]
+        lines.extend(f"- {highlight}" for highlight in earlier_highlights)
         lines.append("")
 
     lines.extend(["## Professional Development", ""])

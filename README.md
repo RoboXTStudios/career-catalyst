@@ -185,6 +185,12 @@ Example: `TrishaLynch_HeadGlobalCreativeOps_PlayStation_Styled.docx`
 
 Styled files are intended for human reviewers. ATS files are intended for applicant tracking systems.
 
+## Google/YouTube Positioning
+
+For Google and YouTube roles, Career Catalyst may reference Trisha's long-term hands-on experience with Google advertising products, including YouTube, dating back to the early 2000s. Generated materials should frame this as platform familiarity and campaign activation experience, not employment at Google or internal product ownership.
+
+Generated application and networking materials must not reference family connections, internal Google relationships, or unsupported referrals. Professional outreach should remain grounded in Trisha's direct work experience and professional contacts.
+
 ## What Comes Next
 
 Later sprints can add interview prep generation and carefully verified company or job-source workflows.

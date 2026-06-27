@@ -8,12 +8,17 @@ try:
     from .filename_utils import build_upload_filename
     from .load_data import load_all_yaml
     from .parse_job import parse_job_description
+    from .role_context import (
+        google_claim_violations,
+        is_google_youtube_role,
+    )
     from .score_match import score_job_match
     from .text_cleanup import cleanup_repeated_words
 except ImportError:
     from filename_utils import build_upload_filename
     from load_data import load_all_yaml
     from parse_job import parse_job_description
+    from role_context import google_claim_violations, is_google_youtube_role
     from score_match import score_job_match
     from text_cleanup import cleanup_repeated_words
 
@@ -64,6 +69,12 @@ def save_material(
         raise ApplicationMaterialError("Generated application materials must not contain placeholder text.")
 
     lowered_content = content.lower()
+    if is_google_youtube_role(context["parsed_job"]):
+        violations = google_claim_violations(content)
+        if violations:
+            raise ApplicationMaterialError(
+                f"Google/YouTube material contains unsupported relationship claim: {violations[0]}"
+            )
     for phrase in context.get("voice", {}).get("avoid", []):
         if str(phrase).lower() in lowered_content:
             raise ApplicationMaterialError(
@@ -120,6 +131,8 @@ def _join_human(values: List[str]) -> str:
 
 
 def _job_focus(parsed_job: Dict[str, Any]) -> str:
+    if is_google_youtube_role(parsed_job):
+        return "YouTube product activation, GTM operations, and large advertiser execution"
     if _is_creative_product_operations_role(parsed_job):
         return "global creative operations, product development, and cross-functional execution"
 
@@ -250,7 +263,12 @@ def _cover_letter_content(context: Dict[str, Any]) -> str:
     campaignos = _project(career_data, "CampaignOS")
     campaignos_summary = str(campaignos.get("summary", "")).strip()
 
-    if role:
+    if role and is_google_youtube_role(parsed_job):
+        opening_sentence = (
+            f"The {role} role at {company} stood out because it brings {job_focus} together "
+            "across a large advertiser ecosystem."
+        )
+    elif role:
         opening_sentence = (
             f"The {role} role at {company} stood out because it brings {job_focus} together "
             "in a global entertainment organization."
@@ -269,15 +287,27 @@ def _cover_letter_content(context: Dict[str, Any]) -> str:
         "slowing down the work."
     )
 
-    experience = (
-        "Much of my career has been spent helping creative, marketing, media, analytics, and "
-        "technology teams bring structure to complex theatrical and streaming campaign ecosystems. "
-        f"At {position_company}, my primary focus was Disney Studios Theatrical and Disney "
-        "Streaming/DSS work, supporting campaign operations across Pixar, Lucasfilm, Marvel, 20th "
-        "Century Studios, Searchlight Pictures, Disney+, and franchise/IP priorities. That work "
-        "required close coordination across internal teams and external partners, with clear "
-        "workflows, milestones, quality standards, and consistent execution at scale."
-    )
+    if is_google_youtube_role(parsed_job):
+        experience = (
+            "I bring long-term hands-on experience with Google advertising products, including "
+            "YouTube, dating back to the early 2000s. Across agency and entertainment roles, I have "
+            "translated Google and YouTube platform capabilities into campaign execution, "
+            "measurement readiness, and operational workflows. At "
+            f"{position_company}, that meant connecting brand objectives, platform activation, "
+            "measurement, and delivery across large entertainment advertisers. Disney Studios "
+            "Theatrical and Disney Streaming/DSS campaigns provide the premium advertiser scale and "
+            "cross-functional operating complexity behind that experience."
+        )
+    else:
+        experience = (
+            "Much of my career has been spent helping creative, marketing, media, analytics, and "
+            "technology teams bring structure to complex theatrical and streaming campaign ecosystems. "
+            f"At {position_company}, my primary focus was Disney Studios Theatrical and Disney "
+            "Streaming/DSS work, supporting campaign operations across Pixar, Lucasfilm, Marvel, 20th "
+            "Century Studios, Searchlight Pictures, Disney+, and franchise/IP priorities. That work "
+            "required close coordination across internal teams and external partners, with clear "
+            "workflows, milestones, quality standards, and consistent execution at scale."
+        )
 
     if _campaignos_is_relevant(context) and campaignos_summary:
         transformation = (
@@ -296,7 +326,15 @@ def _cover_letter_content(context: Dict[str, Any]) -> str:
             "with clear ownership, useful standards, and room for creative teams to do their best work."
         )
 
-    if _is_creative_product_operations_role(parsed_job):
+    if is_google_youtube_role(parsed_job):
+        closing = (
+            "What appeals to me about this opportunity is the chance to help Google translate "
+            "YouTube Brand Auction and AI-powered campaign priorities into clear activation "
+            "strategies, seller enablement, feedback loops, and measurable execution. I would "
+            "welcome the chance to learn more about the role's priorities and discuss how my "
+            "platform experience and operational approach could contribute."
+        )
+    elif _is_creative_product_operations_role(parsed_job):
         closing = (
             "What appeals to me about this opportunity is the chance to help creative and product "
             f"development teams at {company} turn entertainment IP and franchise priorities into "
