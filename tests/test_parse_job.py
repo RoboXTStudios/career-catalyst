@@ -11,6 +11,7 @@ from scripts.parse_job import (
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SAMPLE_JOB = PROJECT_ROOT / "jobs" / "sample_job_description.md"
+PLAYSTATION_JOB = PROJECT_ROOT / "jobs" / "playstation_head_global_creative_product_dev_ops.md"
 
 
 class ParseJobTests(unittest.TestCase):
@@ -36,6 +37,14 @@ class ParseJobTests(unittest.TestCase):
         self.assertIn("enterprise strategy", parsed["keywords"])
         self.assertIn("cross-functional", parsed["keywords"])
         self.assertGreater(len(parsed["keywords"]), 0)
+
+    def test_parser_uses_first_h1_as_job_title_when_no_title_label_exists(self):
+        parsed = parse_job_description(PLAYSTATION_JOB)
+
+        self.assertEqual(
+            parsed["job_title"],
+            "Head of Global Creative and Product Development Operations",
+        )
 
     def test_parser_extracts_responsibilities_and_qualifications(self):
         parsed = parse_job_description(SAMPLE_JOB)

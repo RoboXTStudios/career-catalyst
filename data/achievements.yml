@@ -1,19 +1,20 @@
 achievements:
   - id: omg23_advancement
     theme: Career progression
-    statement: "Advanced from Campaign Manager to Group Director while supporting major Disney entertainment brands and campaigns."
+    statement: "Advanced from Campaign Manager to Group Director while leading campaign operations across Disney Studios Theatrical and Disney Streaming/DSS."
     evidence:
-      - "Partnered with Disney Studios, Disney+, FX, Searchlight Pictures, National Geographic, Disney Branded Television, and Corporate Brand Management."
+      - "Primary work focused on theatrical and streaming film campaign operations across Disney's Studios, franchise/IP, and streaming ecosystem."
+      - "Supported Pixar, Lucasfilm, Marvel, 20th Century Studios, Searchlight Pictures, Disney+, and franchise/IP and brand management priorities."
   - id: cross_functional_leadership
     theme: Cross-functional leadership
-    statement: "Led cross-functional teams of 60+ across Marketing Operations, Creative Management, Analytics, and Ad Operations."
+    statement: "Led cross-functional teams of 60+ across creative management, marketing operations, media, analytics, technology, and campaign operations."
     evidence:
-      - "Supported theatrical, streaming, and television campaign delivery."
+      - "Aligned creative, marketing, media, analytics, technology, and operations teams supporting theatrical and streaming entertainment campaigns."
   - id: enterprise_campaign_delivery
     theme: Campaign operations
-    statement: "Directed operational execution for multimillion-dollar entertainment marketing campaigns."
+    statement: "Directed operational execution for multimillion-dollar premium entertainment campaigns across theatrical releases, streaming launches, and franchise/IP priorities."
     evidence:
-      - "Supported theatrical releases, streaming launches, and franchise marketing initiatives."
+      - "Established workflows, milestones, quality standards, and partner coordination for consistent campaign execution at scale."
   - id: disney_plus_launch_support
     theme: Streaming launch operations
     statement: "Helped operationalize the Disney+ launch through onboarding, QA, measurement readiness, platform coordination, and execution workflows."

@@ -24,17 +24,19 @@ def _application_note_content(context: Dict[str, Any]) -> str:
     career_data = context["career_data"]
     parsed_job = context["parsed_job"]
     company = parsed_job.get("company") or "the organization"
-    role = parsed_job.get("job_title") or "the open role"
+    role = parsed_job.get("job_title")
+    role_reference = f"The {role} role" if role else "This opportunity"
     position = _position(career_data, "OMG23")
     position_company = str(position.get("company") or "OMG23 / OMD Entertainment").split(",")[0]
 
     return (
-        f"What caught my attention about {company}'s {role} role is the intersection of strategy, "
-        "cross-functional operations, and entertainment scale. I have spent much of my career helping creative and marketing "
-        f"teams turn complex work into clear, repeatable systems. At {position_company}, that "
-        "included leading cross-functional operations and helping operationalize the Disney+ launch. "
-        "I would welcome the chance to bring that same blend of strategic thinking, operational "
-        "clarity, and AI systems work to a team building across streaming and fandom."
+        f"{role_reference} at {company} caught my attention because it connects creative operations, "
+        "product development, and entertainment IP. At "
+        f"{position_company}, my primary work centered on Disney Studios Theatrical and Disney "
+        "Streaming/DSS, supporting theatrical and streaming film campaigns across 20th Century "
+        "Studios, Disney+, and franchise/IP priorities. I led cross-functional execution through "
+        "workflows, milestones, QA, standards, and partner coordination, and built CampaignOS to "
+        "turn recurring operational challenges into scalable systems."
     )
 
 

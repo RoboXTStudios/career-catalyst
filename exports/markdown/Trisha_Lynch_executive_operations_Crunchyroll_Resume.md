@@ -6,7 +6,7 @@ Los Angeles, CA | [tslynch@mac.com](mailto:tslynch@mac.com) | LinkedIn: linkedin
 
 ## Profile
 
-Marketing and business operations leader with 20+ years of experience designing scalable operational systems for enterprise entertainment organizations. Proven record leading cross-functional teams, improving complex workflows, strengthening governance practices, and driving technology-enabled transformation across marketing, analytics, creative, engineering, and operations teams. Builder of AI-powered operational tools that reduce manual work, improve quality, and help teams execute consistently at scale.
+Marketing and business operations leader with 20+ years of experience designing scalable operational systems for enterprise entertainment organizations, with a primary focus on Disney Studios Theatrical and Disney Streaming/DSS campaign operations. Proven record leading cross-functional teams, improving complex workflows, strengthening governance practices, and driving technology-enabled transformation across creative, marketing, media, analytics, engineering, technology, and operations teams. Builder of AI-powered operational tools that reduce manual work, improve quality, and help teams execute consistently at scale.
 
 ## Core Competencies
 
@@ -49,14 +49,14 @@ Burbank, CA | 2016-2026
 
 Campaign Manager to Group Director, Ad Operations, Marketing Science & Creative Management
 
-- Led cross-functional teams of 60+ across Marketing Operations, Creative Management, Analytics, and Ad Operations.
+- Led cross-functional teams of 60+ across creative management, marketing operations, media, analytics, technology, and campaign operations.
+- Led campaign operations across Disney Studios Theatrical and Disney Streaming/DSS, supporting theatrical and streaming film campaigns across Pixar, Lucasfilm, Marvel, 20th Century Studios, Searchlight Pictures, Disney+, and franchise/IP priorities.
+- Owned workflow governance, milestones, QA, measurement readiness, vendor integrations, and scalable execution standards for premium entertainment campaigns.
+- Partnered across creative, marketing, media, analytics, engineering, technology, operations, and external partners supporting theatrical releases, streaming launches, and franchise/IP priorities.
+- Directed operational execution for multimillion-dollar premium entertainment campaigns across theatrical releases, streaming launches, and franchise/IP priorities.
 - Introduced scalable workflows, governance practices, and execution standards across marketing, technology, analytics, and creative teams.
-- Partnered across creative, marketing, analytics, media, engineering, and external technology partners.
-- Owned campaign operations, marketing technology, QA, measurement readiness, vendor integrations, and workflow optimization.
-- Directed operational execution for multimillion-dollar entertainment marketing campaigns.
-- Helped operationalize the Disney+ launch through onboarding, QA, measurement readiness, platform coordination, and execution workflows.
-- Supported Disney Studios, Disney+, FX, Searchlight Pictures, National Geographic, Disney Branded Television, and Corporate Brand Management.
-- Improved consistency across complex entertainment marketing operations.
+- Advanced from Campaign Manager to Group Director while leading campaign operations across Disney Studios Theatrical and Disney Streaming/DSS.
+- Primary work focused on theatrical and streaming film campaign operations across Disney's Studios, franchise/IP, and streaming ecosystem.
 
 ## Selected Projects
 

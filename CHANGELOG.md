@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.0.15 - Sprint 8.2
+
+- Polished cover letter paragraph structure.
+- Reduced repetitive entertainment experience phrasing.
+- Added shorthand handling for OMG23 after first full mention.
+- Added tests for cover letter concision and employer shorthand.
+
+## 0.0.14 - Sprint 8.1
+
+- Calibrated Disney entertainment experience taxonomy.
+- Added Disney Studios Theatrical and Disney Streaming/DSS hierarchy.
+- Added Pixar, Lucasfilm, Marvel, 20th Century Studios, Searchlight Pictures, Disney+, and franchise/IP language where relevant.
+- Reweighted experience toward theatrical and streaming film campaign operations.
+- Reduced overemphasis on Networks and Corporate Brand Management.
+- Improved PlayStation-specific creative/product operations positioning.
+- Improved cover letter opening sentence generation.
+- Added repeated-word cleanup safeguards.
+- Regenerated PlayStation application package.
+- Added tests for entertainment experience calibration and repeated-word prevention.
+
 ## 0.0.13 - Sprint 8
 
 - Added local static HTML dashboard.

@@ -169,6 +169,14 @@ open exports/dashboard/index.html
 
 The dashboard is a local static HTML file that groups generated application materials by job. It links to resumes, messages, cover letters, application notes, and strategy packs without using a server or external services. Application status can be updated manually in `data/application_tracker.yml`.
 
+## Entertainment Experience Calibration
+
+Career Catalyst emphasizes Trisha's primary entertainment experience across Disney Studios Theatrical, Disney Streaming/DSS, theatrical and streaming film campaign operations, franchise/IP priorities, and premium entertainment campaign execution.
+
+Disney Studios Theatrical includes Pixar, Lucasfilm, Marvel, 20th Century Studios, and Searchlight Pictures. Disney Streaming/DSS includes Disney+, Disney Streaming Services, streaming pushes from theatrical IP, and relevant Disney Branded Television / DBT work.
+
+Generated materials should not overemphasize Networks or make Corporate Brand Management the central headline. Corporate Brand Management should be framed as franchise/IP and brand management support where relevant.
+
 ## What Comes Next
 
 Later sprints can add interview prep generation and carefully verified company or job-source workflows.

@@ -227,10 +227,22 @@ def _extract_source_url(text: str) -> Optional[str]:
     return None
 
 
+def _extract_job_title(text: str) -> Optional[str]:
+    labeled_title = _extract_labeled_value(text, METADATA_LABELS["job_title"])
+    if labeled_title:
+        return labeled_title
+
+    for line in text.splitlines():
+        match = re.match(r"^\s*#\s+(.+?)\s*$", line)
+        if match:
+            return match.group(1).strip()
+    return None
+
+
 def extract_metadata(text: str) -> Dict[str, Optional[str]]:
     """Extract basic job metadata when available."""
     metadata = {
-        "job_title": _extract_labeled_value(text, METADATA_LABELS["job_title"]),
+        "job_title": _extract_job_title(text),
         "company": _extract_labeled_value(text, METADATA_LABELS["company"]),
         "location": _extract_labeled_value(text, METADATA_LABELS["location"]),
         "salary_range": _extract_salary(text),

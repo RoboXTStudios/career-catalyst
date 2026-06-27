@@ -8,10 +8,12 @@ try:
     from .load_data import load_all_yaml
     from .parse_job import parse_job_description
     from .score_match import score_job_match
+    from .text_cleanup import cleanup_repeated_words
 except ImportError:
     from load_data import load_all_yaml
     from parse_job import parse_job_description
     from score_match import score_job_match
+    from text_cleanup import cleanup_repeated_words
 
 
 VALID_RESUME_PROFILES = (
@@ -253,9 +255,19 @@ def _select_experience_bullets(
         "60+",
         "cross-functional",
         "operational execution",
+        "disney studios theatrical",
+        "disney streaming",
         "disney+",
+        "theatrical",
+        "streaming film",
+        "franchise/ip",
+        "premium entertainment",
+        "product development",
         "workflow",
         "governance",
+        "milestones",
+        "quality",
+        "vendor",
         "technology",
         "analytics",
         "creative",
@@ -475,7 +487,9 @@ def tailor_resume(
     career_data = load_all_yaml(root)
     parsed_job = parse_job_description(root / job_path)
     match_report = score_job_match(job_path, root)
-    markdown = _render_markdown(career_data, parsed_job, match_report, resume_profile)
+    markdown = cleanup_repeated_words(
+        _render_markdown(career_data, parsed_job, match_report, resume_profile)
+    )
 
     export_dir = root / "exports" / "markdown"
     export_dir.mkdir(parents=True, exist_ok=True)

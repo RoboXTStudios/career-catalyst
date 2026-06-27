@@ -1,6 +1,6 @@
 Hello,
 
-I'm reaching out about Crunchyroll's Director, Enterprise Strategy & Initiatives role. It caught my attention because it brings enterprise strategy, operational planning, and cross-functional execution into a global entertainment setting. I have spent more than 20 years helping creative and marketing organizations turn complex work into repeatable systems. At OMG23 / OMD Entertainment, that included progressing to Group Director, leading cross-functional teams of 60+, and helping operationalize the Disney+ launch.
+I'm reaching out about the Director, Enterprise Strategy & Initiatives role at Crunchyroll. It stands out because it connects enterprise strategy, operational planning, and cross-functional execution around entertainment IP. At OMG23 / OMD Entertainment, I led campaign operations across Disney Studios Theatrical and Disney Streaming/DSS, supporting theatrical and streaming film campaigns across Pixar, Lucasfilm, Marvel, 20th Century Studios, Searchlight Pictures, Disney+, and franchise/IP priorities. I led cross-functional teams of 60+ and built workflows, quality practices, and operating standards for entertainment campaigns. I also built CampaignOS to turn operational challenges into scalable systems.
 
 If you're the right person to speak with, I would be glad to share more. If not, would you mind pointing me in the right direction?
 

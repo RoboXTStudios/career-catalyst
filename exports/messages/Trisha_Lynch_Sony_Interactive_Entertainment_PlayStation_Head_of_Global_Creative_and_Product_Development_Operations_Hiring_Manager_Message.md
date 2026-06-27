@@ -1,6 +1,6 @@
 Hello,
 
-The Director, Enterprise Strategy & Initiatives role at Crunchyroll stood out because it brings enterprise strategy, operational planning, and cross-functional execution together. The challenge of turning entertainment IP and franchise priorities into clear workflows, milestones, standards, and operating rhythms is work I find meaningful.
+The Head of Global Creative and Product Development Operations role at Sony Interactive Entertainment / PlayStation stood out because it brings global creative operations, product development, and cross-functional execution together. The challenge of turning entertainment IP and franchise priorities into clear workflows, milestones, standards, and operating rhythms is work I find meaningful.
 
 At OMG23 / OMD Entertainment, I progressed to Group Director. I led campaign operations across Disney Studios Theatrical and Disney Streaming/DSS, supporting theatrical and streaming film campaigns across Pixar, Lucasfilm, Marvel, 20th Century Studios, Searchlight Pictures, Disney+, and franchise/IP priorities. I know how much operational clarity matters when creative, marketing, media, analytics, technology, and external partners need to move together.
 

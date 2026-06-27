@@ -7,8 +7,8 @@ try:
     from .generate_cover_letter import (
         ApplicationMaterialError,
         _as_first_person,
-        _achievement,
         _campaignos_is_relevant,
+        _entertainment_scope,
         _job_focus,
         _position,
         _project,
@@ -19,8 +19,8 @@ except ImportError:
     from generate_cover_letter import (
         ApplicationMaterialError,
         _as_first_person,
-        _achievement,
         _campaignos_is_relevant,
+        _entertainment_scope,
         _job_focus,
         _position,
         _project,
@@ -37,17 +37,21 @@ def _recruiter_content(context: Dict[str, Any]) -> str:
     career_data = context["career_data"]
     parsed_job = context["parsed_job"]
     company = parsed_job.get("company") or "the organization"
-    role = parsed_job.get("job_title") or "the open role"
+    role = parsed_job.get("job_title")
+    role_reference = f"the {role} role" if role else "this opportunity"
     position = _position(career_data, "OMG23")
     position_company = str(position.get("company") or "OMG23 / OMD Entertainment").split(",")[0]
+    entertainment_scope = _entertainment_scope(career_data)
+    campaignos = _project(career_data, "CampaignOS")
 
     message = (
-        f"I'm reaching out about {company}'s {role} role. It caught my attention because it brings "
-        f"{_job_focus(parsed_job)} into a global entertainment setting. I have spent more than 20 "
-        "years helping creative and marketing organizations turn complex work into repeatable "
-        f"systems. At {position_company}, that included progressing to Group Director, leading "
-        "cross-functional teams of 60+, and helping operationalize the Disney+ launch."
+        f"I'm reaching out about {role_reference} at {company}. It stands out because it "
+        f"connects {_job_focus(parsed_job)} around entertainment IP. At {position_company}, "
+        f"{_as_first_person(entertainment_scope)} I led cross-functional teams of 60+ and built "
+        "workflows, quality practices, and operating standards for entertainment campaigns."
     )
+    if _campaignos_is_relevant(context) and campaignos:
+        message += " I also built CampaignOS to turn operational challenges into scalable systems."
     question = (
         "If you're the right person to speak with, I would be glad to share more. If not, would "
         "you mind pointing me in the right direction?"
@@ -59,24 +63,23 @@ def _hiring_manager_content(context: Dict[str, Any]) -> str:
     career_data = context["career_data"]
     parsed_job = context["parsed_job"]
     company = parsed_job.get("company") or "the organization"
-    role = parsed_job.get("job_title") or "the open role"
+    role = parsed_job.get("job_title")
+    role_reference = f"The {role} role" if role else "This opportunity"
     position = _position(career_data, "OMG23")
     position_company = str(position.get("company") or "OMG23 / OMD Entertainment").split(",")[0]
 
-    disney_plus = _achievement(career_data, "disney_plus_launch_support")
-    workflow = _achievement(career_data, "workflow_governance")
     campaignos = _project(career_data, "CampaignOS")
+    entertainment_scope = _entertainment_scope(career_data)
 
     opening = (
-        f"{company}'s {role} role stood out to me because it sits where strategy, operations, and "
-        "creative execution meet. The challenge of turning company priorities into clear plans and "
-        "operating rhythms is work I find meaningful."
+        f"{role_reference} at {company} stood out because it brings {_job_focus(parsed_job)} "
+        "together. The challenge of turning entertainment IP and franchise priorities into clear "
+        "workflows, milestones, standards, and operating rhythms is work I find meaningful."
     )
     experience = (
-        f"At {position_company}, I progressed to Group Director and led cross-functional teams of "
-        "60+ across marketing, creative, analytics, and ad operations. "
-        f"{_as_first_person(disney_plus)} {_as_first_person(workflow)} I know how much operational "
-        "clarity matters when creative teams are moving quickly and many functions need to move together."
+        f"At {position_company}, I progressed to Group Director. "
+        f"{_as_first_person(entertainment_scope)} I know how much operational clarity matters when creative, "
+        "marketing, media, analytics, technology, and external partners need to move together."
     )
     project = ""
     if _campaignos_is_relevant(context) and campaignos:
@@ -86,8 +89,9 @@ def _hiring_manager_content(context: Dict[str, Any]) -> str:
             "consistency and visibility."
         )
     close = (
-        "That mix of strategy, operations, and creative execution is where I do my best work. I "
-        "would welcome the chance to learn more about the team's priorities and share how I could contribute."
+        "That mix of creative operations, product thinking, and scalable execution is where I do my "
+        "best work. I would welcome the chance to learn more about the team's priorities and share "
+        "how I could contribute."
     )
     parts = ["Hello,", opening, experience]
     if project:

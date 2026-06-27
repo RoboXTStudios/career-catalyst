@@ -8,10 +8,12 @@ try:
     from .load_data import load_all_yaml
     from .parse_job import parse_job_description
     from .score_match import score_job_match
+    from .text_cleanup import cleanup_repeated_words
 except ImportError:
     from load_data import load_all_yaml
     from parse_job import parse_job_description
     from score_match import score_job_match
+    from text_cleanup import cleanup_repeated_words
 
 
 PathInput = Union[str, Path]
@@ -58,6 +60,7 @@ def save_material(
     maximum_words: int,
 ) -> Dict[str, Any]:
     """Validate and save one Markdown application material."""
+    content = cleanup_repeated_words(content)
     if "—" in content:
         raise ApplicationMaterialError("Generated application materials must not contain em dashes.")
     if "placeholder" in content.lower():
@@ -108,6 +111,9 @@ def _join_human(values: List[str]) -> str:
 
 
 def _job_focus(parsed_job: Dict[str, Any]) -> str:
+    if _is_creative_product_operations_role(parsed_job):
+        return "global creative operations, product development, and cross-functional execution"
+
     preferred = (
         "enterprise strategy",
         "operational planning",
@@ -125,6 +131,21 @@ def _job_focus(parsed_job: Dict[str, Any]) -> str:
     }
     selected = [display_terms.get(term, term) for term in selected]
     return _join_human(selected) or "strategy and execution"
+
+
+def _is_creative_product_operations_role(parsed_job: Dict[str, Any]) -> bool:
+    text = " ".join(
+        str(value)
+        for value in (
+            parsed_job.get("job_title", ""),
+            parsed_job.get("raw_text", ""),
+        )
+    ).lower()
+    creative_signals = ("creative operations", "creative leadership", "creative assets")
+    product_signals = ("product development", "licensed merchandise", "licensing")
+    return any(signal in text for signal in creative_signals) and any(
+        signal in text for signal in product_signals
+    )
 
 
 def _as_first_person(statement: str) -> str:
@@ -156,6 +177,42 @@ def _project(career_data: Dict[str, Any], project_name: str) -> Dict[str, Any]:
     return next((item for item in projects if item.get("name") == project_name), {})
 
 
+def _entertainment_scope(career_data: Dict[str, Any]) -> str:
+    position = _position(career_data, "OMG23")
+    return next(
+        (
+            str(highlight)
+            for highlight in position.get("highlights", [])
+            if "Disney Studios Theatrical" in str(highlight)
+        ),
+        "",
+    )
+
+
+def _employer_names(position: Dict[str, Any]) -> tuple[str, str]:
+    """Return the full employer name and a safe shorthand for later mentions."""
+    full_name = str(position.get("company") or "OMG23 / OMD Entertainment")
+    shorthand = "OMG23" if "OMG23" in full_name else full_name
+    return full_name, shorthand
+
+
+def _validate_cover_letter_repetition(content: str) -> None:
+    phrase_limits = {
+        "campaign operations": 1,
+        "complex": 1,
+        "cross-functional": 1,
+    }
+    for paragraph in content.split("\n\n"):
+        lowered = paragraph.lower()
+        for phrase, maximum in phrase_limits.items():
+            if lowered.count(phrase) > maximum:
+                raise ApplicationMaterialError(
+                    f"Cover letter paragraph repeats '{phrase}' too many times."
+                )
+        if "role role" in lowered:
+            raise ApplicationMaterialError("Cover letter paragraph contains repeated role wording.")
+
+
 def _campaignos_is_relevant(context: Dict[str, Any]) -> bool:
     top_projects = context["match_report"].get("top_matching_projects", [])
     if any(project.get("name") == "CampaignOS" for project in top_projects):
@@ -175,50 +232,48 @@ def _cover_letter_content(context: Dict[str, Any]) -> str:
     career_data = context["career_data"]
     parsed_job = context["parsed_job"]
     company = parsed_job.get("company") or "the organization"
-    role = parsed_job.get("job_title") or "this role"
+    role = parsed_job.get("job_title")
     job_focus = _job_focus(parsed_job)
 
     position = _position(career_data, "OMG23")
-    progression = [str(title) for title in position.get("progression", [])]
-    starting_title = progression[0] if progression else "Campaign Manager"
-    senior_title = progression[-1] if progression else "Group Director"
-    position_company = position.get("company") or "OMG23 / OMD Entertainment"
-
-    leadership = _achievement(career_data, "cross_functional_leadership")
-    disney_plus = _achievement(career_data, "disney_plus_launch_support")
-    brand_support = next(
-        (
-            str(highlight)
-            for highlight in position.get("highlights", [])
-            if "Disney Studios" in str(highlight)
-        ),
-        "",
-    )
+    position_company, position_shorthand = _employer_names(position)
 
     campaignos = _project(career_data, "CampaignOS")
     campaignos_summary = str(campaignos.get("summary", "")).strip()
 
+    if role:
+        opening_sentence = (
+            f"The {role} role at {company} stood out because it brings {job_focus} together "
+            "in a global entertainment organization."
+        )
+    else:
+        opening_sentence = (
+            f"This opportunity at {company} stood out because it brings {job_focus} together "
+            "in a global entertainment organization."
+        )
+
     opening = (
-        f"{company}'s {role} role stood out to me because it sits at the intersection of "
-        f"{job_focus} in a global entertainment organization. What caught my attention is the "
+        f"{opening_sentence} What caught my attention is the "
         "practical challenge behind the title: helping many functions turn complex priorities into "
-        "clear plans, aligned operating rhythms, and reliable execution. I have spent much of my "
-        "career helping creative and marketing teams build that kind of clarity without slowing "
-        "down the work."
+        "clear workflows, aligned milestones, useful standards, and reliable execution. I have spent "
+        "much of my career helping creative and marketing teams build that kind of clarity without "
+        "slowing down the work."
     )
 
     experience = (
-        f"At {position_company}, I grew from {starting_title} to {senior_title} while working "
-        "across enterprise entertainment marketing and operations. "
-        f"{_as_first_person(leadership)} {_as_first_person(disney_plus)} "
-        f"{_as_first_person(brand_support)} I know how much operational clarity matters when "
-        "creative teams are moving quickly and marketing, analytics, media, engineering, ad "
-        "operations, and technology partners all need to move together."
+        "Much of my career has been spent helping creative, marketing, media, analytics, and "
+        "technology teams bring structure to complex theatrical and streaming campaign ecosystems. "
+        f"At {position_company}, my primary focus was Disney Studios Theatrical and Disney "
+        "Streaming/DSS work, supporting campaign operations across Pixar, Lucasfilm, Marvel, 20th "
+        "Century Studios, Searchlight Pictures, Disney+, and franchise/IP priorities. That work "
+        "required close coordination across internal teams and external partners, with clear "
+        "workflows, milestones, quality standards, and consistent execution at scale."
     )
 
     if _campaignos_is_relevant(context) and campaignos_summary:
         transformation = (
-            f"That same instinct led me to build CampaignOS. As {campaignos.get('role')}, I "
+            f"The systems mindset I developed at {position_shorthand} also led me to build "
+            f"CampaignOS. As {campaignos.get('role')}, I "
             f"{campaignos_summary[0].lower() + campaignos_summary[1:]} The project grew from a "
             "practical question I have encountered repeatedly: how can teams reduce manual effort "
             "and operational risk while improving visibility and decision-making? That mix of "
@@ -232,13 +287,25 @@ def _cover_letter_content(context: Dict[str, Any]) -> str:
             "with clear ownership, useful standards, and room for creative teams to do their best work."
         )
 
-    closing = (
-        f"What appeals to me about this opportunity is the chance to bring that experience into "
-        f"{company} at the scale of streaming entertainment and fandom. I would welcome the chance "
-        "to learn more about the team's priorities and discuss how I could contribute."
-    )
+    if _is_creative_product_operations_role(parsed_job):
+        closing = (
+            "What appeals to me about this opportunity is the chance to help creative and product "
+            f"development teams at {company} turn entertainment IP and franchise priorities into "
+            "clear, scalable operating rhythms. I would welcome the chance to learn more about the "
+            "team's priorities and discuss how I could contribute."
+        )
+    else:
+        closing = (
+            f"What appeals to me about this opportunity is the chance to bring that experience into "
+            f"{company} within a complex entertainment organization. I would welcome the chance "
+            "to learn more about the team's priorities and discuss how I could contribute."
+        )
 
-    return "\n\n".join(["Hello,", opening, experience, transformation, closing, "Best,\n\nTrisha Lynch"])
+    content = "\n\n".join(
+        ["Hello,", opening, experience, transformation, closing, "Best,\n\nTrisha Lynch"]
+    )
+    _validate_cover_letter_repetition(content)
+    return content
 
 
 def generate_cover_letter(

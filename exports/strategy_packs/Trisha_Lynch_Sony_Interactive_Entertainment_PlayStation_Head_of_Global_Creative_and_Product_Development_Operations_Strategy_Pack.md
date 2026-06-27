@@ -1,12 +1,12 @@
 # Trisha Lynch | Strategy Pack
 
-## Crunchyroll | Director, Enterprise Strategy & Initiatives
+## Sony Interactive Entertainment / PlayStation | Head of Global Creative and Product Development Operations
 
 ### Role Opportunity Brief
 
-Based on the job description, the Director, Enterprise Strategy & Initiatives role appears to sit between enterprise strategy and day-to-day execution. Crunchyroll is asking this leader to translate company priorities into operational plans, milestones, and decision-ready communication while coordinating across executive leadership, business operations, content, marketing, product, finance, and regional teams. The operational problem is not simply producing strategy. It is creating enough shared structure that many functions can understand dependencies, make decisions, and keep work moving.
+Based on the job description, the Head of Global Creative and Product Development Operations role sits at the intersection of global creative operations, product development operations, licensing, and cross-functional execution. Sony Interactive Entertainment / PlayStation is asking this leader to translate entertainment IP and franchise priorities into clear concept-to-production workflows, milestones, style guides, creative assets, and product development tools. The operational problem is not simply managing a calendar. It is creating enough shared structure for creative teams, product partners, licensees, gaming studios, retail marketing, and external agencies to deliver consistent work on time, on budget, and in line with brand standards.
 
-The role likely matters because the job description presents a global streaming entertainment and fandom organization that needs a reliable way to connect strategic programs with practical ownership, timelines, operating rhythms, and measurable outcomes. The cross-functional complexity is significant because the role must coordinate functions with different responsibilities while giving leaders concise visibility into risks and tradeoffs. The job description points specifically to operational planning, process improvement, stakeholder alignment, change management, executive communication, and coordination across markets and functions. Together, those themes suggest a role responsible for making strategy executable without adding unnecessary friction. A thoughtful first move would be to learn how decisions and work currently flow before recommending changes.
+The role matters because licensed merchandise moves through many internal and external handoffs before it reaches market. Clear ownership, quality standards, decision paths, and operating rhythms can reduce avoidable friction while protecting creative quality and franchise consistency. The job description points to team leadership, stakeholder influence, deadline and resource management, vendor coordination, and the full creative and product development lifecycle. A thoughtful first move would be to learn how work currently moves from franchise priority to brief, concept, approval, production, and launch before recommending changes.
 
 ### Why Trisha
 
@@ -20,27 +20,27 @@ CampaignOS adds a current proof point for her systems thinking. As Founder & Pro
 
 #### First 30 Days: Listen, Map, and Understand
 
-- Meet key partners across executive leadership, business operations, content, marketing, product, finance, and regional teams to understand priorities and working expectations.
-- Review active strategic initiatives, existing planning cadences, and the ways risks, dependencies, and decisions are currently communicated.
-- Map how work moves from company priority to plan, owner, decision, and follow-through, including where ownership and accountability are documented or need clarification.
-- Listen for recurring friction and operational pain points without treating every complaint as a process problem.
-- Confirm what leaders and teams need from the role before proposing changes.
+- Meet creative, product development, licensing, franchise, retail marketing, studio, and external partner leads to understand priorities and working expectations.
+- Review active product categories, creative assets, style guides, milestone plans, approval paths, and quality standards.
+- Map the concept-to-production lifecycle, including ownership, handoffs, vendor coordination, dependencies, and escalation points.
+- Listen for recurring friction without assuming every issue requires a new process or tool.
+- Confirm how leaders define creative quality, franchise consistency, speed, and successful market delivery.
 
 #### Days 31-60: Prioritize, Align, and Improve
 
-- Synthesize the patterns from the first month and separate isolated issues from recurring workflow or decision-path problems.
-- Align stakeholders on a short list of high-impact improvements, with clear ownership and realistic scope.
-- Clarify communication loops for decisions, risks, dependencies, and progress so teams know what information belongs where.
-- Document any consequential process gaps and identify early wins that reduce friction without creating new bureaucracy.
-- Test one or two lightweight improvements with the teams closest to the work, then adjust based on what is useful.
+- Separate isolated delivery issues from recurring workflow, milestone, approval, or decision-path problems.
+- Align internal and external stakeholders on a short list of high-impact improvements with clear ownership and realistic scope.
+- Clarify communication loops for creative reviews, product decisions, risks, dependencies, and launch readiness.
+- Test lightweight templates or workflow improvements with the teams closest to the work, then adjust based on what is useful.
+- Identify where stronger standards, QA, or visibility can improve consistency without limiting creative judgment.
 
 #### Days 61-90: Operationalize, Scale, and Measure
 
-- Turn useful early improvements into repeatable practices, templates, or operating rhythms that teams can sustain.
-- Establish appropriate governance for ownership, escalation, decision-making, and cross-functional follow-through.
-- Improve visibility into progress, dependencies, and risks while keeping reporting focused on decisions and action.
-- Define practical success measures with stakeholders rather than imposing metrics before the work is understood.
-- Prepare a longer-term roadmap that distinguishes immediate operating needs from broader organizational improvements.
+- Turn useful early improvements into repeatable operating rhythms that teams, licensees, studios, and agencies can sustain.
+- Establish practical governance for ownership, approvals, escalation, quality, and cross-functional follow-through.
+- Improve visibility into milestones, dependencies, resources, and risks while keeping reporting focused on decisions and action.
+- Define success measures with stakeholders across creative quality, delivery reliability, partner experience, and market readiness.
+- Prepare a longer-term roadmap for scalable global creative and product development operations.
 
 ### Strategic POV Note
 
@@ -66,10 +66,10 @@ The best operators help teams move faster without losing the quality of the work
 
 ### Smart Questions to Ask
 
-- Which strategic priorities most need clearer operating plans today, and what has made them difficult to move forward?
-- Where does this role have the most responsibility for shaping strategy versus driving cross-functional execution?
-- Which functions or stakeholder groups will require the strongest alignment from this person in the first six months?
-- How are major decisions, dependencies, and tradeoffs surfaced today, and where does that process tend to slow down?
-- What would you want the person in this role to understand before recommending changes in the first 30 days?
-- Which current planning or communication rhythms are working well, and where is there still avoidable friction?
-- By the end of 90 days, what specific evidence would tell you this person is creating better clarity and momentum?
+- Where does the current concept-to-production process create the most friction for creative, product development, and licensing teams?
+- How are franchise priorities, style guides, and brand standards translated into clear direction for internal teams and external partners today?
+- Which milestones or approval points most often affect speed, quality, or market readiness?
+- How does the team balance global consistency with the needs of individual product categories, licensees, studios, and markets?
+- Which operating rhythms are working well today, and where do teams still lack useful visibility into ownership, dependencies, or risk?
+- What would you want this leader to understand before recommending workflow or governance changes in the first 30 days?
+- By the end of 90 days, what evidence would tell you this person is improving creative quality, partner alignment, and delivery reliability?

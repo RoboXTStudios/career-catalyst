@@ -7,6 +7,8 @@ try:
     from .generate_cover_letter import (
         _achievement,
         _campaignos_is_relevant,
+        _entertainment_scope,
+        _is_creative_product_operations_role,
         _join_human,
         _position,
         _project,
@@ -14,10 +16,13 @@ try:
         _word_count,
         load_generation_context,
     )
+    from .text_cleanup import cleanup_repeated_words
 except ImportError:
     from generate_cover_letter import (
         _achievement,
         _campaignos_is_relevant,
+        _entertainment_scope,
+        _is_creative_product_operations_role,
         _join_human,
         _position,
         _project,
@@ -25,6 +30,7 @@ except ImportError:
         _word_count,
         load_generation_context,
     )
+    from text_cleanup import cleanup_repeated_words
 
 
 PathInput = Union[str, Path]
@@ -46,6 +52,11 @@ def _job_functions(parsed_job: Dict[str, Any]) -> List[str]:
     candidates = (
         "executive leadership",
         "business operations",
+        "creative operations",
+        "product development",
+        "licensing",
+        "franchise teams",
+        "external partners",
         "content",
         "marketing",
         "product",
@@ -83,6 +94,26 @@ def _role_opportunity_brief(context: Dict[str, Any]) -> str:
     function_text = _join_human(functions) if functions else "multiple business functions"
     organization_context = _organization_context(parsed_job)
 
+    if _is_creative_product_operations_role(parsed_job):
+        return (
+            f"Based on the job description, the {role} role sits at the intersection of global "
+            "creative operations, product development operations, licensing, and cross-functional "
+            f"execution. {company} is asking this leader to translate entertainment IP and franchise "
+            "priorities into clear concept-to-production workflows, milestones, style guides, creative "
+            "assets, and product development tools. The operational problem is not simply managing a "
+            "calendar. It is creating enough shared structure for creative teams, product partners, "
+            "licensees, gaming studios, retail marketing, and external agencies to deliver consistent "
+            "work on time, on budget, and in line with brand standards.\n\n"
+            "The role matters because licensed merchandise moves through many internal and external "
+            "handoffs before it reaches market. Clear ownership, quality standards, decision paths, "
+            "and operating rhythms can reduce avoidable friction while protecting creative quality "
+            "and franchise consistency. The job description points to team leadership, stakeholder "
+            "influence, deadline and resource management, vendor coordination, and the full creative "
+            "and product development lifecycle. A thoughtful first move would be to learn how work "
+            "currently moves from franchise priority to brief, concept, approval, production, and "
+            "launch before recommending changes."
+        )
+
     return (
         f"Based on the job description, the {role} role appears to sit between enterprise strategy "
         f"and day-to-day execution. {company} is asking this leader to translate company priorities "
@@ -108,14 +139,7 @@ def _why_trisha(context: Dict[str, Any]) -> str:
     career_data = context["career_data"]
     position = _position(career_data, "OMG23")
     position_company = position.get("company") or "OMG23 / OMD Entertainment"
-    brand_support = next(
-        (
-            str(highlight)
-            for highlight in position.get("highlights", [])
-            if "Disney Studios" in str(highlight)
-        ),
-        "",
-    )
+    entertainment_scope = _entertainment_scope(career_data)
     leadership = _achievement(career_data, "cross_functional_leadership")
     disney_plus = _achievement(career_data, "disney_plus_launch_support")
     workflow = _achievement(career_data, "workflow_governance")
@@ -126,12 +150,13 @@ def _why_trisha(context: Dict[str, Any]) -> str:
         "operations experience, with a career built around helping complex teams move from strategy "
         f"to consistent execution. At {position_company}, she progressed from Campaign Manager to "
         f"Group Director. {_as_third_person(leadership)} {_as_third_person(disney_plus)} "
-        f"{_as_third_person(brand_support)}\n\n"
+        f"{_as_third_person(entertainment_scope)}\n\n"
         f"Her relevance is broader than any one function. {_as_third_person(workflow)} She has worked across marketing, "
-        "creative, analytics, media, engineering, ad operations, quality assurance, and technology "
-        "partners, which gives her a practical view of where handoffs, decision paths, and operating "
-        "standards can help or hinder the work. She understands that creative organizations need "
-        "clarity and accountability, but not process for its own sake."
+        "creative, media, analytics, engineering, technology, operations, quality assurance, and "
+        "external partners. That experience gives her a practical view of where handoffs, milestones, "
+        "decision paths, and operating standards can help or hinder the work. She understands that "
+        "creative and product organizations need clarity and accountability, but not process for its "
+        "own sake."
     )
     if _campaignos_is_relevant(context) and campaignos:
         value += (
@@ -144,7 +169,32 @@ def _why_trisha(context: Dict[str, Any]) -> str:
     return value
 
 
-def _thirty_sixty_ninety_plan() -> str:
+def _thirty_sixty_ninety_plan(context: Dict[str, Any]) -> str:
+    if _is_creative_product_operations_role(context["parsed_job"]):
+        return """#### First 30 Days: Listen, Map, and Understand
+
+- Meet creative, product development, licensing, franchise, retail marketing, studio, and external partner leads to understand priorities and working expectations.
+- Review active product categories, creative assets, style guides, milestone plans, approval paths, and quality standards.
+- Map the concept-to-production lifecycle, including ownership, handoffs, vendor coordination, dependencies, and escalation points.
+- Listen for recurring friction without assuming every issue requires a new process or tool.
+- Confirm how leaders define creative quality, franchise consistency, speed, and successful market delivery.
+
+#### Days 31-60: Prioritize, Align, and Improve
+
+- Separate isolated delivery issues from recurring workflow, milestone, approval, or decision-path problems.
+- Align internal and external stakeholders on a short list of high-impact improvements with clear ownership and realistic scope.
+- Clarify communication loops for creative reviews, product decisions, risks, dependencies, and launch readiness.
+- Test lightweight templates or workflow improvements with the teams closest to the work, then adjust based on what is useful.
+- Identify where stronger standards, QA, or visibility can improve consistency without limiting creative judgment.
+
+#### Days 61-90: Operationalize, Scale, and Measure
+
+- Turn useful early improvements into repeatable operating rhythms that teams, licensees, studios, and agencies can sustain.
+- Establish practical governance for ownership, approvals, escalation, quality, and cross-functional follow-through.
+- Improve visibility into milestones, dependencies, resources, and risks while keeping reporting focused on decisions and action.
+- Define success measures with stakeholders across creative quality, delivery reliability, partner experience, and market readiness.
+- Prepare a longer-term roadmap for scalable global creative and product development operations."""
+
     return """#### First 30 Days: Listen, Map, and Understand
 
 - Meet key partners across executive leadership, business operations, content, marketing, product, finance, and regional teams to understand priorities and working expectations.
@@ -209,8 +259,8 @@ def _interview_talking_points(context: Dict[str, Any]) -> List[Tuple[str, str]]:
     )
     return [
         (
-            "Bridging strategy and execution",
-            "I can discuss how enterprise priorities become practical plans, owners, and operating rhythms, drawing on years of leading entertainment marketing operations.",
+            "Connecting entertainment IP to execution",
+            "I can discuss how franchise and creative priorities become practical workflows, milestones, owners, quality standards, and operating rhythms.",
         ),
         (
             "Building clarity without slowing creative work",
@@ -218,7 +268,7 @@ def _interview_talking_points(context: Dict[str, Any]) -> List[Tuple[str, str]]:
         ),
         (
             "Leading through cross-functional complexity",
-            "I led teams of 60+ across marketing operations, creative management, analytics, and ad operations, with many partners and dependencies to align.",
+            "I led teams of 60+ across creative management, marketing operations, media, analytics, technology, and campaign operations, with internal and external partners to align.",
         ),
         (
             "Turning recurring friction into systems",
@@ -230,7 +280,7 @@ def _interview_talking_points(context: Dict[str, Any]) -> List[Tuple[str, str]]:
         ),
         (
             "Understanding entertainment marketing scale",
-            "My experience includes Disney Studios, Disney+, FX, Searchlight Pictures, National Geographic, and other entertainment brands across theatrical, streaming, and television work.",
+            "My primary experience includes Disney Studios Theatrical and Disney Streaming/DSS campaign operations across Pixar, Lucasfilm, Marvel, 20th Century Studios, Searchlight Pictures, Disney+, and franchise/IP priorities.",
         ),
         (
             "Creating visibility for better decisions",
@@ -239,7 +289,18 @@ def _interview_talking_points(context: Dict[str, Any]) -> List[Tuple[str, str]]:
     ]
 
 
-def _smart_questions() -> List[str]:
+def _smart_questions(context: Dict[str, Any]) -> List[str]:
+    if _is_creative_product_operations_role(context["parsed_job"]):
+        return [
+            "Where does the current concept-to-production process create the most friction for creative, product development, and licensing teams?",
+            "How are franchise priorities, style guides, and brand standards translated into clear direction for internal teams and external partners today?",
+            "Which milestones or approval points most often affect speed, quality, or market readiness?",
+            "How does the team balance global consistency with the needs of individual product categories, licensees, studios, and markets?",
+            "Which operating rhythms are working well today, and where do teams still lack useful visibility into ownership, dependencies, or risk?",
+            "What would you want this leader to understand before recommending workflow or governance changes in the first 30 days?",
+            "By the end of 90 days, what evidence would tell you this person is improving creative quality, partner alignment, and delivery reliability?",
+        ]
+
     return [
         "Which strategic priorities most need clearer operating plans today, and what has made them difficult to move forward?",
         "Where does this role have the most responsibility for shaping strategy versus driving cross-functional execution?",
@@ -258,7 +319,7 @@ def _render_strategy_pack(context: Dict[str, Any]) -> str:
     talking_points = "\n".join(
         f"- **{title}:** {detail}" for title, detail in _interview_talking_points(context)
     )
-    questions = "\n".join(f"- {question}" for question in _smart_questions())
+    questions = "\n".join(f"- {question}" for question in _smart_questions(context))
 
     return "\n\n".join(
         [
@@ -266,7 +327,7 @@ def _render_strategy_pack(context: Dict[str, Any]) -> str:
             f"## {company} | {role}",
             "### Role Opportunity Brief\n\n" + _role_opportunity_brief(context),
             "### Why Trisha\n\n" + _why_trisha(context),
-            "### 30/60/90-Day Plan\n\n" + _thirty_sixty_ninety_plan(),
+            "### 30/60/90-Day Plan\n\n" + _thirty_sixty_ninety_plan(context),
             "### Strategic POV Note\n\n" + _strategic_pov_note(context),
             "### Interview Talking Points\n\n" + talking_points,
             "### Smart Questions to Ask\n\n" + questions,
@@ -305,7 +366,7 @@ def generate_strategy_pack(
 ) -> Dict[str, Any]:
     """Generate and save a Markdown Standout Strategy Pack."""
     context = load_generation_context(job_path, project_root)
-    content = _render_strategy_pack(context)
+    content = cleanup_repeated_words(_render_strategy_pack(context))
     _validate_strategy_pack(context, content)
 
     parsed_job = context["parsed_job"]
