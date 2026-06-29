@@ -1,5 +1,32 @@
-  - company: "Google"
+applications:
+  - id: "playstation_head_global_creative_ops"
+    company: "Sony Interactive Entertainment / PlayStation"
+    company_aliases:
+      - "PlayStation"
+      - "Sony Interactive Entertainment"
+      - "SIE"
+    role: "Head of Global Creative and Product Development Operations"
+    role_aliases:
+      - "Head Global Creative Product Development Operations"
+      - "Head of Global Creative and Product Development Operations"
+    status: "Applied"
+    priority: "High"
+    source: "Official Greenhouse"
+    submitted_date: "2026-06-27"
+    salary_range: "$184,100-$276,100 USD"
+    notes: "Submitted application for Head of Global Creative and Product Development Operations. Used styled resume and PlayStation cover letter."
+    next_action: "Monitor for response and identify possible recruiter or hiring manager follow-up."
+    show_on_dashboard: true
+
+  - id: "google_strategy_ops_youtube_auction_brand"
+    company: "Google"
+    company_aliases:
+      - "Google"
+      - "YouTube"
     role: "Strategy and Operations Lead, YouTube Auction Brand"
+    role_aliases:
+      - "Strategy and Operations Lead YouTube Auction Brand"
+      - "Strategy Ops Lead YouTube Auction Brand"
     status: "Applied"
     priority: "High"
     source: "Official Google Careers"
@@ -7,3 +34,30 @@
     salary_range: "$152,000-$222,000 + 15% bonus target + equity + benefits"
     notes: "Submitted application using Google-tailored styled resume and cover letter. Strong YouTube, GTM operations, product activation, large advertiser, Google advertising product familiarity, and operational excellence fit."
     next_action: "Monitor for response and identify Google/YouTube professional contacts for possible follow-up."
+    show_on_dashboard: true
+
+  - id: "playstation_director_ad_ops_invalid"
+    company: "Sony Interactive Entertainment / PlayStation"
+    company_aliases:
+      - "PlayStation"
+      - "Sony Interactive Entertainment"
+      - "SIE"
+    role: "Director, Ad Operations & Technology"
+    status: "Invalid"
+    priority: "Do Not Pursue"
+    source: "Official PlayStation detail page but broken/unavailable apply flow"
+    notes: "Official detail page appeared active, but application flow was broken or unavailable. Do not pursue unless role is reposted with a working application."
+    next_action: "Do not show in active dashboard."
+    show_on_dashboard: false
+
+  - id: "crunchyroll_enterprise_strategy_paused"
+    company: "Crunchyroll"
+    company_aliases:
+      - "Crunchyroll"
+    role: "Director, Enterprise Strategy & Initiatives"
+    status: "Paused"
+    priority: "Medium"
+    source: "Official Crunchyroll / Greenhouse"
+    notes: "Strong potential fit but not applied yet."
+    next_action: "Revisit after current high-priority applications."
+    show_on_dashboard: true

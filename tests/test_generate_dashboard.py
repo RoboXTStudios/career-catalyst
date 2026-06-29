@@ -6,8 +6,13 @@ from pathlib import Path
 from urllib.parse import unquote
 
 from scripts.cli import main
-from scripts.generate_dashboard import _asset_label, _package_for_asset, generate_dashboard
-from scripts.load_data import load_yaml_file
+from scripts.generate_dashboard import (
+    _asset_label,
+    _merge_tracker,
+    _package_for_asset,
+    _render_badges,
+    generate_dashboard,
+)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -53,16 +58,135 @@ class GenerateDashboardTests(unittest.TestCase):
             self.assertFalse(link.startswith("file:"))
         self.assertNotIn(str(PROJECT_ROOT), self.content)
 
-    def test_dashboard_contains_playstation_tracker_package(self):
-        tracker = load_yaml_file("data/application_tracker.yml", PROJECT_ROOT)
-        playstation_status = tracker["applications"][0]["status"]
-
-        self.assertIn("Sony Interactive Entertainment / PlayStation", self.content)
+    def test_google_tracker_status_and_notes_apply_to_google_card(self):
+        self.assertIn("Google", self.content)
         self.assertIn(
-            "Head of Global Creative and Product Development Operations",
+            "Strategy and Operations Lead, YouTube Auction Brand",
             self.content,
         )
-        self.assertIn(playstation_status, self.content)
+        self.assertIn("Official Google Careers", self.content)
+        self.assertIn(
+            "Submitted application using Google-tailored styled resume and cover letter.",
+            self.content,
+        )
+        self.assertIn('<span class="badge status-applied">Applied</span>', self.content)
+
+    def test_active_section_preserves_both_applied_roles(self):
+        active_section = self.content.split('id="active-applied"', 1)[1].split(
+            'id="draft-paused"', 1
+        )[0]
+
+        self.assertIn("Strategy and Operations Lead, YouTube Auction Brand", active_section)
+        self.assertIn(
+            "Head of Global Creative and Product Development Operations",
+            active_section,
+        )
+        self.assertEqual(active_section.count('status-applied">Applied</span>'), 2)
+
+    def test_invalid_playstation_role_is_not_in_active_section(self):
+        active_section = self.content.split('id="active-applied"', 1)[1].split(
+            'id="draft-paused"', 1
+        )[0]
+        hidden_section = self.content.split('id="hidden-invalid-roles"', 1)[1]
+
+        self.assertNotIn("Director, Ad Operations &amp; Technology", active_section)
+        self.assertIn("Director, Ad Operations &amp; Technology", hidden_section)
+        self.assertIn('status-invalid">Invalid</span>', hidden_section)
+
+    def test_crunchyroll_role_is_paused_not_applied(self):
+        draft_section = self.content.split('id="draft-paused"', 1)[1].split(
+            'id="hidden-invalid-roles"', 1
+        )[0]
+
+        self.assertIn("Director, Enterprise Strategy &amp; Initiatives", draft_section)
+        self.assertIn('status-paused">Paused</span>', draft_section)
+        self.assertNotIn('status-applied">Applied</span>', draft_section)
+
+    def test_dashboard_summary_distinguishes_tracker_states(self):
+        for label in (
+            "Total job files",
+            "Active applications",
+            "Applied applications",
+            "Draft or paused roles",
+            "Hidden/invalid roles",
+        ):
+            self.assertIn(label, self.content)
+
+    def test_playstation_alias_matching_merges_without_duplicate_card(self):
+        package = {
+            "company": "Sony Interactive Entertainment / PlayStation",
+            "role": "Head of Global Creative and Product Development Operations",
+            "tracker": {},
+            "files": {},
+        }
+        packages = [package]
+        tracker = [
+            {
+                "id": "playstation_head_global_creative_ops",
+                "company": "  PLAYSTATION ",
+                "company_aliases": ["Sony Interactive Entertainment / PlayStation"],
+                "role": "Head of Global Creative and Product Development Operations!!!",
+                "role_aliases": [
+                    "Head Global Creative Product Development Operations"
+                ],
+                "status": "Applied",
+            }
+        ]
+
+        _merge_tracker(packages, tracker)
+
+        self.assertEqual(len(packages), 1)
+        self.assertEqual(package["tracker"]["status"], "Applied")
+
+    def test_unique_role_fallback_merges_when_company_does_not_match(self):
+        package = {
+            "company": "Google",
+            "role": "Strategy and Operations Lead, YouTube Auction Brand",
+            "tracker": {},
+            "files": {},
+        }
+        packages = [package]
+        tracker = [
+            {
+                "company": "Alphabet",
+                "role": " strategy and operations lead youtube auction brand ",
+                "status": "Applied",
+            }
+        ]
+
+        _merge_tracker(packages, tracker)
+
+        self.assertEqual(len(packages), 1)
+        self.assertEqual(package["tracker"]["status"], "Applied")
+
+    def test_tracker_id_match_has_priority_over_text_fields(self):
+        package = {
+            "company": "Different Company Label",
+            "role": "Different Role Label",
+            "tracker_id": "google_strategy_ops_youtube_auction_brand",
+            "tracker": {},
+            "files": {},
+        }
+        packages = [package]
+        tracker = [
+            {
+                "id": "google_strategy_ops_youtube_auction_brand",
+                "company": "Google",
+                "role": "Strategy and Operations Lead, YouTube Auction Brand",
+                "status": "Applied",
+            }
+        ]
+
+        _merge_tracker(packages, tracker)
+
+        self.assertEqual(len(packages), 1)
+        self.assertEqual(package["tracker"]["status"], "Applied")
+
+    def test_applied_status_renders_applied_badge(self):
+        self.assertEqual(
+            _render_badges({"status": "Applied"}),
+            '<span class="badge status-applied">Applied</span>',
+        )
 
     def test_dashboard_recognizes_old_and_new_material_filenames(self):
         expected_labels = {

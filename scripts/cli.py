@@ -6,6 +6,10 @@ from pathlib import Path
 from typing import Any, List, Optional
 
 if __package__:
+    from .application_tracker import (
+        TrackerValidationError,
+        validate_application_tracker,
+    )
     from .generate_dashboard import DashboardGenerationError, generate_dashboard
     from .generate_application_note import generate_application_note
     from .generate_cover_letter import ApplicationMaterialError, generate_cover_letter
@@ -29,6 +33,7 @@ if __package__:
     from .score_match import score_job_match
     from .tailor_resume import ResumeTailoringError, tailor_resume
 else:
+    from application_tracker import TrackerValidationError, validate_application_tracker
     from generate_dashboard import DashboardGenerationError, generate_dashboard
     from generate_application_note import generate_application_note
     from generate_cover_letter import ApplicationMaterialError, generate_cover_letter
@@ -331,6 +336,23 @@ def dashboard_command() -> int:
     return 0
 
 
+def validate_tracker_command() -> int:
+    try:
+        report = validate_application_tracker(PROJECT_ROOT)
+    except TrackerValidationError as error:
+        print(f"Tracker validation failed: {error}", file=sys.stderr)
+        return 1
+
+    print("Application tracker validation succeeded.")
+    print(f"Applications: {len(report['applications'])}")
+    print("Status counts:")
+    for status, count in report["status_counts"].items():
+        print(f"- {status}: {count}")
+    for warning in report["warnings"]:
+        print(f"Warning: {warning}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Career Catalyst CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -375,6 +397,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     strategy_pack_parser.add_argument("file_path", help="Path to a local job description")
     subparsers.add_parser("dashboard", help="Generate the local static dashboard")
+    subparsers.add_parser("validate-tracker", help="Validate application tracker data")
     return parser
 
 
@@ -403,6 +426,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         return strategy_pack_command(args.file_path)
     if args.command == "dashboard":
         return dashboard_command()
+    if args.command == "validate-tracker":
+        return validate_tracker_command()
 
     return 1
 

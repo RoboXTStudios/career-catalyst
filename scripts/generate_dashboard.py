@@ -8,17 +8,34 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 from urllib.parse import quote
 
 if __package__:
+    from .application_tracker import (
+        ACTIVE_STATUSES,
+        DRAFT_STATUSES,
+        HIDDEN_STATUSES,
+        TrackerValidationError,
+        normalize_tracker_value,
+        tracker_company_keys,
+        tracker_role_keys,
+        validate_application_tracker,
+    )
     from .filename_utils import short_company_name, short_role_name
-    from .load_data import DataLoadError, load_yaml_file
     from .parse_job import JobParseError, parse_job_description
 else:
+    from application_tracker import (
+        ACTIVE_STATUSES,
+        DRAFT_STATUSES,
+        HIDDEN_STATUSES,
+        TrackerValidationError,
+        normalize_tracker_value,
+        tracker_company_keys,
+        tracker_role_keys,
+        validate_application_tracker,
+    )
     from filename_utils import short_company_name, short_role_name
-    from load_data import DataLoadError, load_yaml_file
     from parse_job import JobParseError, parse_job_description
 
 
 PathInput = Union[str, Path]
-TRACKER_PATH = "data/application_tracker.yml"
 ASSET_DIRECTORIES = (
     "exports/markdown",
     "exports/docx",
@@ -85,6 +102,7 @@ def _load_jobs(root: Path) -> List[Dict[str, Any]]:
                 "role": str(role or "Role not listed"),
                 "location": parsed.get("location"),
                 "salary_range": parsed.get("salary_range"),
+                "tracker_id": _tracker_id_from_job(parsed.get("raw_text", "")),
                 "job_path": path,
                 "tracker": {},
                 "files": {"Job Description": path},
@@ -93,28 +111,51 @@ def _load_jobs(root: Path) -> List[Dict[str, Any]]:
     return packages
 
 
-def _load_tracker(root: Path) -> List[Dict[str, Any]]:
-    tracker_file = root / TRACKER_PATH
-    if not tracker_file.is_file():
-        return []
-
-    loaded = load_yaml_file(TRACKER_PATH, root)
-    applications = loaded.get("applications", [])
-    if not isinstance(applications, list):
-        raise DashboardGenerationError(
-            f"Tracker file must contain an applications list: {TRACKER_PATH}"
-        )
-    return [item for item in applications if isinstance(item, dict)]
+def _tracker_id_from_job(raw_text: str) -> Optional[str]:
+    match = re.search(r"^\s*Tracker ID\s*:\s*(.+?)\s*$", raw_text, flags=re.MULTILINE | re.IGNORECASE)
+    return match.group(1).strip() if match else None
 
 
 def _matching_package(
-    packages: List[Dict[str, Any]], company: str, role: str
+    packages: List[Dict[str, Any]], application: Dict[str, Any]
 ) -> Optional[Dict[str, Any]]:
-    company_key = _slug(company)
-    role_key = _slug(role)
-    for package in packages:
-        if _slug(package["company"]) == company_key and _slug(package["role"]) == role_key:
-            return package
+    tracker_id = str(application.get("id") or "")
+    if tracker_id:
+        id_matches = [
+            package for package in packages if package.get("tracker_id") == tracker_id
+        ]
+        if len(id_matches) == 1:
+            return id_matches[0]
+
+    company_key = normalize_tracker_value(application.get("company"))
+    role_key = normalize_tracker_value(application.get("role"))
+    exact_matches = [
+        package
+        for package in packages
+        if normalize_tracker_value(package["company"]) == company_key
+        and normalize_tracker_value(package["role"]) == role_key
+    ]
+    if len(exact_matches) == 1:
+        return exact_matches[0]
+
+    company_keys = tracker_company_keys(application)
+    role_keys = tracker_role_keys(application)
+    alias_matches = [
+        package
+        for package in packages
+        if normalize_tracker_value(package["company"]) in company_keys
+        and normalize_tracker_value(package["role"]) in role_keys
+    ]
+    if len(alias_matches) == 1:
+        return alias_matches[0]
+
+    role_matches = [
+        package
+        for package in packages
+        if normalize_tracker_value(package["role"]) in role_keys
+    ]
+    if len(role_matches) == 1:
+        return role_matches[0]
     return None
 
 
@@ -122,19 +163,22 @@ def _merge_tracker(packages: List[Dict[str, Any]], tracker: List[Dict[str, Any]]
     for application in tracker:
         company = str(application.get("company") or "Company not listed")
         role = str(application.get("role") or "Role not listed")
-        package = _matching_package(packages, company, role)
+        package = _matching_package(packages, application)
         if package is None:
             package = {
                 "company": company,
                 "role": role,
                 "location": application.get("location"),
                 "salary_range": application.get("salary_range"),
+                "tracker_id": application.get("id"),
                 "job_path": None,
                 "tracker": {},
                 "files": {},
             }
             packages.append(package)
-        package["tracker"] = application
+        if not package.get("tracker"):
+            package["tracker"] = application
+            package["tracker_id"] = application.get("id")
 
 
 def _asset_label(path: Path) -> Optional[str]:
@@ -240,9 +284,11 @@ def _relative_href(path: Path, dashboard_directory: Path) -> str:
 def _status_class(status: str) -> str:
     known_statuses = {
         "applied",
+        "archived",
         "drafted",
         "follow_up",
         "interviewing",
+        "invalid",
         "paused",
         "rejected",
         "reviewed",
@@ -265,10 +311,12 @@ def _render_badges(tracker: Dict[str, Any]) -> str:
 
 
 def _render_metadata(package: Dict[str, Any]) -> str:
+    tracker = package.get("tracker", {})
     values = (
         ("Location", package.get("location")),
-        ("Salary", package.get("salary_range")),
-        ("Source", package.get("tracker", {}).get("source")),
+        ("Salary", tracker.get("salary_range") or package.get("salary_range")),
+        ("Source", tracker.get("source")),
+        ("Submitted", tracker.get("submitted_date")),
     )
     items = [
         f'<div class="meta-item"><dt>{label}</dt><dd>{html.escape(str(value))}</dd></div>'
@@ -348,7 +396,39 @@ def _render_unassigned(
     )
 
 
-def _summary_counts(root: Path) -> Dict[str, int]:
+def _partition_packages(
+    packages: List[Dict[str, Any]],
+) -> Dict[str, List[Dict[str, Any]]]:
+    groups: Dict[str, List[Dict[str, Any]]] = {
+        "active": [],
+        "draft": [],
+        "hidden": [],
+    }
+    for package in packages:
+        tracker = package.get("tracker", {})
+        status = str(tracker.get("status") or "Drafted")
+        if tracker and (
+            tracker.get("show_on_dashboard") is False or status in HIDDEN_STATUSES
+        ):
+            groups["hidden"].append(package)
+        elif status in ACTIVE_STATUSES:
+            groups["active"].append(package)
+        elif status in DRAFT_STATUSES or not tracker:
+            groups["draft"].append(package)
+        else:
+            groups["hidden"].append(package)
+    return groups
+
+
+def _summary_counts(
+    root: Path,
+    groups: Dict[str, List[Dict[str, Any]]],
+) -> Dict[str, int]:
+    applied_count = sum(
+        1
+        for package in groups["active"]
+        if package.get("tracker", {}).get("status") == "Applied"
+    )
     return {
         "Total job files": len(
             [
@@ -357,21 +437,55 @@ def _summary_counts(root: Path) -> Dict[str, int]:
                 if path.name.lower() != "readme.md"
             ]
         ),
-        "Total resumes generated": len(
-            _scan_files(root, "exports/markdown", (".md",))
-        ),
-        "Total DOCX files": len(_scan_files(root, "exports/docx", (".docx",))),
-        "Total messages generated": len(
-            _scan_files(root, "exports/messages", (".md",))
-        ),
-        "Total strategy packs generated": len(
-            _scan_files(root, "exports/strategy_packs", (".md",))
-        ),
+        "Active applications": len(groups["active"]),
+        "Applied applications": applied_count,
+        "Draft or paused roles": len(groups["draft"]),
+        "Hidden/invalid roles": len(groups["hidden"]),
     }
 
 
-def _render_html(
+def _render_group(
+    title: str,
+    group_id: str,
     packages: List[Dict[str, Any]],
+    dashboard_directory: Path,
+) -> str:
+    role_label = "role" if len(packages) == 1 else "roles"
+    cards = "".join(
+        _render_package(package, dashboard_directory) for package in packages
+    )
+    if not cards:
+        cards = '<p class="empty-state">No roles in this section.</p>'
+    return (
+        f'<section class="application-group" id="{group_id}" '
+        f'aria-labelledby="{group_id}-heading">'
+        '<div class="group-heading">'
+        f'<h3 class="group-title" id="{group_id}-heading">{html.escape(title)}</h3>'
+        f'<span class="section-count">{len(packages)} {role_label}</span>'
+        "</div>"
+        f'<div class="application-list">{cards}</div>'
+        "</section>"
+    )
+
+
+def _render_hidden_group(
+    packages: List[Dict[str, Any]], dashboard_directory: Path
+) -> str:
+    if not packages:
+        return ""
+    cards = "".join(
+        _render_package(package, dashboard_directory) for package in packages
+    )
+    return (
+        '<details class="hidden-group" id="hidden-invalid-roles">'
+        f'<summary>Hidden / Invalid Roles ({len(packages)})</summary>'
+        f'<div class="application-list hidden-list">{cards}</div>'
+        "</details>"
+    )
+
+
+def _render_html(
+    groups: Dict[str, List[Dict[str, Any]]],
     counts: Dict[str, int],
     unassigned: List[Tuple[str, Path]],
     dashboard_directory: Path,
@@ -383,11 +497,20 @@ def _render_html(
         "</div>"
         for label, count in counts.items()
     )
-    package_cards = "".join(
-        _render_package(package, dashboard_directory) for package in packages
+    active_group = _render_group(
+        "Active / Applied",
+        "active-applied",
+        groups["active"],
+        dashboard_directory,
     )
-    if not package_cards:
-        package_cards = '<p class="empty-state">No application packages found.</p>'
+    draft_group = _render_group(
+        "Draft / Paused",
+        "draft-paused",
+        groups["draft"],
+        dashboard_directory,
+    )
+    hidden_group = _render_hidden_group(groups["hidden"], dashboard_directory)
+    visible_count = len(groups["active"]) + len(groups["draft"])
 
     return f"""<!doctype html>
 <html lang="en">
@@ -482,6 +605,15 @@ def _render_html(
       margin-bottom: 12px;
     }}
     .section-count {{ color: var(--muted); font-size: 13px; }}
+    .application-group {{ margin-top: 22px; }}
+    .group-heading {{
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }}
+    .group-title {{ margin: 0; font-size: 15px; }}
     .application-list {{ display: grid; gap: 14px; }}
     .application-card {{ padding: 20px; }}
     .application-heading {{
@@ -510,6 +642,8 @@ def _render_html(
     .status-interviewing {{ background: var(--accent-soft); color: var(--accent); }}
     .status-rejected {{ background: var(--red-soft); color: var(--red); }}
     .status-paused {{ background: #eef1f3; color: #4c5963; }}
+    .status-invalid {{ background: var(--red-soft); color: var(--red); }}
+    .status-archived {{ background: #eef1f3; color: #4c5963; }}
     .priority {{ border: 1px solid #e1c891; background: #ffffff; color: var(--gold); }}
     .metadata {{
       display: flex;
@@ -545,6 +679,9 @@ def _render_html(
     .empty-links, .empty-state {{ margin: 0; color: var(--muted); }}
     .unassigned {{ margin-top: 28px; }}
     .unassigned h2 {{ margin-bottom: 12px; }}
+    .hidden-group {{ margin-top: 26px; color: var(--muted); }}
+    .hidden-group summary {{ cursor: pointer; font-size: 13px; font-weight: 700; }}
+    .hidden-list {{ margin-top: 12px; }}
     @media (max-width: 900px) {{
       .summary-grid {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
     }}
@@ -579,9 +716,11 @@ def _render_html(
     <section class="packages" aria-labelledby="packages-heading">
       <div class="section-heading">
         <h2 id="packages-heading">Application Packages</h2>
-        <span class="section-count">{len(packages)} tracked roles</span>
+        <span class="section-count">{visible_count} visible roles</span>
       </div>
-      <div class="application-list">{package_cards}</div>
+      {active_group}
+      {draft_group}
+      {hidden_group}
     </section>
     {_render_unassigned(unassigned, dashboard_directory)}
   </main>
@@ -598,10 +737,9 @@ def generate_dashboard(project_root: PathInput = Path.cwd()) -> Dict[str, Any]:
 
     try:
         packages = _load_jobs(root)
-        tracker = _load_tracker(root)
+        tracker = validate_application_tracker(root)["applications"]
         _merge_tracker(packages, tracker)
         unassigned = _attach_assets(root, packages)
-        counts = _summary_counts(root)
         packages.sort(
             key=lambda item: (
                 0 if item.get("tracker") else 1,
@@ -609,12 +747,14 @@ def generate_dashboard(project_root: PathInput = Path.cwd()) -> Dict[str, Any]:
                 _slug(item["role"]),
             )
         )
+        groups = _partition_packages(packages)
+        counts = _summary_counts(root, groups)
         dashboard_directory.mkdir(parents=True, exist_ok=True)
         output_path.write_text(
-            _render_html(packages, counts, unassigned, dashboard_directory),
+            _render_html(groups, counts, unassigned, dashboard_directory),
             encoding="utf-8",
         )
-    except (DataLoadError, JobParseError, OSError) as error:
+    except (JobParseError, OSError, TrackerValidationError) as error:
         raise DashboardGenerationError(f"Could not generate dashboard: {error}") from error
 
     return {

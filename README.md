@@ -191,6 +191,31 @@ For Google and YouTube roles, Career Catalyst may reference Trisha's long-term h
 
 Generated application and networking materials must not reference family connections, internal Google relationships, or unsupported referrals. Professional outreach should remain grounded in Trisha's direct work experience and professional contacts.
 
+## Application Tracker
+
+Career Catalyst uses `data/application_tracker.yml` as the source of truth for application status.
+
+Supported statuses:
+
+- Drafted
+- Reviewed
+- Applied
+- Follow-up
+- Interviewing
+- Paused
+- Rejected
+- Invalid
+- Archived
+
+Validate tracker data and regenerate the dashboard:
+
+```bash
+python3 scripts/cli.py validate-tracker
+python3 scripts/cli.py dashboard
+```
+
+Tracker entries can include company and role aliases to help the dashboard match generated job packages to the correct application record. Invalid or unavailable roles can be preserved with `show_on_dashboard: false` so they do not clutter the active dashboard.
+
 ## What Comes Next
 
 Later sprints can add interview prep generation and carefully verified company or job-source workflows.

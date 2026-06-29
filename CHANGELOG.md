@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.0.18 - Sprint 9
+
+- Stabilized application tracker schema.
+- Added tracker ids, aliases, and dashboard visibility flags.
+- Fixed dashboard matching across multiple applied roles.
+- Added Applied tracking for PlayStation and Google.
+- Marked invalid PlayStation Ad Operations role as hidden.
+- Marked Crunchyroll Enterprise Strategy role as Paused.
+- Added tracker validation command.
+- Added tests for tracker matching, dashboard status badges, and hidden invalid roles.
+
 ## 0.0.17 - Sprint 8.4
 
 - Added Google/YouTube-specific positioning.
