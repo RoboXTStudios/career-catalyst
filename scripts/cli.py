@@ -421,6 +421,16 @@ def hide_role_command(tracker_id: str, reason: str) -> int:
     return 0
 
 
+def launcher_info_command() -> int:
+    launcher_path = PROJECT_ROOT / "launchers" / "Open_Career_Catalyst.command"
+    print("Career Catalyst macOS launcher")
+    print(f"Launcher path: {launcher_path}")
+    print("First time only: chmod +x launchers/Open_Career_Catalyst.command")
+    print("Launch: Double-click Open_Career_Catalyst.command in Finder.")
+    print("Stop: Close the Terminal window or press Control+C.")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Career Catalyst CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -484,6 +494,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     hide_parser.add_argument("tracker_id")
     hide_parser.add_argument("reason", nargs="+")
+    subparsers.add_parser(
+        "launcher-info", help="Show how to open Career Catalyst with the macOS launcher"
+    )
     return parser
 
 
@@ -522,6 +535,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         return update_status_command(args.tracker_id, args.status)
     if args.command == "hide-role":
         return hide_role_command(args.tracker_id, " ".join(args.reason))
+    if args.command == "launcher-info":
+        return launcher_info_command()
 
     return 1
 

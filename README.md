@@ -267,6 +267,53 @@ The local UI mirrors the Career Catalyst dashboard and provides an interactive c
 - viewing outputs
 - refreshing the dashboard
 
+## Opening Career Catalyst
+
+Recommended:
+
+Double-click:
+
+```text
+launchers/Open_Career_Catalyst.command
+```
+
+First time only:
+
+```bash
+chmod +x launchers/Open_Career_Catalyst.command
+```
+
+Manual fallback:
+
+```bash
+python3 -m streamlit run app.py
+```
+
+To stop:
+
+Close the Terminal window or press Control+C.
+
+### Optional: Create a Dock App
+
+Option A:
+
+- Double-click `launchers/Open_Career_Catalyst.command` in Finder.
+
+Option B:
+
+1. Open Automator.
+2. Choose **Application**.
+3. Add **Run Shell Script**.
+4. Call the launcher with `open "/full/path/to/career-catalyst/launchers/Open_Career_Catalyst.command"`, replacing the example path with the launcher path shown in Finder.
+5. Save as `Career Catalyst.app`.
+6. Drag `Career Catalyst.app` to the Dock.
+
+Launcher details are also available from:
+
+```bash
+python3 scripts/cli.py launcher-info
+```
+
 ## What Comes Next
 
 Later sprints can add interview prep generation and carefully verified company or job-source workflows.

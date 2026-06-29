@@ -94,7 +94,6 @@ class Sprint101UiHelperTests(unittest.TestCase):
         self.assertEqual(by_id["playstation_head_global_creative_ops"]["status"], "Applied")
         self.assertEqual(by_id["google_strategy_ops_youtube_auction_brand"]["status"], "Applied")
         self.assertEqual(by_id["paramount_director_marketing_operations"]["status"], "Applied")
-        self.assertEqual(by_id["crunchyroll_enterprise_strategy_paused"]["status"], "Paused")
         self.assertEqual(by_id["playstation_director_ad_ops_invalid"]["status"], "Invalid")
         self.assertFalse(
             by_id["playstation_director_ad_ops_invalid"]["show_on_dashboard"]

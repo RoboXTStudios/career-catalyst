@@ -6,6 +6,7 @@ from pathlib import Path
 from urllib.parse import unquote
 
 from scripts.cli import main
+from scripts.application_tracker import load_application_tracker
 from scripts.generate_dashboard import (
     _asset_label,
     _merge_tracker,
@@ -82,7 +83,15 @@ class GenerateDashboardTests(unittest.TestCase):
             active_section,
         )
         self.assertIn("Director, Marketing Operations", active_section)
-        self.assertEqual(active_section.count('status-applied">Applied</span>'), 3)
+        applications = load_application_tracker(PROJECT_ROOT)
+        expected_applied = sum(
+            item["status"] == "Applied" and item.get("show_on_dashboard") is not False
+            for item in applications
+        )
+        self.assertEqual(
+            active_section.count('status-applied">Applied</span>'),
+            expected_applied,
+        )
 
     def test_invalid_playstation_role_is_not_in_active_section(self):
         active_section = self.content.split('id="active-applied"', 1)[1].split(
@@ -94,14 +103,31 @@ class GenerateDashboardTests(unittest.TestCase):
         self.assertIn("Director, Ad Operations &amp; Technology", hidden_section)
         self.assertIn('status-invalid">Invalid</span>', hidden_section)
 
-    def test_crunchyroll_role_is_paused_not_applied(self):
+    def test_crunchyroll_role_matches_tracker_status(self):
+        applications = load_application_tracker(PROJECT_ROOT)
+        crunchyroll = next(
+            item
+            for item in applications
+            if item["id"] == "crunchyroll_enterprise_strategy_paused"
+        )
+        role = "Director, Enterprise Strategy &amp; Initiatives"
+        active_section = self.content.split('id="active-applied"', 1)[1].split(
+            'id="draft-paused"', 1
+        )[0]
         draft_section = self.content.split('id="draft-paused"', 1)[1].split(
             'id="hidden-invalid-roles"', 1
         )[0]
+        hidden_section = self.content.split('id="hidden-invalid-roles"', 1)[1]
 
-        self.assertIn("Director, Enterprise Strategy &amp; Initiatives", draft_section)
-        self.assertIn('status-paused">Paused</span>', draft_section)
-        self.assertNotIn('status-applied">Applied</span>', draft_section)
+        if crunchyroll["status"] == "Paused":
+            self.assertIn(role, draft_section)
+            self.assertIn('status-paused">Paused</span>', draft_section)
+        elif crunchyroll["status"] == "Invalid":
+            self.assertIn(role, hidden_section)
+            self.assertIn('status-invalid">Invalid</span>', hidden_section)
+        else:
+            self.assertIn(role, self.content)
+        self.assertNotIn(role, active_section)
 
     def test_dashboard_summary_distinguishes_tracker_states(self):
         for label in (

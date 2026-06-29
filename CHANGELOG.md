@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.22 - Sprint 10.2
+
+- Added macOS one-click launcher for Career Catalyst.
+- Added launcher documentation.
+- Added optional launcher-info CLI command.
+- Reduced need to manually type Streamlit launch commands.
+
 ## 0.0.21 - Sprint 10.1
 
 - Restyled local Streamlit UI to match Career Catalyst dashboard.
