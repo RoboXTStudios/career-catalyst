@@ -1,5 +1,5 @@
-<!-- career-catalyst-job-title: Director, Enterprise Strategy & Initiatives -->
-<!-- career-catalyst-company: Crunchyroll -->
+<!-- career-catalyst-job-title: Director, Marketing Operations -->
+<!-- career-catalyst-company: Paramount -->
 
 # Trisha Lynch
 
@@ -13,18 +13,18 @@ Marketing and business operations leader with 20+ years of experience designing 
 
 ## Core Competencies
 
-- Business Operations
-- Change Management
-- Cross-Functional Leadership
 - Marketing Operations
-- Process Excellence
+- Business Operations
 - Operational Strategy
-- Stakeholder Management
-- Program Leadership
-- Team Leadership
+- Cross-Functional Leadership
 - Creative Operations
 - Workflow Governance
 - AI Workflow Design
+- Program Leadership
+- Team Leadership
+- Entertainment Marketing
+- Change Management
+- Stakeholder Management
 
 ## Platforms & Technologies
 
@@ -53,11 +53,11 @@ Burbank, CA | 2016-2026
 Campaign Manager to Group Director, Ad Operations, Marketing Science & Creative Management
 
 - Led cross-functional teams of 60+ across creative management, marketing operations, media, analytics, technology, and campaign operations.
+- Aligned creative, marketing, media, analytics, technology, and operations teams supporting theatrical and streaming entertainment campaigns.
 - Led campaign operations across Disney Studios Theatrical and Disney Streaming/DSS, supporting theatrical and streaming film campaigns across Pixar, Lucasfilm, Marvel, 20th Century Studios, Searchlight Pictures, Disney+, and franchise/IP priorities.
-- Owned workflow governance, milestones, QA, measurement readiness, vendor integrations, and scalable execution standards for premium entertainment campaigns.
-- Partnered across creative, marketing, media, analytics, engineering, technology, operations, and external partners supporting theatrical releases, streaming launches, and franchise/IP priorities.
-- Directed operational execution for multimillion-dollar premium entertainment campaigns across theatrical releases, streaming launches, and franchise/IP priorities.
 - Introduced scalable workflows, governance practices, and execution standards across marketing, technology, analytics, and creative teams.
+- Owned workflow governance, milestones, QA, measurement readiness, vendor integrations, and scalable execution standards for premium entertainment campaigns.
+- Directed operational execution for multimillion-dollar premium entertainment campaigns across theatrical releases, streaming launches, and franchise/IP priorities.
 - Advanced from Campaign Manager to Group Director while leading campaign operations across Disney Studios Theatrical and Disney Streaming/DSS.
 - Primary work focused on theatrical and streaming film campaign operations across Disney's Studios, franchise/IP, and streaming ecosystem.
 
@@ -70,6 +70,22 @@ Founder & Product Lead | 2026-Present
 - Designed and developed an AI-powered operations platform that standardizes workflow governance, automates quality assurance, reduces operational risk, and enables cross-functional teams to execute consistently at scale.
 - Built schema-driven workflows, validation frameworks, and operational reporting that reduce manual effort while improving consistency, visibility, and decision-making.
 - Applied nearly two decades of enterprise entertainment operations experience to solve recurring organizational challenges through AI, automation, and product thinking.
+
+### Substack Writer
+
+Writer | 2026-Present
+
+- Publishes essays exploring creativity, technology, music, AI, grief, and life after corporate leadership through an editorial lens.
+- Develops personal voice and public thought leadership.
+
+### OMG23 Multiverse Newsletter
+
+Creator & Managing Editor | 2023-2026
+
+- Internal culture publication spanning creativity, innovation, music, and emerging media.
+- Developed editorial voice.
+- Built recurring content strategy.
+- Created contributor framework.
 
 ## Earlier Career
 

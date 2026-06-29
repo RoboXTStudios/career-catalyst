@@ -11,6 +11,7 @@ from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT, WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_LINE_SPACING
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
+from docx.opc.constants import RELATIONSHIP_TYPE as RT
 from docx.shared import Inches, Pt, RGBColor, Twips
 
 try:
@@ -576,21 +577,59 @@ def _inline_tokens(text: str) -> List[Dict[str, Any]]:
     position = 0
     for match in pattern.finditer(text):
         if match.start() > position:
-            tokens.append({"text": text[position : match.start()], "bold": False})
+            tokens.append(
+                {"text": text[position : match.start()], "bold": False, "url": None}
+            )
         token = match.group(0)
         if token.startswith("**"):
-            tokens.append({"text": token[2:-2], "bold": True})
+            tokens.append({"text": token[2:-2], "bold": True, "url": None})
         else:
-            link_match = re.match(r"\[([^\]]+)\]\([^)]+\)", token)
-            tokens.append({"text": link_match.group(1) if link_match else token, "bold": False})
+            link_match = re.match(r"\[([^\]]+)\]\(([^)]+)\)", token)
+            tokens.append(
+                {
+                    "text": link_match.group(1) if link_match else token,
+                    "bold": False,
+                    "url": link_match.group(2) if link_match else None,
+                }
+            )
         position = match.end()
     if position < len(text):
-        tokens.append({"text": text[position:], "bold": False})
-    return tokens or [{"text": text, "bold": False}]
+        tokens.append({"text": text[position:], "bold": False, "url": None})
+    return tokens or [{"text": text, "bold": False, "url": None}]
 
 
-def _add_inline_text(paragraph: Any, text: str) -> None:
+def add_hyperlink(paragraph: Any, text: str, url: str) -> Any:
+    """Add a visible external hyperlink to a python-docx paragraph."""
+    if not re.match(r"^(?:https?://|mailto:)", url, flags=re.IGNORECASE):
+        return paragraph.add_run(text)
+
+    relationship_id = paragraph.part.relate_to(url, RT.HYPERLINK, is_external=True)
+    hyperlink = OxmlElement("w:hyperlink")
+    hyperlink.set(qn("r:id"), relationship_id)
+
+    run = OxmlElement("w:r")
+    run_properties = OxmlElement("w:rPr")
+    color = OxmlElement("w:color")
+    color.set(qn("w:val"), "0563C1")
+    underline = OxmlElement("w:u")
+    underline.set(qn("w:val"), "single")
+    run_properties.extend([color, underline])
+    run.append(run_properties)
+
+    text_element = OxmlElement("w:t")
+    text_element.set(qn("xml:space"), "preserve")
+    text_element.text = text
+    run.append(text_element)
+    hyperlink.append(run)
+    paragraph._p.append(hyperlink)
+    return hyperlink
+
+
+def _add_inline_text(paragraph: Any, text: str, hyperlinks: bool = False) -> None:
     for token in _inline_tokens(text):
+        if hyperlinks and token["url"]:
+            add_hyperlink(paragraph, token["text"], token["url"])
+            continue
         run = paragraph.add_run(token["text"])
         if token["bold"]:
             run.bold = True
@@ -656,6 +695,9 @@ def _add_markdown_content(
     mode: str,
     platform_categories: List[Dict[str, Any]],
 ) -> None:
+    def add_text(paragraph: Any, text: str) -> None:
+        _add_inline_text(paragraph, text, hyperlinks=mode == STYLED_MODE)
+
     header_paragraph_index = 0
     current_section = ""
     current_subheading = ""
@@ -669,7 +711,7 @@ def _add_markdown_content(
 
         if block_type == "h1":
             paragraph = document.add_paragraph(style="Resume Name")
-            _add_inline_text(paragraph, text)
+            add_text(paragraph, text)
             index += 1
             continue
 
@@ -678,7 +720,7 @@ def _add_markdown_content(
             current_subheading = ""
             subheading_paragraph_index = 0
             paragraph = document.add_paragraph(style="Heading 1")
-            _add_inline_text(paragraph, text)
+            add_text(paragraph, text)
             index += 1
             if _is_section(text, "Platforms & Technologies"):
                 index = _skip_platform_blocks(blocks, index)
@@ -700,12 +742,12 @@ def _add_markdown_content(
                 paragraph = document.add_paragraph(style="Resume Platform Group")
                 label_run = paragraph.add_run(f"{text}: ")
                 label_run.bold = True
-                _add_inline_text(paragraph, next_block["text"])
+                add_text(paragraph, next_block["text"])
                 index += 2
                 continue
 
             paragraph = document.add_paragraph(style="Heading 2")
-            _add_inline_text(paragraph, text)
+            add_text(paragraph, text)
             index += 1
             continue
 
@@ -715,13 +757,13 @@ def _add_markdown_content(
                 competencies.append(blocks[index]["text"])
                 index += 1
             paragraph = document.add_paragraph(style="Resume Competencies")
-            _add_inline_text(paragraph, competency_separator.join(competencies))
+            add_text(paragraph, competency_separator.join(competencies))
             continue
 
         if block_type == "bullet":
             paragraph = document.add_paragraph(style="Resume Bullet")
             _apply_bullet_numbering(paragraph, bullet_num_id)
-            _add_inline_text(paragraph, text)
+            add_text(paragraph, text)
             index += 1
             continue
 
@@ -737,7 +779,7 @@ def _add_markdown_content(
                 subheading_paragraph_index += 1
 
         paragraph = document.add_paragraph(style=style)
-        _add_inline_text(paragraph, text)
+        add_text(paragraph, text)
         index += 1
 
 

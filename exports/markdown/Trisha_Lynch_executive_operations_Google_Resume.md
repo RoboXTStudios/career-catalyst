@@ -5,7 +5,7 @@
 
 Marketing & Business Operations Leader | AI Systems | Process Excellence | Cross-Functional Strategy
 
-Los Angeles, CA | [tslynch@mac.com](mailto:tslynch@mac.com) | LinkedIn: linkedin.com/in/trishalynch
+Los Angeles, CA | [tslynch@mac.com](mailto:tslynch@mac.com) | LinkedIn: [https://www.linkedin.com/in/trisha-lynch-3433417](https://www.linkedin.com/in/trisha-lynch-3433417)
 
 ## Profile
 

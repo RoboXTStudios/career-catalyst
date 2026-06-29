@@ -111,6 +111,10 @@ ATS DOCX:
 
 Platforms & Technologies are controlled by `data/platforms.yml`. Styled and ATS exports must use this canonical file so important positioning language such as AI Workflow Design and Process Automation is preserved.
 
+## Resume Contact Links
+
+Career Catalyst displays the full LinkedIn URL in generated resumes so the link remains visible even if applicant tracking systems strip hyperlinks.
+
 ## Sprint 6 Commands
 
 Generate a cover letter:

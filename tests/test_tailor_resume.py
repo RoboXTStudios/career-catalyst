@@ -6,6 +6,9 @@ from scripts.tailor_resume import tailor_resume
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SAMPLE_JOB = "jobs/sample_job_description.md"
+LINKEDIN_URL = "https://www.linkedin.com/in/trisha-lynch-3433417"
+LINKEDIN_MARKDOWN = f"[{LINKEDIN_URL}]({LINKEDIN_URL})"
+OLD_LINKEDIN_URL = "https://www.linkedin.com/in/trishalynch"
 
 
 class TailorResumeTests(unittest.TestCase):
@@ -20,6 +23,14 @@ class TailorResumeTests(unittest.TestCase):
         content = Path(result["output_path"]).read_text(encoding="utf-8")
 
         self.assertIn("Trisha Lynch", content)
+
+    def test_generated_resume_contains_full_linkedin_url(self):
+        result = tailor_resume("executive_operations", SAMPLE_JOB, PROJECT_ROOT)
+        content = Path(result["output_path"]).read_text(encoding="utf-8")
+
+        self.assertIn(LINKEDIN_MARKDOWN, content)
+        self.assertNotIn(OLD_LINKEDIN_URL, content)
+        self.assertNotIn("LinkedIn: linkedin.com/", content)
 
     def test_generated_resume_contains_profile(self):
         result = tailor_resume("executive_operations", SAMPLE_JOB, PROJECT_ROOT)

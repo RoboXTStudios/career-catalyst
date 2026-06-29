@@ -5,6 +5,7 @@ from pathlib import Path
 
 from docx import Document
 from docx.oxml.ns import qn
+from docx.opc.constants import RELATIONSHIP_TYPE as RT
 
 from scripts.cli import main
 from scripts.export_docx import (
@@ -16,6 +17,8 @@ from scripts.export_docx import (
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 MARKDOWN_RESUME = "exports/markdown/Trisha_Lynch_executive_operations_Crunchyroll_Resume.md"
+LINKEDIN_URL = "https://www.linkedin.com/in/trisha-lynch-3433417"
+OLD_LINKEDIN_URL = "https://www.linkedin.com/in/trishalynch"
 
 
 def _document_text(document):
@@ -105,6 +108,30 @@ class ExportDocxTests(unittest.TestCase):
         document = Document(result["output_path"])
 
         self.assertIn("CampaignOS", _document_text(document))
+
+    def test_styled_output_contains_full_clickable_linkedin_url(self):
+        result = export_styled_docx(MARKDOWN_RESUME, PROJECT_ROOT)
+        document = Document(result["output_path"])
+        content = _document_text(document)
+
+        self.assertIn(LINKEDIN_URL, content)
+        self.assertNotIn(OLD_LINKEDIN_URL, content)
+        self.assertNotIn("LinkedIn: linkedin.com/", content)
+        self.assertTrue(
+            any(
+                relationship.reltype == RT.HYPERLINK
+                and relationship.target_ref == LINKEDIN_URL
+                for relationship in document.part.rels.values()
+            )
+        )
+
+    def test_ats_output_contains_full_visible_linkedin_url(self):
+        result = export_ats_docx(MARKDOWN_RESUME, PROJECT_ROOT)
+        content = _document_text(Document(result["output_path"]))
+
+        self.assertIn(LINKEDIN_URL, content)
+        self.assertNotIn(OLD_LINKEDIN_URL, content)
+        self.assertNotIn("LinkedIn: linkedin.com/", content)
 
     def test_exports_use_polished_profile_and_campaignos_language(self):
         for exporter in (export_styled_docx, export_ats_docx):

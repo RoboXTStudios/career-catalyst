@@ -98,16 +98,27 @@ PROJECT_RELEVANCE_TERMS = {
     ),
 }
 
-CONTACT_LINE = (
-    "Los Angeles, CA | [tslynch@mac.com](mailto:tslynch@mac.com) | "
-    "LinkedIn: linkedin.com/in/trishalynch"
-)
-
 PathInput = Union[str, Path]
 
 
 class ResumeTailoringError(Exception):
     """Raised when a tailored resume cannot be generated."""
+
+
+def _contact_line(personal_brand: Dict[str, Any]) -> str:
+    candidate = personal_brand.get("candidate", {})
+    location = candidate.get("location", "Los Angeles, CA")
+    email = candidate.get("email", "tslynch@mac.com")
+    linkedin_label = candidate.get("linkedin_label", "LinkedIn")
+    linkedin_url = candidate.get(
+        "linkedin_url",
+        "[https://www.linkedin.com/in/trisha-lynch-3433417]"
+        "(https://www.linkedin.com/in/trisha-lynch-3433417)",
+    )
+    return (
+        f"{location} | [{email}](mailto:{email}) | "
+        f"{linkedin_label}: {linkedin_url}"
+    )
 
 
 def _flatten_strings(value: Any) -> List[str]:
@@ -434,7 +445,7 @@ def _render_markdown(
         "",
         candidate.get("headline", ""),
         "",
-        CONTACT_LINE,
+        _contact_line(personal_brand),
         "",
         "## Profile",
         "",

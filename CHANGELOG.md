@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.19 - Sprint 9.1
+
+- Updated resume headers to show Trisha’s full LinkedIn URL.
+- Added LinkedIn URL preservation in Markdown, Styled DOCX, and ATS DOCX exports.
+- Added clickable LinkedIn hyperlink support where feasible.
+- Added tests for LinkedIn URL visibility and old-link prevention.
+
 ## 0.0.18 - Sprint 9
 
 - Stabilized application tracker schema.
