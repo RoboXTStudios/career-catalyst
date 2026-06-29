@@ -61,3 +61,21 @@ applications:
     notes: "Strong potential fit but not applied yet."
     next_action: "Revisit after current high-priority applications."
     show_on_dashboard: true
+
+  - id: "paramount_director_marketing_operations"
+    company: "Paramount"
+    company_aliases:
+      - "Paramount"
+      - "Paramount Careers"
+      - "ViacomCBS"
+    role: "Director, Marketing Operations"
+    role_aliases:
+      - "Director Marketing Operations"
+    status: "Applied"
+    priority: "High"
+    source: "Official Paramount Careers"
+    submitted_date: "2026-06-29"
+    salary_range: "$130,000-$180,000 USD + bonus eligible"
+    notes: "Submitted application using Paramount-tailored styled resume and cover letter. Strong fit for marketing operations, creative operations, workflow systems, AI enablement, dashboards, capacity planning, and cross-team alignment."
+    next_action: "Monitor for response and identify Paramount marketing operations or creative operations contacts for possible follow-up."
+    show_on_dashboard: true
