@@ -1,81 +1,128 @@
 applications:
-  - id: "playstation_head_global_creative_ops"
-    company: "Sony Interactive Entertainment / PlayStation"
-    company_aliases:
-      - "PlayStation"
-      - "Sony Interactive Entertainment"
-      - "SIE"
-    role: "Head of Global Creative and Product Development Operations"
-    role_aliases:
-      - "Head Global Creative Product Development Operations"
-      - "Head of Global Creative and Product Development Operations"
-    status: "Applied"
-    priority: "High"
-    source: "Official Greenhouse"
-    submitted_date: "2026-06-27"
-    salary_range: "$184,100-$276,100 USD"
-    notes: "Submitted application for Head of Global Creative and Product Development Operations. Used styled resume and PlayStation cover letter."
-    next_action: "Monitor for response and identify possible recruiter or hiring manager follow-up."
-    show_on_dashboard: true
-
-  - id: "google_strategy_ops_youtube_auction_brand"
-    company: "Google"
-    company_aliases:
-      - "Google"
-      - "YouTube"
-    role: "Strategy and Operations Lead, YouTube Auction Brand"
-    role_aliases:
-      - "Strategy and Operations Lead YouTube Auction Brand"
-      - "Strategy Ops Lead YouTube Auction Brand"
-    status: "Applied"
-    priority: "High"
-    source: "Official Google Careers"
-    submitted_date: "2026-06-27"
-    salary_range: "$152,000-$222,000 + 15% bonus target + equity + benefits"
-    notes: "Submitted application using Google-tailored styled resume and cover letter. Strong YouTube, GTM operations, product activation, large advertiser, Google advertising product familiarity, and operational excellence fit."
-    next_action: "Monitor for response and identify Google/YouTube professional contacts for possible follow-up."
-    show_on_dashboard: true
-
-  - id: "playstation_director_ad_ops_invalid"
-    company: "Sony Interactive Entertainment / PlayStation"
-    company_aliases:
-      - "PlayStation"
-      - "Sony Interactive Entertainment"
-      - "SIE"
-    role: "Director, Ad Operations & Technology"
-    status: "Invalid"
-    priority: "Do Not Pursue"
-    source: "Official PlayStation detail page but broken/unavailable apply flow"
-    notes: "Official detail page appeared active, but application flow was broken or unavailable. Do not pursue unless role is reposted with a working application."
-    next_action: "Do not show in active dashboard."
-    show_on_dashboard: false
-
-  - id: "crunchyroll_enterprise_strategy_paused"
-    company: "Crunchyroll"
-    company_aliases:
-      - "Crunchyroll"
-    role: "Director, Enterprise Strategy & Initiatives"
-    status: "Paused"
-    priority: "Medium"
-    source: "Official Crunchyroll / Greenhouse"
-    notes: "Strong potential fit but not applied yet."
-    next_action: "Revisit after current high-priority applications."
-    show_on_dashboard: true
-
-  - id: "paramount_director_marketing_operations"
-    company: "Paramount"
-    company_aliases:
-      - "Paramount"
-      - "Paramount Careers"
-      - "ViacomCBS"
-    role: "Director, Marketing Operations"
-    role_aliases:
-      - "Director Marketing Operations"
-    status: "Applied"
-    priority: "High"
-    source: "Official Paramount Careers"
-    submitted_date: "2026-06-29"
-    salary_range: "$130,000-$180,000 USD + bonus eligible"
-    notes: "Submitted application using Paramount-tailored styled resume and cover letter. Strong fit for marketing operations, creative operations, workflow systems, AI enablement, dashboards, capacity planning, and cross-team alignment."
-    next_action: "Monitor for response and identify Paramount marketing operations or creative operations contacts for possible follow-up."
-    show_on_dashboard: true
+- id: playstation_head_global_creative_ops
+  company: Sony Interactive Entertainment / PlayStation
+  company_aliases:
+  - PlayStation
+  - Sony Interactive Entertainment
+  - SIE
+  role: Head of Global Creative and Product Development Operations
+  role_aliases:
+  - Head Global Creative Product Development Operations
+  - Head of Global Creative and Product Development Operations
+  status: Applied
+  priority: High
+  source: Official Greenhouse
+  submitted_date: '2026-06-27'
+  salary_range: $184,100-$276,100 USD
+  notes: Submitted application for Head of Global Creative and Product Development Operations. Used styled resume and PlayStation cover letter.
+  next_action: Monitor for response and identify possible recruiter or hiring manager follow-up.
+  show_on_dashboard: true
+- id: google_strategy_ops_youtube_auction_brand
+  company: Google
+  company_aliases:
+  - Google
+  - YouTube
+  role: Strategy and Operations Lead, YouTube Auction Brand
+  role_aliases:
+  - Strategy and Operations Lead YouTube Auction Brand
+  - Strategy Ops Lead YouTube Auction Brand
+  status: Applied
+  priority: High
+  source: Official Google Careers
+  submitted_date: '2026-06-27'
+  salary_range: $152,000-$222,000 + 15% bonus target + equity + benefits
+  notes: Submitted application using Google-tailored styled resume and cover letter. Strong YouTube, GTM operations, product activation, large advertiser, Google advertising product familiarity, and operational excellence fit.
+  next_action: Monitor for response and identify Google/YouTube professional contacts for possible follow-up.
+  show_on_dashboard: true
+- id: playstation_director_ad_ops_invalid
+  company: Sony Interactive Entertainment / PlayStation
+  company_aliases:
+  - PlayStation
+  - Sony Interactive Entertainment
+  - SIE
+  role: Director, Ad Operations & Technology
+  status: Invalid
+  priority: Do Not Pursue
+  source: Official PlayStation detail page but broken/unavailable apply flow
+  notes: Official detail page appeared active, but application flow was broken or unavailable. Do not pursue unless role is reposted with a working application.
+  next_action: Do not show in active dashboard.
+  show_on_dashboard: false
+- id: crunchyroll_enterprise_strategy_paused
+  company: Crunchyroll
+  company_aliases:
+  - Crunchyroll
+  role: Director, Enterprise Strategy & Initiatives
+  status: Invalid
+  priority: Medium
+  source: Official Crunchyroll / Greenhouse
+  notes: Strong potential fit but not applied yet.
+  next_action: Revisit after current high-priority applications.
+  show_on_dashboard: true
+- id: paramount_director_marketing_operations
+  company: Paramount
+  company_aliases:
+  - Paramount
+  - Paramount Careers
+  - ViacomCBS
+  role: Director, Marketing Operations
+  role_aliases:
+  - Director Marketing Operations
+  status: Applied
+  priority: High
+  source: Official Paramount Careers
+  submitted_date: '2026-06-29'
+  salary_range: $130,000-$180,000 USD + bonus eligible
+  notes: Submitted application using Paramount-tailored styled resume and cover letter. Strong fit for marketing operations, creative operations, workflow systems, AI enablement, dashboards, capacity planning, and cross-team alignment.
+  next_action: Monitor for response and identify Paramount marketing operations or creative operations contacts for possible follow-up.
+  show_on_dashboard: true
+- id: united_talent_agency_director_transformation
+  company: United Talent Agency
+  company_aliases: []
+  role: Director, Transformation
+  role_aliases: []
+  status: Applied
+  priority: Medium
+  source: Official Ashby
+  notes: 'Did not ask for Cover Letter in application process. '
+  next_action: Review fit and generate application package.
+  show_on_dashboard: true
+  official_url: https://jobs.ashbyhq.com/united-talent-agency/1309ff52-8e7b-4633-8c30-08e4c738399a
+  location: New York, New York, United States; Los Angeles, California, United States
+  salary_range: $130,000 to $185,000
+  work_arrangement: Not specified
+  job_file: jobs/director_transformation_united_talent_agency.md
+  submitted_date: '2026-06-29'
+- id: disney_entertainment_and_espn_product_technology_director_strategy_operations_product_technology
+  company: Disney Entertainment and ESPN Product & Technology
+  company_aliases: []
+  role: Director - Strategy & Operations, Product & Technology
+  role_aliases: []
+  status: Applied
+  priority: Medium
+  source: Official career page
+  notes: ''
+  next_action: Review fit and generate application package.
+  show_on_dashboard: true
+  official_url: https://www.disneycareers.com/en/job/san-francisco/director-strategy-and-operations-product-and-technology/391/95265580544
+  location: San Francisco, California, United States of America; Glendale, California, United States
+  salary_range: $227,200
+  work_arrangement: Not specified
+  job_file: jobs/director_strategy_operations_product_technology_disney_entertainment_and_espn_product_technology.md
+  submitted_date: '2026-06-29'
+- id: fieldai_director_of_matrix_operations_organizational_efficiency
+  company: FieldAI
+  company_aliases: []
+  role: Director of Matrix Operations & Organizational Efficiency
+  role_aliases: []
+  status: Applied
+  priority: Medium
+  source: Official career page
+  notes: ''
+  next_action: Review fit and generate application package.
+  show_on_dashboard: true
+  official_url: https://jobs.lever.co/field-ai/7effb612-eeba-4d8e-ba15-447ed3e8d7e9
+  location: Irvine, CA
+  salary_range: $70,000 - $300,000
+  work_arrangement: Not specified
+  job_file: jobs/director_of_matrix_operations_organizational_efficiency_fieldai.md
+  submitted_date: '2026-06-29'

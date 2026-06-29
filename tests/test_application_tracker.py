@@ -21,14 +21,14 @@ class ApplicationTrackerTests(unittest.TestCase):
         cls.applications = load_application_tracker(PROJECT_ROOT)
 
     def test_application_tracker_loads_successfully(self):
-        self.assertEqual(len(self.applications), 4)
+        self.assertEqual(len(self.applications), 5)
         self.assertTrue(all(isinstance(item, dict) for item in self.applications))
 
     def test_application_tracker_validates_successfully(self):
         report = validate_application_tracker(PROJECT_ROOT)
 
         self.assertEqual(report["errors"], [])
-        self.assertEqual(report["status_counts"]["Applied"], 2)
+        self.assertEqual(report["status_counts"]["Applied"], 3)
         self.assertEqual(report["status_counts"]["Paused"], 1)
         self.assertEqual(report["status_counts"]["Invalid"], 1)
 
@@ -39,7 +39,7 @@ class ApplicationTrackerTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 0)
         self.assertIn("Application tracker validation succeeded.", output.getvalue())
-        self.assertIn("- Applied: 2", output.getvalue())
+        self.assertIn("- Applied: 3", output.getvalue())
         self.assertIn("- Paused: 1", output.getvalue())
         self.assertIn("- Invalid: 1", output.getvalue())
 
@@ -75,6 +75,10 @@ class ApplicationTrackerTests(unittest.TestCase):
         )
         self.assertEqual(
             by_id["google_strategy_ops_youtube_auction_brand"]["status"],
+            "Applied",
+        )
+        self.assertEqual(
+            by_id["paramount_director_marketing_operations"]["status"],
             "Applied",
         )
         self.assertEqual(

@@ -8,6 +8,9 @@ from typing import Any, List, Optional
 if __package__:
     from .application_tracker import (
         TrackerValidationError,
+        TrackerUpdateError,
+        hide_role,
+        update_status,
         validate_application_tracker,
     )
     from .generate_dashboard import DashboardGenerationError, generate_dashboard
@@ -30,10 +33,18 @@ if __package__:
         load_yaml_file,
     )
     from .parse_job import JobParseError, parse_job_description
+    from .package_generator import PackageGenerationError, generate_package
+    from .prospect_intake import ProspectIntakeError, add_prospect_from_job_file
     from .score_match import score_job_match
     from .tailor_resume import ResumeTailoringError, tailor_resume
 else:
-    from application_tracker import TrackerValidationError, validate_application_tracker
+    from application_tracker import (
+        TrackerUpdateError,
+        TrackerValidationError,
+        hide_role,
+        update_status,
+        validate_application_tracker,
+    )
     from generate_dashboard import DashboardGenerationError, generate_dashboard
     from generate_application_note import generate_application_note
     from generate_cover_letter import ApplicationMaterialError, generate_cover_letter
@@ -54,6 +65,8 @@ else:
         load_yaml_file,
     )
     from parse_job import JobParseError, parse_job_description
+    from package_generator import PackageGenerationError, generate_package
+    from prospect_intake import ProspectIntakeError, add_prospect_from_job_file
     from score_match import score_job_match
     from tailor_resume import ResumeTailoringError, tailor_resume
 
@@ -353,6 +366,61 @@ def validate_tracker_command() -> int:
     return 0
 
 
+def add_prospect_command(file_path: str) -> int:
+    try:
+        result = add_prospect_from_job_file(file_path, PROJECT_ROOT)
+        generate_dashboard(PROJECT_ROOT)
+    except (ProspectIntakeError, TrackerValidationError, DashboardGenerationError) as error:
+        print(f"Could not add prospect: {error}", file=sys.stderr)
+        return 1
+
+    action = "created" if result["tracker_created"] else "updated"
+    print(f"Prospect {action}: {result['tracker_id']}")
+    print(f"Job file: {result['job_file_path']}")
+    return 0
+
+
+def generate_package_command(job_file_or_tracker_id: str) -> int:
+    try:
+        result = generate_package(job_file_or_tracker_id, PROJECT_ROOT)
+    except PackageGenerationError as error:
+        print(str(error), file=sys.stderr)
+        return 1
+
+    print(f"Package generated: {result['tracker_id']}")
+    print(f"Status: {result['status']}")
+    print(f"Match score: {result.get('match_score')}")
+    for label, path in result["outputs"].items():
+        print(f"{label}: {path}")
+    return 0
+
+
+def update_status_command(tracker_id: str, status: str) -> int:
+    try:
+        application = update_status(tracker_id, status, PROJECT_ROOT)
+        generate_dashboard(PROJECT_ROOT)
+    except (TrackerUpdateError, TrackerValidationError, DashboardGenerationError) as error:
+        print(f"Could not update status: {error}", file=sys.stderr)
+        return 1
+
+    print(f"Updated {tracker_id} to {application['status']}.")
+    if application.get("submitted_date"):
+        print(f"Submitted date: {application['submitted_date']}")
+    return 0
+
+
+def hide_role_command(tracker_id: str, reason: str) -> int:
+    try:
+        application = hide_role(tracker_id, reason, PROJECT_ROOT)
+        generate_dashboard(PROJECT_ROOT)
+    except (TrackerUpdateError, TrackerValidationError, DashboardGenerationError) as error:
+        print(f"Could not hide role: {error}", file=sys.stderr)
+        return 1
+
+    print(f"Hidden {tracker_id} with status {application['status']}.")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Career Catalyst CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -398,6 +466,24 @@ def build_parser() -> argparse.ArgumentParser:
     strategy_pack_parser.add_argument("file_path", help="Path to a local job description")
     subparsers.add_parser("dashboard", help="Generate the local static dashboard")
     subparsers.add_parser("validate-tracker", help="Validate application tracker data")
+    add_prospect_parser = subparsers.add_parser(
+        "add-prospect", help="Add or update a tracker entry from a local job file"
+    )
+    add_prospect_parser.add_argument("job_file_path", help="Path to a local job description")
+    package_parser = subparsers.add_parser(
+        "generate-package", help="Generate every application material for a job"
+    )
+    package_parser.add_argument("job_file_or_tracker_id")
+    status_parser = subparsers.add_parser(
+        "update-status", help="Update a tracker entry and refresh the dashboard"
+    )
+    status_parser.add_argument("tracker_id")
+    status_parser.add_argument("status")
+    hide_parser = subparsers.add_parser(
+        "hide-role", help="Mark a tracker entry Invalid and hide it from the active dashboard"
+    )
+    hide_parser.add_argument("tracker_id")
+    hide_parser.add_argument("reason", nargs="+")
     return parser
 
 
@@ -428,6 +514,14 @@ def main(argv: Optional[List[str]] = None) -> int:
         return dashboard_command()
     if args.command == "validate-tracker":
         return validate_tracker_command()
+    if args.command == "add-prospect":
+        return add_prospect_command(args.job_file_path)
+    if args.command == "generate-package":
+        return generate_package_command(args.job_file_or_tracker_id)
+    if args.command == "update-status":
+        return update_status_command(args.tracker_id, args.status)
+    if args.command == "hide-role":
+        return hide_role_command(args.tracker_id, " ".join(args.reason))
 
     return 1
 

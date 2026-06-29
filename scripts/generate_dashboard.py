@@ -729,6 +729,27 @@ def _render_html(
 """
 
 
+def load_application_packages(project_root: PathInput = Path.cwd()) -> Dict[str, Any]:
+    """Load tracker-backed application packages for local dashboard surfaces."""
+    root = Path(project_root).resolve()
+    packages = _load_jobs(root)
+    tracker = validate_application_tracker(root)["applications"]
+    _merge_tracker(packages, tracker)
+    unassigned = _attach_assets(root, packages)
+    packages.sort(
+        key=lambda item: (
+            0 if item.get("tracker") else 1,
+            _slug(item["company"]),
+            _slug(item["role"]),
+        )
+    )
+    return {
+        "packages": packages,
+        "unassigned": unassigned,
+        "groups": _partition_packages(packages),
+    }
+
+
 def generate_dashboard(project_root: PathInput = Path.cwd()) -> Dict[str, Any]:
     """Build the local static dashboard and return generation details."""
     root = Path(project_root).resolve()
@@ -736,18 +757,10 @@ def generate_dashboard(project_root: PathInput = Path.cwd()) -> Dict[str, Any]:
     output_path = dashboard_directory / "index.html"
 
     try:
-        packages = _load_jobs(root)
-        tracker = validate_application_tracker(root)["applications"]
-        _merge_tracker(packages, tracker)
-        unassigned = _attach_assets(root, packages)
-        packages.sort(
-            key=lambda item: (
-                0 if item.get("tracker") else 1,
-                _slug(item["company"]),
-                _slug(item["role"]),
-            )
-        )
-        groups = _partition_packages(packages)
+        package_data = load_application_packages(root)
+        packages = package_data["packages"]
+        unassigned = package_data["unassigned"]
+        groups = package_data["groups"]
         counts = _summary_counts(root, groups)
         dashboard_directory.mkdir(parents=True, exist_ok=True)
         output_path.write_text(

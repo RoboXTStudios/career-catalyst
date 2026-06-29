@@ -220,6 +220,53 @@ python3 scripts/cli.py dashboard
 
 Tracker entries can include company and role aliases to help the dashboard match generated job packages to the correct application record. Invalid or unavailable roles can be preserved with `show_on_dashboard: false` so they do not clutter the active dashboard.
 
+## Sprint 10: Local Application Cockpit
+
+Run:
+
+```bash
+streamlit run app.py
+```
+
+Career Catalyst's local UI lets Trisha:
+
+- add role prospects
+- paste official job descriptions
+- try importing from official career page URLs
+- generate full application packages
+- update application statuses
+- refresh the dashboard
+- open output folders
+
+Manual paste is always supported because many career sites block or complicate automated import.
+
+CLI commands remain available:
+
+```bash
+python3 scripts/cli.py add-prospect jobs/paramount_director_marketing_operations.md
+python3 scripts/cli.py generate-package paramount_director_marketing_operations
+python3 scripts/cli.py update-status paramount_director_marketing_operations Applied
+python3 scripts/cli.py hide-role playstation_director_ad_ops_invalid "Broken apply flow"
+python3 scripts/cli.py validate-tracker
+python3 scripts/cli.py dashboard
+```
+
+## Sprint 10.1: Career Catalyst UI
+
+Run:
+
+```bash
+streamlit run app.py
+```
+
+The local UI mirrors the Career Catalyst dashboard and provides an interactive cockpit for:
+
+- adding prospects
+- generating application packages
+- updating statuses
+- viewing outputs
+- refreshing the dashboard
+
 ## What Comes Next
 
 Later sprints can add interview prep generation and carefully verified company or job-source workflows.

@@ -1,0 +1,316 @@
+"""Lightweight official career-page import with a manual-paste fallback."""
+
+from __future__ import annotations
+
+import json
+import re
+from html import unescape
+from html.parser import HTMLParser
+from typing import Any, Dict, Iterable, Optional
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlparse
+from urllib.request import Request, urlopen
+
+try:
+    from .parse_job import extract_metadata
+except ImportError:
+    from parse_job import extract_metadata
+
+
+BLOCKED_PRIMARY_HOSTS = (
+    "indeed.com",
+    "linkedin.com",
+    "entertainmentcareers.net",
+    "entertainmentcareers.com",
+)
+MINIMUM_DESCRIPTION_LENGTH = 80
+
+
+class JobImportError(Exception):
+    """Raised when a career page cannot produce a safe, useful import."""
+
+
+class _VisibleTextParser(HTMLParser):
+    """Collect useful visible text and basic page metadata without dependencies."""
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.hidden_depth = 0
+        self.current_heading: Optional[str] = None
+        self.title_parts: list[str] = []
+        self.h1_parts: list[str] = []
+        self.text_parts: list[str] = []
+        self.site_name = ""
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, Optional[str]]]) -> None:
+        lowered = tag.lower()
+        if lowered in {"script", "style", "noscript", "svg"}:
+            self.hidden_depth += 1
+        if lowered in {"title", "h1"}:
+            self.current_heading = lowered
+        if lowered == "meta":
+            attributes = {key.lower(): value or "" for key, value in attrs}
+            if attributes.get("property", "").lower() == "og:site_name":
+                self.site_name = attributes.get("content", "").strip()
+
+    def handle_endtag(self, tag: str) -> None:
+        lowered = tag.lower()
+        if lowered in {"script", "style", "noscript", "svg"} and self.hidden_depth:
+            self.hidden_depth -= 1
+        if lowered == self.current_heading:
+            self.current_heading = None
+
+    def handle_data(self, data: str) -> None:
+        if self.hidden_depth:
+            return
+        cleaned = " ".join(data.split())
+        if not cleaned:
+            return
+        self.text_parts.append(cleaned)
+        if self.current_heading == "title":
+            self.title_parts.append(cleaned)
+        elif self.current_heading == "h1":
+            self.h1_parts.append(cleaned)
+
+
+def _manual_fallback(message: str) -> JobImportError:
+    return JobImportError(
+        f"{message} Keep the official URL and paste the job description text manually."
+    )
+
+
+def _validated_url(url: str) -> str:
+    clean_url = str(url or "").strip()
+    parsed = urlparse(clean_url)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise _manual_fallback("Enter a complete http:// or https:// career-page URL.")
+    hostname = (parsed.hostname or "").lower()
+    if any(hostname == host or hostname.endswith(f".{host}") for host in BLOCKED_PRIMARY_HOSTS):
+        raise _manual_fallback(
+            "Career Catalyst only imports official company career pages, not aggregators or reposts."
+        )
+    return clean_url
+
+
+def validate_official_url(url: str) -> str:
+    """Validate an official-page URL without fetching it."""
+    return _validated_url(url)
+
+
+def fetch_job_page(url: str, timeout: int = 12) -> str:
+    """Fetch one official career page with a small timeout and no browser automation."""
+    clean_url = _validated_url(url)
+    request = Request(
+        clean_url,
+        headers={
+            "User-Agent": "CareerCatalyst/0.0.20 (local personal career-page importer)",
+            "Accept": "text/html,application/xhtml+xml",
+        },
+    )
+    try:
+        with urlopen(request, timeout=timeout) as response:  # nosec: user supplies an official URL
+            content_type = response.headers.get_content_type()
+            if content_type not in {"text/html", "application/xhtml+xml"}:
+                raise _manual_fallback(
+                    f"The URL returned {content_type or 'non-HTML content'} instead of a career page."
+                )
+            charset = response.headers.get_content_charset() or "utf-8"
+            return response.read().decode(charset, errors="replace")
+    except JobImportError:
+        raise
+    except HTTPError as error:
+        raise _manual_fallback(
+            f"The career page returned HTTP {error.code} and could not be imported."
+        ) from error
+    except (URLError, TimeoutError, OSError) as error:
+        raise _manual_fallback(f"The career page could not be reached ({error}).") from error
+
+
+def _walk_json(value: Any) -> Iterable[Dict[str, Any]]:
+    if isinstance(value, dict):
+        yield value
+        for nested in value.values():
+            yield from _walk_json(nested)
+    elif isinstance(value, list):
+        for nested in value:
+            yield from _walk_json(nested)
+
+
+def _job_posting(html: str) -> Optional[Dict[str, Any]]:
+    scripts = re.findall(
+        r"<script\b[^>]*type=[\"']application/ld\+json[\"'][^>]*>(.*?)</script>",
+        html,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    for script in scripts:
+        try:
+            loaded = json.loads(unescape(script).strip())
+        except (json.JSONDecodeError, TypeError):
+            continue
+        for item in _walk_json(loaded):
+            item_type = item.get("@type")
+            types = item_type if isinstance(item_type, list) else [item_type]
+            if any(str(value).lower() == "jobposting" for value in types):
+                return item
+    return None
+
+
+def _plain_html_text(value: Any) -> str:
+    parser = _VisibleTextParser()
+    parser.feed(str(value or ""))
+    return "\n".join(parser.text_parts).strip()
+
+
+def _structured_location(posting: Dict[str, Any]) -> str:
+    locations = posting.get("jobLocation") or []
+    if isinstance(locations, dict):
+        locations = [locations]
+    values = []
+    for location in locations if isinstance(locations, list) else []:
+        if not isinstance(location, dict):
+            continue
+        address = location.get("address", location)
+        if not isinstance(address, dict):
+            continue
+        parts = [
+            address.get("addressLocality"),
+            address.get("addressRegion"),
+            address.get("addressCountry"),
+        ]
+        clean = ", ".join(str(part).strip() for part in parts if part)
+        if clean and clean not in values:
+            values.append(clean)
+    if not values and str(posting.get("jobLocationType") or "").upper() == "TELECOMMUTE":
+        return "Remote"
+    return "; ".join(values)
+
+
+def _structured_salary(posting: Dict[str, Any]) -> str:
+    salary = posting.get("baseSalary")
+    if not isinstance(salary, dict):
+        return ""
+    currency = str(salary.get("currency") or "").strip()
+    value = salary.get("value", salary)
+    if not isinstance(value, dict):
+        return str(value or "").strip()
+    minimum = value.get("minValue")
+    maximum = value.get("maxValue")
+    unit = str(value.get("unitText") or "").strip().lower()
+    if minimum is None and maximum is None:
+        return ""
+    prefix = "$" if currency.upper() == "USD" else f"{currency} " if currency else ""
+    amount = (
+        f"{prefix}{minimum:,}-{prefix}{maximum:,}"
+        if isinstance(minimum, (int, float)) and isinstance(maximum, (int, float))
+        else f"{prefix}{minimum or maximum}"
+    )
+    return f"{amount}{f' per {unit}' if unit else ''}".strip()
+
+
+def _source_name(url: str) -> str:
+    host = (urlparse(url).hostname or "").lower()
+    if "greenhouse.io" in host:
+        return "Official Greenhouse"
+    if "ashbyhq.com" in host:
+        return "Official Ashby"
+    return "Official career page"
+
+
+def create_job_markdown(job_data: Dict[str, Any]) -> str:
+    """Render normalized job data into Career Catalyst's Markdown format."""
+    title = str(job_data.get("job_title") or job_data.get("role") or "").strip()
+    company = str(job_data.get("company") or "").strip()
+    description = str(job_data.get("job_description") or job_data.get("description") or "").strip()
+    if not title or not company or len(description) < MINIMUM_DESCRIPTION_LENGTH:
+        raise _manual_fallback(
+            "The page did not provide a complete title, company, and job description."
+        )
+
+    lines = [f"# {title}", "", f"Company: {company}"]
+    optional_fields = (
+        ("Tracker ID", job_data.get("tracker_id")),
+        ("Location", job_data.get("location")),
+        ("Work arrangement", job_data.get("work_arrangement")),
+        ("Salary range", job_data.get("salary_range")),
+        ("Official source", job_data.get("source")),
+        ("Official URL", job_data.get("official_url") or job_data.get("source_url")),
+    )
+    lines.extend(f"{label}: {str(value).strip()}" for label, value in optional_fields if value)
+    lines.extend(["", "## Job Description", "", description, ""])
+    return "\n".join(lines)
+
+
+def extract_job_text(html: str, url: str) -> str:
+    """Extract a useful canonical job document from JSON-LD or plain HTML."""
+    _validated_url(url)
+    if not str(html or "").strip():
+        raise _manual_fallback("The career page returned no HTML.")
+
+    posting = _job_posting(html)
+    if posting:
+        organization = posting.get("hiringOrganization") or {}
+        company = organization.get("name") if isinstance(organization, dict) else organization
+        return create_job_markdown(
+            {
+                "job_title": posting.get("title"),
+                "company": company,
+                "location": _structured_location(posting),
+                "salary_range": _structured_salary(posting),
+                "source": _source_name(url),
+                "official_url": url,
+                "job_description": _plain_html_text(posting.get("description")),
+            }
+        )
+
+    parser = _VisibleTextParser()
+    parser.feed(html)
+    page_title = " ".join(parser.title_parts).strip()
+    title = " ".join(parser.h1_parts).strip() or page_title
+    company = parser.site_name
+    match = re.match(r"Job Application for (.+?) at (.+?)(?:\s*[|\-].*)?$", title, re.I)
+    if match:
+        title, company = match.group(1).strip(), match.group(2).strip()
+    elif " @ " in title:
+        title, company = (part.strip() for part in title.split(" @ ", 1))
+    title = re.sub(r"\s*[|\-]\s*(?:careers?|jobs?).*$", "", title, flags=re.I).strip()
+    visible_text = "\n".join(parser.text_parts)
+    metadata = extract_metadata(visible_text)
+    return create_job_markdown(
+        {
+            "job_title": metadata.get("job_title") or title,
+            "company": metadata.get("company") or company,
+            "location": metadata.get("location"),
+            "salary_range": metadata.get("salary_range"),
+            "source": _source_name(url),
+            "official_url": url,
+            "job_description": visible_text,
+        }
+    )
+
+
+def parse_imported_job(raw_text: str, url: str) -> Dict[str, Any]:
+    """Parse canonical imported text into fields suitable for the intake form."""
+    metadata = extract_metadata(raw_text)
+    description_match = re.search(
+        r"^##\s+Job Description\s*$\n(.*)", raw_text, flags=re.I | re.M | re.S
+    )
+    description = (description_match.group(1) if description_match else raw_text).strip()
+    parsed = {
+        "job_title": metadata.get("job_title"),
+        "company": metadata.get("company"),
+        "location": metadata.get("location") or "",
+        "salary_range": metadata.get("salary_range") or "",
+        "source": _source_name(url),
+        "official_url": url,
+        "job_description": description,
+    }
+    # Validate the minimum useful payload before a UI can treat import as successful.
+    create_job_markdown(parsed)
+    return parsed
+
+
+def import_job_from_url(url: str) -> Dict[str, Any]:
+    """Fetch, extract, and parse an official job page in one UI-friendly call."""
+    html = fetch_job_page(url)
+    raw_text = extract_job_text(html, url)
+    return parse_imported_job(raw_text, url)

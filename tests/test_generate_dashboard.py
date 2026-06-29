@@ -71,7 +71,7 @@ class GenerateDashboardTests(unittest.TestCase):
         )
         self.assertIn('<span class="badge status-applied">Applied</span>', self.content)
 
-    def test_active_section_preserves_both_applied_roles(self):
+    def test_active_section_preserves_all_applied_roles(self):
         active_section = self.content.split('id="active-applied"', 1)[1].split(
             'id="draft-paused"', 1
         )[0]
@@ -81,7 +81,8 @@ class GenerateDashboardTests(unittest.TestCase):
             "Head of Global Creative and Product Development Operations",
             active_section,
         )
-        self.assertEqual(active_section.count('status-applied">Applied</span>'), 2)
+        self.assertIn("Director, Marketing Operations", active_section)
+        self.assertEqual(active_section.count('status-applied">Applied</span>'), 3)
 
     def test_invalid_playstation_role_is_not_in_active_section(self):
         active_section = self.content.split('id="active-applied"', 1)[1].split(

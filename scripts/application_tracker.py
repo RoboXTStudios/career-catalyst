@@ -1,5 +1,6 @@
-"""Load and validate the Career Catalyst application tracker."""
+"""Load, update, and validate the Career Catalyst application tracker."""
 
+from datetime import date
 import re
 from collections import Counter
 from pathlib import Path
@@ -32,10 +33,22 @@ VALID_STATUSES = (
 ACTIVE_STATUSES = {"Applied", "Follow-up", "Interviewing"}
 DRAFT_STATUSES = {"Drafted", "Reviewed", "Paused"}
 HIDDEN_STATUSES = {"Rejected", "Invalid", "Archived"}
+INTAKE_PROTECTED_STATUSES = {
+    "Applied",
+    "Follow-up",
+    "Interviewing",
+    "Rejected",
+    "Invalid",
+    "Archived",
+}
 
 
 class TrackerValidationError(Exception):
     """Raised when application tracker data is missing or invalid."""
+
+
+class TrackerUpdateError(TrackerValidationError):
+    """Raised when a requested tracker mutation cannot be completed."""
 
 
 def normalize_tracker_value(value: Any) -> str:
@@ -43,6 +56,14 @@ def normalize_tracker_value(value: Any) -> str:
     text = str(value or "").lower()
     text = re.sub(r"[^a-z0-9]+", " ", text)
     return " ".join(text.split())
+
+
+def make_tracker_id(company: Any, role: Any) -> str:
+    """Build a stable, readable tracker id from company and role."""
+    normalized = normalize_tracker_value(f"{company} {role}").replace(" ", "_")
+    if not normalized:
+        raise TrackerUpdateError("A tracker id requires a company and role title.")
+    return normalized
 
 
 def tracker_company_keys(application: Dict[str, Any]) -> set[str]:
@@ -84,6 +105,191 @@ def load_application_tracker(project_root: Optional[PathInput] = None) -> List[D
             f"Application tracker must contain a top-level applications list: {TRACKER_PATH}"
         )
     return loaded["applications"]
+
+
+def load_tracker(project_root: Optional[PathInput] = None) -> List[Dict[str, Any]]:
+    """Short alias used by the local UI and CLI workflows."""
+    return load_application_tracker(project_root)
+
+
+def save_application_tracker(
+    applications: List[Dict[str, Any]],
+    project_root: Optional[PathInput] = None,
+) -> Path:
+    """Validate and save tracker entries without reordering their fields."""
+    report = validate_tracker_entries(applications)
+    if report["errors"]:
+        raise TrackerValidationError(" ".join(report["errors"]))
+
+    root = Path(project_root) if project_root is not None else Path.cwd()
+    tracker_path = root / TRACKER_PATH
+    tracker_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        tracker_path.write_text(
+            yaml.safe_dump(
+                {"applications": applications},
+                sort_keys=False,
+                allow_unicode=True,
+                width=1000,
+            ),
+            encoding="utf-8",
+        )
+    except OSError as error:
+        raise TrackerUpdateError(
+            f"Unable to save application tracker {TRACKER_PATH}: {error}"
+        ) from error
+    return tracker_path
+
+
+def save_tracker(
+    applications: List[Dict[str, Any]],
+    project_root: Optional[PathInput] = None,
+) -> Path:
+    """Short alias used by the local UI and CLI workflows."""
+    return save_application_tracker(applications, project_root)
+
+
+def _clean_updates(values: Dict[str, Any]) -> Dict[str, Any]:
+    """Drop absent values while retaining meaningful false values."""
+    return {
+        key: value
+        for key, value in values.items()
+        if value is not None and (not isinstance(value, str) or value.strip())
+    }
+
+
+def _explicit_updates(values: Dict[str, Any]) -> Dict[str, Any]:
+    """Retain explicit empty strings so editable UI fields can be cleared."""
+    return {key: value for key, value in values.items() if value is not None}
+
+
+def add_prospect(
+    prospect: Dict[str, Any],
+    project_root: Optional[PathInput] = None,
+) -> Dict[str, Any]:
+    """Add a prospect or safely enrich its existing tracker record."""
+    company = str(prospect.get("company") or "").strip()
+    role = str(prospect.get("role") or prospect.get("job_title") or "").strip()
+    if not company or not role:
+        raise TrackerUpdateError("A prospect requires both company and role title.")
+
+    tracker_id = str(prospect.get("id") or make_tracker_id(company, role)).strip()
+    incoming = _clean_updates(dict(prospect))
+    incoming["id"] = tracker_id
+    incoming["company"] = company
+    incoming["role"] = role
+    incoming.pop("job_title", None)
+
+    applications = load_application_tracker(project_root)
+    existing = next(
+        (application for application in applications if application.get("id") == tracker_id),
+        None,
+    )
+    created = existing is None
+    if existing is None:
+        entry: Dict[str, Any] = {
+            "id": tracker_id,
+            "company": company,
+            "company_aliases": [],
+            "role": role,
+            "role_aliases": [],
+            "status": str(incoming.get("status") or "Drafted"),
+            "priority": str(incoming.get("priority") or "Medium"),
+            "source": str(incoming.get("source") or "Official career page"),
+            "notes": str(incoming.get("notes") or ""),
+            "next_action": str(incoming.get("next_action") or ""),
+            "show_on_dashboard": bool(incoming.get("show_on_dashboard", True)),
+        }
+        entry.update(incoming)
+        applications.append(entry)
+    else:
+        entry = existing
+        original_status = str(existing.get("status") or "Drafted")
+        entry.update(incoming)
+        # Intake must never demote an application that has progressed beyond drafting.
+        if original_status in INTAKE_PROTECTED_STATUSES or (
+            original_status != "Drafted" and incoming.get("status") == "Drafted"
+        ):
+            entry["status"] = original_status
+        entry.setdefault("company_aliases", [])
+        entry.setdefault("role_aliases", [])
+        entry.setdefault("show_on_dashboard", True)
+
+    save_application_tracker(applications, project_root)
+    return {"tracker_id": tracker_id, "application": dict(entry), "created": created}
+
+
+def update_prospect(
+    tracker_id: str,
+    updates: Dict[str, Any],
+    project_root: Optional[PathInput] = None,
+) -> Dict[str, Any]:
+    """Update selected fields while preserving every unspecified tracker value."""
+    applications = load_application_tracker(project_root)
+    entry = next(
+        (application for application in applications if application.get("id") == tracker_id),
+        None,
+    )
+    if entry is None:
+        raise TrackerUpdateError(f"Tracker entry not found: {tracker_id}")
+
+    cleaned = _explicit_updates(updates)
+    cleaned.pop("id", None)
+    entry.update(cleaned)
+    save_application_tracker(applications, project_root)
+    return dict(entry)
+
+
+def update_status(
+    tracker_id: str,
+    status: str,
+    project_root: Optional[PathInput] = None,
+    **updates: Any,
+) -> Dict[str, Any]:
+    """Set application status and stamp the first Applied date when needed."""
+    if status not in VALID_STATUSES:
+        raise TrackerUpdateError(
+            f"Unsupported status '{status}'. Valid statuses: {', '.join(VALID_STATUSES)}."
+        )
+
+    applications = load_application_tracker(project_root)
+    entry = next(
+        (application for application in applications if application.get("id") == tracker_id),
+        None,
+    )
+    if entry is None:
+        raise TrackerUpdateError(f"Tracker entry not found: {tracker_id}")
+
+    entry["status"] = status
+    entry.update(_explicit_updates(updates))
+    if status == "Applied" and not entry.get("submitted_date"):
+        entry["submitted_date"] = date.today().isoformat()
+    save_application_tracker(applications, project_root)
+    return dict(entry)
+
+
+def hide_role(
+    tracker_id: str,
+    reason: str,
+    project_root: Optional[PathInput] = None,
+) -> Dict[str, Any]:
+    """Mark a role Invalid, hide it, and retain any existing notes."""
+    applications = load_application_tracker(project_root)
+    entry = next(
+        (application for application in applications if application.get("id") == tracker_id),
+        None,
+    )
+    if entry is None:
+        raise TrackerUpdateError(f"Tracker entry not found: {tracker_id}")
+
+    existing_notes = str(entry.get("notes") or "").strip()
+    clean_reason = reason.strip()
+    if clean_reason and clean_reason not in existing_notes:
+        entry["notes"] = " ".join(value for value in (existing_notes, clean_reason) if value)
+    entry["status"] = "Invalid"
+    entry["show_on_dashboard"] = False
+    save_application_tracker(applications, project_root)
+    return dict(entry)
 
 
 def validate_tracker_entries(

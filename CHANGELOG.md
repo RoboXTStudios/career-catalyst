@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.0.21 - Sprint 10.1
+
+- Restyled local Streamlit UI to match Career Catalyst dashboard.
+- Replaced CampaignOS-style branding with Career Catalyst application cockpit language.
+- Added dashboard-like cards, status groupings, and application workflow sections.
+- Preserved tracker statuses across applied, paused, and invalid roles.
+- Added tests for UI helper imports and branding safeguards.
+
+## 0.0.20 - Sprint 10
+
+- Added local Career Catalyst application cockpit UI.
+- Added prospect intake from official career page URL and pasted job description text.
+- Added simple URL import helper with manual paste fallback.
+- Added package generation from tracker entries.
+- Added status update workflow without manual YAML editing.
+- Added tracker utilities for prospect management.
+- Preserved applied statuses across PlayStation, Google, and Paramount.
+- Added tests for prospect intake, tracker updates, dashboard status preservation, and URL import fallback.
+
 ## 0.0.19 - Sprint 9.1
 
 - Updated resume headers to show Trisha’s full LinkedIn URL.
