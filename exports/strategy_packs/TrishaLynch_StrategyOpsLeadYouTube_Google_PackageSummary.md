@@ -11,19 +11,19 @@
 
 ### Score Dimensions
 
-- Resume Fit: 81/100
+- Resume Fit: 78/100
 - Salary Fit: 92/100
 - Industry Alignment: 58/100
 - Role Level Fit: 100/100
 - Location Fit: 100/100
 - Mission / Personal Alignment: 42/100
 - Posting Freshness: 50/100
-- Interview Probability: 76/100
+- Interview Probability: 75/100
 
 ## Package Quality Check
 
-- Resume Tailoring Score: 83/100
+- Resume Tailoring Score: 80/100
 - Cover Letter Score: 94/100
-- ATS Keyword Match: 89/100
+- ATS Keyword Match: 86/100
 - Voice Match: 99/100
 - Confidence Level: High

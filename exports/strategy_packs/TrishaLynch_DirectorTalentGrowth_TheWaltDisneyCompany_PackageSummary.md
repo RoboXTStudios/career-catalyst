@@ -2,7 +2,7 @@
 
 ## Opportunity
 
-- Overall Score: 76/100
+- Overall Score: 74/100
 - Apply Recommendation: Apply If Strategic
 - Freshness: Unknown freshness / Verify manually
 - Posting Status: Open
@@ -11,19 +11,19 @@
 
 ### Score Dimensions
 
-- Resume Fit: 80/100
+- Resume Fit: 74/100
 - Salary Fit: 100/100
 - Industry Alignment: 30/100
 - Role Level Fit: 100/100
 - Location Fit: 92/100
 - Mission / Personal Alignment: 72/100
 - Posting Freshness: 50/100
-- Interview Probability: 73/100
+- Interview Probability: 70/100
 
 ## Package Quality Check
 
-- Resume Tailoring Score: 81/100
+- Resume Tailoring Score: 75/100
 - Cover Letter Score: 90/100
-- ATS Keyword Match: 86/100
+- ATS Keyword Match: 80/100
 - Voice Match: 90/100
 - Confidence Level: High
