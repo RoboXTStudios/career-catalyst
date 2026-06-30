@@ -1,8 +1,6 @@
 Hello,
 
-I'm reaching out about the Director, Transformation role at United Talent Agency. It stands out because it connects client, uta, and engagement around entertainment IP. At OMG23 / OMD Entertainment, I led campaign operations across Disney Studios Theatrical and Disney Streaming/DSS, supporting theatrical and streaming film campaigns across Pixar, Lucasfilm, Marvel, 20th Century Studios, Searchlight Pictures, Disney+, and franchise/IP priorities. I led cross-functional teams of 60+ and built workflows, quality practices, and operating standards for entertainment campaigns.
-
-If you're the right person to speak with, I would be glad to share more. If not, would you mind pointing me in the right direction?
+I'm reaching out about the Director, Transformation role at United Talent Agency. It stood out because it connects transformation advisory, operating models, and strategy translated into execution. My background spans media, marketing, advertising, and technology, with experience shaping clear recommendations for senior stakeholders and delivery teams. That combination of clear context and disciplined execution is where I do my best work. If you're the right person to speak with, I would be glad to share more. If not, would you mind pointing me in the right direction?
 
 Best,
 

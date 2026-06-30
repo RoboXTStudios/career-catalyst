@@ -1,12 +1,12 @@
 Hello,
 
-The Director of Matrix Operations & Organizational Efficiency role at FieldAI stood out because it brings cross-functional execution together. The challenge of turning entertainment IP and franchise priorities into clear workflows, milestones, standards, and operating rhythms is work I find meaningful.
+The Director of Matrix Operations & Organizational Efficiency role at FieldAI stood out because it centers on creating capacity visibility, decision paths, and shared operating cadences across a fast-moving matrix. That is the kind of problem where clear judgment and practical execution need to work together.
 
-At OMG23 / OMD Entertainment, I progressed to Group Director. I led campaign operations across Disney Studios Theatrical and Disney Streaming/DSS, supporting theatrical and streaming film campaigns across Pixar, Lucasfilm, Marvel, 20th Century Studios, Searchlight Pictures, Disney+, and franchise/IP priorities. I know how much operational clarity matters when creative, marketing, media, analytics, technology, and external partners need to move together.
+I have led cross-functional teams of 60+ and designed governance, dashboards, quality systems, and execution standards across several functions.
 
-CampaignOS grew from that same instinct. I designed the AI-powered operations platform to standardize workflow governance, automate quality assurance, and give teams better consistency and visibility.
+CampaignOS is direct evidence of my AI-forward systems work, including automation, validation frameworks, and operational reporting.
 
-That mix of creative operations, product thinking, and scalable execution is where I do my best work. I would welcome the chance to learn more about the team's priorities and share how I could contribute.
+I would welcome the chance to learn how the team is defining success and share how my experience could contribute. That conversation would also help me understand where the team sees the greatest friction and which outcomes matter first.
 
 Best,
 

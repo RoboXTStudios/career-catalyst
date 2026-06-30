@@ -21,6 +21,7 @@ REQUIRED_CONFIG_FILES = (
     "config/target_companies.yml",
     "config/role_profiles.yml",
     "config/voice.yml",
+    "config/company_voice_profiles.yml",
 )
 
 REQUIRED_YAML_FILES = REQUIRED_DATA_FILES + REQUIRED_CONFIG_FILES

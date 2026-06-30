@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 try:
+    from .company_voice import company_voice_context
     from .filename_utils import build_upload_filename
     from .load_data import load_all_yaml
     from .parse_job import parse_job_description
@@ -15,6 +16,7 @@ try:
     from .score_match import score_job_match
     from .text_cleanup import cleanup_repeated_words
 except ImportError:
+    from company_voice import company_voice_context
     from filename_utils import build_upload_filename
     from load_data import load_all_yaml
     from parse_job import parse_job_description
@@ -41,12 +43,18 @@ def load_generation_context(
         resolved_job_path = root / resolved_job_path
 
     career_data = load_all_yaml(root)
+    parsed_job = parse_job_description(resolved_job_path)
+    voice_context = company_voice_context(
+        parsed_job,
+        career_data["config"].get("company_voice_profiles", {}),
+    )
     return {
         "root": root,
         "career_data": career_data,
         "voice": career_data["config"].get("voice", {}),
-        "parsed_job": parse_job_description(resolved_job_path),
+        "parsed_job": parsed_job,
         "match_report": score_job_match(job_path, root),
+        **voice_context,
     }
 
 
@@ -115,6 +123,11 @@ def save_material(
         "job_title": parsed_job.get("job_title"),
         "company": parsed_job.get("company"),
         "match_score": context["match_report"].get("match_score"),
+        "company_voice_profile": context.get("profile_key", "default"),
+        "company_voice_source": context.get("profile_source", "dynamic_inference"),
+        "company_category": context.get("company_category", "generic_business_operations"),
+        "role_family": context.get("role_family", "creative_marketing_ops"),
+        "voice_confidence": context.get("effective_voice_profile", {}).get("confidence"),
         "output_path": str(output_path),
         "word_count": word_count,
     }
@@ -250,7 +263,7 @@ def _campaignos_is_relevant(context: Dict[str, Any]) -> bool:
     return any(term in text for term in ("ai", "automation", "systems", "workflow", "product"))
 
 
-def _cover_letter_content(context: Dict[str, Any]) -> str:
+def _default_cover_letter_content(context: Dict[str, Any]) -> str:
     career_data = context["career_data"]
     parsed_job = context["parsed_job"]
     company = parsed_job.get("company") or "the organization"
@@ -353,6 +366,390 @@ def _cover_letter_content(context: Dict[str, Any]) -> str:
     )
     _validate_cover_letter_repetition(content)
     return content
+
+
+def _signed_content(*paragraphs: str) -> str:
+    content = "\n\n".join(("Hello,", *paragraphs, "Best,\n\nTrisha Lynch"))
+    _validate_cover_letter_repetition(content)
+    return content
+
+
+def _bandsintown_cover_letter_content(context: Dict[str, Any]) -> str:
+    career_data = context["career_data"]
+    parsed_job = context["parsed_job"]
+    company = parsed_job.get("company") or "the organization"
+    role = parsed_job.get("job_title") or "content strategy opportunity"
+    position = _position(career_data, "OMG23")
+    position_company, _position_shorthand = _employer_names(position)
+
+    opening = (
+        f"The {role} role at {company} stood out because it sits at the intersection of music, "
+        "audience connection, and the kind of clear, human storytelling I keep returning to in my "
+        "own work. The opportunity to move between artists, industry partners, and fans is especially "
+        "compelling because each audience needs a distinct voice, but all of them can tell when the "
+        "writing understands their world."
+    )
+    experience = (
+        f"My background is unusual in a way that feels relevant here. At {position_company}, I led "
+        "large-scale entertainment marketing work across creative, media, analytics, technology, and "
+        "operations. That experience taught me how to find the human idea inside a busy campaign "
+        "ecosystem, shape it for different audiences, and build enough structure around the work to "
+        "keep quality high across many formats and deadlines. Music has remained a recurring creative "
+        "language and point of community throughout that work."
+    )
+    proof = (
+        "I have also built editorial projects from scratch. As creator and managing editor of "
+        "Multiverse, I developed an internal publication around creativity, culture, music, and "
+        "innovation, built a contributor framework, and reached an audience of 400+ employees. More "
+        "recently, through my Substack, I have been writing about creativity, technology, AI, music, "
+        "grief, and life after corporate leadership in a voice that is personal without losing structure. "
+        "Those projects have strengthened my ability to write with voice, edit with care, and turn "
+        "creative ideas into repeatable content systems without sanding away what makes them human."
+    )
+    closing = (
+        f"I would value the chance to bring that mix of editorial judgment, music and audience "
+        f"awareness, and operational discipline to {company}. The role feels like a place where "
+        "creative instinct and the systems behind strong content are equally useful, which is exactly "
+        "the balance I would value discussing."
+    )
+    return _signed_content(opening, experience, proof, closing)
+
+
+def _disney_cover_letter_content(context: Dict[str, Any]) -> str:
+    career_data = context["career_data"]
+    parsed_job = context["parsed_job"]
+    company = parsed_job.get("company") or "Disney"
+    role = parsed_job.get("job_title") or "strategy and operations opportunity"
+    position = _position(career_data, "OMG23")
+    position_company, position_shorthand = _employer_names(position)
+    campaignos = _project(career_data, "CampaignOS")
+
+    opening = (
+        f"The {role} role at {company} stood out because it connects product and technology strategy "
+        "with the operating rhythms that let a large entertainment enterprise make clear decisions "
+        "and execute at scale. I understand the Disney ecosystem through years of hands-on campaign "
+        "work, but what draws me to this role is forward-looking: helping product, engineering, data, "
+        "and business partners turn shared priorities into useful OKRs, decisions, and momentum."
+    )
+    experience = (
+        f"At {position_company}, my primary focus was Disney Studios Theatrical and Disney "
+        "Streaming/DSS. I supported theatrical and streaming film campaign operations across Pixar, "
+        "Lucasfilm, Marvel, 20th Century Studios, Searchlight Pictures, Disney+, and franchise/IP "
+        "priorities. Working across creative, marketing, media, analytics, technology, and external "
+        "partners taught me how enterprise entertainment decisions travel through a system, where "
+        "dependencies surface, and how much executive clarity matters when many teams must move together."
+    )
+    proof = (
+        f"That systems perspective also led me, after {position_shorthand}, to build CampaignOS. As "
+        f"{campaignos.get('role') or 'Founder and Product Lead'}, I designed an AI-powered operations "
+        "platform around workflow governance, quality assurance, validation, and operational visibility. "
+        "The work required the same discipline this role calls for: translating broad goals into a "
+        "practical operating model, defining useful signals, and making information easier for leaders "
+        "and delivery teams to act on."
+    )
+    closing = (
+        f"I would welcome a conversation about how {company} is shaping the operating system around "
+        "its product and technology priorities. I would bring deep entertainment context, a practical "
+        "approach to strategy operations, and respect for the scale and coordination the work requires."
+    )
+    return _signed_content(opening, experience, proof, closing)
+
+
+def _google_cover_letter_content(context: Dict[str, Any]) -> str:
+    career_data = context["career_data"]
+    parsed_job = context["parsed_job"]
+    company = parsed_job.get("company") or "Google"
+    role = parsed_job.get("job_title") or "GTM operations opportunity"
+    position = _position(career_data, "OMG23")
+    position_company, _position_shorthand = _employer_names(position)
+
+    opening = (
+        f"The {role} role at {company} stood out because it brings YouTube product activation, GTM "
+        "operations, seller enablement, and large advertiser execution into one operating challenge. "
+        "The interesting work is not simply introducing a product priority. It is creating the feedback "
+        "loops, activation guidance, and measurement clarity that help sellers and advertisers use it "
+        "well at scale."
+    )
+    experience = (
+        "I bring long-term hands-on experience with Google advertising products, including YouTube, "
+        f"dating back to the early 2000s. At {position_company}, I translated Google and YouTube "
+        "platform capabilities into campaign activation, measurement readiness, and operational "
+        "workflows for large entertainment advertisers. Disney Studios Theatrical and Disney "
+        "Streaming/DSS provided the scale behind that work, requiring alignment across brand goals, "
+        "media strategy, analytics, technology, platform requirements, and senior stakeholders."
+    )
+    proof = (
+        "CampaignOS is a current proof point for how I approach product and operational ambiguity. "
+        "I designed the AI-powered platform to standardize workflow governance, automate quality "
+        "assurance, and improve validation and reporting. Building it has sharpened my ability to "
+        "turn recurring user needs into structured systems, identify useful signals, and create "
+        "feedback that supports better product and execution decisions."
+    )
+    closing = (
+        f"I would welcome the chance to learn how the {company} team is approaching YouTube Brand "
+        "Auction activation and seller readiness. I would bring an advertiser-grounded perspective, "
+        "product fluency, and a practical operating style focused on clear adoption and measurable learning."
+        " I am comfortable moving between data, stakeholder context, and execution detail, especially "
+        "when a product's success depends on many groups understanding the same priority clearly."
+    )
+    return _signed_content(opening, experience, proof, closing)
+
+
+def _paramount_cover_letter_content(context: Dict[str, Any]) -> str:
+    career_data = context["career_data"]
+    parsed_job = context["parsed_job"]
+    company = parsed_job.get("company") or "Paramount"
+    role = parsed_job.get("job_title") or "marketing operations opportunity"
+    position = _position(career_data, "OMG23")
+    position_company, _position_shorthand = _employer_names(position)
+
+    opening = (
+        f"The {role} role at {company} stood out because marketing operations is the connective layer "
+        "between strategy and creative production. In a high-volume entertainment environment, the "
+        "real opportunity is to give teams clearer intake, capacity, priorities, and visibility so "
+        "creative work can move with fewer avoidable handoffs and better decisions. That is practical, "
+        "people-centered systems work, and it is where I have spent much of my career."
+    )
+    experience = (
+        f"At {position_company}, I progressed to Group Director while leading cross-functional teams "
+        "of 60+ across creative management, marketing, media, analytics, technology, and operations. "
+        "My primary work supported Disney Studios Theatrical and Disney Streaming/DSS campaigns, where "
+        "I built workflows, milestones, quality practices, partner coordination, and execution standards "
+        "for a demanding slate of theatrical releases, streaming launches, and franchise/IP priorities."
+    )
+    proof = (
+        "I also built CampaignOS to address the systems behind recurring delivery challenges. The "
+        "platform uses AI-enabled validation, workflow governance, dashboards, and operational reporting "
+        "to reduce manual effort and improve visibility. That experience has reinforced my belief that "
+        "useful enablement starts with the work itself: understanding creative capacity, clarifying "
+        "ownership, and designing tools teams can actually use."
+    )
+    closing = (
+        f"I would welcome the chance to learn how {company} is evolving its marketing operations model "
+        "and where this role can create the most leverage for creative and business partners. I would "
+        "bring entertainment scale, clear operational judgment, and a builder's approach to making the "
+        "work easier to see and manage. The goal is not more process; it is better flow, clearer "
+        "choices, and stronger creative delivery."
+    )
+    return _signed_content(opening, experience, proof, closing)
+
+
+def _uta_cover_letter_content(context: Dict[str, Any]) -> str:
+    career_data = context["career_data"]
+    parsed_job = context["parsed_job"]
+    company = parsed_job.get("company") or "UTA"
+    role = parsed_job.get("job_title") or "transformation opportunity"
+    position = _position(career_data, "OMG23")
+    position_company, _position_shorthand = _employer_names(position)
+
+    opening = (
+        f"The {role} role at {company} stood out because it asks for more than an internal process "
+        "operator. It calls for someone who can understand a stakeholder's problem, form a clear "
+        "hypothesis, shape an operating model, and communicate a recommendation that people can act "
+        "on. That combination of advisory thinking and practical execution fits how I have worked "
+        "across media, marketing, advertising, and technology."
+    )
+    experience = (
+        f"At {position_company}, I progressed to Group Director while aligning senior stakeholders, "
+        "cross-functional teams, and external partners around complex entertainment marketing work. "
+        "I learned to move between executive context and delivery detail: clarify the decision, map "
+        "dependencies, surface risk, and translate competing priorities into workflows and standards. "
+        "That work required client-facing communication, sound judgment, and recommendations grounded "
+        "in the realities of teams responsible for execution."
+    )
+    proof = (
+        "Building CampaignOS extended that transformation work into a product. I took a recurring "
+        "organizational problem, developed a point of view about its root causes, and designed an "
+        "AI-powered operating system for governance, validation, quality, and reporting. The process "
+        "has strengthened the same muscles useful in advisory work: structured discovery, hypothesis-driven "
+        "problem solving, stakeholder empathy, and turning strategy into an implementable model."
+    )
+    closing = (
+        f"I would welcome the chance to discuss how {company} approaches transformation across its "
+        "clients and business. I would bring an operator's fluency in the media ecosystem, an advisory "
+        "mindset, and the discipline to carry a recommendation through to measurable execution. I am "
+        "at my best when the answer must be both strategically sound and workable for the people "
+        "responsible for delivering it."
+    )
+    return _signed_content(opening, experience, proof, closing)
+
+
+def _fieldai_cover_letter_content(context: Dict[str, Any]) -> str:
+    parsed_job = context["parsed_job"]
+    company = parsed_job.get("company") or "FieldAI"
+    role = parsed_job.get("job_title") or "operations systems opportunity"
+
+    opening = (
+        f"The {role} role at {company} stood out because matrix operations becomes consequential when "
+        "a fast-moving organization needs to scale without losing clarity. The challenge is to create "
+        "shared cadences, capacity visibility, and decision paths that help teams move faster, not to "
+        "layer corporate process onto them. That tension between speed and operating discipline is one "
+        "I know well."
+    )
+    experience = (
+        "I have led cross-functional teams of 60+ and designed operating practices across marketing, "
+        "creative, analytics, technology, and delivery functions. My work has included capacity and "
+        "workflow planning, governance, quality systems, dashboards, partner coordination, and executive "
+        "visibility. Although much of that experience was built in entertainment, the transferable "
+        "problem is organizational: making ownership, dependencies, risk, and progress visible across "
+        "a matrix without slowing down the people doing the work."
+    )
+    proof = (
+        "CampaignOS is the clearest expression of my systems approach. I designed and developed the "
+        "AI-powered operations platform to standardize workflows, automate quality assurance, reduce "
+        "operational risk, and improve reporting. Building it required product thinking, schema design, "
+        "validation frameworks, and a pragmatic view of where automation helps versus where human "
+        "judgment still matters."
+    )
+    closing = (
+        f"I would welcome the chance to learn where {company} sees the greatest friction across its "
+        "matrix today. I would bring a builder's mindset, comfort with ambiguity, and a practical "
+        "approach to organizational efficiency that connects operating cadences, data, automation, and "
+        "accountable execution. I also understand that systems earn trust through use. The measures, "
+        "dashboards, and routines have to help technical and business teams make faster decisions, "
+        "not merely document activity."
+    )
+    return _signed_content(opening, experience, proof, closing)
+
+
+def _crunchyroll_cover_letter_content(context: Dict[str, Any]) -> str:
+    career_data = context["career_data"]
+    parsed_job = context["parsed_job"]
+    company = parsed_job.get("company") or "Crunchyroll"
+    role = parsed_job.get("job_title") or "streaming strategy opportunity"
+    position = _position(career_data, "OMG23")
+    position_company, _position_shorthand = _employer_names(position)
+
+    opening = (
+        f"The {role} role at {company} stood out because it connects streaming, fandom, franchise/IP, "
+        "and enterprise strategy. What caught my attention is the need to turn the energy around content "
+        "and audience communities into clear priorities that creative and marketing teams can execute. "
+        "That balance matters in fandom businesses: the operating model needs rigor, but it also needs "
+        "to stay close to why the audience cares."
+    )
+    experience = (
+        f"At {position_company}, I led entertainment campaign work across Disney Studios Theatrical "
+        "and Disney Streaming/DSS, supporting theatrical releases, streaming launches, and franchise/IP "
+        "priorities. I worked across creative, media, analytics, technology, and external partners to "
+        "translate business goals into milestones, quality standards, measurement readiness, and reliable "
+        "execution. That experience taught me how strategy becomes useful across a content ecosystem "
+        "with different brands, audiences, release patterns, and stakeholder needs."
+    )
+    proof = (
+        "CampaignOS grew from the same instinct to make complicated work easier to navigate. I designed "
+        "the AI-powered platform around workflow governance, quality assurance, validation, and reporting, "
+        "creating a clearer system for teams to make decisions and execute consistently. The project "
+        "reflects how I approach enterprise strategy: understand the human and operational context, then "
+        "build structure that helps the organization move."
+    )
+    closing = (
+        f"I would welcome the chance to learn how {company} is approaching its next set of enterprise "
+        "priorities. I would bring streaming and entertainment context, respect for fandom, and a "
+        "practical ability to connect strategy with the systems and people responsible for execution."
+        " I value doing that work with focus, curiosity, and care."
+    )
+    return _signed_content(opening, experience, proof, closing)
+
+
+def _dynamic_cover_letter_content(context: Dict[str, Any]) -> str:
+    parsed_job = context["parsed_job"]
+    effective = context.get("effective_voice_profile", context.get("profile", {}))
+    company = parsed_job.get("company") or "the organization"
+    role = parsed_job.get("job_title") or "senior operations opportunity"
+    role_family = str(effective.get("role_family") or "generic_senior_operator")
+    angles = effective.get("cover_letter_angle", [])
+    angle = str(angles[-1] if angles else "connect the role's stated priorities with clear execution").rstrip(".")
+
+    opening = (
+        f"The {role} role at {company} stood out because the description calls for the ability to "
+        f"{angle}. What interests me is the practical challenge underneath that language: helping "
+        "people with different priorities reach clear decisions, understand ownership, and move the "
+        "work forward without losing the purpose behind it. That is the kind of senior operating work "
+        "I have returned to throughout my career."
+    )
+
+    if role_family in {"editorial_content_strategy", "community_growth"}:
+        experience = (
+            "My experience combines large-scale entertainment marketing with editorial and community "
+            "work. I created and managed Multiverse, an internal publication focused on creativity, "
+            "culture, innovation, music, and employee storytelling, and built a contributor framework "
+            "that reached 400+ employees. Through my Substack, I continue to develop a personal voice "
+            "across creativity, technology, AI, music, grief, and life after corporate leadership."
+        )
+    elif role_family in {"product_strategy_ops", "gtm_product_activation"}:
+        experience = (
+            "At OMG23 / OMD Entertainment, Omnicom Media Group, I worked across business priorities, "
+            "platform activation, analytics, technology, measurement, and delivery for large entertainment "
+            "campaigns. I learned to translate broad goals into practical plans, surface dependencies, "
+            "create feedback loops, and give senior stakeholders enough visibility to make sound decisions. "
+            "That experience is directly relevant when adoption depends on many functions moving together."
+        )
+    else:
+        experience = (
+            "At OMG23 / OMD Entertainment, Omnicom Media Group, I progressed to Group Director while "
+            "leading cross-functional teams of 60+ across creative, marketing, media, analytics, technology, "
+            "and operations. I built workflows, governance practices, quality standards, and executive "
+            "visibility for demanding entertainment work. The industry context was specific, but the operating "
+            "challenge was broadly transferable: create clarity and consistency without slowing the team down."
+        )
+
+    if role_family in {"editorial_content_strategy", "community_growth"}:
+        proof = (
+            "Those editorial projects strengthened more than my writing. They required content planning, "
+            "audience judgment, contributor management, repeatable workflows, and care for tone across different "
+            "formats. They also reinforced a principle I bring to operational work: systems should make good "
+            "creative decisions easier without flattening the human voice that gives the work meaning."
+        )
+    else:
+        proof = (
+            "CampaignOS is a current proof point for that approach. I designed and developed the AI-powered "
+            "operations platform to standardize workflow governance, automate quality assurance, reduce risk, "
+            "and improve reporting. Building it required product thinking, schema design, validation frameworks, "
+            "and practical judgment about where automation can help. It reflects how I turn recurring friction "
+            "into an operating system people can understand and use."
+        )
+
+    closing = (
+        f"I would welcome the chance to learn how {company} is defining success for this role and where the "
+        "team sees the greatest opportunity for leverage. I would bring calm senior judgment, a builder's "
+        "mindset, and an approach grounded in the role's actual priorities rather than assumptions about the company."
+    )
+    return _signed_content(opening, experience, proof, closing)
+
+
+def _cover_letter_content(context: Dict[str, Any]) -> str:
+    profile_key = context.get("profile_key", "default")
+    role_family = context.get("role_family")
+    builders = {
+        "disney": _disney_cover_letter_content,
+        "google_youtube": _google_cover_letter_content,
+        "paramount": _paramount_cover_letter_content,
+        "uta": _uta_cover_letter_content,
+        "fieldai": _fieldai_cover_letter_content,
+        "bandsintown": _bandsintown_cover_letter_content,
+        "crunchyroll": _crunchyroll_cover_letter_content,
+    }
+    if role_family == "music_content_strategy":
+        return _bandsintown_cover_letter_content(context)
+    if profile_key in builders:
+        return builders[profile_key](context)
+    effective = context.get("effective_voice_profile", {})
+    if effective.get("company_category") == "gaming_fandom":
+        return _default_cover_letter_content(context)
+    has_job_context = any(
+        parsed_value
+        for parsed_value in (
+            context["parsed_job"].get("company"),
+            context["parsed_job"].get("job_title"),
+            str(context["parsed_job"].get("raw_text") or "").strip(),
+        )
+    )
+    builder = (
+        _dynamic_cover_letter_content
+        if effective.get("source") == "dynamic_inference" and has_job_context
+        else _default_cover_letter_content
+    )
+    return builder(context)
 
 
 def generate_cover_letter(

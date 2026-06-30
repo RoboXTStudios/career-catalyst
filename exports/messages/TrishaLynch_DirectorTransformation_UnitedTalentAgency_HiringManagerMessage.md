@@ -1,10 +1,12 @@
 Hello,
 
-The Director, Transformation role at United Talent Agency stood out because it brings client, uta, and engagement together. The challenge of turning entertainment IP and franchise priorities into clear workflows, milestones, standards, and operating rhythms is work I find meaningful.
+The Director, Transformation role at United Talent Agency stood out because it centers on moving from a sound transformation hypothesis to an operating model and recommendation stakeholders can use. That is the kind of problem where clear judgment and practical execution need to work together.
 
-At OMG23 / OMD Entertainment, I progressed to Group Director. I led campaign operations across Disney Studios Theatrical and Disney Streaming/DSS, supporting theatrical and streaming film campaigns across Pixar, Lucasfilm, Marvel, 20th Century Studios, Searchlight Pictures, Disney+, and franchise/IP priorities. I know how much operational clarity matters when creative, marketing, media, analytics, technology, and external partners need to move together.
+My background across media, marketing, advertising, and technology lets me move between executive context, client-facing communication, and delivery detail.
 
-That mix of creative operations, product thinking, and scalable execution is where I do my best work. I would welcome the chance to learn more about the team's priorities and share how I could contribute.
+Building CampaignOS strengthened my approach to structured discovery, systems design, and carrying strategy through to implementation.
+
+I would welcome the chance to learn how the team is defining success and share how my experience could contribute. That conversation would also help me understand where the team sees the greatest friction and which outcomes matter first.
 
 Best,
 

@@ -17,6 +17,10 @@ applications:
   notes: Submitted application for Head of Global Creative and Product Development Operations. Used styled resume and PlayStation cover letter.
   next_action: Monitor for response and identify possible recruiter or hiring manager follow-up.
   show_on_dashboard: true
+  company_category: gaming_fandom
+  role_family: creative_marketing_ops
+  company_voice_profile: dynamic_gaming_fandom
+  company_voice_source: dynamic_inference
 - id: google_strategy_ops_youtube_auction_brand
   company: Google
   company_aliases:
@@ -34,6 +38,10 @@ applications:
   notes: Submitted application using Google-tailored styled resume and cover letter. Strong YouTube, GTM operations, product activation, large advertiser, Google advertising product familiarity, and operational excellence fit.
   next_action: Monitor for response and identify Google/YouTube professional contacts for possible follow-up.
   show_on_dashboard: true
+  company_category: product_technology
+  role_family: gtm_product_activation
+  company_voice_profile: google_youtube
+  company_voice_source: known_profile
 - id: playstation_director_ad_ops_invalid
   company: Sony Interactive Entertainment / PlayStation
   company_aliases:
@@ -52,7 +60,7 @@ applications:
   company_aliases:
   - Crunchyroll
   role: Director, Enterprise Strategy & Initiatives
-  status: Invalid
+  status: Archived
   priority: Medium
   source: Official Crunchyroll / Greenhouse
   notes: Strong potential fit but not applied yet.
@@ -75,6 +83,10 @@ applications:
   notes: Submitted application using Paramount-tailored styled resume and cover letter. Strong fit for marketing operations, creative operations, workflow systems, AI enablement, dashboards, capacity planning, and cross-team alignment.
   next_action: Monitor for response and identify Paramount marketing operations or creative operations contacts for possible follow-up.
   show_on_dashboard: true
+  company_category: entertainment_streaming
+  role_family: creative_marketing_ops
+  company_voice_profile: paramount
+  company_voice_source: known_profile
 - id: united_talent_agency_director_transformation
   company: United Talent Agency
   company_aliases: []
@@ -92,6 +104,10 @@ applications:
   work_arrangement: Not specified
   job_file: jobs/director_transformation_united_talent_agency.md
   submitted_date: '2026-06-29'
+  company_category: talent_agency_media
+  role_family: transformation_advisory
+  company_voice_profile: uta
+  company_voice_source: known_profile
 - id: disney_entertainment_and_espn_product_technology_director_strategy_operations_product_technology
   company: Disney Entertainment and ESPN Product & Technology
   company_aliases: []
@@ -109,6 +125,10 @@ applications:
   work_arrangement: Not specified
   job_file: jobs/director_strategy_operations_product_technology_disney_entertainment_and_espn_product_technology.md
   submitted_date: '2026-06-29'
+  company_category: entertainment_streaming
+  role_family: product_strategy_ops
+  company_voice_profile: disney
+  company_voice_source: known_profile
 - id: fieldai_director_of_matrix_operations_organizational_efficiency
   company: FieldAI
   company_aliases: []
@@ -126,3 +146,27 @@ applications:
   work_arrangement: Not specified
   job_file: jobs/director_of_matrix_operations_organizational_efficiency_fieldai.md
   submitted_date: '2026-06-29'
+  company_category: ai_technology_startup
+  role_family: ai_operations_systems
+  company_voice_profile: fieldai
+  company_voice_source: known_profile
+- id: bandsintown_senior_copywriter_content_strategist
+  company: BandsInTown
+  company_aliases: []
+  role: Senior Copywriter & Content Strategist
+  role_aliases: []
+  status: Applied
+  priority: Medium
+  source: Official career page
+  notes: ''
+  next_action: Review fit and generate application package.
+  show_on_dashboard: true
+  official_url: https://www.company.bandsintown.com/careers
+  location: Los Angeles, CA
+  work_arrangement: Remote
+  job_file: jobs/senior_copywriter_content_strategist_bandsintown.md
+  submitted_date: '2026-06-29'
+  company_category: music_live_events
+  role_family: music_content_strategy
+  company_voice_profile: bandsintown
+  company_voice_source: known_profile

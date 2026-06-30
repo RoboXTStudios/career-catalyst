@@ -1,12 +1,12 @@
 Hello,
 
-The Director - Strategy & Operations, Product & Technology role at Disney Entertainment and ESPN Product & Technology stood out because it brings cross-functional execution together. The challenge of turning entertainment IP and franchise priorities into clear workflows, milestones, standards, and operating rhythms is work I find meaningful.
+The Director - Strategy & Operations, Product & Technology role at Disney Entertainment and ESPN Product & Technology stood out because it centers on aligning product, engineering, data, and business partners through useful OKRs and executive operating rhythms. That is the kind of problem where clear judgment and practical execution need to work together.
 
-At OMG23 / OMD Entertainment, I progressed to Group Director. I led campaign operations across Disney Studios Theatrical and Disney Streaming/DSS, supporting theatrical and streaming film campaigns across Pixar, Lucasfilm, Marvel, 20th Century Studios, Searchlight Pictures, Disney+, and franchise/IP priorities. I know how much operational clarity matters when creative, marketing, media, analytics, technology, and external partners need to move together.
+My work across Disney Studios Theatrical and Disney Streaming/DSS taught me how priorities move through a large entertainment ecosystem and where clear decisions matter most.
 
-CampaignOS grew from that same instinct. I designed the AI-powered operations platform to standardize workflow governance, automate quality assurance, and give teams better consistency and visibility.
+CampaignOS adds a current product and systems proof point through workflow governance, validation, and operational visibility.
 
-That mix of creative operations, product thinking, and scalable execution is where I do my best work. I would welcome the chance to learn more about the team's priorities and share how I could contribute.
+I would welcome the chance to learn how the team is defining success and share how my experience could contribute. That conversation would also help me understand where the team sees the greatest friction and which outcomes matter first.
 
 Best,
 

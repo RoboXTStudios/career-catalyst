@@ -18,6 +18,7 @@ if __package__:
         tracker_role_keys,
         validate_application_tracker,
     )
+    from .dynamic_role_intelligence import get_effective_voice_profile
     from .filename_utils import short_company_name, short_role_name
     from .parse_job import JobParseError, parse_job_description
 else:
@@ -31,6 +32,7 @@ else:
         tracker_role_keys,
         validate_application_tracker,
     )
+    from dynamic_role_intelligence import get_effective_voice_profile
     from filename_utils import short_company_name, short_role_name
     from parse_job import JobParseError, parse_job_description
 
@@ -41,6 +43,7 @@ ASSET_DIRECTORIES = (
     "exports/docx",
     "exports/messages",
     "exports/strategy_packs",
+    "exports/followups",
 )
 LINK_ORDER = (
     "Job Description",
@@ -52,6 +55,7 @@ LINK_ORDER = (
     "Hiring Manager Message",
     "Application Note",
     "Strategy Pack",
+    "Follow-Up Materials",
 )
 
 
@@ -61,6 +65,11 @@ class DashboardGenerationError(Exception):
 
 def _slug(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", value.lower()).strip("_")
+
+
+def _display_taxonomy(value: Any) -> str:
+    label = str(value or "").replace("_", " ").title()
+    return label.replace("Ai ", "AI ").replace("Gtm ", "GTM ")
 
 
 def _first_heading(text: str) -> Optional[str]:
@@ -96,12 +105,23 @@ def _load_jobs(root: Path) -> List[Dict[str, Any]]:
         if not role and not company:
             continue
 
+        intelligence = get_effective_voice_profile(
+            company_name=str(company or ""),
+            job_title=str(role or ""),
+            job_description=str(parsed.get("raw_text") or ""),
+            source_url=str(parsed.get("source_url") or ""),
+        )
+
         packages.append(
             {
                 "company": str(company or "Company not listed"),
                 "role": str(role or "Role not listed"),
                 "location": parsed.get("location"),
                 "salary_range": parsed.get("salary_range"),
+                "company_category": intelligence["company_category"],
+                "role_family": intelligence["role_family"],
+                "company_voice_profile": intelligence["profile_name"],
+                "company_voice_source": intelligence["source"],
                 "tracker_id": _tracker_id_from_job(parsed.get("raw_text", "")),
                 "job_path": path,
                 "tracker": {},
@@ -165,11 +185,21 @@ def _merge_tracker(packages: List[Dict[str, Any]], tracker: List[Dict[str, Any]]
         role = str(application.get("role") or "Role not listed")
         package = _matching_package(packages, application)
         if package is None:
+            intelligence = get_effective_voice_profile(
+                company_name=company,
+                job_title=role,
+                job_description=str(application.get("job_description") or ""),
+                source_url=str(application.get("official_url") or ""),
+            )
             package = {
                 "company": company,
                 "role": role,
                 "location": application.get("location"),
                 "salary_range": application.get("salary_range"),
+                "company_category": intelligence["company_category"],
+                "role_family": intelligence["role_family"],
+                "company_voice_profile": intelligence["profile_name"],
+                "company_voice_source": intelligence["source"],
                 "tracker_id": application.get("id"),
                 "job_path": None,
                 "tracker": {},
@@ -212,6 +242,11 @@ def _asset_label(path: Path) -> Optional[str]:
         name.endswith("_strategy_pack.md") or name.endswith("_strategypack.md")
     ):
         return "Strategy Pack"
+    if parent == "followups" and (
+        name.endswith("_followup_strategy.md")
+        or name.endswith("_followupstrategy.md")
+    ):
+        return "Follow-Up Materials"
     return None
 
 
@@ -317,6 +352,21 @@ def _render_metadata(package: Dict[str, Any]) -> str:
         ("Salary", tracker.get("salary_range") or package.get("salary_range")),
         ("Source", tracker.get("source")),
         ("Submitted", tracker.get("submitted_date")),
+        (
+            "Company category",
+            _display_taxonomy(
+                tracker.get("company_category")
+                or package.get("company_category")
+            )
+            if tracker.get("company_category") or package.get("company_category")
+            else None,
+        ),
+        (
+            "Role family",
+            _display_taxonomy(tracker.get("role_family") or package.get("role_family"))
+            if tracker.get("role_family") or package.get("role_family")
+            else None,
+        ),
     )
     items = [
         f'<div class="meta-item"><dt>{label}</dt><dd>{html.escape(str(value))}</dd></div>'

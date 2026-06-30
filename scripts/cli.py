@@ -16,6 +16,12 @@ if __package__:
     from .generate_dashboard import DashboardGenerationError, generate_dashboard
     from .generate_application_note import generate_application_note
     from .generate_cover_letter import ApplicationMaterialError, generate_cover_letter
+    from .dynamic_role_intelligence import get_effective_voice_profile
+    from .generate_followups import (
+        FollowupGenerationError,
+        generate_followups,
+        generate_missing_followups,
+    )
     from .generate_messages import generate_message
     from .generate_strategy_pack import StrategyPackError, generate_strategy_pack
     from .export_docx import (
@@ -33,7 +39,11 @@ if __package__:
         load_yaml_file,
     )
     from .parse_job import JobParseError, parse_job_description
-    from .package_generator import PackageGenerationError, generate_package
+    from .package_generator import (
+        PackageGenerationError,
+        generate_package,
+        resolve_job_reference,
+    )
     from .prospect_intake import ProspectIntakeError, add_prospect_from_job_file
     from .score_match import score_job_match
     from .tailor_resume import ResumeTailoringError, tailor_resume
@@ -48,6 +58,12 @@ else:
     from generate_dashboard import DashboardGenerationError, generate_dashboard
     from generate_application_note import generate_application_note
     from generate_cover_letter import ApplicationMaterialError, generate_cover_letter
+    from dynamic_role_intelligence import get_effective_voice_profile
+    from generate_followups import (
+        FollowupGenerationError,
+        generate_followups,
+        generate_missing_followups,
+    )
     from generate_messages import generate_message
     from generate_strategy_pack import StrategyPackError, generate_strategy_pack
     from export_docx import (
@@ -65,7 +81,11 @@ else:
         load_yaml_file,
     )
     from parse_job import JobParseError, parse_job_description
-    from package_generator import PackageGenerationError, generate_package
+    from package_generator import (
+        PackageGenerationError,
+        generate_package,
+        resolve_job_reference,
+    )
     from prospect_intake import ProspectIntakeError, add_prospect_from_job_file
     from score_match import score_job_match
     from tailor_resume import ResumeTailoringError, tailor_resume
@@ -380,9 +400,16 @@ def add_prospect_command(file_path: str) -> int:
     return 0
 
 
-def generate_package_command(job_file_or_tracker_id: str) -> int:
+def generate_package_command(
+    job_file_or_tracker_id: str,
+    generate_followups_too: Optional[bool] = None,
+) -> int:
     try:
-        result = generate_package(job_file_or_tracker_id, PROJECT_ROOT)
+        result = generate_package(
+            job_file_or_tracker_id,
+            PROJECT_ROOT,
+            generate_followups_too=generate_followups_too,
+        )
     except PackageGenerationError as error:
         print(str(error), file=sys.stderr)
         return 1
@@ -393,6 +420,64 @@ def generate_package_command(job_file_or_tracker_id: str) -> int:
     for label, path in result["outputs"].items():
         print(f"{label}: {path}")
     return 0
+
+
+def detect_role_command(job_file_or_tracker_id: str) -> int:
+    try:
+        candidate = Path(job_file_or_tracker_id)
+        resolved_path = candidate if candidate.is_absolute() else PROJECT_ROOT / candidate
+        if resolved_path.is_file():
+            job_path = resolved_path
+        else:
+            resolved = resolve_job_reference(job_file_or_tracker_id, PROJECT_ROOT)
+            job_path = Path(resolved["job_path"])
+        parsed = parse_job_description(job_path)
+        intelligence = get_effective_voice_profile(
+            company_name=str(parsed.get("company") or ""),
+            job_title=str(parsed.get("job_title") or ""),
+            job_description=str(parsed.get("raw_text") or ""),
+            source_url=str(parsed.get("source_url") or ""),
+        )
+    except (JobParseError, PackageGenerationError, DataLoadError) as error:
+        print(f"Could not detect role: {error}", file=sys.stderr)
+        return 1
+
+    print(f"Company: {parsed.get('company') or 'Not found'}")
+    print(f"Role: {parsed.get('job_title') or 'Not found'}")
+    print(f"Company category: {intelligence['company_category']}")
+    print(f"Role family: {intelligence['role_family']}")
+    print(f"Voice profile: {intelligence['profile_name']}")
+    print(f"Source: {intelligence['source']}")
+    print(f"Confidence: {intelligence['confidence']}")
+    print(f"Reasoning summary: {intelligence['reasoning_summary']}")
+    return 0
+
+
+def followups_command(tracker_id: str) -> int:
+    try:
+        result = generate_followups(tracker_id, PROJECT_ROOT)
+    except FollowupGenerationError as error:
+        print(f"Could not generate follow-ups: {error}", file=sys.stderr)
+        return 1
+
+    print(f"Company: {result['company']}")
+    print(f"Role: {result['role']}")
+    print(f"Status: {result['status']}")
+    print("Generated follow-up files:")
+    for label, path in result["outputs"].items():
+        print(f"- {label}: {path}")
+    print("Follow-up materials generated successfully.")
+    return 0
+
+
+def followups_all_command(force: bool = False) -> int:
+    result = generate_missing_followups(PROJECT_ROOT, force=force)
+    print(f"Generated: {result['generated_count']}")
+    print(f"Skipped existing: {result['skipped_existing_count']}")
+    print(f"Failed: {result['failed_count']}")
+    for tracker_id, error in result["failed"].items():
+        print(f"- {tracker_id}: {error}", file=sys.stderr)
+    return 1 if result["failed_count"] else 0
 
 
 def update_status_command(tracker_id: str, status: str) -> int:
@@ -484,6 +569,24 @@ def build_parser() -> argparse.ArgumentParser:
         "generate-package", help="Generate every application material for a job"
     )
     package_parser.add_argument("job_file_or_tracker_id")
+    package_parser.add_argument(
+        "--followups",
+        action="store_true",
+        default=None,
+        help="Generate follow-up materials after the package",
+    )
+    detect_parser = subparsers.add_parser(
+        "detect-role", help="Detect company category, role family, and voice guidance"
+    )
+    detect_parser.add_argument("job_file_or_tracker_id")
+    followups_parser = subparsers.add_parser(
+        "followups", help="Generate follow-up materials for a submitted application"
+    )
+    followups_parser.add_argument("tracker_id")
+    followups_all_parser = subparsers.add_parser(
+        "followups-all", help="Generate missing follow-ups for all visible Applied roles"
+    )
+    followups_all_parser.add_argument("--force", action="store_true")
     status_parser = subparsers.add_parser(
         "update-status", help="Update a tracker entry and refresh the dashboard"
     )
@@ -530,7 +633,13 @@ def main(argv: Optional[List[str]] = None) -> int:
     if args.command == "add-prospect":
         return add_prospect_command(args.job_file_path)
     if args.command == "generate-package":
-        return generate_package_command(args.job_file_or_tracker_id)
+        return generate_package_command(args.job_file_or_tracker_id, args.followups)
+    if args.command == "detect-role":
+        return detect_role_command(args.job_file_or_tracker_id)
+    if args.command == "followups":
+        return followups_command(args.tracker_id)
+    if args.command == "followups-all":
+        return followups_all_command(args.force)
     if args.command == "update-status":
         return update_status_command(args.tracker_id, args.status)
     if args.command == "hide-role":

@@ -41,6 +41,12 @@ INTAKE_PROTECTED_STATUSES = {
     "Invalid",
     "Archived",
 }
+OPTIONAL_INTELLIGENCE_FIELDS = (
+    "company_category",
+    "role_family",
+    "company_voice_profile",
+    "company_voice_source",
+)
 
 
 class TrackerValidationError(Exception):
@@ -345,6 +351,11 @@ def validate_tracker_entries(
                 isinstance(alias, str) for alias in aliases
             ):
                 errors.append(f"{label} field {aliases_field} must be a list of strings.")
+
+        for metadata_field in OPTIONAL_INTELLIGENCE_FIELDS:
+            value = application.get(metadata_field)
+            if value is not None and not isinstance(value, str):
+                errors.append(f"{label} field {metadata_field} must be a string when present.")
 
         if status in ACTIVE_STATUSES and application.get("show_on_dashboard") is True:
             pair = (

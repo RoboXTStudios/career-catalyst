@@ -34,6 +34,155 @@ except ImportError:
 PathInput = Union[str, Path]
 MESSAGE_TYPES = ("recruiter", "hiring_manager")
 
+DYNAMIC_MESSAGE_FOCUS = {
+    "music_content_strategy": "music, audience connection, editorial voice, and content systems",
+    "editorial_content_strategy": "editorial judgment, audience clarity, brand voice, and repeatable content systems",
+    "transformation_advisory": "transformation thinking, stakeholder recommendations, operating models, and execution",
+    "product_strategy_ops": "product and technology priorities, roadmaps, operating rhythms, and cross-functional decisions",
+    "gtm_product_activation": "GTM activation, adoption, enablement, feedback loops, and measurable execution",
+    "ai_operations_systems": "matrix operations, capacity visibility, dashboards, automation, and organizational clarity",
+    "streaming_strategy": "streaming, content and franchise priorities, audience context, and executable strategy",
+    "community_growth": "community understanding, audience trust, content, measurement, and sustainable growth",
+    "business_operations": "ownership, capacity, decision cadence, and reliable cross-functional execution",
+    "creative_marketing_ops": "creative and marketing priorities, workflow, quality, capacity, and delivery",
+    "generic_senior_operator": "strategic clarity, stakeholder alignment, scalable systems, and dependable execution",
+}
+
+DYNAMIC_MESSAGE_PROOF = {
+    "music_content_strategy": "I created Multiverse and continue developing my writing through Substack alongside entertainment marketing leadership.",
+    "editorial_content_strategy": "I created Multiverse, write through Substack, and have built the operating systems that keep high-volume work moving.",
+    "community_growth": "Multiverse, Substack, and large-scale audience campaign work give me both community and operating proof points.",
+    "gtm_product_activation": "My background includes platform activation, measurement readiness, large advertiser execution, and CampaignOS product thinking.",
+    "product_strategy_ops": "I have aligned business, analytics, and technology partners and built CampaignOS as a current product and systems proof point.",
+    "transformation_advisory": "My experience spans senior stakeholder alignment, operating-model design, and CampaignOS as strategy translated into a working system.",
+    "ai_operations_systems": "I have led teams of 60+ and built CampaignOS around automation, governance, validation, dashboards, and better decisions.",
+    "streaming_strategy": "I have led theatrical and streaming entertainment work and built systems that turn cross-functional priorities into execution.",
+    "business_operations": "I have led teams of 60+ and built workflow governance, execution standards, dashboards, and operational reporting.",
+    "creative_marketing_ops": "I have led large-scale entertainment marketing work and built creative workflows, quality standards, and CampaignOS.",
+    "generic_senior_operator": "I have led teams of 60+ and built workflow governance, execution standards, and CampaignOS systems at scale.",
+}
+
+
+def _dynamic_message_copy(context: Dict[str, Any]) -> tuple[str, str]:
+    effective = context.get("effective_voice_profile", context.get("profile", {}))
+    role_family = str(effective.get("role_family") or "generic_senior_operator")
+    return (
+        DYNAMIC_MESSAGE_FOCUS.get(role_family, DYNAMIC_MESSAGE_FOCUS["generic_senior_operator"]),
+        DYNAMIC_MESSAGE_PROOF.get(role_family, DYNAMIC_MESSAGE_PROOF["generic_senior_operator"]),
+    )
+
+
+def _profile_recruiter_content(context: Dict[str, Any]) -> str:
+    parsed_job = context["parsed_job"]
+    profile_key = context.get("profile_key", "default")
+    company = parsed_job.get("company") or "the organization"
+    role = parsed_job.get("job_title")
+    role_reference = f"the {role} role" if role else "this opportunity"
+    profile_copy = {
+        "disney": (
+            "product and technology strategy, executive operating rhythms, and enterprise entertainment",
+            "My Disney Studios Theatrical and Disney Streaming/DSS experience gives me context for the scale, while CampaignOS reflects my current systems thinking.",
+        ),
+        "paramount": (
+            "marketing operations, creative capacity, workflow visibility, and high-volume entertainment execution",
+            "I have led cross-functional entertainment work at scale and built AI-enabled workflow and reporting systems through CampaignOS.",
+        ),
+        "uta": (
+            "transformation advisory, operating models, and strategy translated into execution",
+            "My background spans media, marketing, advertising, and technology, with experience shaping clear recommendations for senior stakeholders and delivery teams.",
+        ),
+        "fieldai": (
+            "matrix operations, organizational efficiency, capacity visibility, and AI workflow systems",
+            "I have led teams of 60+ and built CampaignOS around automation, governance, dashboards, and better operational decisions.",
+        ),
+        "bandsintown": (
+            "music, audience connection, editorial voice, and content systems",
+            "Alongside entertainment marketing leadership, I created Multiverse and now write through my Substack, giving me both editorial and operational proof points.",
+        ),
+        "crunchyroll": (
+            "streaming, fandom, franchise/IP, and enterprise strategy",
+            "I have led theatrical and streaming entertainment work and built systems that turn cross-functional priorities into clearer execution.",
+        ),
+    }
+    copy = profile_copy.get(profile_key)
+    if copy is None:
+        effective = context.get("effective_voice_profile", {})
+        if effective.get("source") != "dynamic_inference" or effective.get("company_category") == "gaming_fandom":
+            return ""
+        copy = _dynamic_message_copy(context)
+    focus, proof = copy
+    message = (
+        f"I'm reaching out about {role_reference} at {company}. It stood out because it connects "
+        f"{focus}. {proof} That combination of clear context and disciplined execution is where I "
+        "do my best work. If you're the right person to speak with, I would be glad to share more. "
+        "If not, would you mind pointing me in the right direction?"
+    )
+    return "\n\n".join(["Hello,", message, "Best,\n\nTrisha Lynch"])
+
+
+def _profile_hiring_manager_content(context: Dict[str, Any]) -> str:
+    parsed_job = context["parsed_job"]
+    profile_key = context.get("profile_key", "default")
+    company = parsed_job.get("company") or "the organization"
+    role = parsed_job.get("job_title")
+    role_reference = f"The {role} role" if role else "This opportunity"
+    profile_copy = {
+        "disney": (
+            "aligning product, engineering, data, and business partners through useful OKRs and executive operating rhythms",
+            "My work across Disney Studios Theatrical and Disney Streaming/DSS taught me how priorities move through a large entertainment ecosystem and where clear decisions matter most.",
+            "CampaignOS adds a current product and systems proof point through workflow governance, validation, and operational visibility.",
+        ),
+        "paramount": (
+            "making marketing operations a practical connective layer between strategy, creative capacity, and delivery",
+            "I have led teams of 60+ across creative, marketing, media, analytics, technology, and operations for high-volume entertainment campaigns.",
+            "CampaignOS reflects how I use AI enablement, dashboards, and workflow systems to improve visibility without adding process for its own sake.",
+        ),
+        "uta": (
+            "moving from a sound transformation hypothesis to an operating model and recommendation stakeholders can use",
+            "My background across media, marketing, advertising, and technology lets me move between executive context, client-facing communication, and delivery detail.",
+            "Building CampaignOS strengthened my approach to structured discovery, systems design, and carrying strategy through to implementation.",
+        ),
+        "fieldai": (
+            "creating capacity visibility, decision paths, and shared operating cadences across a fast-moving matrix",
+            "I have led cross-functional teams of 60+ and designed governance, dashboards, quality systems, and execution standards across several functions.",
+            "CampaignOS is direct evidence of my AI-forward systems work, including automation, validation frameworks, and operational reporting.",
+        ),
+        "bandsintown": (
+            "writing with a distinct voice for artists, industry partners, and fans while building the content systems that keep quality consistent",
+            "I have led entertainment marketing work and created Multiverse, an editorial publication centered on creativity, culture, music, innovation, and employee storytelling.",
+            "My Substack has given me another place to develop a personal voice across music, creativity, technology, AI, and life after corporate leadership.",
+        ),
+        "crunchyroll": (
+            "turning streaming, fandom, and franchise priorities into an enterprise strategy teams can execute",
+            "My theatrical and streaming background spans Disney Studios Theatrical, Disney Streaming/DSS, and coordination across creative, media, technology, analytics, and operations.",
+            "CampaignOS demonstrates how I translate recurring cross-functional friction into clearer governance, validation, and reporting systems.",
+        ),
+    }
+    copy = profile_copy.get(profile_key)
+    if copy is None:
+        effective = context.get("effective_voice_profile", {})
+        if effective.get("source") != "dynamic_inference" or effective.get("company_category") == "gaming_fandom":
+            return ""
+        focus, proof = _dynamic_message_copy(context)
+        copy = (
+            f"turning {focus} into an operating approach teams can understand and use",
+            "I have led cross-functional teams of 60+ and learned to move between senior stakeholder context and delivery detail.",
+            proof,
+        )
+    challenge, experience, proof = copy
+    opening = (
+        f"{role_reference} at {company} stood out because it centers on {challenge}. "
+        "That is the kind of problem where clear judgment and practical execution need to work together."
+    )
+    close = (
+        "I would welcome the chance to learn how the team is defining success and share how my "
+        "experience could contribute. That conversation would also help me understand where the "
+        "team sees the greatest friction and which outcomes matter first."
+    )
+    return "\n\n".join(
+        ["Hello,", opening, experience, proof, close, "Best,\n\nTrisha Lynch"]
+    )
+
 
 def _recruiter_content(context: Dict[str, Any]) -> str:
     career_data = context["career_data"]
@@ -61,6 +210,10 @@ def _recruiter_content(context: Dict[str, Any]) -> str:
             "you mind pointing me in the right direction?"
         )
         return "\n\n".join(["Hello,", message, question, "Best,\n\nTrisha Lynch"])
+
+    profile_content = _profile_recruiter_content(context)
+    if profile_content:
+        return profile_content
 
     message = (
         f"I'm reaching out about {role_reference} at {company}. It stands out because it "
@@ -115,6 +268,10 @@ def _hiring_manager_content(context: Dict[str, Any]) -> str:
         return "\n\n".join(
             ["Hello,", opening, experience, project, close, "Best,\n\nTrisha Lynch"]
         )
+
+    profile_content = _profile_hiring_manager_content(context)
+    if profile_content:
+        return profile_content
 
     opening = (
         f"{role_reference} at {company} stood out because it brings {_job_focus(parsed_job)} "

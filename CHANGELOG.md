@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.0.23 - Sprint 11
+
+- Added follow-up and networking message generation.
+- Added follow-up strategy packs for applied roles.
+- Added recruiter, hiring manager, warm contact, and referral ask message drafts.
+- Added company voice profiles for cover letter generation.
+- Added role family detection for creative, music, GTM, transformation, streaming, and AI operations roles.
+- Improved company-specific cover letter tone and proof point selection.
+- Added Bandsintown/music content strategy cover letter support.
+- Added dynamic company and role intelligence.
+- Added deterministic company category and role family detection for new prospects.
+- Added dynamic voice profile fallback for unknown companies.
+- Updated cover letters, messages, application notes, and follow-ups to use effective voice profiles.
+- Added followups-all command for applied roles.
+- Added role detection preview in the local UI.
+- Added Follow-Up tab to the local Career Catalyst UI.
+- Added follow-up links to dashboard application cards.
+- Added dashboard metadata for company category and role family.
+- Added tests for follow-up generation, company voice profiles, dynamic role intelligence, and tone safeguards.
+
 ## 0.0.22 - Sprint 10.2
 
 - Added macOS one-click launcher for Career Catalyst.

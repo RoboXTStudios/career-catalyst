@@ -10,8 +10,10 @@ try:
         TrackerValidationError,
         load_application_tracker,
         normalize_tracker_value,
+        update_prospect,
         update_status,
     )
+    from .dynamic_role_intelligence import get_effective_voice_profile
     from .export_docx import export_ats_docx, export_styled_docx
     from .generate_application_note import generate_application_note
     from .generate_cover_letter import generate_cover_letter
@@ -27,8 +29,10 @@ except ImportError:
         TrackerValidationError,
         load_application_tracker,
         normalize_tracker_value,
+        update_prospect,
         update_status,
     )
+    from dynamic_role_intelligence import get_effective_voice_profile
     from export_docx import export_ats_docx, export_styled_docx
     from generate_application_note import generate_application_note
     from generate_cover_letter import generate_cover_letter
@@ -142,6 +146,7 @@ def _output_path(result: Dict[str, Any]) -> Optional[str]:
 def generate_package(
     job_file_or_tracker_id: PathInput,
     project_root: Optional[PathInput] = None,
+    generate_followups_too: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """Generate all package materials and apply the safe Drafted-to-Reviewed transition."""
     root = Path(project_root) if project_root is not None else Path.cwd()
@@ -152,6 +157,27 @@ def generate_package(
         job_reference = str(job_path.relative_to(root)) if job_path.is_relative_to(root) else str(job_path)
 
         parsed = parse_job_description(job_path)
+        intelligence = get_effective_voice_profile(
+            company_name=str(parsed.get("company") or application.get("company") or ""),
+            job_title=str(parsed.get("job_title") or application.get("role") or ""),
+            job_description=str(parsed.get("raw_text") or ""),
+            source_url=str(parsed.get("source_url") or application.get("official_url") or ""),
+        )
+        application = update_prospect(
+            str(application["id"]),
+            {
+                "company_category": intelligence["company_category"],
+                "role_family": intelligence["role_family"],
+                "company_voice_profile": intelligence["profile_name"],
+                "company_voice_source": intelligence["source"],
+            },
+            root,
+        )
+        should_generate_followups = (
+            application.get("status") == "Applied"
+            if generate_followups_too is None
+            else bool(generate_followups_too)
+        )
         score = score_job_match(job_reference, root)
         resume = tailor_resume("executive_operations", job_reference, root)
         styled = export_styled_docx(resume["output_path"], root)
@@ -165,6 +191,19 @@ def generate_package(
         tracker_id = str(application["id"])
         if application.get("status") == "Drafted":
             application = update_status(tracker_id, "Reviewed", root)
+        followup_outputs: Dict[str, str] = {}
+        followup_error = None
+        if should_generate_followups:
+            try:
+                if __package__:
+                    from .generate_followups import generate_followups
+                else:
+                    from generate_followups import generate_followups
+                followup_result = generate_followups(tracker_id, root)
+                followup_outputs = dict(followup_result.get("outputs", {}))
+            except Exception as error:
+                # The core package remains useful if optional networking materials fail.
+                followup_error = str(error)
         dashboard = generate_dashboard(root)
     except (OSError, TrackerValidationError, ValueError) as error:
         raise PackageGenerationError(f"Could not generate package: {error}") from error
@@ -183,6 +222,7 @@ def generate_package(
         "hiring_manager_message": _output_path(hiring_manager),
         "application_note": _output_path(application_note),
         "strategy_pack": _output_path(strategy_pack),
+        **followup_outputs,
         "dashboard": _output_path(dashboard),
     }
     return {
@@ -192,5 +232,10 @@ def generate_package(
         "company": parsed.get("company"),
         "match_score": score.get("match_score"),
         "match_band": score.get("match_band"),
+        "company_category": intelligence["company_category"],
+        "role_family": intelligence["role_family"],
+        "company_voice_profile": intelligence["profile_name"],
+        "company_voice_source": intelligence["source"],
+        "followup_error": followup_error,
         "outputs": {key: value for key, value in outputs.items() if value},
     }

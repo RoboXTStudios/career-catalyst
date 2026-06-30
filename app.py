@@ -19,9 +19,22 @@ from scripts.application_tracker import (
     load_application_tracker,
     update_status,
 )
+from scripts.dynamic_role_intelligence import get_effective_voice_profile
+from scripts.filename_utils import build_upload_filename
 from scripts.generate_dashboard import generate_dashboard, load_application_packages
+from scripts.generate_followups import (
+    FOLLOWUP_ELIGIBLE_STATUSES,
+    FollowupGenerationError,
+    generate_followups,
+    generate_missing_followups,
+)
 from scripts.job_importer import JobImportError, import_job_from_url
-from scripts.package_generator import PackageGenerationError, generate_package
+from scripts.package_generator import (
+    PackageGenerationError,
+    generate_package,
+    resolve_job_reference,
+)
+from scripts.parse_job import parse_job_description
 from scripts.prospect_intake import ProspectIntakeError, create_prospect
 
 
@@ -46,6 +59,11 @@ OUTPUT_LABELS = {
     "hiring_manager_message": "Hiring manager message",
     "application_note": "Application note",
     "strategy_pack": "Strategy pack",
+    "recruiter_followup": "Recruiter follow-up",
+    "hiring_manager_followup": "Hiring manager follow-up",
+    "warm_contact_message": "Warm contact message",
+    "referral_ask": "Referral ask",
+    "followup_strategy": "Follow-up strategy",
     "dashboard": "Dashboard",
 }
 PACKAGE_MATERIAL_LABELS = {
@@ -58,6 +76,7 @@ PACKAGE_MATERIAL_LABELS = {
     "Hiring Manager Message": "Hiring manager message",
     "Application Note": "Application note",
     "Strategy Pack": "Strategy pack",
+    "Follow-Up Materials": "Follow-up materials",
 }
 APP_CSS = """
 <style>
@@ -278,6 +297,7 @@ def recent_output_files(
         "exports/markdown",
         "exports/messages",
         "exports/strategy_packs",
+        "exports/followups",
         "exports/dashboard",
     ):
         directory = project_root / relative_directory
@@ -344,10 +364,26 @@ def _package_map(project_root: Path = PROJECT_ROOT) -> Dict[str, Dict[str, Any]]
 
 
 def _metadata_html(application: Dict[str, Any], package: Dict[str, Any]) -> str:
+    humanize = lambda value: str(value).replace("_", " ").title()
     metadata = (
         ("Location", application.get("location") or package.get("location")),
         ("Salary", application.get("salary_range") or package.get("salary_range")),
         ("Submitted", application.get("submitted_date")),
+        (
+            "Category",
+            humanize(
+                application.get("company_category")
+                or package.get("company_category")
+            )
+            if application.get("company_category") or package.get("company_category")
+            else None,
+        ),
+        (
+            "Role family",
+            humanize(application.get("role_family") or package.get("role_family"))
+            if application.get("role_family") or package.get("role_family")
+            else None,
+        ),
     )
     items = "".join(
         '<span class="cc-meta-item">'
@@ -512,6 +548,40 @@ def _initialize_intake_state(st: Any) -> None:
         st.session_state.setdefault(key, value)
 
 
+def detect_prospect_intelligence(values: Dict[str, Any]) -> Dict[str, Any]:
+    """Infer local company and role guidance from unsaved prospect fields."""
+    return get_effective_voice_profile(
+        company_name=str(values.get("company") or ""),
+        job_title=str(values.get("job_title") or values.get("role") or ""),
+        job_description=str(values.get("job_description") or ""),
+        source_url=str(values.get("official_url") or ""),
+    )
+
+
+def _humanize_taxonomy(value: Any) -> str:
+    label = str(value or "").replace("_", " ").title()
+    return label.replace("Ai ", "AI ").replace("Gtm ", "GTM ")
+
+
+def _render_intelligence_preview(st: Any, intelligence: Dict[str, Any]) -> None:
+    with st.container(border=True):
+        st.markdown("**Detected role intelligence**")
+        st.markdown(
+            f"Company voice: **{_humanize_taxonomy(intelligence['profile_name'])}**  |  "
+            f"Category: **{_humanize_taxonomy(intelligence['company_category'])}**  |  "
+            f"Role family: **{_humanize_taxonomy(intelligence['role_family'])}**  |  "
+            f"Source: **{str(intelligence['source']).replace('_', ' ')}**"
+        )
+        angles = intelligence.get("cover_letter_angle", [])
+        if angles:
+            st.markdown(f"**Suggested cover letter angle:** {angles[0]}")
+        proof_points = intelligence.get("proof_points_to_emphasize", [])
+        if proof_points:
+            st.markdown(
+                "**Suggested proof points:** " + "; ".join(proof_points[:4])
+            )
+
+
 def _render_add_prospect(st: Any) -> None:
     st.markdown(
         '<h2 class="cc-section-heading">Add Prospect</h2>',
@@ -590,6 +660,11 @@ def _render_add_prospect(st: Any) -> None:
         "notes": st.session_state["prospect_notes"],
         "next_action": st.session_state["prospect_next_action"],
     }
+    if any(
+        values.get(key)
+        for key in ("company", "job_title", "job_description", "official_url")
+    ):
+        _render_intelligence_preview(st, detect_prospect_intelligence(values))
     save_column, generate_column = st.columns(2)
     save_clicked = save_column.button("Save Prospect", use_container_width=True)
     generate_clicked = generate_column.button(
@@ -629,6 +704,63 @@ def _load_applications(st: Any) -> list[Dict[str, Any]]:
         return []
 
 
+def submitted_applications(
+    applications: list[Dict[str, Any]],
+) -> list[Dict[str, Any]]:
+    """Return visible applications that are ready for follow-up outreach."""
+    return [
+        application
+        for application in applications
+        if application.get("status") in {"Applied", "Follow-up", "Interviewing"}
+        and application.get("show_on_dashboard") is not False
+    ]
+
+
+def networking_applications(
+    applications: list[Dict[str, Any]],
+) -> list[Dict[str, Any]]:
+    """Return visible roles eligible for follow-up or pre-application networking."""
+    return [
+        application
+        for application in applications
+        if application.get("status") in FOLLOWUP_ELIGIBLE_STATUSES
+        and application.get("show_on_dashboard") is not False
+    ]
+
+
+def _followup_strategy_path(application: Dict[str, Any]) -> Path:
+    filename = build_upload_filename(
+        "Trisha Lynch",
+        str(application.get("role") or "Role"),
+        str(application.get("company") or "Company"),
+        "Followup Strategy",
+        "md",
+    )
+    return PROJECT_ROOT / "exports" / "followups" / filename
+
+
+def detected_application_voice(
+    tracker_id: str,
+    project_root: Path = PROJECT_ROOT,
+) -> Dict[str, Any]:
+    """Return the company voice and role family shown in the package workflow."""
+    resolved = resolve_job_reference(tracker_id, project_root)
+    parsed_job = parse_job_description(resolved["job_path"])
+    intelligence = get_effective_voice_profile(
+        company_name=str(parsed_job.get("company") or ""),
+        job_title=str(parsed_job.get("job_title") or ""),
+        job_description=str(parsed_job.get("raw_text") or ""),
+        source_url=str(parsed_job.get("source_url") or ""),
+    )
+    intelligence["profile_label"] = _humanize_taxonomy(
+        intelligence["profile_name"]
+    )
+    intelligence["role_family_label"] = _humanize_taxonomy(
+        intelligence["role_family"]
+    )
+    return intelligence
+
+
 def _render_generate_package(st: Any) -> None:
     st.markdown(
         '<h2 class="cc-section-heading">Generate Application Package</h2>',
@@ -645,10 +777,26 @@ def _render_generate_package(st: Any) -> None:
         format_func=lambda value: _application_label(by_id[value]),
         key="package_tracker_id",
     )
+    try:
+        voice_context = detected_application_voice(tracker_id, PROJECT_ROOT)
+    except Exception as error:
+        st.caption(f"Company voice detection unavailable: {error}")
+    else:
+        _render_intelligence_preview(st, voice_context)
+    application = by_id[tracker_id]
+    generate_followups_too = st.checkbox(
+        "Generate follow-up materials after package generation",
+        value=application.get("status") == "Applied",
+        key=f"package_followups_{tracker_id}",
+    )
     if st.button("Generate Package", type="primary"):
         try:
             with st.spinner("Generating resumes, messages, strategy pack, and dashboard…"):
-                result = generate_package(tracker_id, PROJECT_ROOT)
+                result = generate_package(
+                    tracker_id,
+                    PROJECT_ROOT,
+                    generate_followups_too=generate_followups_too,
+                )
         except PackageGenerationError as error:
             st.error(str(error))
         else:
@@ -660,6 +808,99 @@ def _render_generate_package(st: Any) -> None:
     outputs = st.session_state.get("last_package_outputs")
     if outputs:
         _show_output_paths(st, outputs, "generated_output")
+
+
+def _render_followups(st: Any) -> None:
+    st.markdown(
+        '<h2 class="cc-section-heading">Follow-Up</h2>',
+        unsafe_allow_html=True,
+    )
+    bulk_column, folder_column = st.columns((3, 1))
+    if bulk_column.button(
+        "Generate missing follow-ups for all Applied roles",
+        type="primary",
+        use_container_width=True,
+    ):
+        with st.spinner("Generating missing follow-up packages…"):
+            summary = generate_missing_followups(PROJECT_ROOT)
+        st.success(
+            f"Generated {summary['generated_count']}; skipped existing "
+            f"{summary['skipped_existing_count']}; failed {summary['failed_count']}."
+        )
+        for tracker_id, error in summary["failed"].items():
+            st.warning(f"{tracker_id}: {error}")
+
+    followup_directory = PROJECT_ROOT / "exports" / "followups"
+    if folder_column.button("Open follow-up folder", use_container_width=True):
+        if not followup_directory.exists():
+            followup_directory.mkdir(parents=True, exist_ok=True)
+        opened, message = open_local_path(followup_directory)
+        (st.success if opened else st.warning)(message)
+
+    applications = networking_applications(_load_applications(st))
+    if not applications:
+        st.info("No roles are ready for follow-up or pre-application networking.")
+        return
+
+    by_id = {str(item["id"]): item for item in applications}
+    tracker_id = st.selectbox(
+        "Role",
+        tuple(by_id),
+        format_func=lambda value: _application_label(by_id[value]),
+        key="followup_tracker_id",
+    )
+    application = by_id[tracker_id]
+    status_column, mode_column = st.columns(2)
+    status_column.markdown(
+        f"**Current status:** {html.escape(str(application.get('status') or 'Not recorded'))}"
+    )
+    mode = (
+        "Post-application follow-up"
+        if application.get("status") in {"Applied", "Follow-up", "Interviewing"}
+        else "Pre-application networking"
+    )
+    mode_column.markdown(f"**Outreach mode:** {mode}")
+    try:
+        _render_intelligence_preview(
+            st, detected_application_voice(tracker_id, PROJECT_ROOT)
+        )
+    except Exception as error:
+        st.caption(f"Role intelligence unavailable: {error}")
+
+    button_label = (
+        "Regenerate Follow-Ups"
+        if _followup_strategy_path(application).is_file()
+        else "Generate Follow-Ups"
+    )
+    if st.button(button_label, type="primary"):
+        try:
+            with st.spinner("Preparing role-specific follow-up messages and strategy…"):
+                result = generate_followups(tracker_id, PROJECT_ROOT)
+        except FollowupGenerationError as error:
+            st.error(str(error))
+        else:
+            st.success(
+                f"Generated follow-up materials for {result['role']} at {result['company']}."
+            )
+            st.session_state["last_followup_tracker_id"] = tracker_id
+            st.session_state["last_followup_outputs"] = result["outputs"]
+
+    outputs = st.session_state.get("last_followup_outputs")
+    if not outputs or st.session_state.get("last_followup_tracker_id") != tracker_id:
+        return
+    _show_output_paths(st, outputs, "followup_output")
+    st.markdown("**Message previews**")
+    for key in (
+        "recruiter_followup",
+        "hiring_manager_followup",
+        "warm_contact_message",
+        "referral_ask",
+    ):
+        path = Path(outputs[key])
+        if not path.is_file():
+            continue
+        with st.expander(OUTPUT_LABELS[key], expanded=False):
+            st.markdown(path.read_text(encoding="utf-8"))
 
 
 def _render_update_status(st: Any) -> None:
@@ -771,7 +1012,7 @@ def _render_recent_outputs(st: Any) -> None:
     dashboard_path = PROJECT_ROOT / "exports" / "dashboard" / "index.html"
     with st.container(border=True):
         st.markdown("**Quick access**")
-        dashboard_column, docx_column, messages_column, strategy_column = st.columns(4)
+        dashboard_column, docx_column, messages_column, strategy_column, followup_column = st.columns(5)
         quick_links = (
             (dashboard_column, "Dashboard", dashboard_path),
             (docx_column, "DOCX resumes", PROJECT_ROOT / "exports" / "docx"),
@@ -781,6 +1022,7 @@ def _render_recent_outputs(st: Any) -> None:
                 "Strategy packs",
                 PROJECT_ROOT / "exports" / "strategy_packs",
             ),
+            (followup_column, "Follow-ups", PROJECT_ROOT / "exports" / "followups"),
         )
         for column, label, path in quick_links:
             if column.button(label, key=f"quick_{path.name}", use_container_width=True):
@@ -819,11 +1061,12 @@ def main() -> None:
         f'<p class="cc-description">{html.escape(UI_DESCRIPTION)}</p>',
         unsafe_allow_html=True,
     )
-    dashboard_tab, add_tab, generate_tab, status_tab, outputs_tab = st.tabs(
+    dashboard_tab, add_tab, generate_tab, followup_tab, status_tab, outputs_tab = st.tabs(
         (
             "Dashboard",
             "Add Prospect",
             "Generate Package",
+            "Follow-Up",
             "Update Status",
             "Outputs",
         )
@@ -834,6 +1077,8 @@ def main() -> None:
         _render_add_prospect(st)
     with generate_tab:
         _render_generate_package(st)
+    with followup_tab:
+        _render_followups(st)
     with status_tab:
         _render_update_status(st)
     with outputs_tab:

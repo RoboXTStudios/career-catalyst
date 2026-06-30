@@ -8,6 +8,7 @@ from typing import Any, Dict, Optional, Union
 
 try:
     from .application_tracker import add_prospect, make_tracker_id
+    from .dynamic_role_intelligence import get_effective_voice_profile
     from .job_importer import (
         MINIMUM_DESCRIPTION_LENGTH,
         JobImportError,
@@ -17,6 +18,7 @@ try:
     from .parse_job import JobParseError, parse_job_description
 except ImportError:
     from application_tracker import add_prospect, make_tracker_id
+    from dynamic_role_intelligence import get_effective_voice_profile
     from job_importer import (
         MINIMUM_DESCRIPTION_LENGTH,
         JobImportError,
@@ -95,6 +97,13 @@ def create_prospect(
     except OSError as error:
         raise ProspectIntakeError(f"Unable to save job file {job_path}: {error}") from error
 
+    intelligence = get_effective_voice_profile(
+        company_name=company,
+        job_title=role,
+        job_description=description,
+        source_url=official_url,
+    )
+
     tracker_result = add_prospect(
         {
             "id": tracker_id,
@@ -111,6 +120,10 @@ def create_prospect(
             "next_action": str(job_data.get("next_action") or "").strip(),
             "show_on_dashboard": bool(job_data.get("show_on_dashboard", True)),
             "job_file": _project_relative(job_path, root),
+            "company_category": intelligence["company_category"],
+            "role_family": intelligence["role_family"],
+            "company_voice_profile": intelligence["profile_name"],
+            "company_voice_source": intelligence["source"],
         },
         root,
     )
@@ -150,6 +163,12 @@ def add_prospect_from_job_file(
         r"^\s*(?:Official source|Source)\s*:\s*(.+?)\s*$", raw_text, flags=re.I | re.M
     )
     tracker_id = tracker_match.group(1).strip() if tracker_match else make_tracker_id(company, role)
+    intelligence = get_effective_voice_profile(
+        company_name=company,
+        job_title=role,
+        job_description=raw_text,
+        source_url=str(parsed.get("source_url") or ""),
+    )
     tracker_result = add_prospect(
         {
             "id": tracker_id,
@@ -163,6 +182,10 @@ def add_prospect_from_job_file(
             "salary_range": str(parsed.get("salary_range") or ""),
             "job_file": _project_relative(resolved, root),
             "show_on_dashboard": True,
+            "company_category": intelligence["company_category"],
+            "role_family": intelligence["role_family"],
+            "company_voice_profile": intelligence["profile_name"],
+            "company_voice_source": intelligence["source"],
         },
         root,
     )

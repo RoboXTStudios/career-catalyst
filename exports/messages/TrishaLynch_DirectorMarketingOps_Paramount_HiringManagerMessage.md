@@ -1,12 +1,12 @@
 Hello,
 
-The Director, Marketing Operations role at Paramount stood out because it brings creative, marketing, and operations together. The challenge of turning entertainment IP and franchise priorities into clear workflows, milestones, standards, and operating rhythms is work I find meaningful.
+The Director, Marketing Operations role at Paramount stood out because it centers on making marketing operations a practical connective layer between strategy, creative capacity, and delivery. That is the kind of problem where clear judgment and practical execution need to work together.
 
-At OMG23 / OMD Entertainment, I progressed to Group Director. I led campaign operations across Disney Studios Theatrical and Disney Streaming/DSS, supporting theatrical and streaming film campaigns across Pixar, Lucasfilm, Marvel, 20th Century Studios, Searchlight Pictures, Disney+, and franchise/IP priorities. I know how much operational clarity matters when creative, marketing, media, analytics, technology, and external partners need to move together.
+I have led teams of 60+ across creative, marketing, media, analytics, technology, and operations for high-volume entertainment campaigns.
 
-CampaignOS grew from that same instinct. I designed the AI-powered operations platform to standardize workflow governance, automate quality assurance, and give teams better consistency and visibility.
+CampaignOS reflects how I use AI enablement, dashboards, and workflow systems to improve visibility without adding process for its own sake.
 
-That mix of creative operations, product thinking, and scalable execution is where I do my best work. I would welcome the chance to learn more about the team's priorities and share how I could contribute.
+I would welcome the chance to learn how the team is defining success and share how my experience could contribute. That conversation would also help me understand where the team sees the greatest friction and which outcomes matter first.
 
 Best,
 

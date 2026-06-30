@@ -314,6 +314,67 @@ Launcher details are also available from:
 python3 scripts/cli.py launcher-info
 ```
 
+## Sprint 11: Follow-Up, Company Voice, and Dynamic Role Intelligence
+
+Career Catalyst now supports:
+
+- follow-up and networking message generation
+- company-voice cover letters
+- dynamic company category detection
+- dynamic role family detection
+- follow-up materials for applied roles
+- role intelligence previews in the local UI
+
+Generate follow-up materials:
+
+```bash
+python3 scripts/cli.py followups paramount_director_marketing_operations
+```
+
+Or use the local UI:
+
+```bash
+streamlit run app.py
+```
+
+The Follow-Up tab generates:
+
+- recruiter follow-up
+- hiring manager follow-up
+- warm contact message
+- referral ask
+- follow-up strategy
+
+Messages should be reviewed before sending.
+
+Career Catalyst uses company voice profiles to make cover letters feel specific to the company and role. Disney, Google/YouTube, Paramount, UTA, FieldAI, Bandsintown, and Crunchyroll use different tone guidance and proof points.
+
+Career Catalyst can infer company category, role family, and voice guidance for newly added prospects without hardcoding every company.
+
+Known profiles are used when available. Unknown companies use deterministic local inference from company name, role title, source URL, and job description.
+
+Generate missing follow-ups for all applied roles:
+
+```bash
+python3 scripts/cli.py followups-all
+```
+
+Force regenerate all applied follow-ups:
+
+```bash
+python3 scripts/cli.py followups-all --force
+```
+
+Detect company and role intelligence:
+
+```bash
+python3 scripts/cli.py detect-role jobs/example.md
+```
+
+The UI also shows detected company category, role family, suggested cover letter angles, and proof points before generating packages.
+
+Cover letters and messages should be reviewed before submission, especially for creative or music-focused roles.
+
 ## What Comes Next
 
 Later sprints can add interview prep generation and carefully verified company or job-source workflows.

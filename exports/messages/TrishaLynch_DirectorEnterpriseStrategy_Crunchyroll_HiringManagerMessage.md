@@ -1,12 +1,12 @@
 Hello,
 
-The Director, Enterprise Strategy & Initiatives role at Crunchyroll stood out because it brings enterprise strategy, operational planning, and cross-functional execution together. The challenge of turning entertainment IP and franchise priorities into clear workflows, milestones, standards, and operating rhythms is work I find meaningful.
+The Director, Enterprise Strategy & Initiatives role at Crunchyroll stood out because it centers on turning streaming, fandom, and franchise priorities into an enterprise strategy teams can execute. That is the kind of problem where clear judgment and practical execution need to work together.
 
-At OMG23 / OMD Entertainment, I progressed to Group Director. I led campaign operations across Disney Studios Theatrical and Disney Streaming/DSS, supporting theatrical and streaming film campaigns across Pixar, Lucasfilm, Marvel, 20th Century Studios, Searchlight Pictures, Disney+, and franchise/IP priorities. I know how much operational clarity matters when creative, marketing, media, analytics, technology, and external partners need to move together.
+My theatrical and streaming background spans Disney Studios Theatrical, Disney Streaming/DSS, and coordination across creative, media, technology, analytics, and operations.
 
-CampaignOS grew from that same instinct. I designed the AI-powered operations platform to standardize workflow governance, automate quality assurance, and give teams better consistency and visibility.
+CampaignOS demonstrates how I translate recurring cross-functional friction into clearer governance, validation, and reporting systems.
 
-That mix of creative operations, product thinking, and scalable execution is where I do my best work. I would welcome the chance to learn more about the team's priorities and share how I could contribute.
+I would welcome the chance to learn how the team is defining success and share how my experience could contribute. That conversation would also help me understand where the team sees the greatest friction and which outcomes matter first.
 
 Best,
 
