@@ -5,11 +5,23 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Union
 
 try:
-    from .load_data import load_all_yaml
-    from .parse_job import parse_job_description
+    from .load_data import DataLoadError, load_all_yaml
+    from .job_freshness import detect_job_freshness
+    from .parse_job import (
+        extract_keywords,
+        extract_qualifications,
+        extract_responsibilities,
+        parse_job_description,
+    )
 except ImportError:
-    from load_data import load_all_yaml
-    from parse_job import parse_job_description
+    from load_data import DataLoadError, load_all_yaml
+    from job_freshness import detect_job_freshness
+    from parse_job import (
+        extract_keywords,
+        extract_qualifications,
+        extract_responsibilities,
+        parse_job_description,
+    )
 
 
 GENERIC_TERMS = {
@@ -62,6 +74,50 @@ RESUME_PROFILE_KEYWORDS = {
 }
 
 PathInput = Union[str, Path]
+
+MATCH_PERSISTENCE_FIELDS = (
+    "match_score",
+    "match_tier",
+    "match_summary",
+    "match_strengths",
+    "match_gaps",
+    "recommended_action",
+    "confidence",
+)
+
+FUNCTIONAL_SIGNAL_GROUPS = (
+    ("ad/media operations", ("ad operations", "media operations", "trafficking", "media execution")),
+    ("programmatic", ("programmatic", "ad tech", "adtech", "dsp", "ad server")),
+    ("campaign operations", ("campaign operations", "marketing operations", "campaign management", "campaign execution")),
+    ("marketing technology and measurement", ("marketing technology", "martech", "measurement", "vendor operations", "vendor management")),
+    ("workflow and process automation", ("workflow", "automation", "process improvement", "operational excellence", "scalable process")),
+    ("strategic operations", ("strategic operations", "business operations", "operating model", "transformation", "operational strategy", "strategy and operations")),
+)
+
+TARGET_INDUSTRY_SIGNALS = (
+    "music",
+    "entertainment",
+    "streaming",
+    "media",
+    "creator economy",
+    "creators",
+    "advertising technology",
+    "marketing technology",
+    "martech",
+    "brand marketing",
+    "creative technology",
+)
+
+OBVIOUS_NON_FIT_SIGNALS = (
+    "active medical license",
+    "registered nurse",
+    "licensed clinical",
+    "admitted to the bar",
+    "active bar membership",
+    "certified public accountant required",
+    "security clearance required",
+    "software engineering degree required",
+)
 
 
 def _flatten_strings(value: Any) -> List[str]:
@@ -382,11 +438,307 @@ def _tailoring_notes(
     return notes[:6]
 
 
-def score_job_match(job_path: PathInput, project_root: Optional[PathInput] = None) -> Dict[str, Any]:
-    """Return a structured match report for a local job description."""
-    root = Path(project_root) if project_root is not None else Path.cwd()
-    parsed_job = parse_job_description(root / job_path)
-    career_data = load_all_yaml(root)
+def persisted_match_fields(report: Dict[str, Any]) -> Dict[str, Any]:
+    """Return only the Sprint 13 fields stored on a tracker record."""
+    return {
+        field: report[field]
+        for field in MATCH_PERSISTENCE_FIELDS
+        if field in report and report[field] is not None
+    }
+
+
+def _empty_career_data() -> Dict[str, Any]:
+    """Allow isolated intake fixtures to score safely without a full profile tree."""
+    return {
+        "data": {
+            "skills": {"skill_groups": {}},
+            "achievements": {"achievements": []},
+            "positions": {"positions": []},
+            "projects": {"projects": []},
+            "personal_brand": {"target_industries": []},
+        },
+        "config": {
+            "role_profiles": {"role_profiles": []},
+            "target_companies": {"target_companies": []},
+        },
+    }
+
+
+def _signal_groups(text: str) -> List[str]:
+    lowered = text.lower()
+    return [
+        label
+        for label, signals in FUNCTIONAL_SIGNAL_GROUPS
+        if any(signal in lowered for signal in signals)
+    ]
+
+
+def _functional_fit(text: str) -> Tuple[int, List[str]]:
+    matched = _signal_groups(text)
+    if not matched:
+        return 20, matched
+    return min(100, 30 + (25 * len(matched))), matched
+
+
+def _seniority_fit(title: Any) -> Tuple[int, str, bool]:
+    lowered = str(title or "").lower()
+    if any(signal in lowered for signal in ("chief ", "vice president", "vp ", "head of", "group director", "director")):
+        return 100, "The seniority is aligned with Trisha's director/head-of target level.", False
+    if any(signal in lowered for signal in ("senior manager", "sr. manager", "sr manager", "principal", "lead")):
+        return 90, "The seniority is aligned with Trisha's senior manager/lead target range.", False
+    if "manager" in lowered or "senior" in lowered:
+        return 65, "The role has meaningful ownership, though its level should be verified.", False
+    if any(signal in lowered for signal in ("coordinator", "assistant", "junior", "entry level", "associate")):
+        return 20, "", True
+    return 55, "The role level is not explicit enough to confirm seniority fit.", False
+
+
+def _industry_fit(text: str, company: Any = "") -> Tuple[int, Optional[str], bool]:
+    lowered = text.lower()
+    matches = [signal for signal in TARGET_INDUSTRY_SIGNALS if signal in lowered]
+    company_lowered = str(company or "").lower()
+    pure_agency = "agency" in company_lowered and not any(
+        signal in lowered for signal in ("client-side", "in-house", "brand role", "brand team")
+    )
+    if matches:
+        score = min(100, 75 + (8 * min(len(matches), 4)))
+        if pure_agency:
+            score = min(score, 60)
+        return score, matches[0], pure_agency
+    if pure_agency:
+        return 35, None, True
+    return 55, None, False
+
+
+def _salary_amounts(salary_value: Any, raw_text: str) -> List[int]:
+    salary_text = str(salary_value or "")
+    candidates = [salary_text]
+    candidates.extend(
+        match.group(0)
+        for match in re.finditer(
+            r"\$\s*\d{2,3}(?:,\d{3})*(?:\.\d+)?\s*[kK]?",
+            raw_text,
+        )
+    )
+    amounts: List[int] = []
+    for candidate in candidates:
+        for raw_number, suffix in re.findall(
+            r"\$?\s*(\d{2,3}(?:,\d{3})*(?:\.\d+)?)\s*([kK]?)",
+            candidate,
+        ):
+            number = float(raw_number.replace(",", ""))
+            if suffix or number < 1000:
+                number *= 1000
+            if 30000 <= number <= 1000000:
+                amounts.append(int(number))
+    return sorted(set(amounts))
+
+
+def _salary_fit(salary_value: Any, raw_text: str) -> Tuple[int, str, Optional[str]]:
+    disclosed = bool(
+        str(salary_value or "").strip()
+        and str(salary_value or "").strip().lower() not in {"not disclosed", "unknown", "n/a"}
+    )
+    amounts = _salary_amounts(salary_value, raw_text) if disclosed else []
+    if not amounts:
+        return 55, "Not disclosed", "Compensation is not disclosed; verify the range before investing in a package."
+    minimum, maximum = min(amounts), max(amounts)
+    display = str(salary_value).strip()
+    if minimum >= 150000:
+        return 100, display, None
+    if maximum >= 150000:
+        return 90, display, None
+    if minimum >= 120000:
+        return 78, display, None
+    if maximum >= 120000:
+        return 68, display, "The lower end of the range is below Trisha's $120k caution threshold."
+    if maximum >= 85000:
+        return (
+            45,
+            display,
+            "Compensation is below the $120k caution threshold; pursue only if the role is a strategic doorway.",
+        )
+    return 25, display, "Compensation is materially below Trisha's target range."
+
+
+def _work_arrangement(parsed_job: Dict[str, Any]) -> Tuple[int, str, Optional[str]]:
+    raw_text = str(parsed_job.get("raw_text") or "")
+    labeled = re.search(
+        r"^\s*Work arrangement\s*:\s*(.+?)\s*$", raw_text, flags=re.I | re.M
+    )
+    arrangement = labeled.group(1).strip() if labeled else ""
+    combined = f"{arrangement} {parsed_job.get('location') or ''} {raw_text}".lower()
+    heavy_onsite = bool(
+        re.search(r"(?:minimum of\s+)?[4-5]\s+days?\s+per week\s+in (?:the )?office", combined)
+        or "#li-onsite" in combined
+    )
+    if heavy_onsite:
+        return 25, arrangement or "Heavy on-site", "The heavy on-site requirement is a practical constraint, especially at lower pay."
+    if "remote" in combined:
+        return 100, arrangement or "Remote", None
+    if "hybrid" in combined:
+        return 88, arrangement or "Hybrid", None
+    if any(signal in combined for signal in ("on-site", "onsite", "in office", "in-office")):
+        return 45, arrangement or "On-site", "The on-site requirement should be weighed against commute and compensation."
+    if "flexible" in combined:
+        return 82, arrangement or "Flexible", None
+    return 55, arrangement or "Not specified", "Work arrangement is not specified."
+
+
+def _confidence(parsed_job: Dict[str, Any], salary_display: str, work_label: str, freshness: Dict[str, Any]) -> str:
+    missing = sum(
+        (
+            not bool(parsed_job.get("job_title")),
+            not bool(parsed_job.get("company")),
+            not bool(parsed_job.get("location")),
+            salary_display == "Not disclosed",
+            work_label == "Not specified",
+            freshness.get("age_days") is None,
+        )
+    )
+    if missing <= 1:
+        confidence = "High"
+    elif missing <= 3:
+        confidence = "Medium"
+    else:
+        confidence = "Low"
+    if salary_display == "Not disclosed" and confidence == "High":
+        return "Medium"
+    return confidence
+
+
+def _match_tier(score: int) -> str:
+    if score >= 82:
+        return "Strong Match"
+    if score >= 68:
+        return "Good Match"
+    if score >= 55:
+        return "Stretch Match"
+    if score >= 35:
+        return "Weak Match"
+    return "Pass"
+
+
+def _decision_match_report(parsed_job: Dict[str, Any], legacy_report: Dict[str, Any]) -> Dict[str, Any]:
+    raw_text = str(parsed_job.get("raw_text") or "")
+    title = str(parsed_job.get("job_title") or "")
+    combined = f"{title}\n{parsed_job.get('company') or ''}\n{raw_text}"
+    functional_score, functional_matches = _functional_fit(combined)
+    seniority_score, seniority_strength, junior_role = _seniority_fit(title)
+    industry_score, industry_signal, pure_agency = _industry_fit(
+        combined, parsed_job.get("company")
+    )
+    salary_score, salary_display, salary_gap = _salary_fit(parsed_job.get("salary_range"), raw_text)
+    work_score, work_label, work_gap = _work_arrangement(parsed_job)
+    freshness = detect_job_freshness(raw_text)
+    non_fit_signals = [signal for signal in OBVIOUS_NON_FIT_SIGNALS if signal in combined.lower()]
+
+    score = round(
+        (legacy_report["match_score"] * 0.30)
+        + (functional_score * 0.25)
+        + (seniority_score * 0.15)
+        + (industry_score * 0.12)
+        + (salary_score * 0.08)
+        + (work_score * 0.05)
+        + (int(freshness["score"]) * 0.05)
+        - (15 if non_fit_signals else 0)
+    )
+    if freshness.get("is_closed"):
+        score = min(score, 25)
+    score = int(max(0, min(100, score)))
+    tier = "Pass" if freshness.get("is_closed") else _match_tier(score)
+
+    strengths: List[str] = []
+    if functional_matches:
+        strengths.append("Functional alignment includes " + ", ".join(functional_matches[:3]) + ".")
+    if seniority_strength:
+        strengths.append(seniority_strength)
+    if industry_signal and not pure_agency:
+        strengths.append(f"The {industry_signal} context is adjacent to Trisha's target industries.")
+    if salary_score >= 78:
+        strengths.append("The disclosed compensation is aligned with or near Trisha's target.")
+    if work_score >= 82:
+        strengths.append(f"The {work_label.lower()} arrangement supports practical fit.")
+    if legacy_report.get("top_matching_skills"):
+        strengths.append(
+            "Career evidence overlaps in "
+            + ", ".join(str(value) for value in legacy_report["top_matching_skills"][:3])
+            + "."
+        )
+    fallback_strengths = (
+        "The role has enough detail for a pre-package fit review.",
+        "The role title and employer are clearly identified.",
+        "The listing can be evaluated before spending package-generation time.",
+    )
+    for strength in fallback_strengths:
+        if len(strengths) >= 3:
+            break
+        strengths.append(strength)
+
+    gaps: List[str] = []
+    if salary_gap:
+        gaps.append(salary_gap)
+    if work_gap:
+        gaps.append(work_gap)
+    if freshness.get("is_closed"):
+        gaps.append("The posting appears closed, so no package should be generated unless its status is verified.")
+    elif freshness.get("age_days") is None:
+        gaps.append("Posting age is unknown; verify that the role is still active.")
+    elif freshness.get("category") in {"Aging", "Stale"}:
+        gaps.append(f"The posting is {freshness['category'].lower()} at {freshness['age_days']} days old.")
+    if junior_role:
+        gaps.append("The role is below Trisha's target seniority.")
+    if pure_agency:
+        gaps.append("This appears to be an agency role; confirm that the scope is strategic and client-side adjacent.")
+    if non_fit_signals:
+        gaps.append(f"The listing includes a likely hard non-fit requirement: {non_fit_signals[0]}.")
+    if not functional_matches:
+        gaps.append("The listing shows limited alignment with Trisha's core operations background.")
+    if not gaps:
+        gaps.append("Confirm the reporting line and decision authority before generating the package.")
+
+    if freshness.get("is_closed"):
+        action = "Pass"
+    elif tier in {"Strong Match", "Good Match"}:
+        action = "Generate Package"
+    elif tier == "Stretch Match":
+        action = "Review First"
+    elif tier == "Weak Match" and industry_score >= 75 and functional_score >= 55:
+        action = "Review First"
+    else:
+        action = "Pass"
+
+    lead = {
+        "Strong Match": "Strong alignment across Trisha's core experience, target level, and practical priorities.",
+        "Good Match": "Good overall alignment, with a few cautions to weigh before investing further.",
+        "Stretch Match": "There is credible alignment, but the tradeoffs deserve review before package generation.",
+        "Weak Match": "The role has some overlap but falls short on important fit factors.",
+        "Pass": "The current listing is not a sensible package-generation priority.",
+    }[tier]
+    if salary_score <= 45 and industry_score >= 75 and tier in {"Good Match", "Stretch Match"}:
+        lead = "This could be a strategic doorway into a target industry, but the compensation gap is material."
+
+    legacy_report.update(
+        {
+            "salary_range": salary_display,
+            "match_score": score,
+            "match_band": _match_band(score),
+            "match_tier": tier,
+            "match_summary": lead,
+            "match_strengths": _dedupe(strengths)[:5],
+            "match_gaps": _dedupe(gaps)[:5],
+            "recommended_action": action,
+            "confidence": _confidence(parsed_job, salary_display, work_label, freshness),
+        }
+    )
+    return legacy_report
+
+
+def _score_parsed_job(parsed_job: Dict[str, Any], root: Path) -> Dict[str, Any]:
+    try:
+        career_data = load_all_yaml(root)
+    except DataLoadError:
+        career_data = _empty_career_data()
     keywords = _important_keywords(parsed_job)
     candidate_text = _candidate_text(career_data)
 
@@ -424,5 +776,46 @@ def score_job_match(job_path: PathInput, project_root: Optional[PathInput] = Non
         "recommended_resume_profile": _recommended_resume_profile(parsed_job),
         "tailoring_notes": [],
     }
-    report["tailoring_notes"] = _tailoring_notes(report, top_skills, top_projects, top_experience)
+    report = _decision_match_report(parsed_job, report)
+    report["tailoring_notes"] = _tailoring_notes(
+        report, top_skills, top_projects, top_experience
+    )
     return report
+
+
+def score_job_data(job_data: Dict[str, Any], project_root: Optional[PathInput] = None) -> Dict[str, Any]:
+    """Score unsaved intake data so the UI can show the gate before generation."""
+    root = Path(project_root) if project_root is not None else Path.cwd()
+    raw_text = str(job_data.get("raw_text") or job_data.get("job_description") or "")
+    metadata_lines = "\n".join(
+        line
+        for line in (
+            f"# {job_data.get('job_title') or job_data.get('role') or ''}",
+            f"Company: {job_data.get('company') or ''}",
+            f"Location: {job_data.get('location') or ''}",
+            f"Work arrangement: {job_data.get('work_arrangement') or ''}",
+            f"Salary range: {job_data.get('salary_range') or ''}",
+            f"Posting date: {job_data.get('posting_date') or ''}",
+        )
+        if not line.endswith(": ") and line != "# "
+    )
+    canonical_text = f"{metadata_lines}\n\n{raw_text}".strip()
+    parsed_job = {
+        "raw_text": canonical_text,
+        "job_title": job_data.get("job_title") or job_data.get("role"),
+        "company": job_data.get("company"),
+        "location": job_data.get("location"),
+        "salary_range": job_data.get("salary_range"),
+        "posting_date": job_data.get("posting_date"),
+        "keywords": extract_keywords(canonical_text),
+        "responsibilities": extract_responsibilities(canonical_text),
+        "qualifications": extract_qualifications(canonical_text),
+    }
+    return _score_parsed_job(parsed_job, root)
+
+
+def score_job_match(job_path: PathInput, project_root: Optional[PathInput] = None) -> Dict[str, Any]:
+    """Return the legacy tailoring report plus the Sprint 13 decision gate."""
+    root = Path(project_root) if project_root is not None else Path.cwd()
+    parsed_job = parse_job_description(root / job_path)
+    return _score_parsed_job(parsed_job, root)

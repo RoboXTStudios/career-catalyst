@@ -26,7 +26,7 @@ try:
     from .package_quality import calculate_package_quality, save_package_summary
     from .parse_job import JobParseError, parse_job_description
     from .prospect_intake import add_prospect_from_job_file
-    from .score_match import score_job_match
+    from .score_match import persisted_match_fields, score_job_match
     from .tailor_resume import tailor_resume
 except ImportError:
     from application_tracker import (
@@ -49,7 +49,7 @@ except ImportError:
     from package_quality import calculate_package_quality, save_package_summary
     from parse_job import JobParseError, parse_job_description
     from prospect_intake import add_prospect_from_job_file
-    from score_match import score_job_match
+    from score_match import persisted_match_fields, score_job_match
     from tailor_resume import tailor_resume
 
 
@@ -173,6 +173,7 @@ def generate_package(
             source_url=str(parsed.get("source_url") or application.get("official_url") or ""),
         )
         freshness = detect_job_freshness(str(parsed.get("raw_text") or ""))
+        score = score_job_match(job_reference, root)
         application = update_prospect(
             str(application["id"]),
             {
@@ -188,6 +189,7 @@ def generate_package(
                 "freshness": freshness["category"],
                 "freshness_label": freshness["label"],
                 "posting_status": freshness["posting_status"],
+                **persisted_match_fields(score),
             },
             root,
         )
@@ -202,7 +204,6 @@ def generate_package(
             if generate_followups_too is None
             else bool(generate_followups_too)
         )
-        score = score_job_match(job_reference, root)
         opportunity = score_opportunity(parsed, score, intelligence, freshness)
         resume = tailor_resume("executive_operations", job_reference, root)
         styled = export_styled_docx(resume["output_path"], root)
@@ -278,6 +279,12 @@ def generate_package(
         "company": parsed.get("company"),
         "match_score": score.get("match_score"),
         "match_band": score.get("match_band"),
+        "match_tier": score.get("match_tier"),
+        "match_summary": score.get("match_summary"),
+        "match_strengths": score.get("match_strengths", []),
+        "match_gaps": score.get("match_gaps", []),
+        "recommended_action": score.get("recommended_action"),
+        "confidence": score.get("confidence"),
         "company_category": intelligence["company_category"],
         "role_family": intelligence["role_family"],
         "company_voice_profile": intelligence["profile_name"],

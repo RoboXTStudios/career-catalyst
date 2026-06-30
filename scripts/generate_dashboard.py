@@ -392,6 +392,49 @@ def _render_metadata(package: Dict[str, Any]) -> str:
     return f'<dl class="metadata">{"".join(items)}</dl>'
 
 
+def _render_match_score(tracker: Dict[str, Any]) -> str:
+    score = tracker.get("match_score")
+    if score is None:
+        return (
+            '<section class="match-gate match-unscored" aria-label="Match Score">'
+            '<div><span class="match-label">Match Score</span>'
+            '<strong>Not scored yet</strong></div>'
+            '<p>Re-import or update this role to calculate the pre-package recommendation.</p>'
+            '</section>'
+        )
+
+    tier = str(tracker.get("match_tier") or "Not scored yet")
+    action = str(tracker.get("recommended_action") or "Review First")
+    confidence = str(tracker.get("confidence") or "Low")
+    summary = str(tracker.get("match_summary") or "Review the fit before generating a package.")
+    strengths = tracker.get("match_strengths") or []
+    gaps = tracker.get("match_gaps") or []
+
+    def render_list(label: str, values: Any) -> str:
+        if not isinstance(values, list) or not values:
+            return ""
+        items = "".join(f"<li>{html.escape(str(value))}</li>" for value in values)
+        return f'<div class="match-list"><h4>{label}</h4><ul>{items}</ul></div>'
+
+    return (
+        '<section class="match-gate" aria-label="Match Score">'
+        '<div class="match-score-row">'
+        '<div><span class="match-label">Match Score</span>'
+        f'<strong class="match-number">{html.escape(str(score))}<small>/100</small></strong></div>'
+        f'<span class="match-tier">{html.escape(tier)}</span>'
+        '</div>'
+        '<div class="match-action">'
+        f'<span>Recommended action</span><strong>{html.escape(action)}</strong>'
+        f'<span>Confidence: {html.escape(confidence)}</span>'
+        '</div>'
+        f'<p class="match-summary">{html.escape(summary)}</p>'
+        '<div class="match-details">'
+        f'{render_list("Top strengths", strengths)}'
+        f'{render_list("Gaps / cautions", gaps)}'
+        '</div></section>'
+    )
+
+
 def _render_notes(tracker: Dict[str, Any]) -> str:
     rows = []
     for label, key in (("Notes", "notes"), ("Next action", "next_action")):
@@ -433,6 +476,7 @@ def _render_package(package: Dict[str, Any], dashboard_directory: Path) -> str:
         "</div>"
         f'<div class="badges">{_render_badges(tracker)}</div>'
         "</div>"
+        f"{_render_match_score(tracker)}"
         f"{_render_metadata(package)}"
         f"{_render_notes(tracker)}"
         '<div class="materials"><h4>Application materials</h4>'
@@ -709,6 +753,28 @@ def _render_html(
     .status-invalid {{ background: var(--red-soft); color: var(--red); }}
     .status-archived {{ background: #eef1f3; color: #4c5963; }}
     .priority {{ border: 1px solid #e1c891; background: #ffffff; color: var(--gold); }}
+    .match-gate {{
+      margin-top: 16px;
+      border: 1px solid #b8d7d0;
+      border-radius: 6px;
+      padding: 15px;
+      background: var(--accent-soft);
+    }}
+    .match-unscored {{ border-color: var(--border); background: #f7f8f9; }}
+    .match-unscored div {{ display: flex; align-items: baseline; gap: 10px; }}
+    .match-unscored p {{ margin: 6px 0 0; color: var(--muted); font-size: 13px; }}
+    .match-score-row {{ display: flex; align-items: center; justify-content: space-between; gap: 12px; }}
+    .match-label {{ display: block; color: var(--accent); font-size: 12px; font-weight: 700; text-transform: uppercase; }}
+    .match-number {{ display: block; font-size: 30px; line-height: 1.1; }}
+    .match-number small {{ color: var(--muted); font-size: 13px; }}
+    .match-tier {{ border-radius: 999px; padding: 5px 10px; background: var(--surface); color: var(--accent); font-size: 13px; font-weight: 700; }}
+    .match-action {{ display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 8px; font-size: 13px; }}
+    .match-action span {{ color: var(--muted); }}
+    .match-summary {{ margin: 9px 0 0; }}
+    .match-details {{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 10px; }}
+    .match-list h4 {{ margin-bottom: 4px; }}
+    .match-list ul {{ margin: 0; padding-left: 18px; font-size: 13px; }}
+    .match-list li + li {{ margin-top: 3px; }}
     .metadata {{
       display: flex;
       flex-wrap: wrap;
@@ -759,6 +825,7 @@ def _render_html(
       .application-heading {{ display: block; }}
       .badges {{ justify-content: flex-start; margin-top: 10px; }}
       .tracker-row {{ grid-template-columns: 1fr; gap: 2px; }}
+      .match-details {{ grid-template-columns: 1fr; gap: 10px; }}
     }}
   </style>
 </head>

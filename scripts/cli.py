@@ -213,7 +213,19 @@ def score_job(file_path: str) -> int:
     print(f"Salary range: {report.get('salary_range') or 'Not found'}")
     print(f"Match score: {report.get('match_score')}")
     print(f"Match band: {report.get('match_band')}")
+    print(f"Match tier: {report.get('match_tier')}")
+    print(f"Recommended action: {report.get('recommended_action')}")
+    print(f"Confidence: {report.get('confidence')}")
+    print(f"Match summary: {report.get('match_summary')}")
     print(f"Recommended resume profile: {report.get('recommended_resume_profile')}")
+
+    strengths = report.get("match_strengths", [])
+    if strengths:
+        _print_list("Match strengths", strengths)
+
+    gaps = report.get("match_gaps", [])
+    if gaps:
+        _print_list("Match gaps / cautions", gaps)
 
     top_skills = report.get("top_matching_skills", [])
     if top_skills:

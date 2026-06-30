@@ -18,6 +18,7 @@ try:
     )
     from .job_freshness import detect_job_freshness
     from .parse_job import JobParseError, extract_metadata, parse_job_description
+    from .score_match import persisted_match_fields, score_job_match
 except ImportError:
     from application_tracker import add_prospect, make_tracker_id
     from dynamic_role_intelligence import get_effective_voice_profile
@@ -30,6 +31,7 @@ except ImportError:
     )
     from job_freshness import detect_job_freshness
     from parse_job import JobParseError, extract_metadata, parse_job_description
+    from score_match import persisted_match_fields, score_job_match
 
 
 PathInput = Union[str, Path]
@@ -165,6 +167,7 @@ def create_prospect(
         source_url=official_url,
     )
     freshness = detect_job_freshness(markdown)
+    match_report = score_job_match(job_path, root)
 
     tracker_result = add_prospect(
         {
@@ -193,6 +196,7 @@ def create_prospect(
             "freshness": freshness["category"],
             "freshness_label": freshness["label"],
             "posting_status": freshness["posting_status"],
+            **persisted_match_fields(match_report),
         },
         root,
     )
@@ -239,6 +243,7 @@ def add_prospect_from_job_file(
         source_url=str(parsed.get("source_url") or ""),
     )
     freshness = detect_job_freshness(raw_text)
+    match_report = score_job_match(resolved, root)
     tracker_result = add_prospect(
         {
             "id": tracker_id,
@@ -263,6 +268,7 @@ def add_prospect_from_job_file(
             "freshness": freshness["category"],
             "freshness_label": freshness["label"],
             "posting_status": freshness["posting_status"],
+            **persisted_match_fields(match_report),
         },
         root,
     )

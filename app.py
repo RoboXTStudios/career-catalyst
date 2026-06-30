@@ -37,6 +37,7 @@ from scripts.package_generator import (
 )
 from scripts.parse_job import parse_job_description
 from scripts.prospect_intake import ProspectIntakeError, create_prospect
+from scripts.score_match import score_job_data, score_job_match
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -203,6 +204,19 @@ APP_CSS = """
   }
   .cc-meta-item { color: var(--cc-ink); font-size: 13px; }
   .cc-meta-label { margin-right: 5px; color: var(--cc-muted); font-weight: 700; }
+  .cc-match-gate { margin-top: 14px; border: 1px solid #b8d7d0; border-radius: 6px; padding: 14px; background: var(--cc-accent-soft); }
+  .cc-match-unscored { border-color: var(--cc-border); background: #f7f8f9; }
+  .cc-match-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .cc-match-label { display: block; color: var(--cc-accent); font-size: 12px; font-weight: 700; text-transform: uppercase; }
+  .cc-match-number { color: var(--cc-ink); font-size: 29px; font-weight: 700; line-height: 1.1; }
+  .cc-match-number small { color: var(--cc-muted); font-size: 13px; }
+  .cc-match-tier { border-radius: 999px; padding: 5px 10px; background: var(--cc-surface); color: var(--cc-accent); font-size: 13px; font-weight: 700; }
+  .cc-match-action { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 7px; font-size: 13px; }
+  .cc-match-action span { color: var(--cc-muted); }
+  .cc-match-summary { margin: 8px 0 0; }
+  .cc-match-details { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 9px; font-size: 13px; }
+  .cc-match-details strong { display: block; margin-bottom: 3px; }
+  .cc-match-details ul { margin: 0; padding-left: 18px; }
   .cc-tracker-row { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 12px; margin-top: 10px; font-size: 14px; }
   .cc-tracker-label { color: var(--cc-muted); font-size: 13px; font-weight: 700; }
   .cc-materials-label { margin: 13px 0 6px; color: var(--cc-ink); font-size: 13px; font-weight: 700; }
@@ -229,6 +243,7 @@ APP_CSS = """
     .cc-card-role { font-size: 17px; }
     .cc-badges { justify-content: flex-start; margin-top: 8px; }
     .cc-tracker-row { grid-template-columns: 1fr; gap: 2px; }
+    .cc-match-details { grid-template-columns: 1fr; gap: 9px; }
   }
 </style>
 """
@@ -403,6 +418,41 @@ def _metadata_html(application: Dict[str, Any], package: Dict[str, Any]) -> str:
     return f'<div class="cc-metadata">{items}</div>' if items else ""
 
 
+def _match_score_html(report: Dict[str, Any]) -> str:
+    score = report.get("match_score")
+    if score is None:
+        return (
+            '<section class="cc-match-gate cc-match-unscored">'
+            '<span class="cc-match-label">Match Score</span><strong>Not scored yet</strong>'
+            '<p class="cc-match-summary">Re-import or update this role to calculate the pre-package recommendation.</p>'
+            '</section>'
+        )
+
+    def render_list(label: str, key: str) -> str:
+        values = report.get(key) or []
+        if not isinstance(values, list) or not values:
+            return ""
+        items = "".join(f"<li>{html.escape(str(value))}</li>" for value in values)
+        return f'<div><strong>{label}</strong><ul>{items}</ul></div>'
+
+    return (
+        '<section class="cc-match-gate">'
+        '<div class="cc-match-heading"><div>'
+        '<span class="cc-match-label">Match Score</span>'
+        f'<span class="cc-match-number">{html.escape(str(score))}<small>/100</small></span>'
+        '</div>'
+        f'<span class="cc-match-tier">{html.escape(str(report.get("match_tier") or "Not scored yet"))}</span></div>'
+        '<div class="cc-match-action"><span>Recommended action</span>'
+        f'<strong>{html.escape(str(report.get("recommended_action") or "Review First"))}</strong>'
+        f'<span>Confidence: {html.escape(str(report.get("confidence") or "Low"))}</span></div>'
+        f'<p class="cc-match-summary">{html.escape(str(report.get("match_summary") or "Review the fit before generating a package."))}</p>'
+        '<div class="cc-match-details">'
+        f'{render_list("Top strengths", "match_strengths")}'
+        f'{render_list("Gaps / cautions", "match_gaps")}'
+        '</div></section>'
+    )
+
+
 def _material_button_rows(
     st: Any,
     tracker_id: str,
@@ -449,6 +499,7 @@ def _render_role_card(
         metadata = _metadata_html(application, package)
         if metadata:
             st.markdown(metadata, unsafe_allow_html=True)
+        st.markdown(_match_score_html(application), unsafe_allow_html=True)
         notes = str(application.get("notes") or "").strip()
         if notes:
             st.markdown(
@@ -595,6 +646,7 @@ def detect_prospect_intelligence(values: Dict[str, Any]) -> Dict[str, Any]:
     intelligence["freshness"] = detect_job_freshness(
         f"Posting date: {values.get('posting_date') or ''}\n{values.get('job_description') or ''}"
     )
+    intelligence["match_report"] = score_job_data(values, PROJECT_ROOT)
     return intelligence
 
 
@@ -626,6 +678,9 @@ def _render_intelligence_preview(st: Any, intelligence: Dict[str, Any]) -> None:
             st.markdown(
                 "**Suggested proof points:** " + "; ".join(proof_points[:4])
             )
+        match_report = intelligence.get("match_report")
+        if isinstance(match_report, dict):
+            st.markdown(_match_score_html(match_report), unsafe_allow_html=True)
 
 
 def _render_add_prospect(st: Any) -> None:
@@ -810,6 +865,7 @@ def detected_application_voice(
         intelligence.get("role_family_label") or intelligence["role_family"]
     )
     intelligence["freshness"] = detect_job_freshness(str(parsed_job.get("raw_text") or ""))
+    intelligence["match_report"] = score_job_match(resolved["job_path"], project_root)
     return intelligence
 
 

@@ -47,6 +47,15 @@ OPTIONAL_INTELLIGENCE_FIELDS = (
     "company_voice_profile",
     "company_voice_source",
 )
+VALID_MATCH_TIERS = (
+    "Strong Match",
+    "Good Match",
+    "Stretch Match",
+    "Weak Match",
+    "Pass",
+)
+VALID_MATCH_ACTIONS = ("Generate Package", "Review First", "Pass")
+VALID_MATCH_CONFIDENCE = ("Low", "Medium", "High")
 
 
 class TrackerValidationError(Exception):
@@ -356,6 +365,36 @@ def validate_tracker_entries(
             value = application.get(metadata_field)
             if value is not None and not isinstance(value, str):
                 errors.append(f"{label} field {metadata_field} must be a string when present.")
+
+        match_score = application.get("match_score")
+        if match_score is not None and (
+            isinstance(match_score, bool)
+            or not isinstance(match_score, int)
+            or not 0 <= match_score <= 100
+        ):
+            errors.append(f"{label} field match_score must be an integer from 0 to 100.")
+        match_tier = application.get("match_tier")
+        if match_tier is not None and match_tier not in VALID_MATCH_TIERS:
+            errors.append(f"{label} field match_tier is not supported.")
+        recommended_action = application.get("recommended_action")
+        if recommended_action is not None and recommended_action not in VALID_MATCH_ACTIONS:
+            errors.append(f"{label} field recommended_action is not supported.")
+        confidence = application.get("confidence")
+        if confidence is not None and confidence not in VALID_MATCH_CONFIDENCE:
+            errors.append(f"{label} field confidence is not supported.")
+        for list_field, minimum, maximum in (
+            ("match_strengths", 3, 5),
+            ("match_gaps", 1, 5),
+        ):
+            values = application.get(list_field)
+            if values is not None and (
+                not isinstance(values, list)
+                or not minimum <= len(values) <= maximum
+                or not all(isinstance(value, str) and value.strip() for value in values)
+            ):
+                errors.append(
+                    f"{label} field {list_field} must contain {minimum}-{maximum} non-empty strings."
+                )
 
         if status in ACTIVE_STATUSES and application.get("show_on_dashboard") is True:
             pair = (
