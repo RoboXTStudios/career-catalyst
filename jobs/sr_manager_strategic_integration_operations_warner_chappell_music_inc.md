@@ -5,6 +5,7 @@ Tracker ID: warner_chappell_music_inc_sr_manager_strategic_integration_operation
 Location: USA - Los Angeles - 777 S. Santa Fe Ave, United States of America
 Work arrangement: Not specified
 Salary range: $85
+Posting date: 2026-05-05
 Official source: Official career page
 Official URL: https://wmg.wd1.myworkdayjobs.com/en-US/WMGUS/job/Sr-Manager--Strategic-Integration---Operations_R-027620?utm_source=chatgpt.com
 

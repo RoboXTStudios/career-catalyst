@@ -5,6 +5,7 @@ Tracker ID: the_walt_disney_company_corporate_director_talent_growth
 Location: Burbank, California, United States of America
 Work arrangement: Not specified
 Salary range: $203,600 to $248,800 per year
+Posting date: 2026-6-18
 Official source: Official career page
 Official URL: https://www.disneycareers.com/en/job/burbank/director-talent-and-growth/391/96569904576?utm_source=chatgpt.com
 

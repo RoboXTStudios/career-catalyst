@@ -21,6 +21,30 @@ applications:
   role_family: creative_marketing_ops
   company_voice_profile: dynamic_gaming_fandom
   company_voice_source: dynamic_inference
+  company_voice_label: Dynamic Gaming Fandom
+  company_inference_confidence: Medium
+  posting_date: ''
+  freshness: Unknown freshness
+  freshness_label: Unknown freshness / Verify manually
+  posting_status: Open
+  opportunity_score: 79
+  apply_recommendation: Apply If Strategic
+  opportunity_dimensions:
+    Resume Fit: 77
+    Salary Fit: 100
+    Industry Alignment: 58
+    Role Level Fit: 100
+    Location Fit: 100
+    Mission / Personal Alignment: 62
+    Posting Freshness: 50
+    Interview Probability: 76
+  package_quality:
+    resume_tailoring_score: 78
+    cover_letter_score: 86
+    ats_keyword_match: 83
+    voice_match: 68
+    confidence_level: Medium
+    confidence_score: 79
 - id: google_strategy_ops_youtube_auction_brand
   company: Google
   company_aliases:
@@ -34,7 +58,7 @@ applications:
   priority: High
   source: Official Google Careers
   submitted_date: '2026-06-27'
-  salary_range: $152,000-$222,000 + 15% bonus target + equity + benefits
+  salary_range: US $152,000-$222,000 USD + 15% bonus target + equity + benefits
   notes: Submitted application using Google-tailored styled resume and cover letter. Strong YouTube, GTM operations, product activation, large advertiser, Google advertising product familiarity, and operational excellence fit.
   next_action: Monitor for response and identify Google/YouTube professional contacts for possible follow-up.
   show_on_dashboard: true
@@ -42,6 +66,30 @@ applications:
   role_family: gtm_product_activation
   company_voice_profile: google_youtube
   company_voice_source: known_profile
+  company_voice_label: Dynamic Product Technology
+  company_inference_confidence: High
+  posting_date: ''
+  freshness: Unknown freshness
+  freshness_label: Unknown freshness / Verify manually
+  posting_status: Open
+  opportunity_score: 77
+  apply_recommendation: Apply If Strategic
+  opportunity_dimensions:
+    Resume Fit: 81
+    Salary Fit: 92
+    Industry Alignment: 58
+    Role Level Fit: 100
+    Location Fit: 100
+    Mission / Personal Alignment: 42
+    Posting Freshness: 50
+    Interview Probability: 76
+  package_quality:
+    resume_tailoring_score: 83
+    cover_letter_score: 94
+    ats_keyword_match: 89
+    voice_match: 99
+    confidence_level: High
+    confidence_score: 91
 - id: playstation_director_ad_ops_invalid
   company: Sony Interactive Entertainment / PlayStation
   company_aliases:
@@ -87,6 +135,30 @@ applications:
   role_family: creative_marketing_ops
   company_voice_profile: paramount
   company_voice_source: known_profile
+  company_voice_label: Dynamic Entertainment Streaming
+  company_inference_confidence: High
+  posting_date: ''
+  freshness: Unknown freshness
+  freshness_label: Unknown freshness / Verify manually
+  posting_status: Open
+  opportunity_score: 78
+  apply_recommendation: Apply If Strategic
+  opportunity_dimensions:
+    Resume Fit: 90
+    Salary Fit: 92
+    Industry Alignment: 58
+    Role Level Fit: 100
+    Location Fit: 42
+    Mission / Personal Alignment: 82
+    Posting Freshness: 50
+    Interview Probability: 85
+  package_quality:
+    resume_tailoring_score: 92
+    cover_letter_score: 94
+    ats_keyword_match: 99
+    voice_match: 99
+    confidence_level: High
+    confidence_score: 96
 - id: united_talent_agency_director_transformation
   company: United Talent Agency
   company_aliases: []
@@ -108,6 +180,30 @@ applications:
   role_family: transformation_advisory
   company_voice_profile: uta
   company_voice_source: known_profile
+  company_voice_label: Dynamic Talent Agency Media
+  company_inference_confidence: High
+  posting_date: ''
+  freshness: Unknown freshness
+  freshness_label: Unknown freshness / Verify manually
+  posting_status: Open
+  opportunity_score: 70
+  apply_recommendation: Apply If Strategic
+  opportunity_dimensions:
+    Resume Fit: 38
+    Salary Fit: 92
+    Industry Alignment: 72
+    Role Level Fit: 100
+    Location Fit: 100
+    Mission / Personal Alignment: 62
+    Posting Freshness: 50
+    Interview Probability: 60
+  package_quality:
+    resume_tailoring_score: 38
+    cover_letter_score: 94
+    ats_keyword_match: 36
+    voice_match: 99
+    confidence_level: Medium
+    confidence_score: 67
 - id: disney_entertainment_and_espn_product_technology_director_strategy_operations_product_technology
   company: Disney Entertainment and ESPN Product & Technology
   company_aliases: []
@@ -129,6 +225,30 @@ applications:
   role_family: product_strategy_ops
   company_voice_profile: disney
   company_voice_source: known_profile
+  company_voice_label: Dynamic Entertainment Streaming
+  company_inference_confidence: High
+  posting_date: ''
+  freshness: Unknown freshness
+  freshness_label: Unknown freshness / Verify manually
+  posting_status: Open
+  opportunity_score: 81
+  apply_recommendation: Apply Immediately
+  opportunity_dimensions:
+    Resume Fit: 82
+    Salary Fit: 100
+    Industry Alignment: 58
+    Role Level Fit: 100
+    Location Fit: 100
+    Mission / Personal Alignment: 72
+    Posting Freshness: 50
+    Interview Probability: 80
+  package_quality:
+    resume_tailoring_score: 83
+    cover_letter_score: 90
+    ats_keyword_match: 88
+    voice_match: 90
+    confidence_level: High
+    confidence_score: 88
 - id: fieldai_director_of_matrix_operations_organizational_efficiency
   company: FieldAI
   company_aliases: []
@@ -150,6 +270,30 @@ applications:
   role_family: ai_operations_systems
   company_voice_profile: fieldai
   company_voice_source: known_profile
+  company_voice_label: Dynamic Ai Technology Startup
+  company_inference_confidence: High
+  posting_date: ''
+  freshness: Unknown freshness
+  freshness_label: Unknown freshness / Verify manually
+  posting_status: Open
+  opportunity_score: 69
+  apply_recommendation: Apply If Strategic
+  opportunity_dimensions:
+    Resume Fit: 49
+    Salary Fit: 92
+    Industry Alignment: 44
+    Role Level Fit: 100
+    Location Fit: 100
+    Mission / Personal Alignment: 72
+    Posting Freshness: 50
+    Interview Probability: 60
+  package_quality:
+    resume_tailoring_score: 49
+    cover_letter_score: 94
+    ats_keyword_match: 49
+    voice_match: 99
+    confidence_level: Medium
+    confidence_score: 73
 - id: bandsintown_senior_copywriter_content_strategist
   company: BandsInTown
   company_aliases: []
@@ -170,12 +314,37 @@ applications:
   role_family: music_content_strategy
   company_voice_profile: bandsintown
   company_voice_source: known_profile
+  company_voice_label: Dynamic Music Live Events
+  company_inference_confidence: High
+  salary_range: The actual base salary offered depends on a variety of factors, which may include, as applicable, the qualifications of the individual applicant for the position, years of relevant experience, specific and unique skills, level of education attained, certifications or other professional licenses held, and the location in which the applicant lives and/or from which they will be performing the job. All candidates are encouraged to apply.
+  posting_date: ''
+  freshness: Unknown freshness
+  freshness_label: Unknown freshness / Verify manually
+  posting_status: Open
+  opportunity_score: 69
+  apply_recommendation: Apply If Strategic
+  opportunity_dimensions:
+    Resume Fit: 48
+    Salary Fit: 55
+    Industry Alignment: 86
+    Role Level Fit: 100
+    Location Fit: 100
+    Mission / Personal Alignment: 42
+    Posting Freshness: 50
+    Interview Probability: 65
+  package_quality:
+    resume_tailoring_score: 48
+    cover_letter_score: 100
+    ats_keyword_match: 48
+    voice_match: 99
+    confidence_level: Medium
+    confidence_score: 74
 - id: the_walt_disney_company_corporate_director_talent_growth
   company: The Walt Disney Company (Corporate)
   company_aliases: []
   role: Director, Talent & Growth
   role_aliases: []
-  status: Reviewed
+  status: Applied
   priority: High
   source: Official career page
   notes: ''
@@ -190,15 +359,40 @@ applications:
   role_family: product_strategy_ops
   company_voice_profile: disney
   company_voice_source: known_profile
+  company_voice_label: Dynamic Entertainment Streaming
+  company_inference_confidence: High
+  freshness: Unknown freshness
+  freshness_label: Unknown freshness / Verify manually
+  posting_status: Open
+  posting_date: ''
+  opportunity_score: 76
+  apply_recommendation: Apply If Strategic
+  opportunity_dimensions:
+    Resume Fit: 80
+    Salary Fit: 100
+    Industry Alignment: 30
+    Role Level Fit: 100
+    Location Fit: 92
+    Mission / Personal Alignment: 72
+    Posting Freshness: 50
+    Interview Probability: 73
+  package_quality:
+    resume_tailoring_score: 81
+    cover_letter_score: 90
+    ats_keyword_match: 86
+    voice_match: 90
+    confidence_level: High
+    confidence_score: 87
+  submitted_date: '2026-06-30'
 - id: warner_chappell_music_inc_sr_manager_strategic_integration_operations
   company: Warner Chappell Music Inc
   company_aliases: []
   role: Sr. Manager, Strategic Integration & Operations
   role_aliases: []
-  status: Drafted
-  priority: High
+  status: Applied
+  priority: Medium
   source: Official career page
-  notes: ''
+  notes: Applied with $100k salary expectation due posted range. Treat as music-industry doorway opportunity, not survival compensation.
   next_action: Review fit and generate application package.
   show_on_dashboard: true
   official_url: https://wmg.wd1.myworkdayjobs.com/en-US/WMGUS/job/Sr-Manager--Strategic-Integration---Operations_R-027620?utm_source=chatgpt.com
@@ -206,7 +400,33 @@ applications:
   salary_range: $85
   work_arrangement: Not specified
   job_file: jobs/sr_manager_strategic_integration_operations_warner_chappell_music_inc.md
-  company_category: music_live_events
-  role_family: community_growth
-  company_voice_profile: dynamic_music_live_events
+  company_category: music_entertainment_operations
+  role_family: business_operations
+  company_voice_profile: dynamic_music_entertainment_operations
   company_voice_source: dynamic_inference
+  company_voice_label: Music + Operational Transformation
+  company_inference_confidence: High
+  posting_date: '2026-05-05'
+  posting_age_days: 56
+  freshness: Stale
+  freshness_label: Stale / Lower priority
+  posting_status: Open
+  opportunity_score: 64
+  apply_recommendation: Watch / Recheck
+  opportunity_dimensions:
+    Resume Fit: 59
+    Salary Fit: 20
+    Industry Alignment: 72
+    Role Level Fit: 85
+    Location Fit: 100
+    Mission / Personal Alignment: 82
+    Posting Freshness: 25
+    Interview Probability: 69
+  package_quality:
+    resume_tailoring_score: 59
+    cover_letter_score: 89
+    ats_keyword_match: 60
+    voice_match: 88
+    confidence_level: Medium
+    confidence_score: 74
+  submitted_date: '2026-06-30'

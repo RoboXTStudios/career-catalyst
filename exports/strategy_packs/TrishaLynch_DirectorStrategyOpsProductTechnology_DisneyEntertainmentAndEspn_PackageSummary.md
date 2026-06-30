@@ -1,0 +1,29 @@
+# Application Package Summary
+
+## Opportunity
+
+- Overall Score: 81/100
+- Apply Recommendation: Apply Immediately
+- Freshness: Unknown freshness / Verify manually
+- Posting Status: Open
+- Posting Date: Unknown
+- Salary: $227,200
+
+### Score Dimensions
+
+- Resume Fit: 82/100
+- Salary Fit: 100/100
+- Industry Alignment: 58/100
+- Role Level Fit: 100/100
+- Location Fit: 100/100
+- Mission / Personal Alignment: 72/100
+- Posting Freshness: 50/100
+- Interview Probability: 80/100
+
+## Package Quality Check
+
+- Resume Tailoring Score: 83/100
+- Cover Letter Score: 90/100
+- ATS Keyword Match: 88/100
+- Voice Match: 90/100
+- Confidence Level: High
