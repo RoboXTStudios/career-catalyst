@@ -39,6 +39,28 @@ class GenerateDashboardTests(unittest.TestCase):
         self.assertIn("Career Catalyst Dashboard", self.content)
         self.assertIn("Application Packages", self.content)
 
+    def test_dashboard_contains_priority_queues_and_next_steps(self):
+        for heading in (
+            "Recommended Next Steps",
+            "Strong Matches",
+            "Good Matches",
+            "Stretch Matches",
+            "Follow-Up Due",
+            "Review First",
+            "Pass / Hidden / Invalid",
+            "Cleanup Needed",
+        ):
+            self.assertIn(heading, self.content)
+
+    def test_dashboard_cards_include_follow_up_timing_fields(self):
+        for label in (
+            "Applied",
+            "Days since applied",
+            "Follow-up",
+            "Suggested follow-up",
+        ):
+            self.assertIn(f"<dt>{label}</dt>", self.content)
+
     def test_dashboard_contains_generated_file_links(self):
         links = re.findall(r'href="([^"]+)"', self.content)
         self.assertTrue(links)

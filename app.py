@@ -21,7 +21,21 @@ from scripts.application_tracker import (
 )
 from scripts.dynamic_role_intelligence import get_effective_voice_profile
 from scripts.filename_utils import build_upload_filename
-from scripts.generate_dashboard import generate_dashboard, load_application_packages
+from scripts.generate_dashboard import (
+    ACTION_FILTERS,
+    DASHBOARD_MODES,
+    FOLLOW_UP_FILTERS,
+    MATCH_TIER_FILTERS,
+    SORT_OPTIONS,
+    STATUS_FILTERS,
+    filter_dashboard_records,
+    generate_dashboard,
+    load_application_packages,
+    prepare_dashboard_records,
+    recommended_next_steps,
+    select_dashboard_mode,
+    sort_dashboard_records,
+)
 from scripts.generate_followups import (
     FOLLOWUP_ELIGIBLE_STATUSES,
     FollowupGenerationError,
@@ -266,6 +280,7 @@ def summarize_applications(applications: list[Dict[str, Any]]) -> Dict[str, int]
 
 def group_applications_by_status(
     applications: list[Dict[str, Any]],
+    preserve_order: bool = False,
 ) -> Dict[str, list[Dict[str, Any]]]:
     """Group tracker records for the interactive dashboard without changing order on disk."""
     grouped = {label: [] for label in TRACKER_GROUPS}
@@ -278,13 +293,14 @@ def group_applications_by_status(
         else:
             label = "Draft / Reviewed / Paused"
         grouped[label].append(application)
-    for values in grouped.values():
-        values.sort(
-            key=lambda item: (
-                str(item.get("company") or "").lower(),
-                str(item.get("role") or "").lower(),
+    if not preserve_order:
+        for values in grouped.values():
+            values.sort(
+                key=lambda item: (
+                    str(item.get("company") or "").lower(),
+                    str(item.get("role") or "").lower(),
+                )
             )
-        )
     return grouped
 
 
@@ -391,7 +407,15 @@ def _metadata_html(application: Dict[str, Any], package: Dict[str, Any]) -> str:
         ("Salary", application.get("salary_range") or package.get("salary_range")),
         ("Freshness", application.get("freshness_label") or application.get("freshness")),
         ("Opportunity", f"{application.get('opportunity_score')}/100 - {application.get('apply_recommendation')}" if application.get("opportunity_score") is not None else None),
-        ("Submitted", application.get("submitted_date")),
+        ("Applied", application.get("submitted_date") or application.get("applied_date") or "No applied date"),
+        (
+            "Days since applied",
+            application.get("days_since_applied")
+            if application.get("days_since_applied") is not None
+            else "Unknown",
+        ),
+        ("Follow-up", application.get("follow_up_status") or "No applied date"),
+        ("Suggested follow-up", application.get("suggested_follow_up_date") or "Verify manually"),
         (
             "Category",
             humanize(
@@ -530,7 +554,7 @@ def _render_application_tracker(
         '<h2 class="cc-section-heading">Application Tracker</h2>',
         unsafe_allow_html=True,
     )
-    grouped = group_applications_by_status(applications)
+    grouped = group_applications_by_status(applications, preserve_order=True)
     for label in TRACKER_GROUPS:
         group = grouped[label]
         count_label = "role" if len(group) == 1 else "roles"
@@ -558,6 +582,16 @@ def _render_application_tracker(
                 application,
                 packages.get(str(application.get("id")), {}),
             )
+
+
+def _render_recommended_next_steps(
+    st: Any, applications: list[Dict[str, Any]], mode: str
+) -> None:
+    steps = recommended_next_steps(applications, mode)
+    with st.container(border=True):
+        st.markdown("**Recommended Next Steps**")
+        for index, step in enumerate(steps, start=1):
+            st.markdown(f"{index}. {step}")
 
 
 def _application_label(application: Dict[str, Any]) -> str:
@@ -1124,7 +1158,46 @@ def _render_dashboard(st: Any) -> None:
         (st.success if opened else st.warning)(message)
 
     _render_summary_metrics(st, applications)
-    _render_application_tracker(st, applications, packages)
+
+    st.markdown(
+        '<h2 class="cc-section-heading">Dashboard Work Mode</h2>',
+        unsafe_allow_html=True,
+    )
+    mode = st.selectbox("Mode", DASHBOARD_MODES, key="dashboard_mode")
+    search = st.text_input(
+        "Search company, title, category, role family, source, or location",
+        key="dashboard_search",
+    )
+    filter_columns = st.columns(4)
+    match_tier = filter_columns[0].selectbox(
+        "Match Tier", MATCH_TIER_FILTERS, key="dashboard_match_tier"
+    )
+    recommended_action = filter_columns[1].selectbox(
+        "Recommended Action", ACTION_FILTERS, key="dashboard_action"
+    )
+    application_status = filter_columns[2].selectbox(
+        "Application Status", STATUS_FILTERS, key="dashboard_status"
+    )
+    follow_up_status = filter_columns[3].selectbox(
+        "Follow-Up Status", FOLLOW_UP_FILTERS, key="dashboard_follow_up_status"
+    )
+    sort_by = st.selectbox("Sort by", SORT_OPTIONS, key="dashboard_sort")
+
+    records = prepare_dashboard_records(applications, packages)
+    if not (mode == "All Mode" and application_status == "Invalid/Hidden"):
+        records = select_dashboard_mode(records, mode)
+    records = filter_dashboard_records(
+        records,
+        match_tier=match_tier,
+        recommended_action=recommended_action,
+        application_status=application_status,
+        follow_up_status=follow_up_status,
+        search=search,
+    )
+    records = sort_dashboard_records(records, sort_by)
+    _render_recommended_next_steps(st, records, mode)
+    st.caption(f"{len(records)} roles match the current mode and filters.")
+    _render_application_tracker(st, records, packages)
 
 
 def _render_recent_outputs(st: Any) -> None:

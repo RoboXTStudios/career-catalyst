@@ -3,6 +3,7 @@
 import html
 import os
 import re
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 from urllib.parse import quote
@@ -59,6 +60,24 @@ LINK_ORDER = (
     "Strategy Pack",
     "Follow-Up Materials",
 )
+MATCH_TIER_FILTERS = (
+    "All", "Strong Match", "Good Match", "Stretch Match", "Weak Match", "Pass", "Not scored yet"
+)
+ACTION_FILTERS = ("All", "Generate Package", "Review First", "Pass")
+STATUS_FILTERS = ("All", "Active", "Applied", "Reviewed", "Paused", "Invalid/Hidden")
+FOLLOW_UP_FILTERS = (
+    "All", "Not due yet", "Due soon", "Due now", "Overdue", "Follow-up sent", "No applied date"
+)
+DASHBOARD_MODES = ("All Mode", "Apply Mode", "Follow-Up Mode", "Review Mode", "Cleanup Mode")
+SORT_OPTIONS = (
+    "Match Score: High to Low",
+    "Match Score: Low to High",
+    "Applied/Submitted Date: Newest First",
+    "Applied/Submitted Date: Oldest First",
+    "Follow-Up Due Date: Soonest First",
+    "Opportunity Score: High to Low",
+    "Company A-Z",
+)
 
 
 class DashboardGenerationError(Exception):
@@ -72,6 +91,326 @@ def _slug(value: str) -> str:
 def _display_taxonomy(value: Any) -> str:
     label = str(value or "").replace("_", " ").title()
     return label.replace("Ai ", "AI ").replace("Gtm ", "GTM ")
+
+
+def _parse_dashboard_date(value: Any) -> Optional[date]:
+    clean = str(value or "").strip()
+    if not clean:
+        return None
+    for pattern in ("%Y-%m-%d", "%m/%d/%Y", "%B %d, %Y", "%b %d, %Y"):
+        try:
+            return datetime.strptime(clean, pattern).date()
+        except ValueError:
+            continue
+    return None
+
+
+def _applied_date(record: Dict[str, Any]) -> Optional[date]:
+    for key in ("submitted_date", "applied_date", "application_date"):
+        parsed = _parse_dashboard_date(record.get(key))
+        if parsed:
+            return parsed
+    return None
+
+
+def _follow_up_was_sent(record: Dict[str, Any]) -> bool:
+    if str(record.get("status") or "").lower() == "follow-up":
+        return True
+    for key in ("follow_up_sent", "followup_sent"):
+        value = record.get(key)
+        if value is True or str(value or "").strip().lower() in {"yes", "sent", "true", "complete", "completed"}:
+            return True
+    for key in ("follow_up_status", "followup_status"):
+        if "sent" in str(record.get(key) or "").lower():
+            return True
+    if any(record.get(key) for key in ("follow_up_sent_date", "followup_sent_date", "last_follow_up_date")):
+        return True
+    history = record.get("follow_up_history") or record.get("followup_history")
+    if isinstance(history, list) and history:
+        return True
+    return False
+
+
+def calculate_follow_up_timing(
+    record: Dict[str, Any], today: Optional[date] = None
+) -> Dict[str, Any]:
+    """Compute non-persistent follow-up guidance from existing tracker dates."""
+    reference_date = today or date.today()
+    applied = _applied_date(record)
+    if _follow_up_was_sent(record):
+        status = "Follow-up sent"
+    elif applied is None:
+        status = "No applied date"
+    else:
+        days = (reference_date - applied).days
+        if days < 3:
+            status = "Not due yet"
+        elif days <= 5:
+            status = "Due soon"
+        elif days <= 10:
+            status = "Due now"
+        else:
+            status = "Overdue"
+
+    existing_suggestion = next(
+        (
+            record.get(key)
+            for key in ("suggested_follow_up_date", "follow_up_due_date", "next_follow_up_date", "follow_up_date")
+            if record.get(key)
+        ),
+        None,
+    )
+    suggested = str(existing_suggestion) if existing_suggestion else (
+        (applied + timedelta(days=5)).isoformat() if applied else None
+    )
+    return {
+        "days_since_applied": (reference_date - applied).days if applied else None,
+        "suggested_follow_up_date": suggested,
+        "follow_up_status": status,
+    }
+
+
+def enrich_dashboard_record(
+    record: Dict[str, Any], today: Optional[date] = None
+) -> Dict[str, Any]:
+    enriched = dict(record)
+    enriched.update(calculate_follow_up_timing(record, today))
+    return enriched
+
+
+def _date_ordinal(record: Dict[str, Any], key: str = "applied") -> Optional[int]:
+    parsed = (
+        _applied_date(record)
+        if key == "applied"
+        else _parse_dashboard_date(record.get("suggested_follow_up_date"))
+    )
+    return parsed.toordinal() if parsed else None
+
+
+def sort_dashboard_records(
+    records: Iterable[Dict[str, Any]], sort_by: str = SORT_OPTIONS[0]
+) -> List[Dict[str, Any]]:
+    """Sort dashboard records with missing values last and stable company fallback."""
+    values = list(records)
+    company = lambda item: normalize_tracker_value(item.get("company"))
+    if sort_by == "Match Score: Low to High":
+        key = lambda item: (item.get("match_score") is None, item.get("match_score") or 0, company(item))
+    elif sort_by == "Applied/Submitted Date: Newest First":
+        key = lambda item: (_date_ordinal(item) is None, -(_date_ordinal(item) or 0), company(item))
+    elif sort_by == "Applied/Submitted Date: Oldest First":
+        key = lambda item: (_date_ordinal(item) is None, _date_ordinal(item) or 0, company(item))
+    elif sort_by == "Follow-Up Due Date: Soonest First":
+        key = lambda item: (_date_ordinal(item, "follow_up") is None, _date_ordinal(item, "follow_up") or 0, company(item))
+    elif sort_by == "Opportunity Score: High to Low":
+        key = lambda item: (item.get("opportunity_score") is None, -(item.get("opportunity_score") or 0), company(item))
+    elif sort_by == "Company A-Z":
+        key = lambda item: (company(item), normalize_tracker_value(item.get("role")))
+    else:
+        key = lambda item: (
+            item.get("match_score") is None,
+            -(item.get("match_score") or 0),
+            _date_ordinal(item) is None,
+            -(_date_ordinal(item) or 0),
+            company(item),
+        )
+    return sorted(values, key=key)
+
+
+def _is_hidden(record: Dict[str, Any]) -> bool:
+    return record.get("show_on_dashboard") is False or str(record.get("status") or "") in HIDDEN_STATUSES
+
+
+def filter_dashboard_records(
+    records: Iterable[Dict[str, Any]],
+    match_tier: str = "All",
+    recommended_action: str = "All",
+    application_status: str = "All",
+    follow_up_status: str = "All",
+    search: str = "",
+) -> List[Dict[str, Any]]:
+    """Apply safe dashboard filters without requiring complete tracker records."""
+    query = normalize_tracker_value(search)
+    filtered = []
+    for record in records:
+        tier = str(record.get("match_tier") or "Not scored yet")
+        if match_tier != "All" and tier != match_tier:
+            continue
+        if recommended_action != "All" and record.get("recommended_action") != recommended_action:
+            continue
+        status = str(record.get("status") or "Drafted")
+        if application_status == "Active" and status not in ACTIVE_STATUSES:
+            continue
+        if application_status == "Applied" and status != "Applied":
+            continue
+        if application_status in {"Reviewed", "Paused"} and status != application_status:
+            continue
+        if application_status == "Invalid/Hidden" and not _is_hidden(record):
+            continue
+        if follow_up_status != "All" and record.get("follow_up_status") != follow_up_status:
+            continue
+        if query:
+            searchable = " ".join(
+                str(record.get(key) or "")
+                for key in ("company", "role", "job_title", "company_category", "role_family", "source", "location")
+            )
+            if query not in normalize_tracker_value(searchable):
+                continue
+        filtered.append(record)
+    return filtered
+
+
+def _needs_cleanup(record: Dict[str, Any]) -> bool:
+    status = str(record.get("status") or "")
+    freshness = str(record.get("freshness") or record.get("freshness_label") or "").lower()
+    posting_status = str(record.get("posting_status") or "").lower()
+    salary = str(record.get("salary_range") or "").strip().lower()
+    return bool(
+        record.get("match_tier") in {"Weak Match", "Pass"}
+        or _is_hidden(record)
+        or status == "Paused"
+        or "closed" in posting_status
+        or any(value in freshness for value in ("stale", "unknown"))
+        or salary in {"", "not disclosed", "unknown"}
+        or not record.get("source")
+    )
+
+
+def select_dashboard_mode(
+    records: Iterable[Dict[str, Any]], mode: str = "All Mode"
+) -> List[Dict[str, Any]]:
+    values = list(records)
+    if mode == "Apply Mode":
+        return [
+            item for item in values
+            if item.get("match_tier") in {"Strong Match", "Good Match"}
+            and item.get("recommended_action") == "Generate Package"
+            and str(item.get("status") or "") not in ACTIVE_STATUSES
+            and not _is_hidden(item)
+            and str(item.get("posting_status") or "").lower() != "closed"
+        ]
+    if mode == "Follow-Up Mode":
+        return [
+            item for item in values
+            if str(item.get("status") or "") in ACTIVE_STATUSES
+            and item.get("follow_up_status") in {"Due soon", "Due now", "Overdue"}
+            and not _is_hidden(item)
+        ]
+    if mode == "Review Mode":
+        return [item for item in values if item.get("match_tier") == "Stretch Match" or item.get("recommended_action") == "Review First"]
+    if mode == "Cleanup Mode":
+        return [item for item in values if _needs_cleanup(item)]
+    return [item for item in values if not _is_hidden(item)]
+
+
+def _record_label(record: Dict[str, Any]) -> str:
+    return f"{record.get('company') or 'Unknown company'} — {record.get('role') or record.get('job_title') or 'Unknown role'}"
+
+
+def recommended_next_steps(
+    records: Iterable[Dict[str, Any]], mode: str = "All Mode"
+) -> List[str]:
+    """Return practical, mode-specific actions for the visible dashboard records."""
+    values = sort_dashboard_records(records)
+    empty = {
+        "Apply Mode": "No strong unapplied matches found.",
+        "Follow-Up Mode": "No roles need follow-up right now.",
+        "Review Mode": "No stretch or review-first roles found.",
+        "Cleanup Mode": "No cleanup items found.",
+        "All Mode": "No roles match the current dashboard filters.",
+    }
+    if not values:
+        return [empty.get(mode, empty["All Mode"])]
+
+    if mode == "Apply Mode":
+        steps = []
+        ordered = sorted(
+            values,
+            key=lambda item: (
+                -(item.get("match_score") or 0),
+                -(item.get("opportunity_score") or 0),
+                normalize_tracker_value(item.get("company")),
+            ),
+        )
+        for item in ordered[:3]:
+            if not item.get("_has_package"):
+                action = "Generate package for"
+            elif item.get("status") == "Reviewed":
+                action = "Apply to"
+            else:
+                action = "Review and apply to"
+            steps.append(f"{action} {_record_label(item)} ({item.get('match_tier')}, {item.get('match_score', 'Not scored')}/100).")
+        return steps
+    if mode == "Follow-Up Mode":
+        priority = {"Overdue": 0, "Due now": 1, "Due soon": 2}
+        ordered = sorted(values, key=lambda item: (priority.get(str(item.get("follow_up_status")), 9), _date_ordinal(item, "follow_up") or 9999999))
+        steps = []
+        for item in ordered[:5]:
+            materials = item.get("_follow_up_materials_status")
+            material_action = (
+                "Use existing follow-up materials."
+                if materials == "Available"
+                else "Generate follow-up materials."
+                if materials == "Missing"
+                else "Follow-up materials not verified."
+            )
+            has_contact = any(
+                item.get(key)
+                for key in (
+                    "recruiter_name", "recruiter_contact", "recruiter_email",
+                    "hiring_manager_name", "hiring_manager_contact", "hiring_manager_email",
+                )
+            )
+            contact_action = (
+                "Send the recruiter or hiring manager follow-up."
+                if has_contact
+                else "Manually verify a recruiter or hiring manager contact."
+            )
+            steps.append(
+                f"{item.get('follow_up_status')}: {_record_label(item)}. "
+                f"{material_action} {contact_action}"
+            )
+        return steps
+    if mode == "Review Mode":
+        steps = []
+        for item in values[:5]:
+            reason = str(
+                (item.get("match_gaps") or [item.get("match_summary") or "Human judgment is needed."])[0]
+            )
+            upside = str(
+                (item.get("match_strengths") or ["Company, industry, and strategic-doorway value may justify the stretch."])[0]
+            )
+            steps.append(f"Review {_record_label(item)}: {reason} Weigh against: {upside}")
+        return steps
+    if mode == "Cleanup Mode":
+        steps = []
+        for item in values[:5]:
+            if _is_hidden(item) or item.get("match_tier") == "Pass":
+                action = "Keep hidden or mark pass"
+            elif str(item.get("freshness") or "").lower() in {"stale", "unknown freshness"}:
+                action = "Verify posting freshness"
+            elif not item.get("salary_range") or not item.get("source"):
+                action = "Verify missing salary/source fields"
+            else:
+                action = "Pause or manually verify"
+            steps.append(f"{action}: {_record_label(item)}.")
+        return steps
+
+    unapplied = next((item for item in values if str(item.get("status") or "") not in ACTIVE_STATUSES), None)
+    urgent = next((item for item in values if item.get("follow_up_status") in {"Overdue", "Due now", "Due soon"}), None)
+    if urgent:
+        steps = [f"Act first on {_record_label(urgent)}; its follow-up is {urgent.get('follow_up_status').lower()}." ]
+    elif unapplied:
+        steps = [f"Act first on {_record_label(unapplied)}, the highest match not yet applied."]
+    else:
+        steps = [f"Act first on {_record_label(values[0])}, the highest-priority visible role."]
+    if unapplied:
+        steps.append(f"Highest match not yet applied: {_record_label(unapplied)} ({unapplied.get('match_score', 'Not scored')}/100).")
+    if urgent:
+        steps.append(f"Most urgent follow-up: {_record_label(urgent)} — {urgent.get('follow_up_status')}.")
+    cleanup = next((item for item in values if _needs_cleanup(item)), None)
+    if cleanup:
+        steps.append(f"Verify cleanup item: {_record_label(cleanup)}.")
+    return steps
 
 
 def _first_heading(text: str) -> Optional[str]:
@@ -322,6 +661,56 @@ def _attach_assets(root: Path, packages: List[Dict[str, Any]]) -> List[Tuple[str
     return unassigned
 
 
+def prepare_dashboard_records(
+    applications: Iterable[Dict[str, Any]],
+    packages: Optional[Dict[str, Dict[str, Any]]] = None,
+    today: Optional[date] = None,
+) -> List[Dict[str, Any]]:
+    """Enrich tracker rows with package awareness and dynamic dashboard fields."""
+    package_map = packages or {}
+    records = []
+    for application in applications:
+        tracker_id = str(application.get("id") or "")
+        package = package_map.get(tracker_id, {})
+        record = dict(application)
+        for key in ("location", "salary_range", "company_category", "role_family"):
+            if not record.get(key) and package.get(key):
+                record[key] = package[key]
+        files = package.get("files") if isinstance(package, dict) else None
+        if isinstance(files, dict):
+            record["_follow_up_materials_status"] = (
+                "Available" if "Follow-Up Materials" in files else "Missing"
+            )
+            record["_has_package"] = any(
+                label not in {"Job Description", "Follow-Up Materials"}
+                for label in files
+            )
+        else:
+            record["_follow_up_materials_status"] = "Not verified"
+            record["_has_package"] = bool(record.get("package_quality"))
+        records.append(enrich_dashboard_record(record, today))
+    return records
+
+
+def _enrich_package_trackers(
+    packages: List[Dict[str, Any]], today: Optional[date] = None
+) -> None:
+    package_map = {
+        str(package.get("tracker_id")): package
+        for package in packages
+        if package.get("tracker_id")
+    }
+    applications = [package["tracker"] for package in packages if package.get("tracker")]
+    enriched = {
+        str(record.get("id")): record
+        for record in prepare_dashboard_records(applications, package_map, today)
+    }
+    for package in packages:
+        tracker_id = str(package.get("tracker_id") or "")
+        if tracker_id in enriched:
+            package["tracker"] = enriched[tracker_id]
+
+
 def _relative_href(path: Path, dashboard_directory: Path) -> str:
     relative_path = os.path.relpath(path, dashboard_directory)
     return quote(Path(relative_path).as_posix(), safe="/._-")
@@ -365,7 +754,15 @@ def _render_metadata(package: Dict[str, Any]) -> str:
         ("Opportunity score", f"{tracker.get('opportunity_score')}/100" if tracker.get("opportunity_score") is not None else None),
         ("Recommendation", tracker.get("apply_recommendation")),
         ("Source", tracker.get("source")),
-        ("Submitted", tracker.get("submitted_date")),
+        ("Applied", tracker.get("submitted_date") or tracker.get("applied_date") or "No applied date"),
+        (
+            "Days since applied",
+            tracker.get("days_since_applied")
+            if tracker.get("days_since_applied") is not None
+            else "Unknown",
+        ),
+        ("Follow-up", tracker.get("follow_up_status") or "No applied date"),
+        ("Suggested follow-up", tracker.get("suggested_follow_up_date") or "Verify manually"),
         (
             "Company category",
             _display_taxonomy(
@@ -525,6 +922,19 @@ def _partition_packages(
             groups["draft"].append(package)
         else:
             groups["hidden"].append(package)
+    for key, values in groups.items():
+        ordered_trackers = sort_dashboard_records(
+            [
+                {
+                    **package,
+                    **package.get("tracker", {}),
+                    "_package_identity": id(package),
+                }
+                for package in values
+            ]
+        )
+        by_identity = {id(package): package for package in values}
+        groups[key] = [by_identity[item["_package_identity"]] for item in ordered_trackers]
     return groups
 
 
@@ -592,6 +1002,68 @@ def _render_hidden_group(
     )
 
 
+def _package_record(package: Dict[str, Any]) -> Dict[str, Any]:
+    return {**package, **package.get("tracker", {})}
+
+
+def _render_priority_queue(
+    title: str, queue_id: str, packages: List[Dict[str, Any]], empty_message: str
+) -> str:
+    records = sort_dashboard_records([_package_record(package) for package in packages])
+    if records:
+        items = "".join(
+            '<li><strong>'
+            f'{html.escape(str(item.get("company") or "Unknown company"))} — '
+            f'{html.escape(str(item.get("role") or "Unknown role"))}</strong>'
+            '<span>'
+            f'Match: {html.escape(str(item.get("match_score") if item.get("match_score") is not None else "Not scored yet"))}'
+            f' · {html.escape(str(item.get("match_tier") or "Not scored yet"))}'
+            f' · Action: {html.escape(str(item.get("recommended_action") or "Verify manually"))}'
+            f' · Follow-up: {html.escape(str(item.get("follow_up_status") or "No applied date"))}'
+            '</span></li>'
+            for item in records
+        )
+    else:
+        items = f'<li class="empty-state">{html.escape(empty_message)}</li>'
+    return (
+        f'<section class="priority-queue" id="{queue_id}">'
+        f'<h3>{html.escape(title)}</h3><ul>{items}</ul></section>'
+    )
+
+
+def _render_priority_sections(groups: Dict[str, List[Dict[str, Any]]]) -> str:
+    visible = groups["active"] + groups["draft"]
+    all_packages = visible + groups["hidden"]
+    visible_records = [_package_record(package) for package in visible]
+    steps = recommended_next_steps(visible_records, "All Mode")
+    rendered_steps = "".join(f"<li>{html.escape(step)}</li>" for step in steps)
+
+    def matching(source: List[Dict[str, Any]], predicate: Any) -> List[Dict[str, Any]]:
+        return [package for package in source if predicate(_package_record(package))]
+
+    queues = (
+        ("Strong Matches", "strong-matches", matching(visible, lambda item: item.get("match_tier") == "Strong Match"), "No strong matches found."),
+        ("Good Matches", "good-matches", matching(visible, lambda item: item.get("match_tier") == "Good Match"), "No good matches found."),
+        ("Stretch Matches", "stretch-matches", matching(visible, lambda item: item.get("match_tier") == "Stretch Match"), "No stretch matches found."),
+        ("Follow-Up Due", "follow-up-due", matching(visible, lambda item: item.get("follow_up_status") in {"Due soon", "Due now", "Overdue"}), "No roles need follow-up right now."),
+        ("Review First", "review-first", matching(visible, lambda item: item.get("recommended_action") == "Review First"), "No review-first roles found."),
+        ("Pass / Hidden / Invalid", "pass-hidden-invalid", matching(all_packages, lambda item: item.get("match_tier") == "Pass" or _is_hidden(item)), "No pass or hidden roles found."),
+        ("Cleanup Needed", "cleanup-needed", matching(all_packages, _needs_cleanup), "No cleanup items found."),
+    )
+    rendered_queues = "".join(
+        _render_priority_queue(title, queue_id, packages, empty_message)
+        for title, queue_id, packages, empty_message in queues
+    )
+    return (
+        '<section class="recommended-steps" aria-labelledby="recommended-next-steps">'
+        '<h2 id="recommended-next-steps">Recommended Next Steps</h2>'
+        f'<ol>{rendered_steps}</ol></section>'
+        '<section class="priority-section" aria-labelledby="priority-queues">'
+        '<h2 id="priority-queues">Priority Queues</h2>'
+        f'<div class="priority-grid">{rendered_queues}</div></section>'
+    )
+
+
 def _render_html(
     groups: Dict[str, List[Dict[str, Any]]],
     counts: Dict[str, int],
@@ -618,6 +1090,7 @@ def _render_html(
         dashboard_directory,
     )
     hidden_group = _render_hidden_group(groups["hidden"], dashboard_directory)
+    priority_sections = _render_priority_sections(groups)
     visible_count = len(groups["active"]) + len(groups["draft"])
 
     return f"""<!doctype html>
@@ -704,6 +1177,15 @@ def _render_html(
     .summary-card {{ min-height: 96px; padding: 16px; }}
     .summary-value {{ display: block; font-size: 26px; font-weight: 700; line-height: 1; }}
     .summary-label {{ display: block; margin-top: 8px; color: var(--muted); font-size: 13px; }}
+    .recommended-steps, .priority-section {{ margin-top: 30px; }}
+    .recommended-steps ol {{ margin: 10px 0 0; border: 1px solid var(--border); border-radius: 6px; padding: 16px 20px 16px 42px; background: var(--surface); }}
+    .recommended-steps li + li {{ margin-top: 7px; }}
+    .priority-grid {{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }}
+    .priority-queue {{ border: 1px solid var(--border); border-radius: 6px; padding: 15px; background: var(--surface); }}
+    .priority-queue h3 {{ font-size: 15px; }}
+    .priority-queue ul {{ margin: 9px 0 0; padding-left: 18px; }}
+    .priority-queue li + li {{ margin-top: 8px; }}
+    .priority-queue li span {{ display: block; color: var(--muted); font-size: 12px; }}
     .packages {{ margin-top: 34px; }}
     .section-heading {{
       display: flex;
@@ -814,6 +1296,7 @@ def _render_html(
     .hidden-list {{ margin-top: 12px; }}
     @media (max-width: 900px) {{
       .summary-grid {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
+      .priority-grid {{ grid-template-columns: 1fr; }}
     }}
     @media (max-width: 620px) {{
       .header-inner, .page {{ width: min(100% - 24px, 1180px); }}
@@ -844,6 +1327,7 @@ def _render_html(
       <h2 id="summary-heading">Workspace Summary</h2>
       <div class="summary-grid">{summary_cards}</div>
     </section>
+    {priority_sections}
     <section class="packages" aria-labelledby="packages-heading">
       <div class="section-heading">
         <h2 id="packages-heading">Application Packages</h2>
@@ -867,6 +1351,7 @@ def load_application_packages(project_root: PathInput = Path.cwd()) -> Dict[str,
     tracker = validate_application_tracker(root)["applications"]
     _merge_tracker(packages, tracker)
     unassigned = _attach_assets(root, packages)
+    _enrich_package_trackers(packages)
     packages.sort(
         key=lambda item: (
             0 if item.get("tracker") else 1,
