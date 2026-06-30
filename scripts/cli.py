@@ -403,12 +403,14 @@ def add_prospect_command(file_path: str) -> int:
 def generate_package_command(
     job_file_or_tracker_id: str,
     generate_followups_too: Optional[bool] = None,
+    override_closed: bool = False,
 ) -> int:
     try:
         result = generate_package(
             job_file_or_tracker_id,
             PROJECT_ROOT,
             generate_followups_too=generate_followups_too,
+            override_closed=override_closed,
         )
     except PackageGenerationError as error:
         print(str(error), file=sys.stderr)
@@ -417,6 +419,16 @@ def generate_package_command(
     print(f"Package generated: {result['tracker_id']}")
     print(f"Status: {result['status']}")
     print(f"Match score: {result.get('match_score')}")
+    print(f"Opportunity score: {result['opportunity']['overall_score']}")
+    print(f"Recommendation: {result['opportunity']['apply_recommendation']}")
+    print(f"Freshness: {result['freshness']['label']}")
+    quality = result["package_quality"]
+    print(
+        "Package quality: "
+        f"resume {quality['resume_tailoring_score']}, cover letter {quality['cover_letter_score']}, "
+        f"ATS {quality['ats_keyword_match']}, voice {quality['voice_match']}, "
+        f"confidence {quality['confidence_level']}"
+    )
     for label, path in result["outputs"].items():
         print(f"{label}: {path}")
     return 0
@@ -575,6 +587,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Generate follow-up materials after the package",
     )
+    package_parser.add_argument(
+        "--override-closed",
+        action="store_true",
+        help="Generate only after manually verifying a closed-signal posting is still open",
+    )
     detect_parser = subparsers.add_parser(
         "detect-role", help="Detect company category, role family, and voice guidance"
     )
@@ -633,7 +650,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     if args.command == "add-prospect":
         return add_prospect_command(args.job_file_path)
     if args.command == "generate-package":
-        return generate_package_command(args.job_file_or_tracker_id, args.followups)
+        return generate_package_command(
+            args.job_file_or_tracker_id, args.followups, args.override_closed
+        )
     if args.command == "detect-role":
         return detect_role_command(args.job_file_or_tracker_id)
     if args.command == "followups":

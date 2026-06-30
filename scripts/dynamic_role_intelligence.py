@@ -18,6 +18,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 COMPANY_CATEGORIES = (
     "music_live_events",
+    "music_entertainment_operations",
     "entertainment_streaming",
     "talent_agency_media",
     "gaming_fandom",
@@ -47,13 +48,23 @@ CATEGORY_SIGNALS = {
         "bandsintown",
         "concert",
         "live music",
-        "artist",
-        "tour",
+        "live events",
         "touring",
         "venue",
         "festival",
-        "music fan",
+        "ticketing",
+        "fan community",
+        "event production",
         "promoter",
+    ),
+    "music_entertainment_operations": (
+        "warner music group",
+        "warner chappell",
+        " wmg ",
+        "record label",
+        "music publishing",
+        "music company",
+        "music industry",
     ),
     "talent_agency_media": (
         "united talent agency",
@@ -138,6 +149,22 @@ CATEGORY_GUIDANCE = {
         "avoid": [
             "unsupported label, artist management, or music journalism claims",
             "language that reads like fan mail",
+        ],
+    },
+    "music_entertainment_operations": {
+        "tone": ["music-aware", "strategic", "systems-minded", "operational"],
+        "cover_letter_angle": [
+            "connect music and entertainment experience with operational transformation, integration, and scalable execution",
+            "show how strategy becomes clear processes, systems, ownership, and cross-functional operating rhythms",
+        ],
+        "proof_points": [
+            "entertainment marketing and campaign operations",
+            "cross-functional leadership and workflow transformation",
+            "CampaignOS systems thinking and operational visibility",
+        ],
+        "avoid": [
+            "assuming a live-events focus without touring, venue, ticketing, fan-community, or event-production evidence",
+            "unsupported label or music-publishing experience claims",
         ],
     },
     "entertainment_streaming": {
@@ -396,6 +423,7 @@ def infer_company_context(
     scores = _category_scores(text)
     precedence = (
         "music_live_events",
+        "music_entertainment_operations",
         "talent_agency_media",
         "gaming_fandom",
         "ai_technology_startup",
@@ -406,6 +434,7 @@ def infer_company_context(
     )
     company_overrides = (
         ("music_live_events", ("bandsintown", "live nation", "ticketmaster")),
+        ("music_entertainment_operations", ("warner music group", "warner chappell", "wmg")),
         ("talent_agency_media", ("united talent agency", " uta ", "creative artists agency")),
         ("gaming_fandom", ("playstation", "riot games", "xbox", "nintendo")),
         ("ai_technology_startup", ("fieldai", "field ai")),
@@ -454,6 +483,28 @@ def detect_role_family(job_title: str = "", job_description: str = "") -> str:
         signal in combined
         for signal in ("music", "artist", "concert", "tour", "venue", "fan", "festival")
     )
+    operations_context = any(
+        signal in combined
+        for signal in (
+            "operations", "operational", "strategy", "strategic", "integration",
+            "transformation", "systems", "process", "workflow",
+        )
+    )
+    music_operations_company = any(
+        signal in combined
+        for signal in (
+            "warner chappell", "warner music", "music publishing", "record label", "music company"
+        )
+    )
+    wmg_context = any(
+        signal in combined for signal in ("warner chappell", "warner music", " wmg ")
+    )
+
+    if (wmg_context or (music_operations_company and "integration operations" in title)) and operations_context and any(
+        signal in title
+        for signal in ("operations", "integration", "transformation", "strategy")
+    ):
+        return "business_operations"
 
     if any(
         signal in title
@@ -501,7 +552,7 @@ def detect_role_family(job_title: str = "", job_description: str = "") -> str:
         and any(signal in title for signal in ("strategy", "operations", "director", "lead"))
     ):
         return "product_strategy_ops"
-    if any(signal in title for signal in ("business operations", "operations director", "chief of staff", "program operations")):
+    if any(signal in title for signal in ("business operations", "strategic operations", "strategy operations", "integration operations", "operations director", "chief of staff", "program operations")):
         return "business_operations"
     if any(signal in title for signal in ("marketing", "creative", "brand", "campaign")):
         return "creative_marketing_ops"
@@ -531,6 +582,10 @@ def build_dynamic_voice_profile(
     category_guidance = CATEGORY_GUIDANCE[category]
     role_guidance = ROLE_GUIDANCE[role_family]
     emphasize, proof_avoid = _proof_guidance(category, role_family)
+    is_music_operations = category == "music_entertainment_operations" and role_family in {
+        "business_operations", "product_strategy_ops", "transformation_advisory", "generic_senior_operator"
+    }
+    confidence_label = "High" if context["confidence"] >= 0.8 else "Medium"
     return {
         "profile_name": f"dynamic_{category}",
         "company_name": str(company_name or "").strip(),
@@ -543,7 +598,11 @@ def build_dynamic_voice_profile(
         "proof_points_to_avoid": proof_avoid,
         "avoid": _dedupe(category_guidance["avoid"]),
         "confidence": context["confidence"],
+        "confidence_label": confidence_label,
         "reasoning_summary": context["reasoning_summary"],
+        "company_voice_label": "Music + Operational Transformation" if is_music_operations else f"Dynamic {category.replace('_', ' ').title()}",
+        "company_category_label": "Music / Entertainment Operations" if category == "music_entertainment_operations" else category.replace("_", " ").title(),
+        "role_family_label": "Strategic Operations" if is_music_operations else role_family.replace("_", " ").title(),
     }
 
 
@@ -597,8 +656,12 @@ def get_effective_voice_profile(
         "proof_points_to_avoid": proof_avoid,
         "avoid": _dedupe((*profile.get("avoid", []), *dynamic["avoid"])),
         "confidence": confidence,
+        "confidence_label": "High" if confidence >= 0.8 else "Medium",
         "reasoning_summary": (
             f"Matched {company_name or 'the company'} to the configured {profile_name} profile "
             f"using {article} {match_type} company-name match; role text maps to {role_family}."
         ),
+        "company_voice_label": dynamic.get("company_voice_label", profile_name),
+        "company_category_label": dynamic.get("company_category_label", category.replace("_", " ").title()),
+        "role_family_label": dynamic.get("role_family_label", role_family.replace("_", " ").title()),
     }

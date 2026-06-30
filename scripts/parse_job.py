@@ -65,6 +65,7 @@ METADATA_LABELS = {
     "salary_range": ("salary", "salary range", "compensation", "compensation range"),
     "employment_type": ("employment type", "job type", "type"),
     "source_url": ("source url", "source", "posting url", "job url"),
+    "posting_date": ("posting date", "date posted", "posted on", "dateposted", "published"),
 }
 
 RESPONSIBILITY_HEADINGS = (
@@ -248,6 +249,7 @@ def extract_metadata(text: str) -> Dict[str, Optional[str]]:
         "salary_range": _extract_salary(text),
         "employment_type": _extract_employment_type(text),
         "source_url": _extract_source_url(text),
+        "posting_date": _extract_labeled_value(text, METADATA_LABELS["posting_date"]),
     }
     return metadata
 
@@ -354,6 +356,7 @@ def parse_job_description(file_path: PathInput) -> Dict[str, Any]:
         "salary_range": metadata["salary_range"],
         "employment_type": metadata["employment_type"],
         "source_url": metadata["source_url"],
+        "posting_date": metadata["posting_date"],
         "keywords": extract_keywords(text),
         "responsibilities": extract_responsibilities(text),
         "qualifications": extract_qualifications(text),

@@ -19,7 +19,11 @@ try:
     from .generate_cover_letter import generate_cover_letter
     from .generate_dashboard import generate_dashboard
     from .generate_messages import generate_message
+    from .generate_interview_prep import generate_interview_prep
     from .generate_strategy_pack import generate_strategy_pack
+    from .job_freshness import detect_job_freshness
+    from .opportunity_scoring import score_opportunity
+    from .package_quality import calculate_package_quality, save_package_summary
     from .parse_job import JobParseError, parse_job_description
     from .prospect_intake import add_prospect_from_job_file
     from .score_match import score_job_match
@@ -38,7 +42,11 @@ except ImportError:
     from generate_cover_letter import generate_cover_letter
     from generate_dashboard import generate_dashboard
     from generate_messages import generate_message
+    from generate_interview_prep import generate_interview_prep
     from generate_strategy_pack import generate_strategy_pack
+    from job_freshness import detect_job_freshness
+    from opportunity_scoring import score_opportunity
+    from package_quality import calculate_package_quality, save_package_summary
     from parse_job import JobParseError, parse_job_description
     from prospect_intake import add_prospect_from_job_file
     from score_match import score_job_match
@@ -147,6 +155,7 @@ def generate_package(
     job_file_or_tracker_id: PathInput,
     project_root: Optional[PathInput] = None,
     generate_followups_too: Optional[bool] = None,
+    override_closed: bool = False,
 ) -> Dict[str, Any]:
     """Generate all package materials and apply the safe Drafted-to-Reviewed transition."""
     root = Path(project_root) if project_root is not None else Path.cwd()
@@ -163,6 +172,7 @@ def generate_package(
             job_description=str(parsed.get("raw_text") or ""),
             source_url=str(parsed.get("source_url") or application.get("official_url") or ""),
         )
+        freshness = detect_job_freshness(str(parsed.get("raw_text") or ""))
         application = update_prospect(
             str(application["id"]),
             {
@@ -170,15 +180,30 @@ def generate_package(
                 "role_family": intelligence["role_family"],
                 "company_voice_profile": intelligence["profile_name"],
                 "company_voice_source": intelligence["source"],
+                "company_voice_label": intelligence.get("company_voice_label", intelligence["profile_name"]),
+                "company_inference_confidence": intelligence.get("confidence_label", "Medium"),
+                "salary_range": str(parsed.get("salary_range") or application.get("salary_range") or "Not disclosed"),
+                "posting_date": freshness.get("posting_date") or "",
+                "posting_age_days": freshness.get("age_days"),
+                "freshness": freshness["category"],
+                "freshness_label": freshness["label"],
+                "posting_status": freshness["posting_status"],
             },
             root,
         )
+        if freshness["is_closed"] and not override_closed:
+            reason = freshness.get("closed_reason") or "closed-role language"
+            raise PackageGenerationError(
+                f"Package generation paused because this posting appears {freshness['posting_status'].lower()} "
+                f"('{reason}'). Verify the role and use the closed-posting override to continue."
+            )
         should_generate_followups = (
-            application.get("status") == "Applied"
+            True
             if generate_followups_too is None
             else bool(generate_followups_too)
         )
         score = score_job_match(job_reference, root)
+        opportunity = score_opportunity(parsed, score, intelligence, freshness)
         resume = tailor_resume("executive_operations", job_reference, root)
         styled = export_styled_docx(resume["output_path"], root)
         ats = export_ats_docx(resume["output_path"], root)
@@ -187,10 +212,27 @@ def generate_package(
         hiring_manager = generate_message("hiring-manager", job_reference, root)
         application_note = generate_application_note(job_reference, root)
         strategy_pack = generate_strategy_pack(job_reference, root)
+        try:
+            interview_prep = generate_interview_prep(job_reference, root)
+        except Exception:
+            interview_prep = {}
+
+        quality = calculate_package_quality(score, resume, cover_letter, intelligence)
+        package_summary = save_package_summary(root, parsed, freshness, opportunity, quality)
 
         tracker_id = str(application["id"])
         if application.get("status") == "Drafted":
             application = update_status(tracker_id, "Reviewed", root)
+        application = update_prospect(
+            tracker_id,
+            {
+                "opportunity_score": opportunity["overall_score"],
+                "apply_recommendation": opportunity["apply_recommendation"],
+                "opportunity_dimensions": opportunity["dimensions"],
+                "package_quality": quality,
+            },
+            root,
+        )
         followup_outputs: Dict[str, str] = {}
         followup_error = None
         if should_generate_followups:
@@ -205,6 +247,8 @@ def generate_package(
                 # The core package remains useful if optional networking materials fail.
                 followup_error = str(error)
         dashboard = generate_dashboard(root)
+    except PackageGenerationError:
+        raise
     except (OSError, TrackerValidationError, ValueError) as error:
         raise PackageGenerationError(f"Could not generate package: {error}") from error
     except Exception as error:
@@ -222,6 +266,8 @@ def generate_package(
         "hiring_manager_message": _output_path(hiring_manager),
         "application_note": _output_path(application_note),
         "strategy_pack": _output_path(strategy_pack),
+        "interview_prep": _output_path(interview_prep),
+        "package_summary": _output_path(package_summary),
         **followup_outputs,
         "dashboard": _output_path(dashboard),
     }
@@ -236,6 +282,10 @@ def generate_package(
         "role_family": intelligence["role_family"],
         "company_voice_profile": intelligence["profile_name"],
         "company_voice_source": intelligence["source"],
+        "company_voice_label": intelligence.get("company_voice_label", intelligence["profile_name"]),
+        "freshness": freshness,
+        "opportunity": opportunity,
+        "package_quality": quality,
         "followup_error": followup_error,
         "outputs": {key: value for key, value in outputs.items() if value},
     }

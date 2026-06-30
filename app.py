@@ -29,6 +29,7 @@ from scripts.generate_followups import (
     generate_missing_followups,
 )
 from scripts.job_importer import JobImportError, import_job_from_url
+from scripts.job_freshness import detect_job_freshness
 from scripts.package_generator import (
     PackageGenerationError,
     generate_package,
@@ -59,6 +60,8 @@ OUTPUT_LABELS = {
     "hiring_manager_message": "Hiring manager message",
     "application_note": "Application note",
     "strategy_pack": "Strategy pack",
+    "interview_prep": "Interview prep",
+    "package_summary": "Package quality summary",
     "recruiter_followup": "Recruiter follow-up",
     "hiring_manager_followup": "Hiring manager follow-up",
     "warm_contact_message": "Warm contact message",
@@ -76,6 +79,8 @@ PACKAGE_MATERIAL_LABELS = {
     "Hiring Manager Message": "Hiring manager message",
     "Application Note": "Application note",
     "Strategy Pack": "Strategy pack",
+    "Interview Prep": "Interview prep",
+    "Package Summary": "Package summary",
     "Follow-Up Materials": "Follow-up materials",
 }
 APP_CSS = """
@@ -276,6 +281,7 @@ def build_prospect_payload(values: Dict[str, Any]) -> Dict[str, Any]:
         "job_title": str(values.get("job_title") or "").strip(),
         "location": str(values.get("location") or "").strip(),
         "salary_range": str(values.get("salary_range") or "").strip(),
+        "posting_date": str(values.get("posting_date") or "").strip(),
         "source": str(values.get("source") or "Official career page").strip(),
         "priority": str(values.get("priority") or "Medium"),
         "status": str(values.get("status") or "Drafted"),
@@ -368,6 +374,8 @@ def _metadata_html(application: Dict[str, Any], package: Dict[str, Any]) -> str:
     metadata = (
         ("Location", application.get("location") or package.get("location")),
         ("Salary", application.get("salary_range") or package.get("salary_range")),
+        ("Freshness", application.get("freshness_label") or application.get("freshness")),
+        ("Opportunity", f"{application.get('opportunity_score')}/100 - {application.get('apply_recommendation')}" if application.get("opportunity_score") is not None else None),
         ("Submitted", application.get("submitted_date")),
         (
             "Category",
@@ -529,6 +537,33 @@ def _show_output_paths(st: Any, outputs: Dict[str, str], key_prefix: str) -> Non
             )
 
 
+def _render_package_summary(st: Any, package_result: Dict[str, Any]) -> None:
+    """Show opportunity and quality checks before presenting export paths."""
+    opportunity = package_result.get("opportunity", {})
+    quality = package_result.get("package_quality", {})
+    if opportunity:
+        st.markdown(
+            f"**Opportunity score:** {opportunity.get('overall_score')}/100  |  "
+            f"**Recommendation:** {opportunity.get('apply_recommendation')}  |  "
+            f"**Freshness:** {package_result.get('freshness', {}).get('label', 'Unknown freshness / Verify manually')}"
+        )
+    if quality:
+        st.markdown("**Package quality check**")
+        columns = st.columns(5)
+        for column, (label, key) in zip(
+            columns,
+            (
+                ("Resume tailoring", "resume_tailoring_score"),
+                ("Cover letter", "cover_letter_score"),
+                ("ATS keywords", "ats_keyword_match"),
+                ("Voice match", "voice_match"),
+                ("Confidence", "confidence_level"),
+            ),
+        ):
+            value = quality.get(key, "—")
+            column.metric(label, f"{value}/100" if isinstance(value, int) else value)
+
+
 def _initialize_intake_state(st: Any) -> None:
     defaults = {
         "prospect_url": "",
@@ -536,6 +571,7 @@ def _initialize_intake_state(st: Any) -> None:
         "prospect_role": "",
         "prospect_location": "",
         "prospect_salary": "",
+        "prospect_posting_date": "",
         "prospect_source": "Official career page",
         "prospect_priority": "Medium",
         "prospect_status": "Drafted",
@@ -550,12 +586,16 @@ def _initialize_intake_state(st: Any) -> None:
 
 def detect_prospect_intelligence(values: Dict[str, Any]) -> Dict[str, Any]:
     """Infer local company and role guidance from unsaved prospect fields."""
-    return get_effective_voice_profile(
+    intelligence = get_effective_voice_profile(
         company_name=str(values.get("company") or ""),
         job_title=str(values.get("job_title") or values.get("role") or ""),
         job_description=str(values.get("job_description") or ""),
         source_url=str(values.get("official_url") or ""),
     )
+    intelligence["freshness"] = detect_job_freshness(
+        f"Posting date: {values.get('posting_date') or ''}\n{values.get('job_description') or ''}"
+    )
+    return intelligence
 
 
 def _humanize_taxonomy(value: Any) -> str:
@@ -567,11 +607,17 @@ def _render_intelligence_preview(st: Any, intelligence: Dict[str, Any]) -> None:
     with st.container(border=True):
         st.markdown("**Detected role intelligence**")
         st.markdown(
-            f"Company voice: **{_humanize_taxonomy(intelligence['profile_name'])}**  |  "
-            f"Category: **{_humanize_taxonomy(intelligence['company_category'])}**  |  "
-            f"Role family: **{_humanize_taxonomy(intelligence['role_family'])}**  |  "
-            f"Source: **{str(intelligence['source']).replace('_', ' ')}**"
+            f"Company voice: **{intelligence.get('company_voice_label') or _humanize_taxonomy(intelligence['profile_name'])}**  |  "
+            f"Category: **{intelligence.get('company_category_label') or _humanize_taxonomy(intelligence['company_category'])}**  |  "
+            f"Role family: **{intelligence.get('role_family_label') or _humanize_taxonomy(intelligence['role_family'])}**  |  "
+            f"Source: **{str(intelligence['source']).replace('_', ' ')}**  |  "
+            f"Confidence: **{intelligence.get('confidence_label', 'Medium')}**"
         )
+        freshness = intelligence.get("freshness")
+        if freshness:
+            st.markdown(
+                f"Freshness: **{freshness['label']}**  |  Posting status: **{freshness['posting_status']}**"
+            )
         angles = intelligence.get("cover_letter_angle", [])
         if angles:
             st.markdown(f"**Suggested cover letter angle:** {angles[0]}")
@@ -604,6 +650,7 @@ def _render_add_prospect(st: Any) -> None:
         st.session_state["prospect_role"] = imported.get("job_title", "")
         st.session_state["prospect_location"] = imported.get("location", "")
         st.session_state["prospect_salary"] = imported.get("salary_range", "")
+        st.session_state["prospect_posting_date"] = imported.get("posting_date", "")
         st.session_state["prospect_source"] = imported.get("source", "Official career page")
         st.session_state["prospect_description"] = imported.get("job_description", "")
         st.session_state["prospect_import_result"] = (
@@ -652,6 +699,7 @@ def _render_add_prospect(st: Any) -> None:
         "job_title": st.session_state["prospect_role"],
         "location": st.session_state["prospect_location"],
         "salary_range": st.session_state["prospect_salary"],
+        "posting_date": st.session_state["prospect_posting_date"],
         "source": st.session_state["prospect_source"],
         "priority": st.session_state["prospect_priority"],
         "status": st.session_state["prospect_status"],
@@ -679,6 +727,7 @@ def _render_add_prospect(st: Any) -> None:
             if generate_clicked:
                 package = generate_package(intake["tracker_id"], PROJECT_ROOT)
                 st.session_state["last_package_outputs"] = package["outputs"]
+                st.session_state["last_package_result"] = package
             else:
                 dashboard = generate_dashboard(PROJECT_ROOT)
                 st.session_state["last_package_outputs"] = {
@@ -693,6 +742,8 @@ def _render_add_prospect(st: Any) -> None:
         f"Saved {intake['tracker_id']}"
         + (" and generated the full package." if generate_clicked else ".")
     )
+    if generate_clicked:
+        _render_package_summary(st, package)
     _show_output_paths(st, st.session_state["last_package_outputs"], "intake_output")
 
 
@@ -756,8 +807,9 @@ def detected_application_voice(
         intelligence["profile_name"]
     )
     intelligence["role_family_label"] = _humanize_taxonomy(
-        intelligence["role_family"]
+        intelligence.get("role_family_label") or intelligence["role_family"]
     )
+    intelligence["freshness"] = detect_job_freshness(str(parsed_job.get("raw_text") or ""))
     return intelligence
 
 
@@ -789,6 +841,14 @@ def _render_generate_package(st: Any) -> None:
         value=application.get("status") == "Applied",
         key=f"package_followups_{tracker_id}",
     )
+    freshness = voice_context.get("freshness", {}) if "voice_context" in locals() else {}
+    override_closed = False
+    if freshness.get("is_closed"):
+        override_closed = st.checkbox(
+            "I verified this role is open; generate despite the closed-posting signal",
+            value=False,
+            key=f"package_closed_override_{tracker_id}",
+        )
     if st.button("Generate Package", type="primary"):
         try:
             with st.spinner("Generating resumes, messages, strategy pack, and dashboard…"):
@@ -796,6 +856,7 @@ def _render_generate_package(st: Any) -> None:
                     tracker_id,
                     PROJECT_ROOT,
                     generate_followups_too=generate_followups_too,
+                    override_closed=override_closed,
                 )
         except PackageGenerationError as error:
             st.error(str(error))
@@ -805,6 +866,12 @@ def _render_generate_package(st: Any) -> None:
             )
             st.metric("Match score", result.get("match_score") or "—")
             st.session_state["last_package_outputs"] = result["outputs"]
+            st.session_state["last_package_result"] = result
+    package_result = st.session_state.get("last_package_result")
+    if package_result and package_result.get("tracker_id") != tracker_id:
+        package_result = None
+    if package_result:
+        _render_package_summary(st, package_result)
     outputs = st.session_state.get("last_package_outputs")
     if outputs:
         _show_output_paths(st, outputs, "generated_output")

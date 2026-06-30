@@ -2,7 +2,7 @@
 
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 try:
     from .company_voice import company_voice_context
@@ -68,9 +68,17 @@ def save_material(
     content: str,
     minimum_words: int,
     maximum_words: int,
+    repair_content: Optional[Callable[[str, Dict[str, Any]], str]] = None,
+    repair_attempts: int = 3,
 ) -> Dict[str, Any]:
-    """Validate and save one Markdown application material."""
+    """Validate and save one Markdown application material, repairing length when configured."""
     content = cleanup_repeated_words(content)
+    word_count = _word_count(content)
+    attempts = 0
+    while not minimum_words <= word_count <= maximum_words and repair_content and attempts < repair_attempts:
+        content = cleanup_repeated_words(repair_content(content, context))
+        word_count = _word_count(content)
+        attempts += 1
     if "—" in content:
         raise ApplicationMaterialError("Generated application materials must not contain em dashes.")
     if "placeholder" in content.lower():
@@ -89,7 +97,6 @@ def save_material(
                 f"Generated application materials contain banned voice phrase: {phrase}"
             )
 
-    word_count = _word_count(content)
     if not minimum_words <= word_count <= maximum_words:
         raise ApplicationMaterialError(
             f"Generated {suffix} must be {minimum_words}-{maximum_words} words; got {word_count}."
@@ -130,7 +137,91 @@ def save_material(
         "voice_confidence": context.get("effective_voice_profile", {}).get("confidence"),
         "output_path": str(output_path),
         "word_count": word_count,
+        "repair_attempts": attempts,
     }
+
+
+def _cover_letter_value_sentences(context: Dict[str, Any]) -> List[str]:
+    parsed_job = context.get("parsed_job", {})
+    company = str(parsed_job.get("company") or "the team")
+    role_family = str(context.get("role_family") or "business_operations")
+    role_sentence = {
+        "creative_marketing_ops": "I know how much strong creative work depends on clear intake, thoughtful prioritization, and practical systems that help teams protect quality under pressure.",
+        "business_operations": "My best work has been making complex operations easier to see and run, with clear ownership, useful decision rhythms, and systems people can actually maintain.",
+        "product_strategy_ops": "I am comfortable translating product and business priorities into roadmaps, decisions, feedback loops, and operating rhythms that keep cross-functional work moving.",
+        "ai_operations_systems": "I build AI-enabled workflows with a practical bias: reduce repetitive work, surface risks earlier, and leave important judgment with the people closest to the work.",
+    }.get(
+        role_family,
+        "I bring a practical operating style: listen closely, clarify the real constraint, and build enough structure for people to move with confidence.",
+    )
+    return [
+        role_sentence,
+        f"That is the perspective I would bring to {company}, along with calm stakeholder leadership and a habit of turning recurring friction into a clearer, more dependable way of working.",
+        "The through line in my experience is simple: I care about the work itself, the people doing it, and the operating conditions that allow both to be at their best.",
+        "Across entertainment campaigns and internal transformation work, I have learned to ask direct questions, make tradeoffs visible, and keep the solution proportionate to the problem.",
+        "I am equally comfortable shaping the plan, working through the details with a team, and giving leaders a concise view of what needs a decision.",
+        "That combination of strategic range and hands-on follow-through has helped me earn trust across creative, marketing, analytics, technology, and operations partners.",
+        "I would approach the first months by learning how work moves today, where teams lose time or context, and which small changes would create meaningful momentum.",
+        "I am drawn to roles where better operations do more than improve a dashboard; they give talented people more room to focus on thoughtful, high-quality work.",
+        "That is the kind of contribution I am looking to make next, with curiosity, candor, and respect for what is already working.",
+        "My background has taught me to move between strategy and execution without treating either as the easy part, and to communicate clearly when the path is still taking shape.",
+        "I bring the patience to understand a complicated environment and the urgency to make useful progress once the real problem is clear.",
+        "Most of all, I value work that leaves a team stronger: clearer about its priorities, more confident in its decisions, and better equipped for what comes next.",
+    ]
+
+
+def _expand_cover_letter(content: str, context: Dict[str, Any], target: int = 285) -> str:
+    additions: List[str] = []
+    for sentence in _cover_letter_value_sentences(context):
+        additions.append(sentence)
+        if _word_count(content + "\n\n" + " ".join(additions)) >= target:
+            break
+    paragraph = " ".join(additions)
+    signoff = re.search(r"\n\n((?:Sincerely|Best|Warmly|Thank you)[\s\S]*)$", content.strip(), re.I)
+    if signoff:
+        return content[: signoff.start()].rstrip() + "\n\n" + paragraph + "\n\n" + signoff.group(1).strip()
+    return content.rstrip() + "\n\n" + paragraph
+
+
+def _trim_cover_letter(content: str, target: int = 325) -> str:
+    clean = content.strip()
+    paragraphs = [part.strip() for part in re.split(r"\n\s*\n", clean) if part.strip()]
+    greeting = paragraphs.pop(0) if paragraphs and _word_count(paragraphs[0]) <= 4 else ""
+    signoff_parts: List[str] = []
+    while paragraphs and (
+        re.match(r"^(?:Sincerely|Best|Warmly|Thank you)\b", paragraphs[-1], re.I)
+        or _word_count(paragraphs[-1]) <= 4
+    ):
+        signoff_parts.insert(0, paragraphs.pop())
+    body = "\n\n".join(paragraphs)
+    sentences = [value.strip() for value in re.split(r"(?<=[.!?])\s+", body) if value.strip()]
+    reserved = _word_count(" ".join([greeting, *signoff_parts]))
+    budget = max(250 - reserved, target - reserved)
+    selected: List[str] = []
+    for sentence in sentences:
+        if _word_count(" ".join(selected + [sentence])) <= budget:
+            selected.append(sentence)
+        elif not selected:
+            words = sentence.split()[:budget]
+            selected.append(" ".join(words).rstrip(".,;:") + ".")
+        if _word_count(" ".join(selected)) >= budget - 15:
+            break
+    pieces = [value for value in (greeting, " ".join(selected), *signoff_parts) if value]
+    trimmed = "\n\n".join(pieces)
+    if _word_count(trimmed) > 400:
+        words = trimmed.split()[:target]
+        trimmed = " ".join(words).rstrip(".,;:") + "."
+    return trimmed
+
+
+def repair_cover_letter_content(content: str, context: Dict[str, Any]) -> str:
+    """Repair cover-letter length while preserving its existing language and order."""
+    count = _word_count(content)
+    if count < 250:
+        return _expand_cover_letter(content, context)
+    if count > 400:
+        return _trim_cover_letter(content)
+    return content
 
 
 def _join_human(values: List[str]) -> str:
@@ -764,6 +855,8 @@ def generate_cover_letter(
         _cover_letter_content(context),
         minimum_words=250,
         maximum_words=400,
+        repair_content=repair_cover_letter_content,
+        repair_attempts=3,
     )
     markdown_path = Path(result["output_path"])
     markdown = markdown_path.read_text(encoding="utf-8")

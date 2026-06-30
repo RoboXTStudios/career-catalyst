@@ -19,6 +19,7 @@ if __package__:
         validate_application_tracker,
     )
     from .dynamic_role_intelligence import get_effective_voice_profile
+    from .job_freshness import detect_job_freshness
     from .filename_utils import short_company_name, short_role_name
     from .parse_job import JobParseError, parse_job_description
 else:
@@ -33,6 +34,7 @@ else:
         validate_application_tracker,
     )
     from dynamic_role_intelligence import get_effective_voice_profile
+    from job_freshness import detect_job_freshness
     from filename_utils import short_company_name, short_role_name
     from parse_job import JobParseError, parse_job_description
 
@@ -118,6 +120,7 @@ def _load_jobs(root: Path) -> List[Dict[str, Any]]:
                 "role": str(role or "Role not listed"),
                 "location": parsed.get("location"),
                 "salary_range": parsed.get("salary_range"),
+                "freshness": detect_job_freshness(str(parsed.get("raw_text") or "")),
                 "company_category": intelligence["company_category"],
                 "role_family": intelligence["role_family"],
                 "company_voice_profile": intelligence["profile_name"],
@@ -242,6 +245,14 @@ def _asset_label(path: Path) -> Optional[str]:
         name.endswith("_strategy_pack.md") or name.endswith("_strategypack.md")
     ):
         return "Strategy Pack"
+    if parent == "strategy_packs" and (
+        name.endswith("_interview_prep.md") or name.endswith("_interviewprep.md")
+    ):
+        return "Interview Prep"
+    if parent == "strategy_packs" and (
+        name.endswith("_package_summary.md") or name.endswith("_packagesummary.md")
+    ):
+        return "Package Summary"
     if parent == "followups" and (
         name.endswith("_followup_strategy.md")
         or name.endswith("_followupstrategy.md")
@@ -350,6 +361,9 @@ def _render_metadata(package: Dict[str, Any]) -> str:
     values = (
         ("Location", package.get("location")),
         ("Salary", tracker.get("salary_range") or package.get("salary_range")),
+        ("Freshness", tracker.get("freshness_label") or tracker.get("freshness") or package.get("freshness", {}).get("label")),
+        ("Opportunity score", f"{tracker.get('opportunity_score')}/100" if tracker.get("opportunity_score") is not None else None),
+        ("Recommendation", tracker.get("apply_recommendation")),
         ("Source", tracker.get("source")),
         ("Submitted", tracker.get("submitted_date")),
         (

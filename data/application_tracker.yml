@@ -61,7 +61,7 @@ applications:
   - Crunchyroll
   role: Director, Enterprise Strategy & Initiatives
   status: Archived
-  priority: Medium
+  priority: Do Not Pursue
   source: Official Crunchyroll / Greenhouse
   notes: Strong potential fit but not applied yet.
   next_action: Revisit after current high-priority applications.
@@ -170,3 +170,43 @@ applications:
   role_family: music_content_strategy
   company_voice_profile: bandsintown
   company_voice_source: known_profile
+- id: the_walt_disney_company_corporate_director_talent_growth
+  company: The Walt Disney Company (Corporate)
+  company_aliases: []
+  role: Director, Talent & Growth
+  role_aliases: []
+  status: Reviewed
+  priority: High
+  source: Official career page
+  notes: ''
+  next_action: Review fit and generate application package.
+  show_on_dashboard: true
+  official_url: https://www.disneycareers.com/en/job/burbank/director-talent-and-growth/391/96569904576?utm_source=chatgpt.com
+  location: Burbank, California, United States of America
+  salary_range: $203,600 to $248,800 per year
+  work_arrangement: Not specified
+  job_file: jobs/director_talent_growth_the_walt_disney_company_corporate.md
+  company_category: entertainment_streaming
+  role_family: product_strategy_ops
+  company_voice_profile: disney
+  company_voice_source: known_profile
+- id: warner_chappell_music_inc_sr_manager_strategic_integration_operations
+  company: Warner Chappell Music Inc
+  company_aliases: []
+  role: Sr. Manager, Strategic Integration & Operations
+  role_aliases: []
+  status: Drafted
+  priority: High
+  source: Official career page
+  notes: ''
+  next_action: Review fit and generate application package.
+  show_on_dashboard: true
+  official_url: https://wmg.wd1.myworkdayjobs.com/en-US/WMGUS/job/Sr-Manager--Strategic-Integration---Operations_R-027620?utm_source=chatgpt.com
+  location: USA - Los Angeles - 777 S. Santa Fe Ave, United States of America
+  salary_range: $85
+  work_arrangement: Not specified
+  job_file: jobs/sr_manager_strategic_integration_operations_warner_chappell_music_inc.md
+  company_category: music_live_events
+  role_family: community_growth
+  company_voice_profile: dynamic_music_live_events
+  company_voice_source: dynamic_inference

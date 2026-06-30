@@ -13,9 +13,11 @@ try:
         MINIMUM_DESCRIPTION_LENGTH,
         JobImportError,
         create_job_markdown,
+        import_job_from_url,
         validate_official_url,
     )
-    from .parse_job import JobParseError, parse_job_description
+    from .job_freshness import detect_job_freshness
+    from .parse_job import JobParseError, extract_metadata, parse_job_description
 except ImportError:
     from application_tracker import add_prospect, make_tracker_id
     from dynamic_role_intelligence import get_effective_voice_profile
@@ -23,9 +25,11 @@ except ImportError:
         MINIMUM_DESCRIPTION_LENGTH,
         JobImportError,
         create_job_markdown,
+        import_job_from_url,
         validate_official_url,
     )
-    from parse_job import JobParseError, parse_job_description
+    from job_freshness import detect_job_freshness
+    from parse_job import JobParseError, extract_metadata, parse_job_description
 
 
 PathInput = Union[str, Path]
@@ -53,17 +57,74 @@ def _job_filename(role: str, company: str) -> str:
     return f"{clean}.md"
 
 
+def _infer_pasted_identity(description: str) -> tuple[str, str]:
+    """Infer common title/company layouts when a pasted posting has no labels."""
+    metadata = extract_metadata(description)
+    role = str(metadata.get("job_title") or "").strip()
+    company = str(metadata.get("company") or "").strip()
+    if role and company:
+        return company, role
+
+    lines = [
+        re.sub(r"^[#*\-\s]+", "", line).strip()
+        for line in description.splitlines()
+        if line.strip()
+    ]
+    if lines:
+        at_match = re.match(r"^(.{3,100}?)\s+at\s+(.{2,80})$", lines[0], re.I)
+        if at_match:
+            role = role or at_match.group(1).strip()
+            company = company or at_match.group(2).strip()
+    title_signals = (
+        "director", "manager", "lead", "head", "president", "officer",
+        "strategist", "operations", "producer", "executive",
+    )
+    if not role and lines and len(lines[0]) <= 100 and any(
+        signal in lines[0].lower() for signal in title_signals
+    ):
+        role = lines[0]
+    if not company and role and len(lines) > 1:
+        candidate = lines[1]
+        if len(candidate) <= 80 and not re.search(r"[.!?]$|\b(?:about|description|responsibilities)\b", candidate, re.I):
+            company = re.sub(r"^(?:company|organization)\s*:\s*", "", candidate, flags=re.I)
+    return company, role
+
+
 def create_prospect(
     job_data: Dict[str, Any],
     project_root: Optional[PathInput] = None,
 ) -> Dict[str, Any]:
     """Create a clean job file and add or update its tracker entry."""
     root = Path(project_root) if project_root is not None else Path.cwd()
-    company = str(job_data.get("company") or "").strip()
-    role = str(job_data.get("role") or job_data.get("job_title") or "").strip()
-    description = str(job_data.get("job_description") or "").strip()
+    normalized_input = dict(job_data)
+    company = str(normalized_input.get("company") or "").strip()
+    role = str(normalized_input.get("role") or normalized_input.get("job_title") or "").strip()
+    description = str(normalized_input.get("job_description") or "").strip()
+    raw_url = str(normalized_input.get("official_url") or "").strip()
+    if raw_url and (not company or not role or len(description) < MINIMUM_DESCRIPTION_LENGTH):
+        try:
+            imported = import_job_from_url(raw_url)
+        except JobImportError as error:
+            if len(description) < MINIMUM_DESCRIPTION_LENGTH:
+                raise ProspectIntakeError(str(error)) from error
+        else:
+            for key, value in imported.items():
+                if value and not normalized_input.get(key):
+                    normalized_input[key] = value
+            company = str(normalized_input.get("company") or "").strip()
+            role = str(normalized_input.get("role") or normalized_input.get("job_title") or "").strip()
+            description = str(normalized_input.get("job_description") or "").strip()
+
+    if description and (not company or not role):
+        metadata = extract_metadata(description)
+        inferred_company, inferred_role = _infer_pasted_identity(description)
+        company = company or inferred_company
+        role = role or inferred_role
+        normalized_input.setdefault("posting_date", metadata.get("posting_date") or "")
+        normalized_input.setdefault("location", metadata.get("location") or "")
+        normalized_input.setdefault("salary_range", metadata.get("salary_range") or "")
     try:
-        official_url = validate_official_url(str(job_data.get("official_url") or ""))
+        official_url = validate_official_url(raw_url) if raw_url else ""
     except JobImportError as error:
         raise ProspectIntakeError(str(error)) from error
     if not company or not role:
@@ -73,8 +134,8 @@ def create_prospect(
             "Paste the job description text before saving (at least 80 characters)."
         )
 
-    tracker_id = str(job_data.get("tracker_id") or make_tracker_id(company, role))
-    normalized = dict(job_data)
+    tracker_id = str(normalized_input.get("tracker_id") or make_tracker_id(company, role))
+    normalized = dict(normalized_input)
     normalized.update(
         {
             "tracker_id": tracker_id,
@@ -103,6 +164,7 @@ def create_prospect(
         job_description=description,
         source_url=official_url,
     )
+    freshness = detect_job_freshness(markdown)
 
     tracker_result = add_prospect(
         {
@@ -114,7 +176,7 @@ def create_prospect(
             "source": str(job_data.get("source") or "Official career page"),
             "official_url": official_url,
             "location": str(job_data.get("location") or "").strip(),
-            "salary_range": str(job_data.get("salary_range") or "").strip(),
+            "salary_range": str(normalized_input.get("salary_range") or "Not disclosed").strip(),
             "work_arrangement": str(job_data.get("work_arrangement") or "").strip(),
             "notes": str(job_data.get("notes") or "").strip(),
             "next_action": str(job_data.get("next_action") or "").strip(),
@@ -124,6 +186,13 @@ def create_prospect(
             "role_family": intelligence["role_family"],
             "company_voice_profile": intelligence["profile_name"],
             "company_voice_source": intelligence["source"],
+            "company_voice_label": intelligence.get("company_voice_label", intelligence["profile_name"]),
+            "company_inference_confidence": intelligence.get("confidence_label", "Medium"),
+            "posting_date": freshness.get("posting_date") or "",
+            "posting_age_days": freshness.get("age_days"),
+            "freshness": freshness["category"],
+            "freshness_label": freshness["label"],
+            "posting_status": freshness["posting_status"],
         },
         root,
     )
@@ -169,6 +238,7 @@ def add_prospect_from_job_file(
         job_description=raw_text,
         source_url=str(parsed.get("source_url") or ""),
     )
+    freshness = detect_job_freshness(raw_text)
     tracker_result = add_prospect(
         {
             "id": tracker_id,
@@ -179,13 +249,20 @@ def add_prospect_from_job_file(
             "source": source_match.group(1).strip() if source_match else "Official career page",
             "official_url": str(parsed.get("source_url") or ""),
             "location": str(parsed.get("location") or ""),
-            "salary_range": str(parsed.get("salary_range") or ""),
+            "salary_range": str(parsed.get("salary_range") or "Not disclosed"),
             "job_file": _project_relative(resolved, root),
             "show_on_dashboard": True,
             "company_category": intelligence["company_category"],
             "role_family": intelligence["role_family"],
             "company_voice_profile": intelligence["profile_name"],
             "company_voice_source": intelligence["source"],
+            "company_voice_label": intelligence.get("company_voice_label", intelligence["profile_name"]),
+            "company_inference_confidence": intelligence.get("confidence_label", "Medium"),
+            "posting_date": freshness.get("posting_date") or "",
+            "posting_age_days": freshness.get("age_days"),
+            "freshness": freshness["category"],
+            "freshness_label": freshness["label"],
+            "posting_status": freshness["posting_status"],
         },
         root,
     )
