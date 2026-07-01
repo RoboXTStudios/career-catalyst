@@ -210,12 +210,39 @@ def _structured_salary(posting: Dict[str, Any]) -> str:
     return f"{amount}{f' per {unit}' if unit else ''}".strip()
 
 
+def _work_arrangement(location: Any = "", description: Any = "") -> str:
+    combined = f"{location or ''}\n{description or ''}"
+    if re.search(r"\bhybrid\b", combined, flags=re.I):
+        return "Hybrid"
+    if re.search(r"\bremote\b|telecommute", combined, flags=re.I):
+        return "Remote"
+    if re.search(r"\bon[-\s]?site\b|\bin[-\s]?office\b", combined, flags=re.I):
+        return "On-site"
+    return "Not specified"
+
+
+def _clean_identity(title: Any, company: Any = "") -> tuple[str, str]:
+    """Normalize title/company without flattening intentional brand casing."""
+    clean_title = re.sub(r"\s+", " ", str(title or "").strip())
+    clean_company = re.sub(r"\s+", " ", str(company or "").strip())
+    at_match = re.match(r"^(.{3,120}?)\s+at\s+(.{2,100})$", clean_title, re.I)
+    if at_match:
+        if not clean_company:
+            clean_company = at_match.group(2).strip()
+        if clean_company and clean_company.lower() == at_match.group(2).strip().lower():
+            clean_title = at_match.group(1).strip()
+    if clean_company:
+        clean_title = re.sub(
+            rf"\s*(?:[-|–—]\s*)?(?:at\s+)?{re.escape(clean_company)}\s*$",
+            "",
+            clean_title,
+            flags=re.I,
+        ).strip()
+    clean_company = re.sub(r"\s*(?:jobs?|careers?|job\s+opening|hiring)\s*$", "", clean_company, flags=re.I).strip()
+    return clean_title, clean_company
+
+
 def _source_name(url: str) -> str:
-    host = (urlparse(url).hostname or "").lower()
-    if "greenhouse.io" in host:
-        return "Official Greenhouse"
-    if "ashbyhq.com" in host:
-        return "Official Ashby"
     classified = classify_source(url)
     if classified["source_type"] != "Unknown Source":
         return str(classified["display_name"])
@@ -224,19 +251,27 @@ def _source_name(url: str) -> str:
 
 def create_job_markdown(job_data: Dict[str, Any]) -> str:
     """Render normalized job data into Career Catalyst's Markdown format."""
-    title = str(job_data.get("job_title") or job_data.get("role") or "").strip()
-    company = str(job_data.get("company") or "").strip()
+    title, company = _clean_identity(
+        job_data.get("job_title") or job_data.get("role") or "",
+        job_data.get("company") or "",
+    )
     description = str(job_data.get("job_description") or job_data.get("description") or "").strip()
     if not title or not company or len(description) < MINIMUM_DESCRIPTION_LENGTH:
         raise _manual_fallback(
             "The page did not provide a complete title, company, and job description."
         )
+    location = str(job_data.get("location") or "").strip() or "Not specified"
+    work_arrangement = (
+        str(job_data.get("work_arrangement") or "").strip()
+        or _work_arrangement(location, description)
+        or "Not specified"
+    )
 
     lines = [f"# {title}", "", f"Company: {company}"]
     optional_fields = (
         ("Tracker ID", job_data.get("tracker_id")),
-        ("Location", job_data.get("location")),
-        ("Work arrangement", job_data.get("work_arrangement")),
+        ("Location", location),
+        ("Work arrangement", work_arrangement),
         ("Salary range", job_data.get("salary_range")),
         ("Posting date", job_data.get("posting_date")),
         ("Official source", job_data.get("source")),
@@ -261,16 +296,19 @@ def extract_job_text(html: str, url: str) -> str:
     if posting:
         organization = posting.get("hiringOrganization") or {}
         company = organization.get("name") if isinstance(organization, dict) else organization
+        description = _plain_html_text(posting.get("description"))
+        location = _structured_location(posting)
         return create_job_markdown(
             {
                 "job_title": posting.get("title"),
                 "company": company,
-                "location": _structured_location(posting),
+                "location": location,
+                "work_arrangement": _work_arrangement(location, description),
                 "salary_range": _structured_salary(posting),
                 "posting_date": posting.get("datePosted"),
                 "source": _source_name(url),
                 "official_url": url,
-                "job_description": _plain_html_text(posting.get("description")),
+                "job_description": description,
             }
         )
 
@@ -285,13 +323,16 @@ def extract_job_text(html: str, url: str) -> str:
     elif " @ " in title:
         title, company = (part.strip() for part in title.split(" @ ", 1))
     title = re.sub(r"\s*[|\-]\s*(?:careers?|jobs?).*$", "", title, flags=re.I).strip()
+    title, company = _clean_identity(title, company)
     visible_text = "\n".join(parser.text_parts)
     metadata = extract_metadata(visible_text)
+    location = metadata.get("location") or "Not specified"
     return create_job_markdown(
         {
             "job_title": metadata.get("job_title") or title,
             "company": metadata.get("company") or company,
-            "location": metadata.get("location"),
+            "location": location,
+            "work_arrangement": metadata.get("work_arrangement") or _work_arrangement(location, visible_text),
             "salary_range": metadata.get("salary_range"),
             "posting_date": metadata.get("posting_date"),
             "source": _source_name(url),
@@ -308,10 +349,14 @@ def parse_imported_job(raw_text: str, url: str) -> Dict[str, Any]:
         r"^##\s+Job Description\s*$\n(.*)", raw_text, flags=re.I | re.M | re.S
     )
     description = (description_match.group(1) if description_match else raw_text).strip()
+    title, company = _clean_identity(metadata.get("job_title"), metadata.get("company"))
+    location = metadata.get("location") or "Not specified"
+    work_arrangement = metadata.get("work_arrangement") or _work_arrangement(location, description)
     parsed: Dict[str, Any] = {
-        "job_title": metadata.get("job_title"),
-        "company": metadata.get("company"),
-        "location": metadata.get("location") or "",
+        "job_title": title,
+        "company": company,
+        "location": location,
+        "work_arrangement": work_arrangement or "Not specified",
         "salary_range": metadata.get("salary_range") or "",
         "posting_date": metadata.get("posting_date") or "",
         "source": _source_name(url),

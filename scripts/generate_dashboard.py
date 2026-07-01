@@ -192,7 +192,26 @@ def enrich_dashboard_record(
     enriched = dict(record)
     verification = normalize_job_source(enriched, today)
     for key, value in verification.items():
-        enriched.setdefault(key, value)
+        if (
+            key in {
+                "source_name",
+                "source_domain",
+                "source_type",
+                "source_trust_label",
+                "verification_status",
+                "canonical_apply_url",
+                "canonical_apply_domain",
+                "verification_notes",
+                "source_confidence",
+                "source_warnings",
+                "recommended_next_step",
+            }
+            and verification.get("source_confidence") == "High"
+            and (enriched.get("original_source_url") or enriched.get("official_url"))
+        ):
+            enriched[key] = value
+        else:
+            enriched.setdefault(key, value)
     if verification.get("posting_status") != "Open" and (
         not record.get("posting_date")
         or verification.get("freshness_risk") == "High"
@@ -378,6 +397,14 @@ def source_verification_caution(record: Dict[str, Any]) -> str:
         return ""
     if status == "Aggregator Only":
         return "Verify on the employer site before generating a package or applying."
+    if status == "Industry Board" or source_type in {
+        "Industry Job Board",
+        "Gaming Industry Job Board",
+        "Music Industry Job Board",
+        "Entertainment Job Board",
+        "Startup / Tech Job Board",
+    }:
+        return "Verify on employer site before generating package or applying."
     if status == "Gated / Limited Visibility":
         return "Limited visibility: verify the employer listing manually before investing time."
     if status == "Stale / Closed Risk":
@@ -421,6 +448,9 @@ def recommended_next_steps(
             caution = source_verification_caution(item)
             if item.get("verification_status") == "Aggregator Only":
                 steps.append(f"Verify on employer site before package generation: {_record_label(item)}.")
+                continue
+            if item.get("verification_status") == "Industry Board":
+                steps.append(f"Verify on employer site before generating package or applying: {_record_label(item)}.")
                 continue
             if caution:
                 steps.append(f"{caution} {_record_label(item)}.")
@@ -869,6 +899,7 @@ def _render_metadata(package: Dict[str, Any]) -> str:
         ("Source Type", tracker.get("source_type") or "Unknown Source"),
         ("Trust Label", tracker.get("source_trust_label") or "Unknown Source"),
         ("Verification Status", tracker.get("verification_status") or "Not Verified"),
+        ("Source Confidence", tracker.get("source_confidence")),
         ("Canonical Apply URL", tracker.get("canonical_apply_url")),
         ("Applied", tracker.get("submitted_date") or tracker.get("applied_date") or "No applied date"),
         (
@@ -974,6 +1005,20 @@ def _render_notes(tracker: Dict[str, Any]) -> str:
     caution = source_verification_caution(tracker)
     if caution:
         rows.append(f'<p class="source-caution">{html.escape(caution)}</p>')
+    warnings = []
+    for key in ("field_warnings", "source_warnings"):
+        values = tracker.get(key)
+        if isinstance(values, list):
+            warnings.extend(str(value) for value in values if value)
+        elif values:
+            warnings.append(str(values))
+    warnings = list(dict.fromkeys(warnings))
+    if warnings:
+        items = "".join(f"<li>{html.escape(warning)}</li>" for warning in warnings)
+        rows.append(
+            '<div class="tracker-row"><span class="tracker-label">Field warnings</span>'
+            f"<ul>{items}</ul></div>"
+        )
     return "".join(rows)
 
 

@@ -62,6 +62,7 @@ METADATA_LABELS = {
     "job_title": ("job title", "title", "role"),
     "company": ("company", "organization"),
     "location": ("location", "work location"),
+    "work_arrangement": ("work arrangement", "work model", "work style"),
     "salary_range": ("salary", "salary range", "compensation", "compensation range"),
     "employment_type": ("employment type", "job type", "type"),
     "source_url": ("source url", "source", "posting url", "job url"),
@@ -250,6 +251,47 @@ def _extract_source_url(text: str) -> Optional[str]:
     return None
 
 
+def _extract_work_arrangement(text: str) -> Optional[str]:
+    labeled = _extract_labeled_value(text, METADATA_LABELS["work_arrangement"])
+    if labeled:
+        return labeled
+    lowered = text.lower()
+    if re.search(r"\bhybrid\b", lowered):
+        return "Hybrid"
+    if re.search(r"\bremote\b|#li-remote", lowered):
+        return "Remote"
+    if re.search(r"\bon[-\s]?site\b|\bin[-\s]?office\b|#li-onsite", lowered):
+        return "On-site"
+    if re.search(r"\bflexible\b", lowered):
+        return "Flexible"
+    return None
+
+
+def _extract_location(text: str) -> Optional[str]:
+    labeled = _extract_labeled_value(text, METADATA_LABELS["location"])
+    if labeled:
+        return labeled
+
+    city_state = re.search(
+        r"\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,3},\s*(?:CA|NY|WA|OR|TX|IL|GA|FL|MA|PA|NJ|DC|TN|CO|AZ|NV))\b",
+        text,
+    )
+    if city_state:
+        return city_state.group(1).strip()
+
+    compact = re.sub(r"\s+", " ", text)
+    for pattern, value in (
+        (r"\bRemote\b", "Remote"),
+        (r"\bHybrid\b", "Hybrid"),
+        (r"\bUnited States\b", "United States"),
+        (r"\bCalifornia\b", "California"),
+        (r"\bUS\b|\bU\.S\.\b|\bUSA\b", "US"),
+    ):
+        if re.search(pattern, compact, flags=re.I):
+            return value
+    return None
+
+
 def _extract_job_title(text: str) -> Optional[str]:
     labeled_title = _extract_labeled_value(text, METADATA_LABELS["job_title"])
     if labeled_title:
@@ -267,7 +309,8 @@ def extract_metadata(text: str) -> Dict[str, Optional[str]]:
     metadata = {
         "job_title": _extract_job_title(text),
         "company": _extract_labeled_value(text, METADATA_LABELS["company"]),
-        "location": _extract_labeled_value(text, METADATA_LABELS["location"]),
+        "location": _extract_location(text),
+        "work_arrangement": _extract_work_arrangement(text),
         "salary_range": _extract_salary(text),
         "employment_type": _extract_employment_type(text),
         "source_url": _extract_source_url(text),
@@ -379,6 +422,7 @@ def parse_job_description(file_path: PathInput) -> Dict[str, Any]:
         "employment_type": metadata["employment_type"],
         "source_url": metadata["source_url"],
         "posting_date": metadata["posting_date"],
+        "work_arrangement": metadata["work_arrangement"],
         "keywords": extract_keywords(text),
         "responsibilities": extract_responsibilities(text),
         "qualifications": extract_qualifications(text),

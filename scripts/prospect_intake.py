@@ -37,6 +37,26 @@ except ImportError:
 
 
 PathInput = Union[str, Path]
+VERIFY_FIRST_SOURCE_TYPES = {
+    "Industry Job Board",
+    "Gaming Industry Job Board",
+    "Music Industry Job Board",
+    "Entertainment Job Board",
+    "Startup / Tech Job Board",
+    "Generic Aggregator",
+    "Remote Job Aggregator",
+    "Compensation-Focused Aggregator",
+    "Gated Source",
+    "Unknown Source",
+}
+REVIEW_FIRST_SOURCE_TYPES = {
+    "Generic Aggregator",
+    "Remote Job Aggregator",
+    "Compensation-Focused Aggregator",
+    "Gated Source",
+    "Unknown Source",
+}
+VERIFY_FIRST_MESSAGE = "Verify on employer site before generating package or applying."
 
 
 class ProspectIntakeError(Exception):
@@ -94,6 +114,99 @@ def _infer_pasted_identity(description: str) -> tuple[str, str]:
     return company, role
 
 
+def _clean_identity(company: Any, role: Any) -> tuple[str, str]:
+    clean_company = re.sub(r"\s+", " ", str(company or "").strip())
+    clean_role = re.sub(r"\s+", " ", str(role or "").strip())
+    at_match = re.match(r"^(.{3,120}?)\s+at\s+(.{2,100})$", clean_role, re.I)
+    if at_match:
+        if not clean_company:
+            clean_company = at_match.group(2).strip()
+        if clean_company.lower() == at_match.group(2).strip().lower():
+            clean_role = at_match.group(1).strip()
+    if clean_company:
+        clean_role = re.sub(
+            rf"\s*(?:[-|–—]\s*)?(?:at\s+)?{re.escape(clean_company)}\s*$",
+            "",
+            clean_role,
+            flags=re.I,
+        ).strip()
+    clean_company = re.sub(r"\s*(?:jobs?|careers?|job\s+opening|hiring)\s*$", "", clean_company, flags=re.I).strip()
+    return clean_company, clean_role
+
+
+def _work_arrangement(location: Any = "", description: Any = "") -> str:
+    combined = f"{location or ''}\n{description or ''}"
+    if re.search(r"\bhybrid\b", combined, re.I):
+        return "Hybrid"
+    if re.search(r"\bremote\b|telecommute|#li-remote", combined, re.I):
+        return "Remote"
+    if re.search(r"\bon[-\s]?site\b|\bin[-\s]?office\b|#li-onsite", combined, re.I):
+        return "On-site"
+    if re.search(r"\bflexible\b", combined, re.I):
+        return "Flexible"
+    return "Not specified"
+
+
+def _source_needs_verify_first(verification: Dict[str, Any]) -> bool:
+    return (
+        str(verification.get("source_type") or "") in VERIFY_FIRST_SOURCE_TYPES
+        or str(verification.get("verification_status") or "") in {"Industry Board", "Aggregator Only", "Gated / Limited Visibility", "Cannot Verify", "Not Verified"}
+    ) and str(verification.get("verification_status") or "") != "Employer Source"
+
+
+def _merge_next_action(current: Any, verification: Dict[str, Any]) -> str:
+    current_text = str(current or "").strip()
+    if verification.get("freshness_risk") == "High" or verification.get("verification_status") == "Stale / Closed Risk":
+        return "Verify role is still active before generating package."
+    if _source_needs_verify_first(verification):
+        if not current_text or current_text == "Review fit and generate application package.":
+            return VERIFY_FIRST_MESSAGE
+        if VERIFY_FIRST_MESSAGE.lower() not in current_text.lower():
+            return f"{current_text} {VERIFY_FIRST_MESSAGE}"
+    return current_text or str(verification.get("recommended_next_step") or "Review fit before generating package.")
+
+
+def _source_adjusted_match_report(report: Dict[str, Any], verification: Dict[str, Any]) -> Dict[str, Any]:
+    adjusted = dict(report or {})
+    source_type = str(verification.get("source_type") or "")
+    canonical_url = str(verification.get("canonical_apply_url") or "").strip()
+    if (
+        adjusted.get("recommended_action") == "Generate Package"
+        and source_type in REVIEW_FIRST_SOURCE_TYPES
+        and not canonical_url
+    ):
+        adjusted["recommended_action"] = "Review First"
+        gaps = list(adjusted.get("match_gaps") or [])
+        gaps.append("Source requires employer-site verification before investing in a full package.")
+        adjusted["match_gaps"] = list(dict.fromkeys(gaps))
+    elif _source_needs_verify_first(verification):
+        gaps = list(adjusted.get("match_gaps") or [])
+        gaps.append("Verify the listing on the employer site before applying.")
+        adjusted["match_gaps"] = list(dict.fromkeys(gaps))
+    return adjusted
+
+
+def _field_warnings(
+    normalized: Dict[str, Any],
+    verification: Dict[str, Any],
+    intelligence: Optional[Dict[str, Any]] = None,
+) -> list[str]:
+    warnings = list(verification.get("source_warnings") or [])
+    if not str(normalized.get("location") or "").strip() or str(normalized.get("location")).strip() == "Not specified":
+        warnings.append("Location was not detected. Review before saving.")
+    if not str(normalized.get("work_arrangement") or "").strip() or str(normalized.get("work_arrangement")).strip() == "Not specified":
+        warnings.append("Work arrangement was not detected. Review before saving.")
+    if str(normalized.get("salary_range") or "").strip() in {"", "Not disclosed"}:
+        warnings.append("Salary was not disclosed. Continue with review if the role is otherwise strong.")
+    elif normalized.get("salary_range"):
+        warnings.append("Salary detected from job text. Review before applying.")
+    if _source_needs_verify_first(verification):
+        warnings.append(VERIFY_FIRST_MESSAGE)
+    if intelligence and intelligence.get("source") == "dynamic_inference":
+        warnings.append("Role family was inferred. Review if this is a strategic or product-ops role.")
+    return list(dict.fromkeys(str(warning).strip() for warning in warnings if str(warning).strip()))
+
+
 def create_prospect(
     job_data: Dict[str, Any],
     project_root: Optional[PathInput] = None,
@@ -126,7 +239,21 @@ def create_prospect(
         role = role or inferred_role
         normalized_input.setdefault("posting_date", metadata.get("posting_date") or "")
         normalized_input.setdefault("location", metadata.get("location") or "")
+        normalized_input.setdefault("work_arrangement", metadata.get("work_arrangement") or "")
         normalized_input.setdefault("salary_range", metadata.get("salary_range") or "")
+    else:
+        metadata = extract_metadata(description) if description else {}
+    company, role = _clean_identity(company, role)
+    location = (
+        str(normalized_input.get("location") or metadata.get("location") or "").strip()
+        or "Not specified"
+    )
+    work_arrangement = (
+        str(normalized_input.get("work_arrangement") or metadata.get("work_arrangement") or "").strip()
+        or _work_arrangement(location, description)
+        or "Not specified"
+    )
+    salary_range = str(normalized_input.get("salary_range") or metadata.get("salary_range") or "Not disclosed").strip()
     try:
         official_url = validate_official_url(raw_url) if raw_url else ""
     except JobImportError as error:
@@ -145,6 +272,9 @@ def create_prospect(
             "tracker_id": tracker_id,
             "company": company,
             "job_title": role,
+            "location": location,
+            "work_arrangement": work_arrangement,
+            "salary_range": salary_range,
             "job_description": description,
             "official_url": official_url,
         }
@@ -171,10 +301,9 @@ def create_prospect(
         source_url=official_url,
     )
     freshness = detect_job_freshness(markdown)
-    match_report = score_job_match(job_path, root)
-    next_action = str(job_data.get("next_action") or "").strip()
-    if verification["freshness_risk"] == "High" or verification["verification_status"] == "Stale / Closed Risk":
-        next_action = "Verify role is still active before generating package."
+    match_report = _source_adjusted_match_report(score_job_match(job_path, root), verification)
+    field_warnings = _field_warnings(normalized, verification, intelligence)
+    next_action = _merge_next_action(job_data.get("next_action"), verification)
 
     tracker_result = add_prospect(
         {
@@ -185,11 +314,12 @@ def create_prospect(
             "priority": str(job_data.get("priority") or "Medium"),
             "source": verification["source_name"],
             "official_url": official_url,
-            "location": str(job_data.get("location") or "").strip(),
-            "salary_range": str(normalized_input.get("salary_range") or "Not disclosed").strip(),
-            "work_arrangement": str(job_data.get("work_arrangement") or "").strip(),
+            "location": location,
+            "salary_range": salary_range,
+            "work_arrangement": work_arrangement,
             "notes": str(job_data.get("notes") or "").strip(),
             "next_action": next_action,
+            "field_warnings": field_warnings,
             "show_on_dashboard": bool(job_data.get("show_on_dashboard", True)),
             "job_file": _project_relative(job_path, root),
             "company_category": intelligence["company_category"],
@@ -230,8 +360,7 @@ def add_prospect_from_job_file(
     except JobParseError as error:
         raise ProspectIntakeError(str(error)) from error
 
-    company = str(parsed.get("company") or "").strip()
-    role = str(parsed.get("job_title") or "").strip()
+    company, role = _clean_identity(parsed.get("company"), parsed.get("job_title"))
     if not company or not role:
         raise ProspectIntakeError(
             "The job file needs a # role heading and a Company: metadata line."
@@ -259,13 +388,16 @@ def add_prospect_from_job_file(
             "raw_text": raw_text,
         }
     )
-    match_report = score_job_match(resolved, root)
-    next_action = (
-        "Verify role is still active before generating package."
-        if verification["freshness_risk"] == "High"
-        or verification["verification_status"] == "Stale / Closed Risk"
-        else verification["recommended_next_step"]
-    )
+    match_report = _source_adjusted_match_report(score_job_match(resolved, root), verification)
+    location = str(parsed.get("location") or "").strip() or "Not specified"
+    work_arrangement = str(parsed.get("work_arrangement") or "").strip() or _work_arrangement(location, raw_text)
+    normalized_for_warnings = {
+        "location": location,
+        "work_arrangement": work_arrangement,
+        "salary_range": str(parsed.get("salary_range") or "Not disclosed"),
+    }
+    field_warnings = _field_warnings(normalized_for_warnings, verification, intelligence)
+    next_action = _merge_next_action(verification.get("recommended_next_step"), verification)
     tracker_result = add_prospect(
         {
             "id": tracker_id,
@@ -275,10 +407,12 @@ def add_prospect_from_job_file(
             "priority": "Medium",
             "source": verification["source_name"],
             "official_url": str(parsed.get("source_url") or ""),
-            "location": str(parsed.get("location") or ""),
+            "location": location,
             "salary_range": str(parsed.get("salary_range") or "Not disclosed"),
+            "work_arrangement": work_arrangement,
             "job_file": _project_relative(resolved, root),
             "next_action": next_action,
+            "field_warnings": field_warnings,
             "show_on_dashboard": True,
             "company_category": intelligence["company_category"],
             "role_family": intelligence["role_family"],

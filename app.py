@@ -47,7 +47,7 @@ from scripts.generate_followups import (
     generate_followups,
     generate_missing_followups,
 )
-from scripts.job_importer import JobImportError, import_job_from_url
+from scripts.job_importer import MINIMUM_DESCRIPTION_LENGTH, JobImportError, import_job_from_url
 from scripts.job_freshness import detect_job_freshness
 from scripts.job_source_registry import normalize_job_source
 from scripts.package_generator import (
@@ -422,6 +422,7 @@ def _metadata_html(application: Dict[str, Any], package: Dict[str, Any]) -> str:
         ("Source Type", application.get("source_type") or "Unknown Source"),
         ("Trust Label", application.get("source_trust_label") or "Unknown Source"),
         ("Verification Status", application.get("verification_status") or "Not Verified"),
+        ("Source Confidence", application.get("source_confidence")),
         ("Canonical Apply URL", application.get("canonical_apply_url")),
         ("Opportunity", f"{application.get('opportunity_score')}/100 - {application.get('apply_recommendation')}" if application.get("opportunity_score") is not None else None),
         ("Applied", application.get("submitted_date") or application.get("applied_date") or "No applied date"),
@@ -565,6 +566,21 @@ def _render_role_card(
         if caution:
             st.markdown(
                 f'<p class="cc-source-caution">{html.escape(caution)}</p>',
+                unsafe_allow_html=True,
+            )
+        field_warnings = []
+        for warning_key in ("field_warnings", "source_warnings"):
+            warning_values = application.get(warning_key)
+            if isinstance(warning_values, list):
+                field_warnings.extend(str(value) for value in warning_values if value)
+            elif warning_values:
+                field_warnings.append(str(warning_values))
+        field_warnings = list(dict.fromkeys(field_warnings))
+        if field_warnings:
+            items = "".join(f"<li>{html.escape(warning)}</li>" for warning in field_warnings)
+            st.markdown(
+                '<div class="cc-tracker-row"><span class="cc-tracker-label">Field warnings</span>'
+                f"<ul>{items}</ul></div>",
                 unsafe_allow_html=True,
             )
         st.markdown(
@@ -716,7 +732,34 @@ def detect_prospect_intelligence(values: Dict[str, Any]) -> Dict[str, Any]:
         and (not salary_value or re.fullmatch(r"\$\s*\d{1,2}", salary_value))
     )
     intelligence["match_report"] = score_job_data(values, PROJECT_ROOT)
+    intelligence["job_description"] = str(values.get("job_description") or "")
+    intelligence["location"] = str(values.get("location") or "")
+    intelligence["work_arrangement"] = str(values.get("work_arrangement") or "")
     return intelligence
+
+
+def import_failure_preview(url: str, error_message: str) -> Dict[str, Any]:
+    """Preserve URL source trust when automated import needs a manual paste."""
+    verification = normalize_job_source({"official_url": url})
+    source_name = verification.get("source_name") or "Unknown"
+    message = str(error_message or "").strip()
+    if source_name == "Greenhouse":
+        message = (
+            "Greenhouse source verified, but the page did not provide a complete job "
+            "description. Paste the job description manually before saving or generating a package."
+        )
+    elif verification.get("source_type") in {
+        "Industry Job Board",
+        "Gaming Industry Job Board",
+        "Music Industry Job Board",
+        "Entertainment Job Board",
+        "Startup / Tech Job Board",
+    }:
+        message = (
+            f"Imported from {source_name}, an industry job board. Verify the role on "
+            "the employer site before applying or generating a full package."
+        )
+    return {"message": message, "verification": verification}
 
 
 def prospect_warning_messages(intelligence: Dict[str, Any]) -> list[str]:
@@ -724,6 +767,10 @@ def prospect_warning_messages(intelligence: Dict[str, Any]) -> list[str]:
     messages = []
     verification = intelligence.get("source_verification") or {}
     freshness = intelligence.get("freshness") or {}
+    source_type = str(verification.get("source_type") or "")
+    description = str(intelligence.get("job_description") or "")
+    if not str(intelligence.get("location") or "").strip():
+        messages.append("Location was not detected. Review before saving.")
     if (
         verification.get("freshness_risk") == "High"
         or verification.get("verification_status") == "Stale / Closed Risk"
@@ -735,6 +782,30 @@ def prospect_warning_messages(intelligence: Dict[str, Any]) -> list[str]:
         )
     if intelligence.get("salary_parsing_warning"):
         messages.append("Compensation not detected. Budget or spend figures were ignored.")
+    if source_type in {
+        "Industry Job Board",
+        "Gaming Industry Job Board",
+        "Music Industry Job Board",
+        "Entertainment Job Board",
+        "Startup / Tech Job Board",
+    }:
+        messages.append(
+            f"Imported from {verification.get('source_name') or 'this source'}, an industry job board. "
+            "Verify the role on the employer site before applying or generating a full package."
+        )
+    elif source_type in {
+        "Generic Aggregator",
+        "Remote Job Aggregator",
+        "Compensation-Focused Aggregator",
+        "Gated Source",
+        "Unknown Source",
+    }:
+        messages.append("Verify on employer site before generating package or applying.")
+    if verification.get("source_name") == "Greenhouse" and len(description) < MINIMUM_DESCRIPTION_LENGTH:
+        messages.append(
+            "Greenhouse source verified, but the page did not provide a complete job description. "
+            "Paste the job description manually before saving or generating a package."
+        )
     if verification.get("source_type") == "Employer ATS" and (
         verification.get("freshness_risk") in {"Unknown", "High"}
     ):
@@ -742,7 +813,10 @@ def prospect_warning_messages(intelligence: Dict[str, Any]) -> list[str]:
             "Source recognized as employer ATS. Verify posting freshness if the role is older "
             "or its date is missing."
         )
-    return messages
+    messages.extend(str(value) for value in verification.get("source_warnings") or [])
+    if intelligence.get("source") == "dynamic_inference":
+        messages.append("Role family was inferred. Review if this is a strategic or product-ops role.")
+    return list(dict.fromkeys(message for message in messages if message))
 
 
 def _humanize_taxonomy(value: Any) -> str:
@@ -770,7 +844,9 @@ def _render_intelligence_preview(st: Any, intelligence: Dict[str, Any]) -> None:
             st.markdown(
                 f"Job source: **{verification['source_name']}**  |  "
                 f"Source type: **{verification['source_type']}**  |  "
-                f"Verification: **{verification['verification_status']}**"
+                f"Trust: **{verification.get('source_trust_label', 'Unknown Source')}**  |  "
+                f"Verification: **{verification['verification_status']}**  |  "
+                f"Source confidence: **{verification.get('source_confidence', 'Low')}**"
             )
         for warning in prospect_warning_messages(intelligence):
             st.warning(warning)
@@ -803,7 +879,11 @@ def _render_add_prospect(st: Any) -> None:
         try:
             imported = import_job_from_url(st.session_state.get("prospect_url", ""))
         except JobImportError as error:
-            st.session_state["prospect_import_result"] = ("error", str(error))
+            preview = import_failure_preview(st.session_state.get("prospect_url", ""), str(error))
+            verification = preview["verification"]
+            if verification.get("source_name") and verification.get("source_name") != "Unknown":
+                st.session_state["prospect_source"] = verification["source_name"]
+            st.session_state["prospect_import_result"] = ("error", preview["message"])
             return
         st.session_state["prospect_company"] = imported.get("company", "")
         st.session_state["prospect_role"] = imported.get("job_title", "")

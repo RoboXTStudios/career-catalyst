@@ -499,11 +499,43 @@ def detect_role_family(job_title: str = "", job_description: str = "") -> str:
     wmg_context = any(
         signal in combined for signal in ("warner chappell", "warner music", " wmg ")
     )
+    explicit_product_strategy = any(
+        signal in combined
+        for signal in (
+            "product roadmap",
+            "roadmap ownership",
+            "product lifecycle",
+            "feature prioritization",
+            "feature prioritisation",
+            "product management",
+            "product strategy",
+            "product planning",
+            "product requirements",
+            "product org",
+            "product organization",
+        )
+    )
 
     if (wmg_context or (music_operations_company and "integration operations" in title)) and operations_context and any(
         signal in title
         for signal in ("operations", "integration", "transformation", "strategy")
     ):
+        return "business_operations"
+
+    if any(
+        signal in title
+        for signal in (
+            "operations director",
+            "director of operations",
+            "business operations",
+            "studio operations",
+            "strategic operations",
+            "program operations",
+            "product operations",
+            "cross functional operations",
+            "cross-functional operations",
+        )
+    ) and not explicit_product_strategy:
         return "business_operations"
 
     if any(
@@ -524,7 +556,9 @@ def detect_role_family(job_title: str = "", job_description: str = "") -> str:
         return "transformation_advisory"
     if "creative" in title and "operations" in title:
         return "creative_marketing_ops"
-    if any(signal in title for signal in ("product", "technology")) and any(
+    if any(signal in title for signal in ("product", "technology")) and (
+        explicit_product_strategy or any(signal in combined for signal in ("strategy", "roadmap", "okr"))
+    ) and any(
         signal in combined for signal in ("strategy", "operations", "roadmap", "okr")
     ):
         return "product_strategy_ops"
@@ -547,9 +581,14 @@ def detect_role_family(job_title: str = "", job_description: str = "") -> str:
         return "business_operations"
     if any(signal in combined for signal in ("marketing operations", "creative operations", "campaign workflow", "campaign operations")):
         return "creative_marketing_ops"
-    if any(signal in title for signal in ("strategy operations", "strategy and operations", "product operations", "product strategy")) or (
+    if any(signal in title for signal in ("strategy operations", "strategy and operations")):
+        return "business_operations"
+    if any(signal in title for signal in ("product operations", "product strategy")) and explicit_product_strategy:
+        return "product_strategy_ops"
+    if (
         any(signal in combined for signal in ("roadmap", "okr", "product", "technology"))
         and any(signal in title for signal in ("strategy", "operations", "director", "lead"))
+        and explicit_product_strategy
     ):
         return "product_strategy_ops"
     if any(signal in title for signal in ("business operations", "strategic operations", "strategy operations", "integration operations", "operations director", "chief of staff", "program operations")):

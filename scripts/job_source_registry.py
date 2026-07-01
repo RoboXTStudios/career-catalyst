@@ -18,6 +18,7 @@ SOURCE_TYPES = (
     "Employer ATS",
     "Direct Company Discovery",
     "Industry Job Board",
+    "Gaming Industry Job Board",
     "Music Industry Job Board",
     "Entertainment Job Board",
     "Startup / Tech Job Board",
@@ -77,7 +78,7 @@ def _source(
 
 
 SOURCE_REGISTRY = (
-    _source("workday", "Workday", ("myworkdayjobs.com", "workday.com"), "Employer ATS", 1, "Verified Company Source", False),
+    _source("workday", "Workday", ("myworkdayjobs.com", "workday.com", "workdayjobs.com"), "Employer ATS", 1, "Verified Company Source", False),
     _source("greenhouse", "Greenhouse", ("greenhouse.io",), "Employer ATS", 1, "Verified Company Source", False),
     _source("lever", "Lever", ("lever.co",), "Employer ATS", 1, "Verified Company Source", False),
     _source("ashby", "Ashby", ("ashbyhq.com",), "Employer ATS", 1, "Verified Company Source", False),
@@ -97,6 +98,19 @@ SOURCE_REGISTRY = (
     _source("musiccareers", "MusicCareers.co", ("musiccareers.co",), "Music Industry Job Board", 2, "Industry Job Board", False),
     _source("jobs_by_rostr", "Jobs by ROSTR", ("jobsbyrostr.com", "rostr.cc"), "Music Industry Job Board", 2, "Industry Job Board", False),
     _source("doors_open", "Doors Open", ("doorsopen.co",), "Music Industry Job Board", 2, "Industry Job Board", False),
+    _source(
+        "gamejobs",
+        "GameJobs.co",
+        ("gamejobs.co",),
+        "Gaming Industry Job Board",
+        2,
+        "Industry Job Board",
+        True,
+        notes=(
+            "GameJobs.co is an industry job board. Verify the role on the employer "
+            "site before generating a package or applying."
+        ),
+    ),
     _source("hollylist", "Hollylist", ("hollylist.com",), "Entertainment Job Board", 3, "Industry Job Board", True, True, "Some listing details may require an account."),
     _source("mediabistro", "Mediabistro", ("mediabistro.com",), "Entertainment Job Board", 2, "Industry Job Board", False),
     _source("built_in", "Built In", ("builtin.com",), "Startup / Tech Job Board", 2, "Industry Job Board", False),
@@ -104,6 +118,7 @@ SOURCE_REGISTRY = (
     _source("yc_jobs", "Y Combinator Jobs", ("ycombinator.com", "workatastartup.com"), "Startup / Tech Job Board", 2, "Industry Job Board", False),
     _source("jobgether", "Jobgether", ("jobgether.com",), "Remote Job Aggregator", 4, "Aggregator - Verify First", True),
     _source("jobtogether", "Jobtogether", ("jobtogether.com",), "Remote Job Aggregator", 4, "Aggregator - Verify First", True),
+    _source("ziprecruiter", "ZipRecruiter", ("ziprecruiter.com",), "Generic Aggregator", 4, "Aggregator - Verify First", True),
     _source("flexjobs", "FlexJobs", ("flexjobs.com",), "Gated Source", 4, "Gated Source", True, True, "Canonical apply details may be hidden behind a subscription."),
     _source("ladders", "Ladders", ("theladders.com", "ladders.com"), "Compensation-Focused Aggregator", 4, "Aggregator - Verify First", True),
 )
@@ -120,6 +135,7 @@ AGGREGATOR_TYPES = {
 }
 INDUSTRY_BOARD_TYPES = {
     "Industry Job Board",
+    "Gaming Industry Job Board",
     "Music Industry Job Board",
     "Entertainment Job Board",
     "Startup / Tech Job Board",
@@ -191,6 +207,46 @@ def _looks_like_employer_career_label(label: Any, company: Any = "") -> bool:
     )
 
 
+def _company_named_career_label(label: Any, company: Any = "") -> bool:
+    """Return true only when the label names the employer, not a generic page."""
+    clean_label = re.sub(r"\s+", " ", str(label or "").strip())
+    company_words = {
+        word for word in re.findall(r"[a-z0-9]+", str(company or "").lower())
+        if len(word) >= 3 and word not in {"company", "corporate", "worldwide", "entertainment", "interactive"}
+    }
+    label_words = set(re.findall(r"[a-z0-9]+", clean_label.lower()))
+    return bool(
+        company_words
+        and company_words.intersection(label_words)
+        and re.search(r"\b(?:careers?|jobs?|career\s+site)\b", clean_label, re.I)
+    )
+
+
+def _domain_matches_company(host: str, company: Any) -> bool:
+    """Conservative employer-domain heuristic for non-ATS direct career pages."""
+    compact_host = re.sub(r"[^a-z0-9]+", "", host.lower())
+    if not compact_host:
+        return False
+    stop_words = {
+        "the", "and", "inc", "llc", "ltd", "corp", "corporation", "company",
+        "co", "group", "holdings", "worldwide", "interactive", "entertainment",
+    }
+    company_tokens = [
+        token
+        for token in re.findall(r"[a-z0-9]+", str(company or "").lower())
+        if len(token) >= 3 and token not in stop_words
+    ]
+    if not company_tokens:
+        return False
+    compact_company = "".join(company_tokens)
+    return compact_company in compact_host or any(token in compact_host for token in company_tokens[:2])
+
+
+def _display_from_domain(url: str) -> str:
+    host = source_domain(url)
+    return host or "Unknown"
+
+
 def classify_source(url: Any = "", source_label: Any = "") -> Dict[str, Any]:
     """Find a registry entry by URL domain, then by a supplied source label."""
     host = source_domain(url)
@@ -201,7 +257,10 @@ def classify_source(url: Any = "", source_label: Any = "") -> Dict[str, Any]:
     for entry in SOURCE_REGISTRY:
         if label and _label_matches(label, entry):
             return dict(entry)
-    if re.search(r"\b(?:official|company)\s+(?:career|careers|job|jobs)(?:\s+page)?\b", label, re.I):
+    if not host and (
+        re.search(r"\b(?:official|company)\s+(?:career|careers|job|jobs)(?:\s+page)?\b", label, re.I)
+        or re.fullmatch(r"official\s+.+?\s+(?:careers?|jobs?|career\s+site)", label, re.I)
+    ):
         return _source(
             "company_careers", "Company career page", (), "Direct Employer", 1,
             "Direct Employer", False, notes="Identified from the supplied source label.",
@@ -280,11 +339,21 @@ def normalize_job_source(record: Dict[str, Any], today: Optional[date] = None) -
     )
     apply_url = str(values.get("apply_url") or values.get("application_url") or "").strip()
     classification_url = original_url or apply_url
-    registry = classify_source(classification_url, supplied_source)
+    registry = classify_source(classification_url, "" if original_url else supplied_source)
     label_inferred_employer = _looks_like_employer_career_label(
         supplied_source, values.get("company")
     )
-    if label_inferred_employer and registry["source_type"] == "Unknown Source":
+    if registry["source_type"] == "Unknown Source" and original_url:
+        original_host = source_domain(original_url)
+        if _domain_matches_company(original_host, values.get("company")) or _company_named_career_label(
+            supplied_source, values.get("company")
+        ):
+            registry = _source(
+                "company_careers", "Company career page", (), "Direct Employer", 1,
+                "Direct Employer", False,
+                notes="Source identity inferred from an employer-owned domain or company-named careers label.",
+            )
+    if label_inferred_employer and registry["source_type"] == "Unknown Source" and not original_url:
         registry = _source(
             "company_careers", "Company career page", (), "Direct Employer", 1,
             "Direct Employer", False,
@@ -397,20 +466,19 @@ def normalize_job_source(record: Dict[str, Any], today: Optional[date] = None) -
     elif inferred_employer:
         next_step = "Verify manually if needed, then use the employer career site."
     elif verification_status == "Industry Board" and not canonical_url:
-        next_step = "Confirm the role on the employer site before applying."
+        next_step = "Verify on employer site before generating package or applying."
+        warnings.append("Industry job board source requires employer-site verification")
     else:
         next_step = "Proceed using the canonical employer application."
+
+    source_name = registry["display_name"] if original_url or apply_url else supplied_source if inferred_employer else "Unknown"
+    if original_url and registry["source_type"] == "Unknown Source":
+        source_name = _display_from_domain(original_url)
 
     return {
         "original_source_url": original_url,
         "source_domain": source_domain(classification_url),
-        "source_name": (
-            registry["display_name"]
-            if original_url or apply_url
-            else supplied_source
-            if inferred_employer
-            else "Unknown"
-        ),
+        "source_name": source_name,
         "source_type": source_type if original_url or inferred_employer else "Unknown Source",
         "source_trust_label": trust_label if original_url or inferred_employer else "Unknown Source",
         "verification_status": verification_status,
