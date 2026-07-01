@@ -190,13 +190,21 @@ def enrich_dashboard_record(
     record: Dict[str, Any], today: Optional[date] = None
 ) -> Dict[str, Any]:
     enriched = dict(record)
-    for key, value in normalize_job_source(enriched, today).items():
+    verification = normalize_job_source(enriched, today)
+    for key, value in verification.items():
         enriched.setdefault(key, value)
+    if verification.get("posting_status") != "Open" and (
+        not record.get("posting_date")
+        or verification.get("freshness_risk") == "High"
+    ):
+        enriched["posting_status"] = verification["posting_status"]
     enriched.update(calculate_follow_up_timing(record, today))
     return enriched
 
 
 def _verification_quality(record: Dict[str, Any]) -> int:
+    if record.get("verification_status") == "Stale / Closed Risk":
+        return 9
     if record.get("verification_status") == "Verified Active":
         return 2
     order = (
@@ -360,13 +368,21 @@ def select_dashboard_mode(
 def source_verification_caution(record: Dict[str, Any]) -> str:
     """Return concise dashboard caution copy for sources that need intervention."""
     status = str(record.get("verification_status") or "Not Verified")
+    source_type = str(record.get("source_type") or "Unknown Source")
+    trust_label = str(record.get("source_trust_label") or "Unknown Source")
+    if status != "Stale / Closed Risk" and (
+        source_type in {"Direct Employer", "Employer ATS"}
+        or status == "Employer Source"
+        or trust_label in {"Direct Employer", "Verified Company Source"}
+    ):
+        return ""
     if status == "Aggregator Only":
         return "Verify on the employer site before generating a package or applying."
     if status == "Gated / Limited Visibility":
         return "Limited visibility: verify the employer listing manually before investing time."
     if status == "Stale / Closed Risk":
-        return "Stale or closed risk: pass unless the employer confirms the role is active."
-    if status in {"Cannot Verify", "Not Verified"}:
+        return "Posting may be stale or closed: verify it is active before generating a package."
+    if status in {"Cannot Verify", "Not Verified"} or source_type == "Unknown Source":
         return "Source not verified: confirm the role and apply path manually."
     return ""
 
@@ -846,6 +862,7 @@ def _render_metadata(package: Dict[str, Any]) -> str:
         ("Salary", tracker.get("salary_range") or package.get("salary_range")),
         ("Freshness", tracker.get("freshness_label") or tracker.get("freshness") or package.get("freshness", {}).get("label")),
         ("Freshness Risk", tracker.get("freshness_risk") or "Unknown"),
+        ("Posting Status", tracker.get("posting_status") or "Verify manually"),
         ("Opportunity score", f"{tracker.get('opportunity_score')}/100" if tracker.get("opportunity_score") is not None else None),
         ("Recommendation", tracker.get("apply_recommendation")),
         ("Source", source_display),

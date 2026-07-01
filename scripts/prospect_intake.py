@@ -172,6 +172,9 @@ def create_prospect(
     )
     freshness = detect_job_freshness(markdown)
     match_report = score_job_match(job_path, root)
+    next_action = str(job_data.get("next_action") or "").strip()
+    if verification["freshness_risk"] == "High" or verification["verification_status"] == "Stale / Closed Risk":
+        next_action = "Verify role is still active before generating package."
 
     tracker_result = add_prospect(
         {
@@ -186,7 +189,7 @@ def create_prospect(
             "salary_range": str(normalized_input.get("salary_range") or "Not disclosed").strip(),
             "work_arrangement": str(job_data.get("work_arrangement") or "").strip(),
             "notes": str(job_data.get("notes") or "").strip(),
-            "next_action": str(job_data.get("next_action") or "").strip(),
+            "next_action": next_action,
             "show_on_dashboard": bool(job_data.get("show_on_dashboard", True)),
             "job_file": _project_relative(job_path, root),
             "company_category": intelligence["company_category"],
@@ -257,6 +260,12 @@ def add_prospect_from_job_file(
         }
     )
     match_report = score_job_match(resolved, root)
+    next_action = (
+        "Verify role is still active before generating package."
+        if verification["freshness_risk"] == "High"
+        or verification["verification_status"] == "Stale / Closed Risk"
+        else verification["recommended_next_step"]
+    )
     tracker_result = add_prospect(
         {
             "id": tracker_id,
@@ -269,6 +278,7 @@ def add_prospect_from_job_file(
             "location": str(parsed.get("location") or ""),
             "salary_range": str(parsed.get("salary_range") or "Not disclosed"),
             "job_file": _project_relative(resolved, root),
+            "next_action": next_action,
             "show_on_dashboard": True,
             "company_category": intelligence["company_category"],
             "role_family": intelligence["role_family"],

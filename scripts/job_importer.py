@@ -12,10 +12,10 @@ from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 try:
-    from .job_source_registry import normalize_job_source
+    from .job_source_registry import classify_source, normalize_job_source
     from .parse_job import extract_metadata
 except ImportError:
-    from job_source_registry import normalize_job_source
+    from job_source_registry import classify_source, normalize_job_source
     from parse_job import extract_metadata
 
 
@@ -216,6 +216,9 @@ def _source_name(url: str) -> str:
         return "Official Greenhouse"
     if "ashbyhq.com" in host:
         return "Official Ashby"
+    classified = classify_source(url)
+    if classified["source_type"] != "Unknown Source":
+        return str(classified["display_name"])
     return "Official career page"
 
 

@@ -110,6 +110,12 @@ QUALIFICATION_TERMS = (
     "skills",
 )
 
+NON_SALARY_MONEY_TERMS = (
+    "budget", "media spend", "ad spend", "managed spend", "spend", "revenue",
+    "pipeline", "billings", "investment", "portfolio", "p&l", "profit", "loss",
+    "sales target", "quota",
+)
+
 PathInput = Union[str, Path]
 
 
@@ -193,17 +199,33 @@ def _extract_labeled_value(text: str, labels: Iterable[str]) -> Optional[str]:
 
 def _extract_salary(text: str) -> Optional[str]:
     labeled_salary = _extract_labeled_value(text, METADATA_LABELS["salary_range"])
-    if labeled_salary:
+    if labeled_salary and not salary_parsing_warning(labeled_salary):
         return labeled_salary
 
-    match = re.search(
-        r"\$[0-9][0-9,]*(?:\s*(?:-|–|to)\s*\$?[0-9][0-9,]*)?(?:\s*(?:per year|annually|/year|a year))?",
-        text,
-        flags=re.IGNORECASE,
+    amount = r"\$\s*(?:\d{1,3}(?:,\d{3})+|\d{2,3}(?:\.\d+)?\s*[kK])"
+    patterns = (
+        rf"{amount}\s*(?:-|–|—|to)\s*{amount}(?:\s*(?:USD|per\s+year|annually|/year|a\s+year))?",
+        r"\$\s*\d{1,3}(?:\.\d+)?\s*(?:/\s*(?:hr|hour)|per\s+hour|hourly|an\s+hour)",
+        rf"{amount}\s*(?:USD|per\s+year|annually|/year|a\s+year)",
     )
-    if match:
-        return match.group(0).strip()
+    for pattern in patterns:
+        for match in re.finditer(pattern, text, flags=re.IGNORECASE):
+            start, end = match.span()
+            context = text[max(0, start - 60) : min(len(text), end + 60)]
+            if salary_parsing_warning(context):
+                continue
+            return match.group(0).strip()
     return None
+
+
+def salary_parsing_warning(text: Any) -> bool:
+    """Return whether money text looks like a budget/business metric, not pay."""
+    lowered = re.sub(r"\s+", " ", str(text or "").lower())
+    has_money = bool(
+        re.search(r"\$\s*\d", lowered)
+        or re.search(r"\b\d+(?:\.\d+)?\s+million\s+dollars?\b", lowered)
+    )
+    return has_money and any(term in lowered for term in NON_SALARY_MONEY_TERMS)
 
 
 def _extract_employment_type(text: str) -> Optional[str]:

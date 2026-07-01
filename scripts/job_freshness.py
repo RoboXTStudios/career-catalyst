@@ -16,11 +16,31 @@ CLOSED_PHRASES = (
     "role has been filled",
     "position closed",
     "position has been filled",
+    "this job is no longer available",
+    "job is no longer available",
+    "posting has expired",
+    "job has expired",
+    "posting was removed",
+    "job was removed",
+    "this job has been removed",
+    "job is inactive",
+    "role is inactive",
+    "position is inactive",
+    "job is unavailable",
+    "role is unavailable",
 )
 POSSIBLY_CLOSED_PHRASES = (
     "may no longer be available",
     "not currently accepting applications",
     "no longer accepting applications",
+)
+CURRENT_PHRASES = (
+    "currently accepting applications",
+    "applications are open",
+    "posting is active",
+    "role is active",
+    "status: open",
+    "status - open",
 )
 DATE_PATTERNS = (
     r"(?:date posted|dateposted|posted(?: on)?|posting date|published)\s*[:\-]?\s*"
@@ -42,10 +62,37 @@ def _parse_date(value: str) -> Optional[date]:
     return None
 
 
+def explicit_posting_age_days(text: str) -> Optional[int]:
+    """Return age stated in relative posting language, including stale variants."""
+    raw_text = str(text or "")
+    months = re.search(
+        r"\b(?:posted\s+)?(?:about\s+|at\s+least\s+)?(\d+)\s+months?\s+(?:ago|old)\b",
+        raw_text,
+        re.I,
+    )
+    if months:
+        return int(months.group(1)) * 30
+    older_than = re.search(r"\bolder\s+than\s+(\d+)\s+days?\b", raw_text, re.I)
+    if older_than:
+        return int(older_than.group(1)) + 1
+    days = re.search(
+        r"\b(?:posted\s+)?(?:(more\s+than|over|older\s+than|at\s+least)\s+)?"
+        r"(\d+)\s*(\+)?\s+days?\s+(?:ago|old)\b",
+        raw_text,
+        re.I,
+    )
+    if days:
+        age = int(days.group(2))
+        if days.group(1) and days.group(1).lower() in {"more than", "over", "older than"}:
+            age += 1
+        return age
+    return None
+
+
 def _posting_date(text: str, today: date) -> Optional[date]:
-    relative = re.search(r"\bposted\s+(?:about\s+)?(\d+)\s+days?\s+ago\b", text, re.I)
-    if relative:
-        return today - timedelta(days=int(relative.group(1)))
+    explicit_age = explicit_posting_age_days(text)
+    if explicit_age is not None:
+        return today - timedelta(days=explicit_age)
     if re.search(r"\bposted\s+today\b", text, re.I):
         return today
     if re.search(r"\bposted\s+yesterday\b", text, re.I):
@@ -68,6 +115,12 @@ def detect_job_freshness(text: str, today: Optional[date] = None) -> Dict[str, A
     possible_match = next(
         (phrase for phrase in POSSIBLY_CLOSED_PHRASES if phrase in lowered), None
     )
+    standalone_status = re.search(
+        r"(?im)^\s*(?:status\s*[:\-]\s*)?(closed|expired|inactive|removed|unavailable)\s*[.!]?\s*$",
+        raw_text,
+    )
+    if not closed_match and standalone_status:
+        closed_match = standalone_status.group(1).lower()
     posting_date = _posting_date(raw_text, reference_date)
     age_days = max(0, (reference_date - posting_date).days) if posting_date else None
 
@@ -82,10 +135,23 @@ def detect_job_freshness(text: str, today: Optional[date] = None) -> Dict[str, A
     elif age_days <= 30:
         category, priority, score = "Aging", "Apply if strong fit", 58
     else:
-        category, priority, score = "Stale", "Lower priority", 25
+        category, priority, score = "Stale", "Verify manually", 25
 
-    posting_status = "Closed" if closed_match else "Possibly Closed" if possible_match else "Open"
+    has_current_signal = any(phrase in lowered for phrase in CURRENT_PHRASES)
+    if closed_match:
+        posting_status = "Closed"
+    elif possible_match:
+        posting_status = "Possibly Closed"
+    elif age_days is not None and age_days >= 90 and not has_current_signal:
+        posting_status = "Stale / Closed Risk"
+    elif age_days is not None and age_days >= 31 and not has_current_signal:
+        posting_status = "Possibly stale"
+    elif age_days is None and not has_current_signal:
+        posting_status = "Verify manually"
+    else:
+        posting_status = "Open"
     is_closed = posting_status in {"Closed", "Possibly Closed"}
+    is_stale = bool(age_days is not None and age_days >= 31 and not has_current_signal)
     if is_closed:
         score = 0
 
@@ -95,9 +161,9 @@ def detect_job_freshness(text: str, today: Optional[date] = None) -> Dict[str, A
         "priority": priority,
         "posting_status": posting_status,
         "is_closed": is_closed,
+        "is_stale": is_stale,
         "closed_reason": closed_match or possible_match,
         "posting_date": posting_date.isoformat() if posting_date else None,
         "age_days": age_days,
         "score": score,
     }
-

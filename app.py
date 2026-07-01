@@ -6,6 +6,7 @@ Run with: streamlit run app.py
 from __future__ import annotations
 
 import html
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -48,12 +49,13 @@ from scripts.generate_followups import (
 )
 from scripts.job_importer import JobImportError, import_job_from_url
 from scripts.job_freshness import detect_job_freshness
+from scripts.job_source_registry import normalize_job_source
 from scripts.package_generator import (
     PackageGenerationError,
     generate_package,
     resolve_job_reference,
 )
-from scripts.parse_job import parse_job_description
+from scripts.parse_job import parse_job_description, salary_parsing_warning
 from scripts.prospect_intake import ProspectIntakeError, create_prospect
 from scripts.score_match import score_job_data, score_job_match
 
@@ -415,6 +417,7 @@ def _metadata_html(application: Dict[str, Any], package: Dict[str, Any]) -> str:
         ("Salary", application.get("salary_range") or package.get("salary_range")),
         ("Freshness", application.get("freshness_label") or application.get("freshness")),
         ("Freshness Risk", application.get("freshness_risk") or "Unknown"),
+        ("Posting Status", application.get("posting_status") or "Verify manually"),
         ("Source", source_display),
         ("Source Type", application.get("source_type") or "Unknown Source"),
         ("Trust Label", application.get("source_trust_label") or "Unknown Source"),
@@ -706,8 +709,40 @@ def detect_prospect_intelligence(values: Dict[str, Any]) -> Dict[str, Any]:
     intelligence["freshness"] = detect_job_freshness(
         f"Posting date: {values.get('posting_date') or ''}\n{values.get('job_description') or ''}"
     )
+    intelligence["source_verification"] = normalize_job_source(values)
+    salary_value = str(values.get("salary_range") or "").strip()
+    intelligence["salary_parsing_warning"] = bool(
+        salary_parsing_warning(values.get("job_description"))
+        and (not salary_value or re.fullmatch(r"\$\s*\d{1,2}", salary_value))
+    )
     intelligence["match_report"] = score_job_data(values, PROJECT_ROOT)
     return intelligence
+
+
+def prospect_warning_messages(intelligence: Dict[str, Any]) -> list[str]:
+    """Build visible, non-blocking source/freshness/compensation intake warnings."""
+    messages = []
+    verification = intelligence.get("source_verification") or {}
+    freshness = intelligence.get("freshness") or {}
+    if (
+        verification.get("freshness_risk") == "High"
+        or verification.get("verification_status") == "Stale / Closed Risk"
+        or freshness.get("is_stale")
+    ):
+        messages.append(
+            "Posting appears stale or older than 30 days. Verify the role is still active "
+            "before generating a package."
+        )
+    if intelligence.get("salary_parsing_warning"):
+        messages.append("Compensation not detected. Budget or spend figures were ignored.")
+    if verification.get("source_type") == "Employer ATS" and (
+        verification.get("freshness_risk") in {"Unknown", "High"}
+    ):
+        messages.append(
+            "Source recognized as employer ATS. Verify posting freshness if the role is older "
+            "or its date is missing."
+        )
+    return messages
 
 
 def _humanize_taxonomy(value: Any) -> str:
@@ -730,6 +765,15 @@ def _render_intelligence_preview(st: Any, intelligence: Dict[str, Any]) -> None:
             st.markdown(
                 f"Freshness: **{freshness['label']}**  |  Posting status: **{freshness['posting_status']}**"
             )
+        verification = intelligence.get("source_verification")
+        if verification:
+            st.markdown(
+                f"Job source: **{verification['source_name']}**  |  "
+                f"Source type: **{verification['source_type']}**  |  "
+                f"Verification: **{verification['verification_status']}**"
+            )
+        for warning in prospect_warning_messages(intelligence):
+            st.warning(warning)
         angles = intelligence.get("cover_letter_angle", [])
         if angles:
             st.markdown(f"**Suggested cover letter angle:** {angles[0]}")
@@ -766,7 +810,9 @@ def _render_add_prospect(st: Any) -> None:
         st.session_state["prospect_location"] = imported.get("location", "")
         st.session_state["prospect_salary"] = imported.get("salary_range", "")
         st.session_state["prospect_posting_date"] = imported.get("posting_date", "")
-        st.session_state["prospect_source"] = imported.get("source", "Official career page")
+        st.session_state["prospect_source"] = imported.get(
+            "source_name", imported.get("source", "Official career page")
+        )
         st.session_state["prospect_description"] = imported.get("job_description", "")
         st.session_state["prospect_import_result"] = (
             "success",

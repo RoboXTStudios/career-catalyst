@@ -707,6 +707,8 @@ def _decision_match_report(parsed_job: Dict[str, Any], legacy_report: Dict[str, 
         action = "Review First"
     else:
         action = "Pass"
+    if freshness.get("is_stale") and action == "Generate Package":
+        action = "Review First"
 
     lead = {
         "Strong Match": "Strong alignment across Trisha's core experience, target level, and practical priorities.",
