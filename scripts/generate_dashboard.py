@@ -21,6 +21,12 @@ if __package__:
     )
     from .dynamic_role_intelligence import get_effective_voice_profile
     from .job_freshness import detect_job_freshness
+    from .job_source_registry import (
+        SOURCE_TYPES,
+        TRUST_LABELS,
+        VERIFICATION_STATUSES,
+        normalize_job_source,
+    )
     from .filename_utils import short_company_name, short_role_name
     from .parse_job import JobParseError, parse_job_description
 else:
@@ -36,6 +42,12 @@ else:
     )
     from dynamic_role_intelligence import get_effective_voice_profile
     from job_freshness import detect_job_freshness
+    from job_source_registry import (
+        SOURCE_TYPES,
+        TRUST_LABELS,
+        VERIFICATION_STATUSES,
+        normalize_job_source,
+    )
     from filename_utils import short_company_name, short_role_name
     from parse_job import JobParseError, parse_job_description
 
@@ -68,10 +80,14 @@ STATUS_FILTERS = ("All", "Active", "Applied", "Reviewed", "Paused", "Invalid/Hid
 FOLLOW_UP_FILTERS = (
     "All", "Not due yet", "Due soon", "Due now", "Overdue", "Follow-up sent", "No applied date"
 )
+SOURCE_TYPE_FILTERS = ("All",) + SOURCE_TYPES
+VERIFICATION_STATUS_FILTERS = ("All",) + VERIFICATION_STATUSES
+TRUST_LABEL_FILTERS = ("All",) + TRUST_LABELS
 DASHBOARD_MODES = ("All Mode", "Apply Mode", "Follow-Up Mode", "Review Mode", "Cleanup Mode")
 SORT_OPTIONS = (
     "Match Score: High to Low",
     "Match Score: Low to High",
+    "Verification Quality: Best to Worst",
     "Applied/Submitted Date: Newest First",
     "Applied/Submitted Date: Oldest First",
     "Follow-Up Due Date: Soonest First",
@@ -174,8 +190,31 @@ def enrich_dashboard_record(
     record: Dict[str, Any], today: Optional[date] = None
 ) -> Dict[str, Any]:
     enriched = dict(record)
+    for key, value in normalize_job_source(enriched, today).items():
+        enriched.setdefault(key, value)
     enriched.update(calculate_follow_up_timing(record, today))
     return enriched
+
+
+def _verification_quality(record: Dict[str, Any]) -> int:
+    if record.get("verification_status") == "Verified Active":
+        return 2
+    order = (
+        ("source_trust_label", "Direct Employer"),
+        ("source_trust_label", "Verified Company Source"),
+        ("verification_status", "Employer Source"),
+        ("source_trust_label", "Industry Job Board"),
+        ("verification_status", "Possibly Active"),
+        ("source_trust_label", "Aggregator - Verify First"),
+        ("source_trust_label", "Gated Source"),
+        ("source_trust_label", "Unknown Source"),
+        ("source_trust_label", "Cannot Verify"),
+        ("source_trust_label", "Stale Risk"),
+    )
+    for index, (field, value) in enumerate(order):
+        if record.get(field) == value:
+            return index
+    return 8
 
 
 def _date_ordinal(record: Dict[str, Any], key: str = "applied") -> Optional[int]:
@@ -193,7 +232,9 @@ def sort_dashboard_records(
     """Sort dashboard records with missing values last and stable company fallback."""
     values = list(records)
     company = lambda item: normalize_tracker_value(item.get("company"))
-    if sort_by == "Match Score: Low to High":
+    if sort_by == "Verification Quality: Best to Worst":
+        key = lambda item: (_verification_quality(item), -(item.get("match_score") or 0), company(item))
+    elif sort_by == "Match Score: Low to High":
         key = lambda item: (item.get("match_score") is None, item.get("match_score") or 0, company(item))
     elif sort_by == "Applied/Submitted Date: Newest First":
         key = lambda item: (_date_ordinal(item) is None, -(_date_ordinal(item) or 0), company(item))
@@ -227,6 +268,9 @@ def filter_dashboard_records(
     application_status: str = "All",
     follow_up_status: str = "All",
     search: str = "",
+    source_type: str = "All",
+    verification_status: str = "All",
+    trust_label: str = "All",
 ) -> List[Dict[str, Any]]:
     """Apply safe dashboard filters without requiring complete tracker records."""
     query = normalize_tracker_value(search)
@@ -248,10 +292,16 @@ def filter_dashboard_records(
             continue
         if follow_up_status != "All" and record.get("follow_up_status") != follow_up_status:
             continue
+        if source_type != "All" and record.get("source_type", "Unknown Source") != source_type:
+            continue
+        if verification_status != "All" and record.get("verification_status", "Not Verified") != verification_status:
+            continue
+        if trust_label != "All" and record.get("source_trust_label", "Unknown Source") != trust_label:
+            continue
         if query:
             searchable = " ".join(
                 str(record.get(key) or "")
-                for key in ("company", "role", "job_title", "company_category", "role_family", "source", "location")
+                for key in ("company", "role", "job_title", "company_category", "role_family", "source", "source_name", "source_type", "location")
             )
             if query not in normalize_tracker_value(searchable):
                 continue
@@ -272,6 +322,10 @@ def _needs_cleanup(record: Dict[str, Any]) -> bool:
         or any(value in freshness for value in ("stale", "unknown"))
         or salary in {"", "not disclosed", "unknown"}
         or not record.get("source")
+        or record.get("verification_status") in {
+            "Aggregator Only", "Cannot Verify", "Not Verified", "Stale / Closed Risk"
+        }
+        or record.get("source_trust_label") == "Unknown Source"
     )
 
 
@@ -287,6 +341,7 @@ def select_dashboard_mode(
             and str(item.get("status") or "") not in ACTIVE_STATUSES
             and not _is_hidden(item)
             and str(item.get("posting_status") or "").lower() != "closed"
+            and item.get("verification_status") != "Stale / Closed Risk"
         ]
     if mode == "Follow-Up Mode":
         return [
@@ -300,6 +355,20 @@ def select_dashboard_mode(
     if mode == "Cleanup Mode":
         return [item for item in values if _needs_cleanup(item)]
     return [item for item in values if not _is_hidden(item)]
+
+
+def source_verification_caution(record: Dict[str, Any]) -> str:
+    """Return concise dashboard caution copy for sources that need intervention."""
+    status = str(record.get("verification_status") or "Not Verified")
+    if status == "Aggregator Only":
+        return "Verify on the employer site before generating a package or applying."
+    if status == "Gated / Limited Visibility":
+        return "Limited visibility: verify the employer listing manually before investing time."
+    if status == "Stale / Closed Risk":
+        return "Stale or closed risk: pass unless the employer confirms the role is active."
+    if status in {"Cannot Verify", "Not Verified"}:
+        return "Source not verified: confirm the role and apply path manually."
+    return ""
 
 
 def _record_label(record: Dict[str, Any]) -> str:
@@ -326,12 +395,20 @@ def recommended_next_steps(
         ordered = sorted(
             values,
             key=lambda item: (
+                _verification_quality(item),
                 -(item.get("match_score") or 0),
                 -(item.get("opportunity_score") or 0),
                 normalize_tracker_value(item.get("company")),
             ),
         )
         for item in ordered[:3]:
+            caution = source_verification_caution(item)
+            if item.get("verification_status") == "Aggregator Only":
+                steps.append(f"Verify on employer site before package generation: {_record_label(item)}.")
+                continue
+            if caution:
+                steps.append(f"{caution} {_record_label(item)}.")
+                continue
             if not item.get("_has_package"):
                 action = "Generate package for"
             elif item.get("status") == "Reviewed":
@@ -365,9 +442,14 @@ def recommended_next_steps(
                 if has_contact
                 else "Manually verify a recruiter or hiring manager contact."
             )
+            source_action = (
+                " Verify the employer record before follow-up."
+                if item.get("verification_status") == "Aggregator Only"
+                else ""
+            )
             steps.append(
                 f"{item.get('follow_up_status')}: {_record_label(item)}. "
-                f"{material_action} {contact_action}"
+                f"{material_action} {contact_action}{source_action}"
             )
         return steps
     if mode == "Review Mode":
@@ -379,12 +461,21 @@ def recommended_next_steps(
             upside = str(
                 (item.get("match_strengths") or ["Company, industry, and strategic-doorway value may justify the stretch."])[0]
             )
-            steps.append(f"Review {_record_label(item)}: {reason} Weigh against: {upside}")
+            source_context = (
+                " Direct or industry source supports review."
+                if item.get("source_trust_label") in {"Direct Employer", "Verified Company Source", "Industry Job Board"}
+                else " Verify the source before pursuing this stretch role."
+            )
+            steps.append(f"Review {_record_label(item)}: {reason} Weigh against: {upside}{source_context}")
         return steps
     if mode == "Cleanup Mode":
         steps = []
         for item in values[:5]:
-            if _is_hidden(item) or item.get("match_tier") == "Pass":
+            if item.get("verification_status") == "Stale / Closed Risk":
+                action = "Pass unless manually verified active"
+            elif item.get("verification_status") in {"Aggregator Only", "Cannot Verify", "Not Verified"} or item.get("source_trust_label") == "Unknown Source":
+                action = "Verify manually, then hide or pass if unresolved"
+            elif _is_hidden(item) or item.get("match_tier") == "Pass":
                 action = "Keep hidden or mark pass"
             elif str(item.get("freshness") or "").lower() in {"stale", "unknown freshness"}:
                 action = "Verify posting freshness"
@@ -747,13 +838,21 @@ def _render_badges(tracker: Dict[str, Any]) -> str:
 
 def _render_metadata(package: Dict[str, Any]) -> str:
     tracker = package.get("tracker", {})
+    source_display = tracker.get("source_name")
+    if not source_display or source_display == "Unknown":
+        source_display = tracker.get("source") or "Unknown"
     values = (
         ("Location", package.get("location")),
         ("Salary", tracker.get("salary_range") or package.get("salary_range")),
         ("Freshness", tracker.get("freshness_label") or tracker.get("freshness") or package.get("freshness", {}).get("label")),
+        ("Freshness Risk", tracker.get("freshness_risk") or "Unknown"),
         ("Opportunity score", f"{tracker.get('opportunity_score')}/100" if tracker.get("opportunity_score") is not None else None),
         ("Recommendation", tracker.get("apply_recommendation")),
-        ("Source", tracker.get("source")),
+        ("Source", source_display),
+        ("Source Type", tracker.get("source_type") or "Unknown Source"),
+        ("Trust Label", tracker.get("source_trust_label") or "Unknown Source"),
+        ("Verification Status", tracker.get("verification_status") or "Not Verified"),
+        ("Canonical Apply URL", tracker.get("canonical_apply_url")),
         ("Applied", tracker.get("submitted_date") or tracker.get("applied_date") or "No applied date"),
         (
             "Days since applied",
@@ -779,11 +878,17 @@ def _render_metadata(package: Dict[str, Any]) -> str:
             else None,
         ),
     )
-    items = [
-        f'<div class="meta-item"><dt>{label}</dt><dd>{html.escape(str(value))}</dd></div>'
-        for label, value in values
-        if value
-    ]
+    items = []
+    for label, value in values:
+        if not value:
+            continue
+        rendered_value = html.escape(str(value))
+        if label == "Canonical Apply URL":
+            # Keep the static dashboard dependency-free while displaying the full URL.
+            rendered_value = rendered_value.replace(":", "&#58;")
+        items.append(
+            f'<div class="meta-item"><dt>{label}</dt><dd>{rendered_value}</dd></div>'
+        )
     if not items:
         return ""
     return f'<dl class="metadata">{"".join(items)}</dl>'
@@ -843,6 +948,15 @@ def _render_notes(tracker: Dict[str, Any]) -> str:
                 f'<p>{html.escape(str(value))}</p>'
                 "</div>"
             )
+    verification_notes = tracker.get("verification_notes") or "Verify manually"
+    rows.append(
+        '<div class="tracker-row">'
+        '<span class="tracker-label">Verification notes</span>'
+        f'<p>{html.escape(str(verification_notes))}</p></div>'
+    )
+    caution = source_verification_caution(tracker)
+    if caution:
+        rows.append(f'<p class="source-caution">{html.escape(caution)}</p>')
     return "".join(rows)
 
 
@@ -1042,6 +1156,12 @@ def _render_priority_sections(groups: Dict[str, List[Dict[str, Any]]]) -> str:
         return [package for package in source if predicate(_package_record(package))]
 
     queues = (
+        ("Verified / Employer Source Roles", "verified-employer-sources", matching(visible, lambda item: item.get("verification_status") in {"Verified Active", "Employer Source"} or item.get("source_trust_label") in {"Direct Employer", "Verified Company Source"}), "No verified employer-source roles found."),
+        ("Industry Board Roles", "industry-board-sources", matching(visible, lambda item: item.get("verification_status") == "Industry Board"), "No industry-board roles found."),
+        ("Aggregator - Verify First", "aggregator-verify-first", matching(all_packages, lambda item: item.get("verification_status") == "Aggregator Only"), "No aggregator-only roles found."),
+        ("Gated / Limited Visibility", "gated-limited-visibility", matching(all_packages, lambda item: item.get("verification_status") == "Gated / Limited Visibility"), "No gated roles found."),
+        ("Unknown / Cannot Verify", "unknown-cannot-verify", matching(all_packages, lambda item: item.get("verification_status") in {"Cannot Verify", "Not Verified"} or item.get("source_trust_label") == "Unknown Source"), "No unknown or unverifiable roles found."),
+        ("Stale or Closed Risk", "stale-closed-risk", matching(all_packages, lambda item: item.get("verification_status") == "Stale / Closed Risk"), "No stale or closed-risk roles found."),
         ("Strong Matches", "strong-matches", matching(visible, lambda item: item.get("match_tier") == "Strong Match"), "No strong matches found."),
         ("Good Matches", "good-matches", matching(visible, lambda item: item.get("match_tier") == "Good Match"), "No good matches found."),
         ("Stretch Matches", "stretch-matches", matching(visible, lambda item: item.get("match_tier") == "Stretch Match"), "No stretch matches found."),
@@ -1271,6 +1391,7 @@ def _render_html(
     .tracker-row {{ display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 12px; margin-top: 12px; }}
     .tracker-label {{ color: var(--muted); font-size: 13px; font-weight: 700; }}
     .tracker-row p {{ margin: 0; }}
+    .source-caution {{ margin: 12px 0 0; border-left: 3px solid var(--gold); padding: 8px 10px; background: var(--gold-soft); color: #69460e; font-size: 13px; }}
     .materials {{ margin-top: 16px; }}
     h4 {{ margin: 0 0 8px; font-size: 13px; }}
     .file-links {{ display: flex; flex-wrap: wrap; gap: 7px; }}

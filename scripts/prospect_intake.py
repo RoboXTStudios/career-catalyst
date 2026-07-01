@@ -17,6 +17,7 @@ try:
         validate_official_url,
     )
     from .job_freshness import detect_job_freshness
+    from .job_source_registry import normalize_job_source
     from .parse_job import JobParseError, extract_metadata, parse_job_description
     from .score_match import persisted_match_fields, score_job_match
 except ImportError:
@@ -30,6 +31,7 @@ except ImportError:
         validate_official_url,
     )
     from job_freshness import detect_job_freshness
+    from job_source_registry import normalize_job_source
     from parse_job import JobParseError, extract_metadata, parse_job_description
     from score_match import persisted_match_fields, score_job_match
 
@@ -147,6 +149,8 @@ def create_prospect(
             "official_url": official_url,
         }
     )
+    verification = normalize_job_source(normalized)
+    normalized.update(verification)
     try:
         markdown = create_job_markdown(normalized)
     except Exception as error:
@@ -176,7 +180,7 @@ def create_prospect(
             "role": role,
             "status": str(job_data.get("status") or "Drafted"),
             "priority": str(job_data.get("priority") or "Medium"),
-            "source": str(job_data.get("source") or "Official career page"),
+            "source": verification["source_name"],
             "official_url": official_url,
             "location": str(job_data.get("location") or "").strip(),
             "salary_range": str(normalized_input.get("salary_range") or "Not disclosed").strip(),
@@ -197,6 +201,7 @@ def create_prospect(
             "freshness_label": freshness["label"],
             "posting_status": freshness["posting_status"],
             **persisted_match_fields(match_report),
+            **verification,
         },
         root,
     )
@@ -243,6 +248,14 @@ def add_prospect_from_job_file(
         source_url=str(parsed.get("source_url") or ""),
     )
     freshness = detect_job_freshness(raw_text)
+    verification = normalize_job_source(
+        {
+            "official_url": str(parsed.get("source_url") or ""),
+            "source": source_match.group(1).strip() if source_match else "",
+            "posting_date": parsed.get("posting_date"),
+            "raw_text": raw_text,
+        }
+    )
     match_report = score_job_match(resolved, root)
     tracker_result = add_prospect(
         {
@@ -251,7 +264,7 @@ def add_prospect_from_job_file(
             "role": role,
             "status": "Drafted",
             "priority": "Medium",
-            "source": source_match.group(1).strip() if source_match else "Official career page",
+            "source": verification["source_name"],
             "official_url": str(parsed.get("source_url") or ""),
             "location": str(parsed.get("location") or ""),
             "salary_range": str(parsed.get("salary_range") or "Not disclosed"),
@@ -269,6 +282,7 @@ def add_prospect_from_job_file(
             "freshness_label": freshness["label"],
             "posting_status": freshness["posting_status"],
             **persisted_match_fields(match_report),
+            **verification,
         },
         root,
     )

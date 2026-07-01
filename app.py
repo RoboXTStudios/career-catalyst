@@ -27,13 +27,17 @@ from scripts.generate_dashboard import (
     FOLLOW_UP_FILTERS,
     MATCH_TIER_FILTERS,
     SORT_OPTIONS,
+    SOURCE_TYPE_FILTERS,
     STATUS_FILTERS,
+    TRUST_LABEL_FILTERS,
+    VERIFICATION_STATUS_FILTERS,
     filter_dashboard_records,
     generate_dashboard,
     load_application_packages,
     prepare_dashboard_records,
     recommended_next_steps,
     select_dashboard_mode,
+    source_verification_caution,
     sort_dashboard_records,
 )
 from scripts.generate_followups import (
@@ -232,6 +236,7 @@ APP_CSS = """
   .cc-match-details strong { display: block; margin-bottom: 3px; }
   .cc-match-details ul { margin: 0; padding-left: 18px; }
   .cc-tracker-row { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 12px; margin-top: 10px; font-size: 14px; }
+  .cc-source-caution { margin: 10px 0 0; border-left: 3px solid var(--cc-gold); padding: 8px 10px; background: var(--cc-gold-soft); color: #69460e; font-size: 13px; }
   .cc-tracker-label { color: var(--cc-muted); font-size: 13px; font-weight: 700; }
   .cc-materials-label { margin: 13px 0 6px; color: var(--cc-ink); font-size: 13px; font-weight: 700; }
   .stTabs [data-baseweb="tab-list"] { gap: 6px; border-bottom: 1px solid var(--cc-border); }
@@ -402,10 +407,19 @@ def _package_map(project_root: Path = PROJECT_ROOT) -> Dict[str, Dict[str, Any]]
 
 def _metadata_html(application: Dict[str, Any], package: Dict[str, Any]) -> str:
     humanize = lambda value: str(value).replace("_", " ").title()
+    source_display = application.get("source_name")
+    if not source_display or source_display == "Unknown":
+        source_display = application.get("source") or "Unknown"
     metadata = (
         ("Location", application.get("location") or package.get("location")),
         ("Salary", application.get("salary_range") or package.get("salary_range")),
         ("Freshness", application.get("freshness_label") or application.get("freshness")),
+        ("Freshness Risk", application.get("freshness_risk") or "Unknown"),
+        ("Source", source_display),
+        ("Source Type", application.get("source_type") or "Unknown Source"),
+        ("Trust Label", application.get("source_trust_label") or "Unknown Source"),
+        ("Verification Status", application.get("verification_status") or "Not Verified"),
+        ("Canonical Apply URL", application.get("canonical_apply_url")),
         ("Opportunity", f"{application.get('opportunity_score')}/100 - {application.get('apply_recommendation')}" if application.get("opportunity_score") is not None else None),
         ("Applied", application.get("submitted_date") or application.get("applied_date") or "No applied date"),
         (
@@ -536,6 +550,18 @@ def _render_role_card(
             st.markdown(
                 '<div class="cc-tracker-row"><span class="cc-tracker-label">Next action</span>'
                 f"<span>{html.escape(next_action)}</span></div>",
+                unsafe_allow_html=True,
+            )
+        verification_notes = str(application.get("verification_notes") or "Verify manually")
+        st.markdown(
+            '<div class="cc-tracker-row"><span class="cc-tracker-label">Verification notes</span>'
+            f'<span>{html.escape(verification_notes)}</span></div>',
+            unsafe_allow_html=True,
+        )
+        caution = source_verification_caution(application)
+        if caution:
+            st.markdown(
+                f'<p class="cc-source-caution">{html.escape(caution)}</p>',
                 unsafe_allow_html=True,
             )
         st.markdown(
@@ -723,11 +749,11 @@ def _render_add_prospect(st: Any) -> None:
         unsafe_allow_html=True,
     )
     st.caption(
-        "Paste the official URL and job description for the reliable path, or try a lightweight import first."
+        "Paste the listing URL and job description. Career Catalyst will classify the source and flag verification needs."
     )
     _initialize_intake_state(st)
 
-    st.text_input("Official career page URL", key="prospect_url")
+    st.text_input("Job listing URL", key="prospect_url")
 
     def try_import() -> None:
         try:
@@ -1181,6 +1207,16 @@ def _render_dashboard(st: Any) -> None:
     follow_up_status = filter_columns[3].selectbox(
         "Follow-Up Status", FOLLOW_UP_FILTERS, key="dashboard_follow_up_status"
     )
+    source_columns = st.columns(3)
+    source_type = source_columns[0].selectbox(
+        "Source Type", SOURCE_TYPE_FILTERS, key="dashboard_source_type"
+    )
+    verification_status = source_columns[1].selectbox(
+        "Verification Status", VERIFICATION_STATUS_FILTERS, key="dashboard_verification_status"
+    )
+    trust_label = source_columns[2].selectbox(
+        "Trust Label", TRUST_LABEL_FILTERS, key="dashboard_trust_label"
+    )
     sort_by = st.selectbox("Sort by", SORT_OPTIONS, key="dashboard_sort")
 
     records = prepare_dashboard_records(applications, packages)
@@ -1193,6 +1229,9 @@ def _render_dashboard(st: Any) -> None:
         application_status=application_status,
         follow_up_status=follow_up_status,
         search=search,
+        source_type=source_type,
+        verification_status=verification_status,
+        trust_label=trust_label,
     )
     records = sort_dashboard_records(records, sort_by)
     _render_recommended_next_steps(st, records, mode)

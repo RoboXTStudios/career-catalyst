@@ -12,8 +12,10 @@ from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 try:
+    from .job_source_registry import normalize_job_source
     from .parse_job import extract_metadata
 except ImportError:
+    from job_source_registry import normalize_job_source
     from parse_job import extract_metadata
 
 
@@ -84,11 +86,6 @@ def _validated_url(url: str) -> str:
     parsed = urlparse(clean_url)
     if parsed.scheme not in {"http", "https"} or not parsed.netloc:
         raise _manual_fallback("Enter a complete http:// or https:// career-page URL.")
-    hostname = (parsed.hostname or "").lower()
-    if any(hostname == host or hostname.endswith(f".{host}") for host in BLOCKED_PRIMARY_HOSTS):
-        raise _manual_fallback(
-            "Career Catalyst only imports official company career pages, not aggregators or reposts."
-        )
     return clean_url
 
 
@@ -100,6 +97,12 @@ def validate_official_url(url: str) -> str:
 def fetch_job_page(url: str, timeout: int = 12) -> str:
     """Fetch one official career page with a small timeout and no browser automation."""
     clean_url = _validated_url(url)
+    hostname = (urlparse(clean_url).hostname or "").lower()
+    if any(hostname == host or hostname.endswith(f".{host}") for host in BLOCKED_PRIMARY_HOSTS):
+        raise _manual_fallback(
+            "Automated import supports official company career pages; this board is supported "
+            "for source classification but not automated page import."
+        )
     request = Request(
         clean_url,
         headers={
@@ -235,6 +238,10 @@ def create_job_markdown(job_data: Dict[str, Any]) -> str:
         ("Posting date", job_data.get("posting_date")),
         ("Official source", job_data.get("source")),
         ("Official URL", job_data.get("official_url") or job_data.get("source_url")),
+        ("Canonical apply URL", job_data.get("canonical_apply_url")),
+        ("Source type", job_data.get("source_type")),
+        ("Trust label", job_data.get("source_trust_label")),
+        ("Verification status", job_data.get("verification_status")),
     )
     lines.extend(f"{label}: {str(value).strip()}" for label, value in optional_fields if value)
     lines.extend(["", "## Job Description", "", description, ""])
@@ -298,7 +305,7 @@ def parse_imported_job(raw_text: str, url: str) -> Dict[str, Any]:
         r"^##\s+Job Description\s*$\n(.*)", raw_text, flags=re.I | re.M | re.S
     )
     description = (description_match.group(1) if description_match else raw_text).strip()
-    parsed = {
+    parsed: Dict[str, Any] = {
         "job_title": metadata.get("job_title"),
         "company": metadata.get("company"),
         "location": metadata.get("location") or "",
@@ -308,6 +315,7 @@ def parse_imported_job(raw_text: str, url: str) -> Dict[str, Any]:
         "official_url": url,
         "job_description": description,
     }
+    parsed.update(normalize_job_source(parsed))
     # Validate the minimum useful payload before a UI can treat import as successful.
     create_job_markdown(parsed)
     return parsed
