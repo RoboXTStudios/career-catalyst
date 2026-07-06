@@ -40,6 +40,7 @@ from scripts.generate_dashboard import (
     generate_dashboard,
     load_application_packages,
     prepare_dashboard_records,
+    record_dashboard_reference as dashboard_role_reference,
     record_posting_url,
     recommended_next_steps,
     select_dashboard_mode,
@@ -385,9 +386,29 @@ def resolve_selected_tracker_id(
     return tracker_ids[0] if tracker_ids else ""
 
 
-def focus_dashboard_role(session_state: Any, tracker_id: str) -> str:
-    """Set focused role state using a durable tracker id."""
-    stable_id = str(tracker_id or "").strip()
+def find_dashboard_role(
+    records: list[Dict[str, Any]], focused_reference: Any
+) -> Dict[str, Any] | None:
+    """Find a focused role by stable id, slug, then company/title fallback."""
+    target = str(focused_reference or "").strip()
+    if not target:
+        return None
+    for fields in (
+        ("prospect_id", "record_id", "id"),
+        ("stable_slug", "prospect_slug", "record_slug", "slug"),
+    ):
+        for record in records:
+            if target in {str(record.get(field) or "").strip() for field in fields}:
+                return record
+    return next(
+        (record for record in records if dashboard_role_reference(record) == target),
+        None,
+    )
+
+
+def focus_dashboard_role(session_state: Any, role_reference: str) -> str:
+    """Set focused role state using a durable id, slug, or role key."""
+    stable_id = str(role_reference or "").strip()
     if stable_id:
         session_state["dashboard_focused_role_id"] = stable_id
     return stable_id
@@ -396,6 +417,40 @@ def focus_dashboard_role(session_state: Any, tracker_id: str) -> str:
 def clear_focused_dashboard_role(session_state: Any) -> None:
     """Clear focused role state without changing dashboard filters."""
     session_state.pop("dashboard_focused_role_id", None)
+
+
+def safe_source_metadata(record: Dict[str, Any]) -> Dict[str, str]:
+    """Return display-safe source metadata for incomplete legacy records."""
+    def text(field: str, fallback: str) -> str:
+        value = record.get(field)
+        if not isinstance(value, (str, int, float)):
+            return fallback
+        cleaned = str(value).strip()
+        return cleaned if cleaned else fallback
+
+    source = text("source_name", "") or text("source", "Unknown")
+    if source.lower() == "unknown":
+        source = text("source", "Unknown")
+    return {
+        "source": source,
+        "source_type": text("source_type", "Unknown Source"),
+        "verification_status": text("verification_status", "Not Verified"),
+        "source_trust_label": text("source_trust_label", "Unknown Source"),
+        "freshness_risk": text("freshness_risk", "Unknown"),
+    }
+
+
+def _sync_persisted_widget_value(
+    session_state: Any, widget_key: str, persisted_value: Any
+) -> None:
+    """Refresh a widget only when its persisted record value changed."""
+    shadow_key = f"{widget_key}_persisted"
+    if shadow_key not in session_state:
+        session_state.setdefault(widget_key, persisted_value)
+        session_state[shadow_key] = persisted_value
+    elif session_state[shadow_key] != persisted_value:
+        session_state[widget_key] = persisted_value
+        session_state[shadow_key] = persisted_value
 
 
 def apply_summary_navigation(session_state: Any, bucket: str) -> None:
@@ -1176,16 +1231,18 @@ def _render_recommended_next_steps(
     applications: list[Dict[str, Any]],
     mode: str,
     packages: Dict[str, Dict[str, Any]],
+    focus_records: list[Dict[str, Any]] | None = None,
 ) -> str:
     steps = structured_recommended_next_steps(applications, mode)
-    by_id = {str(item.get("id") or ""): item for item in applications}
+    all_focus_records = focus_records if focus_records is not None else applications
     with st.container(border=True):
         st.markdown("**Recommended Next Steps**")
         if not steps:
             st.caption(recommended_next_steps([], mode)[0])
         for step in steps:
             tracker_id = step["tracker_id"]
-            record = by_id.get(tracker_id, {})
+            record = find_dashboard_role(applications, tracker_id) or {}
+            role_reference = dashboard_role_reference(record) or tracker_id
             st.markdown(
                 f"**{step['priority']}. {step['company']} — {step['title']}**  "
                 f"\n{step['recommendation']}  "
@@ -1194,10 +1251,11 @@ def _render_recommended_next_steps(
             navigation_actions = st.columns(3)
             if navigation_actions[0].button(
                 "View role",
-                key=f"next_view_{tracker_id}",
+                key=f"next_view_{role_reference}",
                 use_container_width=True,
             ):
-                focus_dashboard_role(st.session_state, tracker_id)
+                focus_dashboard_role(st.session_state, role_reference)
+                st.rerun()
             if step.get("posting_url"):
                 navigation_actions[1].link_button(
                     "Open posting", step["posting_url"], use_container_width=True
@@ -1264,8 +1322,11 @@ def _render_recommended_next_steps(
                 st.rerun()
 
     focused_id = str(st.session_state.get("dashboard_focused_role_id") or "")
-    focused = by_id.get(focused_id)
+    focused = find_dashboard_role(all_focus_records, focused_id)
     if focused:
+        visible_references = {
+            dashboard_role_reference(record) for record in applications
+        }
         focus_heading, clear_column = st.columns((5, 1))
         focus_heading.markdown("### Focused role")
         if clear_column.button(
@@ -1273,10 +1334,22 @@ def _render_recommended_next_steps(
         ):
             clear_focused_dashboard_role(st.session_state)
             st.rerun()
-        _render_role_card(st, focused, packages.get(focused_id, {}), mode)
-        return focused_id
+        focused_reference = dashboard_role_reference(focused)
+        if focused_reference not in visible_references:
+            st.caption("Showing focused role outside current filters for convenience.")
+        package = packages.get(str(focused.get("id") or ""), {})
+        _render_role_card(st, focused, package, mode)
+        return str(focused.get("id") or focused_reference)
     if focused_id:
-        clear_focused_dashboard_role(st.session_state)
+        warning_column, clear_column = st.columns((5, 1))
+        warning_column.warning(
+            "Focused role could not be found. It may be hidden by current filters."
+        )
+        if clear_column.button(
+            "Clear focus", key="dashboard_clear_missing_focus", use_container_width=True
+        ):
+            clear_focused_dashboard_role(st.session_state)
+            st.rerun()
     return ""
 
 
@@ -1284,6 +1357,15 @@ def _application_label(application: Dict[str, Any]) -> str:
     return (
         f"{application.get('company', 'Company')} — "
         f"{application.get('role', 'Role')} [{get_record_status(application)}]"
+    )
+
+
+def _application_selection_label(application: Dict[str, Any]) -> str:
+    """Return a unique, status-independent label for role selection widgets."""
+    tracker_id = str(application.get("id") or "unknown-id")
+    return (
+        f"{application.get('company', 'Company')} — "
+        f"{application.get('role', 'Role')} · {tracker_id}"
     )
 
 
@@ -1859,31 +1941,55 @@ def _render_update_status(st: Any) -> None:
     applications = _load_applications(st)
     if not applications:
         return
+    if "status_update_notice" in st.session_state:
+        st.success(st.session_state.pop("status_update_notice"))
     by_id = {str(item["id"]): item for item in applications}
     tracker_ids = list(by_id)
     selected_id = resolve_selected_tracker_id(
         tracker_ids, st.session_state.get("status_tracker_id")
     )
-    if st.session_state.get("status_tracker_id") != selected_id:
-        st.session_state["status_tracker_id"] = selected_id
-    tracker_id = st.selectbox(
-        "Tracker entry",
-        tuple(tracker_ids),
-        index=tracker_ids.index(selected_id),
-        format_func=lambda value: _application_label(by_id[value]),
-        key="status_tracker_id",
+    labels_by_id = {
+        tracker_id: _application_selection_label(application)
+        for tracker_id, application in by_id.items()
+    }
+    ids_by_label = {label: tracker_id for tracker_id, label in labels_by_id.items()}
+    selection_key = "status_tracker_selection"
+    _sync_persisted_widget_value(
+        st.session_state, selection_key, labels_by_id[selected_id]
     )
+    selected_label = st.selectbox(
+        "Tracker entry",
+        tuple(labels_by_id.values()),
+        index=tracker_ids.index(selected_id),
+        key=selection_key,
+    )
+    tracker_id = ids_by_label.get(selected_label, selected_id)
+    st.session_state["status_tracker_id"] = tracker_id
     application = by_id[tracker_id]
     widget_prefix = f"status_{tracker_id}"
     current_status = get_record_status(application)
     choices = status_options(current_status)
+    status_key = f"{widget_prefix}_value"
+    priority_key = f"{widget_prefix}_priority"
+    notes_key = f"{widget_prefix}_notes"
+    next_action_key = f"{widget_prefix}_next_action"
+    current_priority = str(application.get("priority") or "Medium")
+    _sync_persisted_widget_value(st.session_state, status_key, current_status)
+    _sync_persisted_widget_value(st.session_state, priority_key, current_priority)
+    _sync_persisted_widget_value(
+        st.session_state, notes_key, str(application.get("notes") or "")
+    )
+    _sync_persisted_widget_value(
+        st.session_state,
+        next_action_key,
+        str(application.get("next_action") or ""),
+    )
     status = st.selectbox(
         "Application status",
         choices,
         index=choices.index(current_status),
-        key=f"{widget_prefix}_value",
+        key=status_key,
     )
-    current_priority = str(application.get("priority") or "Medium")
     priority_options = (
         PRIORITY_OPTIONS
         if current_priority in PRIORITY_OPTIONS
@@ -1893,16 +1999,30 @@ def _render_update_status(st: Any) -> None:
         "Priority",
         priority_options,
         index=priority_options.index(current_priority),
-        key=f"{widget_prefix}_priority",
+        key=priority_key,
     )
     notes = st.text_area(
-        "Notes", value=str(application.get("notes") or ""), key=f"{widget_prefix}_notes"
+        "Notes", value=str(application.get("notes") or ""), key=notes_key
     )
     next_action = st.text_area(
         "Next action",
         value=str(application.get("next_action") or ""),
-        key=f"{widget_prefix}_next_action",
+        key=next_action_key,
     )
+    source = safe_source_metadata(application)
+    with st.expander("Source and verification", expanded=False):
+        st.markdown(
+            f"**Source:** {source['source']}  \n"
+            f"**Source Type:** {source['source_type']}  \n"
+            f"**Verification:** {source['verification_status']}  \n"
+            f"**Trust Label:** {source['source_trust_label']}  \n"
+            f"**Freshness Risk:** {source['freshness_risk']}"
+        )
+        posting_url = record_posting_url(application)
+        if posting_url:
+            st.link_button("Open posting", posting_url)
+        else:
+            st.caption("No posting URL stored.")
     st.caption(
         "Visibility follows status: Pass and Invalid/Hidden stay in cleanup; "
         "active workflow statuses remain visible."
@@ -1925,10 +2045,11 @@ def _render_update_status(st: Any) -> None:
             submitted = (
                 f" Submitted {updated['submitted_date']}." if updated.get("submitted_date") else ""
             )
-            st.success(
+            st.session_state["status_update_notice"] = (
                 f"Updated {updated.get('company', 'Company')} — "
                 f"{updated.get('role', tracker_id)} to {get_record_status(updated)}.{submitted}"
             )
+            st.rerun()
 
 
 def _render_dashboard(st: Any) -> None:
@@ -2010,7 +2131,8 @@ def _render_dashboard(st: Any) -> None:
     )
     sort_by = st.selectbox("Sort by", SORT_OPTIONS, key="dashboard_sort")
 
-    records = prepare_dashboard_records(applications, packages)
+    all_records = prepare_dashboard_records(applications, packages)
+    records = list(all_records)
     if not (mode == "All Mode" and application_status in HIDDEN_STATUSES):
         records = select_dashboard_mode(records, mode)
     records = filter_dashboard_records(
@@ -2025,7 +2147,9 @@ def _render_dashboard(st: Any) -> None:
         trust_label=trust_label,
     )
     records = sort_dashboard_records(records, sort_by)
-    focused_id = _render_recommended_next_steps(st, records, mode, packages)
+    focused_id = _render_recommended_next_steps(
+        st, records, mode, packages, focus_records=all_records
+    )
     st.caption(f"{len(records)} roles match the current mode and filters.")
     tracker_records = [
         record for record in records if str(record.get("id") or "") != focused_id

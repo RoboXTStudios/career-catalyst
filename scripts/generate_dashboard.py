@@ -660,6 +660,27 @@ def record_posting_url(record: Dict[str, Any]) -> Optional[str]:
     return None
 
 
+def record_dashboard_reference(record: Dict[str, Any]) -> str:
+    """Return a stable id, slug, or normalized company/title reference."""
+    for field in ("prospect_id", "record_id", "id"):
+        value = str(record.get(field) or "").strip()
+        if value:
+            return value
+    for field in ("stable_slug", "prospect_slug", "record_slug", "slug"):
+        value = str(record.get(field) or "").strip()
+        if value:
+            return value
+    company_key = re.sub(
+        r"[^a-z0-9]+", "-", str(record.get("company") or "").lower()
+    ).strip("-")
+    role_key = re.sub(
+        r"[^a-z0-9]+",
+        "-",
+        str(record.get("role") or record.get("job_title") or "").lower(),
+    ).strip("-")
+    return f"role:{company_key}:{role_key}" if company_key and role_key else ""
+
+
 def structured_recommended_next_steps(
     records: Iterable[Dict[str, Any]], mode: str = "All Mode"
 ) -> List[Dict[str, Any]]:
@@ -685,7 +706,7 @@ def structured_recommended_next_steps(
         recommendation = recommended_next_steps([record], mode)[0]
         steps.append(
             {
-                "tracker_id": str(record.get("id") or ""),
+                "tracker_id": record_dashboard_reference(record),
                 "company": str(record.get("company") or "Unknown company"),
                 "title": str(record.get("role") or record.get("job_title") or "Unknown role"),
                 "recommendation": recommendation,
