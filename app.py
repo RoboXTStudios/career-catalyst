@@ -39,10 +39,12 @@ from scripts.generate_dashboard import (
     generate_dashboard,
     load_application_packages,
     prepare_dashboard_records,
+    record_posting_url,
     recommended_next_steps,
     select_dashboard_mode,
     source_verification_caution,
     sort_dashboard_records,
+    structured_recommended_next_steps,
 )
 from scripts.generate_followups import (
     FOLLOWUP_ELIGIBLE_STATUSES,
@@ -131,6 +133,8 @@ PACKAGE_MATERIAL_LABELS = {
     "Hiring Manager Follow-Up": "Hiring manager follow-up",
     "Warm Contact Message": "Warm contact message",
     "Referral Ask": "Referral ask",
+    "PDF Resume": "PDF resume",
+    "Resume Text": "Resume text",
 }
 APP_CSS = """
 <style>
@@ -381,6 +385,19 @@ def resolve_selected_tracker_id(
     return tracker_ids[0] if tracker_ids else ""
 
 
+def focus_dashboard_role(session_state: Any, tracker_id: str) -> str:
+    """Set focused role state using a durable tracker id."""
+    stable_id = str(tracker_id or "").strip()
+    if stable_id:
+        session_state["dashboard_focused_role_id"] = stable_id
+    return stable_id
+
+
+def clear_focused_dashboard_role(session_state: Any) -> None:
+    """Clear focused role state without changing dashboard filters."""
+    session_state.pop("dashboard_focused_role_id", None)
+
+
 def update_dashboard_role(
     tracker_id: str,
     values: Dict[str, Any],
@@ -624,7 +641,43 @@ def _metadata_html(application: Dict[str, Any], package: Dict[str, Any]) -> str:
     return f'<div class="cc-metadata">{items}</div>' if items else ""
 
 
-def _match_score_html(report: Dict[str, Any]) -> str:
+def _primary_facts_html(application: Dict[str, Any], package: Dict[str, Any]) -> str:
+    """Render only high-value, non-duplicative facts on the primary card."""
+    status = get_record_status(application)
+    relevant_follow_up = (
+        application.get("follow_up_status")
+        if status in {"Applied", "Follow-up", "Interviewing"}
+        else None
+    )
+    facts = (
+        ("Location", application.get("location") or package.get("location")),
+        ("Work arrangement", application.get("work_arrangement")),
+        ("Salary", application.get("salary_range") or package.get("salary_range")),
+        ("Source type", application.get("source_type") or "Unknown Source"),
+        ("Verification", application.get("verification_status") or "Not Verified"),
+        (
+            "Applied / status date",
+            application.get("submitted_date")
+            or application.get("applied_date")
+            or application.get("status_updated_at"),
+        ),
+        ("Follow-up", relevant_follow_up),
+    )
+    items = "".join(
+        '<span class="cc-meta-item">'
+        f'<span class="cc-meta-label">{html.escape(label)}</span>'
+        f"{html.escape(str(value))}</span>"
+        for label, value in facts
+        if value
+    )
+    return f'<div class="cc-metadata">{items}</div>' if items else ""
+
+
+def _match_score_html(
+    report: Dict[str, Any],
+    include_details: bool = True,
+    include_tier: bool = True,
+) -> str:
     score = report.get("match_score")
     if score is None:
         return (
@@ -641,21 +694,31 @@ def _match_score_html(report: Dict[str, Any]) -> str:
         items = "".join(f"<li>{html.escape(str(value))}</li>" for value in values)
         return f'<div><strong>{label}</strong><ul>{items}</ul></div>'
 
+    details = (
+        '<div class="cc-match-details">'
+        f'{render_list("Top strengths", "match_strengths")}'
+        f'{render_list("Gaps / cautions", "match_gaps")}'
+        '</div>'
+        if include_details
+        else ""
+    )
+    tier = (
+        f'<span class="cc-match-tier">{html.escape(str(report.get("match_tier") or "Not scored yet"))}</span>'
+        if include_tier
+        else ""
+    )
     return (
         '<section class="cc-match-gate">'
         '<div class="cc-match-heading"><div>'
         '<span class="cc-match-label">Match Score</span>'
         f'<span class="cc-match-number">{html.escape(str(score))}<small>/100</small></span>'
         '</div>'
-        f'<span class="cc-match-tier">{html.escape(str(report.get("match_tier") or "Not scored yet"))}</span></div>'
+        f"{tier}</div>"
         '<div class="cc-match-action"><span>Recommended action</span>'
         f'<strong>{html.escape(str(report.get("recommended_action") or "Review First"))}</strong>'
         f'<span>Confidence: {html.escape(str(report.get("confidence") or "Low"))}</span></div>'
         f'<p class="cc-match-summary">{html.escape(str(report.get("match_summary") or "Review the fit before generating a package."))}</p>'
-        '<div class="cc-match-details">'
-        f'{render_list("Top strengths", "match_strengths")}'
-        f'{render_list("Gaps / cautions", "match_gaps")}'
-        '</div></section>'
+        f"{details}</section>"
     )
 
 
@@ -690,6 +753,7 @@ def _render_role_card(
     st: Any,
     application: Dict[str, Any],
     package: Dict[str, Any],
+    mode: str = "All Mode",
 ) -> None:
     tracker_id = str(application.get("id") or "application")
     with st.container(border=True):
@@ -720,17 +784,15 @@ def _render_role_card(
             unsafe_allow_html=True,
         )
         badge_column.markdown(_status_badges(application), unsafe_allow_html=True)
-        metadata = _metadata_html(application, package)
+        metadata = _primary_facts_html(application, package)
         if metadata:
             st.markdown(metadata, unsafe_allow_html=True)
-        st.markdown(_match_score_html(application), unsafe_allow_html=True)
-        notes = str(application.get("notes") or "").strip()
-        if notes:
-            st.markdown(
-                '<div class="cc-tracker-row"><span class="cc-tracker-label">Notes</span>'
-                f"<span>{html.escape(notes)}</span></div>",
-                unsafe_allow_html=True,
-            )
+        st.markdown(
+            _match_score_html(
+                application, include_details=False, include_tier=False
+            ),
+            unsafe_allow_html=True,
+        )
         next_action = str(application.get("next_action") or "").strip()
         if next_action:
             st.markdown(
@@ -738,45 +800,89 @@ def _render_role_card(
                 f"<span>{html.escape(next_action)}</span></div>",
                 unsafe_allow_html=True,
             )
-        verification_notes = str(application.get("verification_notes") or "Verify manually")
-        st.markdown(
-            '<div class="cc-tracker-row"><span class="cc-tracker-label">Verification notes</span>'
-            f'<span>{html.escape(verification_notes)}</span></div>',
-            unsafe_allow_html=True,
-        )
-        caution = source_verification_caution(application)
-        if caution:
-            st.markdown(
-                f'<p class="cc-source-caution">{html.escape(caution)}</p>',
-                unsafe_allow_html=True,
-            )
-        field_warnings = []
-        for warning_key in ("field_warnings", "source_warnings"):
-            warning_values = application.get(warning_key)
-            if isinstance(warning_values, list):
-                field_warnings.extend(str(value) for value in warning_values if value)
-            elif warning_values:
-                field_warnings.append(str(warning_values))
-        field_warnings = list(dict.fromkeys(field_warnings))
-        if field_warnings:
-            items = "".join(f"<li>{html.escape(warning)}</li>" for warning in field_warnings)
-            st.markdown(
-                '<div class="cc-tracker-row"><span class="cc-tracker-label">Field warnings</span>'
-                f"<ul>{items}</ul></div>",
-                unsafe_allow_html=True,
-            )
-        st.markdown(
-            '<p class="cc-materials-label">Application materials</p>',
-            unsafe_allow_html=True,
-        )
-        materials_label = str(
-            application.get("_materials_availability_label")
-            or "Materials not verified"
-        )
-        st.caption(materials_label)
-        _material_button_rows(st, tracker_id, package.get("files", {}))
+        if mode == "Cleanup Mode":
+            st.info(recommended_next_steps([application], mode)[0])
+        match_details = application.get("match_strengths") or application.get("match_gaps")
+        if match_details:
+            with st.expander("Match details", expanded=False):
+                st.markdown(_match_score_html(application), unsafe_allow_html=True)
 
-        with st.expander("Quick actions", expanded=False):
+        with st.expander("Source verification details", expanded=False):
+            posting_url = record_posting_url(application)
+            if not posting_url:
+                st.caption("No posting URL stored.")
+            verification_notes = str(
+                application.get("verification_notes") or "Verify manually"
+            )
+            st.markdown(f"**Verification notes:** {html.escape(verification_notes)}")
+            caution = source_verification_caution(application)
+            if caution:
+                st.warning(caution)
+            field_warnings = []
+            for warning_key in ("field_warnings", "source_warnings"):
+                warning_values = application.get(warning_key)
+                if isinstance(warning_values, list):
+                    field_warnings.extend(
+                        str(value) for value in warning_values if value
+                    )
+                elif warning_values:
+                    field_warnings.append(str(warning_values))
+            for warning in dict.fromkeys(field_warnings):
+                st.caption(f"• {warning}")
+
+        notes = str(application.get("notes") or "").strip()
+        if notes:
+            with st.expander("Notes", expanded=False):
+                st.write(notes)
+
+        files = package.get("files", {})
+        material_count = sum(Path(path).exists() for path in files.values())
+        with st.expander(
+            f"Application & outreach materials ({material_count})", expanded=False
+        ):
+            st.caption(
+                "Current materials available."
+                if material_count
+                else "Missing materials."
+            )
+            materials_label = str(
+                application.get("_materials_availability_label")
+                or "Materials not verified"
+            )
+            st.caption(materials_label)
+            _material_button_rows(st, tracker_id, files)
+            archive_candidates = int(application.get("_archive_candidate_count") or 0)
+            if archive_candidates:
+                st.caption(
+                    f"{archive_candidates} older duplicate material(s) are archive candidates."
+                )
+            if application.get("_archived_materials_available"):
+                st.caption("Archived materials exist.")
+
+        st.caption(
+            "Use quick actions for common workflow changes. Use Advanced edit only "
+            "for manual corrections."
+        )
+        with st.expander("Quick actions", expanded=True):
+            utility_columns = st.columns(2)
+            posting_url = record_posting_url(application)
+            if posting_url:
+                utility_columns[0].link_button(
+                    "Open posting", posting_url, use_container_width=True
+                )
+            if files:
+                first_material = next(
+                    (Path(path) for path in files.values() if Path(path).exists()),
+                    None,
+                )
+                if first_material and utility_columns[1].button(
+                    "Open Materials",
+                    key=f"dashboard_open_materials_{tracker_id}",
+                    use_container_width=True,
+                    help=str(first_material),
+                ):
+                    opened, message = open_local_path(first_material)
+                    (st.success if opened else st.warning)(message)
             actions = dashboard_status_actions(application)
             for row_start in range(0, len(actions), 4):
                 action_row = actions[row_start : row_start + 4]
@@ -1003,6 +1109,7 @@ def _render_application_tracker(
                         st,
                         application,
                         packages.get(str(application.get("id")), {}),
+                        mode,
                     )
             continue
         st.markdown(heading, unsafe_allow_html=True)
@@ -1013,17 +1120,156 @@ def _render_application_tracker(
                 st,
                 application,
                 packages.get(str(application.get("id")), {}),
+                mode,
             )
 
 
 def _render_recommended_next_steps(
-    st: Any, applications: list[Dict[str, Any]], mode: str
-) -> None:
-    steps = recommended_next_steps(applications, mode)
+    st: Any,
+    applications: list[Dict[str, Any]],
+    mode: str,
+    packages: Dict[str, Dict[str, Any]],
+) -> str:
+    steps = structured_recommended_next_steps(applications, mode)
+    by_id = {str(item.get("id") or ""): item for item in applications}
     with st.container(border=True):
         st.markdown("**Recommended Next Steps**")
-        for index, step in enumerate(steps, start=1):
-            st.markdown(f"{index}. {step}")
+        if not steps:
+            st.caption(recommended_next_steps([], mode)[0])
+        for step in steps:
+            tracker_id = step["tracker_id"]
+            record = by_id.get(tracker_id, {})
+            st.markdown(
+                f"**{step['priority']}. {step['company']} — {step['title']}**  "
+                f"\n{step['recommendation']}  "
+                f"\n`{step['action_type']}` · `{tracker_id}`"
+            )
+            primary_actions = st.columns(5)
+            if primary_actions[0].button(
+                "View role",
+                key=f"next_view_{tracker_id}",
+                use_container_width=True,
+            ):
+                focus_dashboard_role(st.session_state, tracker_id)
+            for column, label, action_key in (
+                (primary_actions[1], "Pass", "pass"),
+                (primary_actions[2], "Pause", "paused"),
+                (primary_actions[3], "Hide / Invalid", "invalid_hidden"),
+            ):
+                if column.button(
+                    label,
+                    key=f"next_{action_key}_{tracker_id}",
+                    use_container_width=True,
+                ):
+                    updated = apply_dashboard_status_action(
+                        tracker_id, action_key, PROJECT_ROOT
+                    )
+                    st.session_state["dashboard_notice"] = (
+                        f"Updated {updated.get('company')} — {updated.get('role')} "
+                        f"to {get_record_status(updated)}."
+                    )
+                    st.rerun()
+            if primary_actions[4].button(
+                "Verify manually",
+                key=f"next_verify_{tracker_id}",
+                use_container_width=True,
+            ):
+                update_dashboard_role(
+                    tracker_id,
+                    {
+                        "status": get_record_status(record),
+                        "next_action": "Verify the current employer posting and apply path manually.",
+                    },
+                    PROJECT_ROOT,
+                )
+                st.session_state["dashboard_notice"] = (
+                    f"Added manual verification for {step['company']} — {step['title']}."
+                )
+                st.rerun()
+
+            secondary_actions = st.columns(4)
+            if step.get("posting_url"):
+                secondary_actions[0].link_button(
+                    "Open posting", step["posting_url"], use_container_width=True
+                )
+            status = get_record_status(record)
+            if status not in HIDDEN_STATUSES and secondary_actions[1].button(
+                "Generate package",
+                key=f"next_package_{tracker_id}",
+                use_container_width=True,
+            ):
+                try:
+                    generate_package(tracker_id, PROJECT_ROOT)
+                except PackageGenerationError as error:
+                    st.error(str(error))
+                else:
+                    st.session_state["dashboard_notice"] = (
+                        f"Generated package for {step['company']} — {step['title']}."
+                    )
+                    st.rerun()
+            material_paths = step.get("material_paths") or {}
+            first_material = next(
+                (
+                    Path(path)
+                    for path in material_paths.values()
+                    if Path(path).exists()
+                ),
+                None,
+            )
+            if first_material and secondary_actions[2].button(
+                "Open materials",
+                key=f"next_materials_{tracker_id}",
+                use_container_width=True,
+                help=str(first_material),
+            ):
+                opened, message = open_local_path(first_material)
+                (st.success if opened else st.warning)(message)
+            if status in ACTIVE_STATUSES:
+                if secondary_actions[3].button(
+                    "Generate follow-up",
+                    key=f"next_followup_generate_{tracker_id}",
+                    use_container_width=True,
+                ):
+                    try:
+                        generate_followups(tracker_id, PROJECT_ROOT)
+                    except FollowupGenerationError as error:
+                        st.error(str(error))
+                    else:
+                        st.session_state["dashboard_notice"] = (
+                            f"Generated follow-up materials for {step['company']} — "
+                            f"{step['title']}."
+                        )
+                        st.rerun()
+                if secondary_actions[3].button(
+                    "Mark follow-up sent",
+                    key=f"next_followup_sent_{tracker_id}",
+                    use_container_width=True,
+                ):
+                    apply_dashboard_status_action(
+                        tracker_id, "follow_up_sent", PROJECT_ROOT
+                    )
+                    st.session_state["dashboard_notice"] = (
+                        f"Marked follow-up sent for {step['company']} — {step['title']}."
+                    )
+                    st.rerun()
+            else:
+                secondary_actions[3].caption("Action available on role card.")
+
+    focused_id = str(st.session_state.get("dashboard_focused_role_id") or "")
+    focused = by_id.get(focused_id)
+    if focused:
+        focus_heading, clear_column = st.columns((5, 1))
+        focus_heading.markdown("### Focused role")
+        if clear_column.button(
+            "Clear focus", key="dashboard_clear_focus", use_container_width=True
+        ):
+            clear_focused_dashboard_role(st.session_state)
+            st.rerun()
+        _render_role_card(st, focused, packages.get(focused_id, {}), mode)
+        return focused_id
+    if focused_id:
+        clear_focused_dashboard_role(st.session_state)
+    return ""
 
 
 def _application_label(application: Dict[str, Any]) -> str:
@@ -1709,7 +1955,8 @@ def _render_dashboard(st: Any) -> None:
         (st.success if opened else st.warning)(message)
     st.caption(
         "Card updates refresh this live dashboard automatically. Regenerate HTML only "
-        "when you want to update the separate static dashboard file."
+        "when you want to update the separate static dashboard file. Restart the local "
+        "app after code changes."
     )
     if "dashboard_notice" in st.session_state:
         st.success(st.session_state.pop("dashboard_notice"))
@@ -1765,9 +2012,12 @@ def _render_dashboard(st: Any) -> None:
         trust_label=trust_label,
     )
     records = sort_dashboard_records(records, sort_by)
-    _render_recommended_next_steps(st, records, mode)
+    focused_id = _render_recommended_next_steps(st, records, mode, packages)
     st.caption(f"{len(records)} roles match the current mode and filters.")
-    _render_application_tracker(st, records, packages, mode)
+    tracker_records = [
+        record for record in records if str(record.get("id") or "") != focused_id
+    ]
+    _render_application_tracker(st, tracker_records, packages, mode)
 
 
 def _render_recent_outputs(st: Any) -> None:

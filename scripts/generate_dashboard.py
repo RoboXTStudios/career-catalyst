@@ -1,6 +1,7 @@
 """Generate a static local dashboard from Career Catalyst project files."""
 
 import html
+import json
 import os
 import re
 from datetime import date, datetime, timedelta
@@ -63,6 +64,7 @@ ASSET_DIRECTORIES = (
     "exports/messages",
     "exports/strategy_packs",
     "exports/followups",
+    "exports/pdf",
 )
 LINK_ORDER = (
     "Job Description",
@@ -79,6 +81,8 @@ LINK_ORDER = (
     "Hiring Manager Follow-Up",
     "Warm Contact Message",
     "Referral Ask",
+    "PDF Resume",
+    "Resume Text",
 )
 FOLLOW_UP_ASSET_LABELS = {
     "Follow-Up Materials",
@@ -595,6 +599,60 @@ def recommended_next_steps(
     return steps
 
 
+def record_posting_url(record: Dict[str, Any]) -> Optional[str]:
+    """Return the first stored posting URL without inventing a destination."""
+    for key in (
+        "canonical_apply_url",
+        "original_source_url",
+        "apply_url",
+        "source_url",
+        "job_url",
+        "official_url",
+    ):
+        value = str(record.get(key) or "").strip()
+        if value.startswith(("https://", "http://")):
+            return value
+    return None
+
+
+def structured_recommended_next_steps(
+    records: Iterable[Dict[str, Any]], mode: str = "All Mode"
+) -> List[Dict[str, Any]]:
+    """Return actionable next-step records keyed by durable tracker identity."""
+    values = sort_dashboard_records(records)
+    steps: List[Dict[str, Any]] = []
+    for priority, record in enumerate(values[:5], start=1):
+        status = get_record_status(record)
+        if status == "Pass":
+            action_type = "passed"
+        elif _is_invalid_hidden(record):
+            action_type = "hidden"
+        elif status == "Paused":
+            action_type = "review_later"
+        elif mode == "Follow-Up Mode":
+            action_type = "follow_up"
+        elif mode == "Apply Mode" and not record.get("_has_package"):
+            action_type = "generate_package"
+        elif mode == "Cleanup Mode":
+            action_type = "verify"
+        else:
+            action_type = "review"
+        recommendation = recommended_next_steps([record], mode)[0]
+        steps.append(
+            {
+                "tracker_id": str(record.get("id") or ""),
+                "company": str(record.get("company") or "Unknown company"),
+                "title": str(record.get("role") or record.get("job_title") or "Unknown role"),
+                "recommendation": recommendation,
+                "action_type": action_type,
+                "priority": priority,
+                "posting_url": record_posting_url(record),
+                "material_paths": dict(record.get("_material_paths") or {}),
+            }
+        )
+    return steps
+
+
 def _first_heading(text: str) -> Optional[str]:
     for line in text.splitlines():
         match = re.match(r"^\s*#\s+(.+?)\s*$", line)
@@ -741,6 +799,10 @@ def _asset_label(path: Path) -> Optional[str]:
 
     if parent == "markdown" and name.endswith("_resume.md"):
         return "Tailored Markdown Resume"
+    if parent == "pdf" and name.endswith("_resume.pdf"):
+        return "PDF Resume"
+    if parent == "pdf" and name.endswith("_resume.txt"):
+        return "Resume Text"
     if parent == "docx" and name.endswith("_styled.docx"):
         return "Styled DOCX"
     if parent == "docx" and name.endswith("_ats.docx"):
@@ -850,9 +912,14 @@ def _package_for_asset(
 
 
 def _attach_assets(root: Path, packages: List[Dict[str, Any]]) -> List[Tuple[str, Path]]:
+    """Attach the newest matching asset and retain older duplicates as archive candidates."""
     unassigned: List[Tuple[str, Path]] = []
+    matches: Dict[Tuple[int, str], List[Path]] = {}
+    packages_by_identity = {id(package): package for package in packages}
     for relative_directory in ASSET_DIRECTORIES:
-        for path in _scan_files(root, relative_directory, (".md", ".docx")):
+        for path in _scan_files(
+            root, relative_directory, (".md", ".docx", ".txt", ".pdf")
+        ):
             label = _asset_label(path)
             if label is None:
                 continue
@@ -860,13 +927,44 @@ def _attach_assets(root: Path, packages: List[Dict[str, Any]]) -> List[Tuple[str
             if package is None:
                 unassigned.append((label, path))
                 continue
-            existing_path = package["files"].get(label)
-            if existing_path is None or (
-                path.name.startswith("TrishaLynch_")
-                and not existing_path.name.startswith("TrishaLynch_")
-            ):
-                package["files"][label] = path
+            matches.setdefault((id(package), label), []).append(path)
+    for (package_identity, label), paths in matches.items():
+        package = packages_by_identity[package_identity]
+        existing = package["files"].get(label)
+        candidates = list(dict.fromkeys([*(paths), *([existing] if existing else [])]))
+        current = max(
+            candidates,
+            key=lambda path: (path.stat().st_mtime, path.name.lower()),
+        )
+        package["files"][label] = current
+        for older in candidates:
+            if older == current:
+                continue
+            package.setdefault("archive_candidates", []).append(
+                {
+                    "path": older,
+                    "material_type": label,
+                    "current_path": current,
+                    "reason": "Older duplicate for the same role and material type.",
+                }
+            )
     return unassigned
+
+
+def archived_materials_exist(root: Path, tracker_id: str) -> bool:
+    """Check archive manifests without treating archived paths as current assets."""
+    archive_root = root / "exports" / "archive"
+    if not archive_root.is_dir() or not tracker_id:
+        return False
+    for manifest_path in archive_root.glob("*/archive_manifest.json"):
+        try:
+            payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        entries = payload.get("archived", []) if isinstance(payload, dict) else []
+        if any(str(entry.get("tracker_id") or "") == tracker_id for entry in entries):
+            return True
+    return False
 
 
 def prepare_dashboard_records(
@@ -886,6 +984,15 @@ def prepare_dashboard_records(
                 record[key] = package[key]
         files = package.get("files") if isinstance(package, dict) else None
         if isinstance(files, dict):
+            record["_material_paths"] = {
+                str(label): str(path) for label, path in files.items()
+            }
+            record["_archive_candidate_count"] = len(
+                package.get("archive_candidates", [])
+            )
+            record["_archived_materials_available"] = bool(
+                package.get("archived_materials_available")
+            )
             follow_up_available = bool(FOLLOW_UP_ASSET_LABELS.intersection(files))
             outreach_available = any(
                 label in files
@@ -1641,6 +1748,10 @@ def load_application_packages(project_root: PathInput = Path.cwd()) -> Dict[str,
     tracker = validate_application_tracker(root)["applications"]
     _merge_tracker(packages, tracker)
     unassigned = _attach_assets(root, packages)
+    for package in packages:
+        package["archived_materials_available"] = archived_materials_exist(
+            root, str(package.get("tracker_id") or "")
+        )
     _enrich_package_trackers(packages)
     packages.sort(
         key=lambda item: (
