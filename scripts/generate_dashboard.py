@@ -21,6 +21,7 @@ if __package__:
         tracker_company_keys,
         tracker_role_keys,
         validate_application_tracker,
+        workflow_status_bucket,
     )
     from .dynamic_role_intelligence import get_effective_voice_profile
     from .job_freshness import detect_job_freshness
@@ -44,6 +45,7 @@ else:
         tracker_company_keys,
         tracker_role_keys,
         validate_application_tracker,
+        workflow_status_bucket,
     )
     from dynamic_role_intelligence import get_effective_voice_profile
     from job_freshness import detect_job_freshness
@@ -95,7 +97,20 @@ MATCH_TIER_FILTERS = (
     "All", "Strong Match", "Good Match", "Stretch Match", "Weak Match", "Pass", "Not scored yet"
 )
 ACTION_FILTERS = ("All", "Generate Package", "Review First", "Pass")
-STATUS_FILTERS = ("All",) + VALID_STATUSES
+STATUS_FILTERS = (
+    "All",
+    "Active",
+    "Applied / Follow-up",
+    "Reviewed",
+    "Paused",
+    "Pass",
+    "Invalid/Hidden",
+) + tuple(
+    status
+    for status in VALID_STATUSES
+    if status
+    not in {"Active", "Reviewed", "Paused", "Pass", "Invalid/Hidden"}
+)
 FOLLOW_UP_FILTERS = (
     "All", "Not due yet", "Due soon", "Due now", "Overdue", "Follow-up sent", "No applied date"
 )
@@ -345,9 +360,26 @@ def filter_dashboard_records(
         if recommended_action != "All" and record.get("recommended_action") != recommended_action:
             continue
         status = get_record_status(record)
+        bucket = workflow_status_bucket(record)
         if application_status == "Invalid/Hidden" and not _is_invalid_hidden(record):
             continue
-        if application_status not in {"All", "Invalid/Hidden"} and status != application_status:
+        if application_status in {
+            "Active",
+            "Applied / Follow-up",
+            "Reviewed",
+            "Paused",
+            "Pass",
+        } and bucket != application_status:
+            continue
+        if application_status not in {
+            "All",
+            "Invalid/Hidden",
+            "Active",
+            "Applied / Follow-up",
+            "Reviewed",
+            "Paused",
+            "Pass",
+        } and status != application_status:
             continue
         if follow_up_status != "All" and record.get("follow_up_status") != follow_up_status:
             continue
@@ -399,7 +431,7 @@ def select_dashboard_mode(
             item for item in values
             if item.get("match_tier") in {"Strong Match", "Good Match"}
             and item.get("recommended_action") == "Generate Package"
-            and get_record_status(item) not in ACTIVE_STATUSES
+            and workflow_status_bucket(item) == "Active"
             and not _is_hidden(item)
             and str(item.get("posting_status") or "").lower() != "closed"
             and item.get("verification_status") != "Stale / Closed Risk"
@@ -407,8 +439,7 @@ def select_dashboard_mode(
     if mode == "Follow-Up Mode":
         return [
             item for item in values
-            if get_record_status(item) in ACTIVE_STATUSES
-            and item.get("follow_up_status") in {"Due soon", "Due now", "Overdue"}
+            if workflow_status_bucket(item) == "Applied / Follow-up"
             and not _is_hidden(item)
         ]
     if mode == "Review Mode":
@@ -416,7 +447,8 @@ def select_dashboard_mode(
             item
             for item in values
             if (
-                item.get("match_tier") == "Stretch Match"
+                workflow_status_bucket(item) == "Reviewed"
+                or item.get("match_tier") == "Stretch Match"
                 or item.get("recommended_action") == "Review First"
             )
             and not _is_hidden(item)
@@ -510,6 +542,12 @@ def recommended_next_steps(
         ordered = sorted(values, key=lambda item: (priority.get(str(item.get("follow_up_status")), 9), _date_ordinal(item, "follow_up") or 9999999))
         steps = []
         for item in ordered[:5]:
+            follow_up_state = str(item.get("follow_up_status") or "Not due yet")
+            if follow_up_state == "Follow-up sent":
+                steps.append(
+                    f"Follow-up sent: {_record_label(item)}. Monitor for a response."
+                )
+                continue
             materials = item.get("_follow_up_materials_status")
             material_action = (
                 "Use existing follow-up materials."
@@ -536,7 +574,7 @@ def recommended_next_steps(
                 else ""
             )
             steps.append(
-                f"{item.get('follow_up_status')}: {_record_label(item)}. "
+                f"{follow_up_state}: {_record_label(item)}. "
                 f"{material_action} {contact_action}{source_action}"
             )
         return steps
@@ -581,7 +619,14 @@ def recommended_next_steps(
             steps.append(f"{action}: {_record_label(item)}.")
         return steps
 
-    unapplied = next((item for item in values if get_record_status(item) not in ACTIVE_STATUSES), None)
+    unapplied = next(
+        (
+            item
+            for item in values
+            if workflow_status_bucket(item) in {"Active", "Reviewed"}
+        ),
+        None,
+    )
     urgent = next((item for item in values if item.get("follow_up_status") in {"Overdue", "Due now", "Due soon"}), None)
     if urgent:
         steps = [f"Act first on {_record_label(urgent)}; its follow-up is {urgent.get('follow_up_status').lower()}." ]
@@ -622,12 +667,12 @@ def structured_recommended_next_steps(
     values = sort_dashboard_records(records)
     steps: List[Dict[str, Any]] = []
     for priority, record in enumerate(values[:5], start=1):
-        status = get_record_status(record)
-        if status == "Pass":
+        bucket = workflow_status_bucket(record)
+        if bucket == "Pass":
             action_type = "passed"
-        elif _is_invalid_hidden(record):
+        elif bucket == "Hidden / Invalid":
             action_type = "hidden"
-        elif status == "Paused":
+        elif bucket == "Paused":
             action_type = "review_later"
         elif mode == "Follow-Up Mode":
             action_type = "follow_up"
@@ -1089,13 +1134,14 @@ def _render_badges(tracker: Dict[str, Any]) -> str:
     return "".join(badges)
 
 
-def _render_metadata(package: Dict[str, Any]) -> str:
+def _render_metadata(package: Dict[str, Any], primary_only: bool = False) -> str:
     tracker = package.get("tracker", {})
     source_display = tracker.get("source_name")
     if not source_display or source_display == "Unknown":
         source_display = tracker.get("source") or "Unknown"
     values = (
         ("Location", package.get("location")),
+        ("Work arrangement", tracker.get("work_arrangement")),
         ("Salary", tracker.get("salary_range") or package.get("salary_range")),
         ("Freshness", tracker.get("freshness_label") or tracker.get("freshness") or package.get("freshness", {}).get("label")),
         ("Freshness Risk", tracker.get("freshness_risk") or "Unknown"),
@@ -1136,6 +1182,16 @@ def _render_metadata(package: Dict[str, Any]) -> str:
     )
     items = []
     for label, value in values:
+        if primary_only and label not in {
+            "Location",
+            "Work arrangement",
+            "Salary",
+            "Source Type",
+            "Verification Status",
+            "Applied",
+            "Follow-up",
+        }:
+            continue
         if not value:
             continue
         rendered_value = html.escape(str(value))
@@ -1150,7 +1206,9 @@ def _render_metadata(package: Dict[str, Any]) -> str:
     return f'<dl class="metadata">{"".join(items)}</dl>'
 
 
-def _render_match_score(tracker: Dict[str, Any]) -> str:
+def _render_match_score(
+    tracker: Dict[str, Any], include_details: bool = True
+) -> str:
     score = tracker.get("match_score")
     if score is None:
         return (
@@ -1174,6 +1232,14 @@ def _render_match_score(tracker: Dict[str, Any]) -> str:
         items = "".join(f"<li>{html.escape(str(value))}</li>" for value in values)
         return f'<div class="match-list"><h4>{label}</h4><ul>{items}</ul></div>'
 
+    details = (
+        '<div class="match-details">'
+        f'{render_list("Top strengths", strengths)}'
+        f'{render_list("Gaps / cautions", gaps)}'
+        '</div>'
+        if include_details
+        else ""
+    )
     return (
         '<section class="match-gate" aria-label="Match Score">'
         '<div class="match-score-row">'
@@ -1186,10 +1252,7 @@ def _render_match_score(tracker: Dict[str, Any]) -> str:
         f'<span>Confidence: {html.escape(confidence)}</span>'
         '</div>'
         f'<p class="match-summary">{html.escape(summary)}</p>'
-        '<div class="match-details">'
-        f'{render_list("Top strengths", strengths)}'
-        f'{render_list("Gaps / cautions", gaps)}'
-        '</div></section>'
+        f"{details}</section>"
     )
 
 
@@ -1257,8 +1320,8 @@ def _render_package(package: Dict[str, Any], dashboard_directory: Path) -> str:
         "</div>"
         f'<div class="badges">{_render_badges(tracker)}</div>'
         "</div>"
-        f"{_render_match_score(tracker)}"
-        f"{_render_metadata(package)}"
+        f"{_render_match_score(tracker, include_details=False)}"
+        f"{_render_metadata(package, primary_only=True)}"
         f"{_render_notes(tracker)}"
         '<div class="materials"><h4>Application materials</h4>'
         f'{_render_links(package["files"], dashboard_directory)}</div>'
@@ -1290,26 +1353,24 @@ def _partition_packages(
 ) -> Dict[str, List[Dict[str, Any]]]:
     groups: Dict[str, List[Dict[str, Any]]] = {
         "active": [],
-        "draft": [],
+        "applied": [],
+        "reviewed": [],
+        "paused": [],
+        "pass": [],
         "hidden": [],
     }
     for package in packages:
         tracker = package.get("tracker", {})
-        status = get_record_status(tracker)
-        if tracker and (
-            status in HIDDEN_STATUSES
-            or (
-                status not in VALID_STATUSES
-                and tracker.get("show_on_dashboard") is False
-            )
-        ):
-            groups["hidden"].append(package)
-        elif status in ACTIVE_STATUSES:
-            groups["active"].append(package)
-        elif status in DRAFT_STATUSES or not tracker:
-            groups["draft"].append(package)
-        else:
-            groups["hidden"].append(package)
+        bucket = workflow_status_bucket(tracker) if tracker else "Active"
+        target = {
+            "Active": "active",
+            "Applied / Follow-up": "applied",
+            "Reviewed": "reviewed",
+            "Paused": "paused",
+            "Pass": "pass",
+            "Hidden / Invalid": "hidden",
+        }[bucket]
+        groups[target].append(package)
     for key, values in groups.items():
         ordered_trackers = sort_dashboard_records(
             [
@@ -1330,23 +1391,14 @@ def _summary_counts(
     root: Path,
     groups: Dict[str, List[Dict[str, Any]]],
 ) -> Dict[str, int]:
-    applied_count = sum(
-        1
-        for package in groups["active"]
-        if get_record_status(package.get("tracker", {})) == "Applied"
-    )
     return {
-        "Total job files": len(
-            [
-                path
-                for path in _scan_files(root, "jobs", (".md", ".txt"))
-                if path.name.lower() != "readme.md"
-            ]
-        ),
-        "Active applications": len(groups["active"]),
-        "Applied applications": applied_count,
-        "Draft or paused roles": len(groups["draft"]),
-        "Hidden/invalid roles": len(groups["hidden"]),
+        "Total": sum(len(values) for values in groups.values()),
+        "Active": len(groups["active"]),
+        "Applied / Follow-up": len(groups["applied"]),
+        "Reviewed": len(groups["reviewed"]),
+        "Paused": len(groups["paused"]),
+        "Pass": len(groups["pass"]),
+        "Hidden / Invalid": len(groups["hidden"]),
     }
 
 
@@ -1420,8 +1472,16 @@ def _render_priority_queue(
 
 
 def _render_priority_sections(groups: Dict[str, List[Dict[str, Any]]]) -> str:
-    visible = groups["active"] + groups["draft"]
-    all_packages = visible + groups["hidden"]
+    if "draft" in groups:
+        visible = groups.get("active", []) + groups.get("draft", [])
+    else:
+        visible = (
+            groups.get("active", [])
+            + groups.get("applied", [])
+            + groups.get("reviewed", [])
+            + groups.get("paused", [])
+        )
+    all_packages = visible + groups.get("pass", []) + groups.get("hidden", [])
     visible_records = [_package_record(package) for package in visible]
     steps = recommended_next_steps(visible_records, "All Mode")
     rendered_steps = "".join(f"<li>{html.escape(step)}</li>" for step in steps)
@@ -1472,20 +1532,40 @@ def _render_html(
         for label, count in counts.items()
     )
     active_group = _render_group(
-        "Active / Applied",
-        "active-applied",
+        "Active",
+        "active",
         groups["active"],
         dashboard_directory,
     )
-    draft_group = _render_group(
-        "Draft / Active / Reviewed / Paused",
-        "draft-paused",
-        groups["draft"],
+    applied_group = _render_group(
+        "Applied / Follow-Up",
+        "applied-follow-up",
+        groups["applied"],
+        dashboard_directory,
+    )
+    reviewed_group = _render_group(
+        "Reviewed",
+        "reviewed",
+        groups["reviewed"],
+        dashboard_directory,
+    )
+    paused_group = _render_group(
+        "Paused",
+        "paused",
+        groups["paused"],
+        dashboard_directory,
+    )
+    passed_group = _render_group(
+        "Passed",
+        "passed",
+        groups["pass"],
         dashboard_directory,
     )
     hidden_group = _render_hidden_group(groups["hidden"], dashboard_directory)
     priority_sections = _render_priority_sections(groups)
-    visible_count = len(groups["active"]) + len(groups["draft"])
+    visible_count = sum(
+        len(groups[key]) for key in ("active", "applied", "reviewed", "paused")
+    )
 
     return f"""<!doctype html>
 <html lang="en">
@@ -1559,7 +1639,7 @@ def _render_html(
     h2 {{ margin: 0; font-size: 18px; }}
     .summary-grid {{
       display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
       gap: 12px;
       margin-top: 12px;
     }}
@@ -1731,7 +1811,10 @@ def _render_html(
         <span class="section-count">{visible_count} visible roles</span>
       </div>
       {active_group}
-      {draft_group}
+      {applied_group}
+      {reviewed_group}
+      {paused_group}
+      {passed_group}
       {hidden_group}
     </section>
     {_render_unassigned(unassigned, dashboard_directory)}

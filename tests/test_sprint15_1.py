@@ -154,16 +154,15 @@ class DashboardGroupingAndFilterTests(unittest.TestCase):
             _record("hidden", status="Invalid/Hidden", show_on_dashboard=False),
         ]
         grouped = app.group_applications_by_status(records)
-        expected = {
-            "Applied / Follow-Up": "applied",
-            "Active": "active",
-            "Drafted / Reviewed": "drafted",
-            "Paused": "paused",
-            "Passed": "pass",
-            "Hidden / Invalid": "hidden",
-        }
-        for label, identifier in expected.items():
-            self.assertEqual([item["id"] for item in grouped[label]], [identifier])
+        self.assertEqual([item["id"] for item in grouped["Applied / Follow-Up"]], ["applied"])
+        self.assertEqual(
+            [item["id"] for item in grouped["Active"]], ["active", "drafted"]
+        )
+        self.assertEqual([item["id"] for item in grouped["Paused"]], ["paused"])
+        self.assertEqual([item["id"] for item in grouped["Passed"]], ["pass"])
+        self.assertEqual(
+            [item["id"] for item in grouped["Hidden / Invalid"]], ["hidden"]
+        )
 
     def test_cleanup_mode_includes_and_labels_every_cleanup_reason(self):
         records = [

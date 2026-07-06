@@ -87,8 +87,9 @@ class DashboardSimplificationTests(unittest.TestCase):
         ):
             self.assertIn(label, labels)
         source = inspect.getsource(app._render_role_card)
-        self.assertIn("Open posting", source)
-        self.assertIn("Open Materials", source)
+        self.assertIn("contextual_primary_actions", source)
+        self.assertIn("open_posting", source)
+        self.assertIn("open_materials", source)
         self.assertIn("dashboard_quick_{tracker_id}_{action_key}", source)
 
 
@@ -142,9 +143,10 @@ class RecommendedActionTests(unittest.TestCase):
         self.assertIn("focus_dashboard_role", source)
         self.assertIn("apply_dashboard_status_action", source)
         self.assertIn('key=f"next_{action_key}_{tracker_id}"', source)
-        self.assertIn('(primary_actions[1], "Pass", "pass")', source)
-        self.assertIn('(primary_actions[2], "Pause", "paused")', source)
-        self.assertIn('(primary_actions[3], "Hide / Invalid", "invalid_hidden")', source)
+        self.assertIn('(cleanup_actions[0], "Mark Pass", "pass")', source)
+        self.assertIn(
+            '(cleanup_actions[1], "Hide / Invalid", "invalid_hidden")', source
+        )
         self.assertIn("Focused role", source)
         self.assertIn("Clear focus", source)
 

@@ -50,12 +50,20 @@ STATUS_ALIASES = {
     "followup": "Follow-up",
     "follow up needed": "Applied",
     "follow up sent": "Follow-up",
+    "due now": "Follow-up",
+    "recruiter contacted": "Follow-up",
+    "hiring manager contacted": "Follow-up",
     "on hold": "Paused",
+    "review first": "Reviewed",
+    "manually reviewed": "Reviewed",
+    "verified": "Reviewed",
     "passed": "Pass",
     "declined": "Pass",
     "do not pursue": "Pass",
     "hidden": "Invalid/Hidden",
     "invalid hidden": "Invalid/Hidden",
+    "closed": "Invalid/Hidden",
+    "stale closed risk": "Invalid/Hidden",
 }
 ACTIVE_STATUSES = {"Applied", "Follow-up", "Interviewing"}
 DRAFT_STATUSES = {"Drafted", "Active", "Reviewed", "Paused"}
@@ -125,6 +133,44 @@ def get_record_status(record: Dict[str, Any]) -> str:
         if record.get(field) not in (None, ""):
             return normalize_status(record[field])
     return "Drafted"
+
+
+def workflow_status_bucket(record: Dict[str, Any]) -> str:
+    """Classify one record into an exclusive normalized dashboard workflow bucket."""
+    status = get_record_status(record)
+    if status in {"Pass"}:
+        return "Pass"
+    if status in {"Invalid", "Invalid/Hidden", "Rejected", "Archived"}:
+        return "Hidden / Invalid"
+    if (
+        record.get("verification_status") == "Stale / Closed Risk"
+        and record.get("show_on_dashboard") is False
+    ):
+        return "Hidden / Invalid"
+    if status == "Paused":
+        return "Paused"
+    if status in {"Applied", "Follow-up", "Interviewing"}:
+        return "Applied / Follow-up"
+    follow_up_status = normalize_tracker_value(record.get("follow_up_status"))
+    if (
+        record.get("submitted_date")
+        or record.get("applied_date")
+        or record.get("application_date")
+        or follow_up_status
+        in {
+            "due soon",
+            "due now",
+            "overdue",
+            "follow up sent",
+            "follow up needed",
+            "recruiter contacted",
+            "hiring manager contacted",
+        }
+    ):
+        return "Applied / Follow-up"
+    if status == "Reviewed":
+        return "Reviewed"
+    return "Active"
 
 
 def make_tracker_id(company: Any, role: Any) -> str:

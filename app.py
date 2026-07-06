@@ -22,6 +22,7 @@ from scripts.application_tracker import (
     normalize_status,
     update_prospect,
     update_status,
+    workflow_status_bucket,
 )
 from scripts.dynamic_role_intelligence import get_effective_voice_profile
 from scripts.filename_utils import build_upload_filename
@@ -73,7 +74,7 @@ UI_DESCRIPTION = (
 TRACKER_GROUPS = (
     "Applied / Follow-Up",
     "Active",
-    "Drafted / Reviewed",
+    "Reviewed",
     "Paused",
     "Passed",
     "Hidden / Invalid",
@@ -200,7 +201,7 @@ APP_CSS = """
   }
   .cc-summary-grid {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
     gap: 12px;
     margin-bottom: 1.8rem;
   }
@@ -304,21 +305,19 @@ APP_CSS = """
 
 
 def summarize_applications(applications: list[Dict[str, Any]]) -> Dict[str, int]:
-    """Return the five cockpit metrics without mutating tracker data."""
-    return {
-        "Total applications": len(applications),
-        "Applied": sum(get_record_status(item) == "Applied" for item in applications),
-        "Reviewed": sum(get_record_status(item) == "Reviewed" for item in applications),
-        "Paused": sum(get_record_status(item) == "Paused" for item in applications),
-        "Invalid/Hidden": sum(
-            get_record_status(item) in HIDDEN_STATUSES
-            or (
-                get_record_status(item) not in VALID_STATUSES
-                and item.get("show_on_dashboard") is False
-            )
-            for item in applications
-        ),
+    """Return exclusive normalized workflow counts without mutating tracker data."""
+    counts = {
+        "Total": len(applications),
+        "Active": 0,
+        "Applied / Follow-up": 0,
+        "Reviewed": 0,
+        "Paused": 0,
+        "Pass": 0,
+        "Hidden / Invalid": 0,
     }
+    for application in applications:
+        counts[workflow_status_bucket(application)] += 1
+    return counts
 
 
 def group_applications_by_status(
@@ -331,6 +330,7 @@ def group_applications_by_status(
     grouped = {label: [] for label in labels}
     for application in applications:
         status = get_record_status(application)
+        workflow_bucket = workflow_status_bucket(application)
         invalid_hidden = status in {"Invalid", "Invalid/Hidden", "Rejected", "Archived"} or (
             status not in VALID_STATUSES
             and application.get("show_on_dashboard") is False
@@ -341,22 +341,22 @@ def group_applications_by_status(
             or application.get("source_trust_label") == "Unknown Source"
             or str(application.get("posting_status") or "").lower() == "closed"
         )
-        if status == "Paused":
+        if workflow_bucket == "Paused":
             label = "Paused"
-        elif status == "Pass":
+        elif workflow_bucket == "Pass":
             label = "Passed"
-        elif invalid_hidden:
+        elif workflow_bucket == "Hidden / Invalid" or invalid_hidden:
             label = "Hidden / Invalid"
         elif mode == "Cleanup Mode" and stale_or_unverified:
             label = "Stale / Cannot Verify"
         elif mode == "Cleanup Mode":
             label = "Needs decision"
-        elif status in ACTIVE_STATUSES:
+        elif workflow_bucket == "Applied / Follow-up":
             label = "Applied / Follow-Up"
-        elif status == "Active":
+        elif workflow_bucket == "Reviewed":
+            label = "Reviewed"
+        elif workflow_bucket == "Active":
             label = "Active"
-        else:
-            label = "Drafted / Reviewed"
         grouped[label].append(application)
     if not preserve_order:
         for values in grouped.values():
@@ -396,6 +396,23 @@ def focus_dashboard_role(session_state: Any, tracker_id: str) -> str:
 def clear_focused_dashboard_role(session_state: Any) -> None:
     """Clear focused role state without changing dashboard filters."""
     session_state.pop("dashboard_focused_role_id", None)
+
+
+def apply_summary_navigation(session_state: Any, bucket: str) -> None:
+    """Set predictable mode/filter state from a normalized summary bucket."""
+    navigation = {
+        "Total": ("All Mode", "All"),
+        "Active": ("All Mode", "Active"),
+        "Applied / Follow-up": ("Follow-Up Mode", "Applied / Follow-up"),
+        "Reviewed": ("Review Mode", "Reviewed"),
+        "Paused": ("All Mode", "Paused"),
+        "Pass": ("Cleanup Mode", "Pass"),
+        "Hidden / Invalid": ("Cleanup Mode", "Invalid/Hidden"),
+    }
+    mode, status_filter = navigation.get(bucket, navigation["Total"])
+    session_state["dashboard_mode"] = mode
+    session_state["dashboard_status"] = status_filter
+    clear_focused_dashboard_role(session_state)
 
 
 def update_dashboard_role(
@@ -454,6 +471,59 @@ def dashboard_status_actions(record: Dict[str, Any]) -> tuple[tuple[str, str], .
             )
         )
     return tuple(actions)
+
+
+def contextual_primary_actions(
+    record: Dict[str, Any],
+    has_materials: bool = False,
+    has_posting_url: bool = False,
+    mode: str = "All Mode",
+) -> tuple[tuple[str, str], ...]:
+    """Return at most four calm, status-specific primary card actions."""
+    bucket = workflow_status_bucket(record)
+    if mode == "Cleanup Mode" and bucket in {"Active", "Reviewed"}:
+        return (
+            ("Pass", "pass"),
+            ("Hide / Invalid", "invalid_hidden"),
+            ("Keep Active", "active"),
+        )
+    if bucket == "Paused":
+        return (
+            ("Resume / Active", "active"),
+            ("Pass", "pass"),
+            ("Hide / Invalid", "invalid_hidden"),
+        )
+    if bucket == "Pass":
+        return (("Reopen / Active", "active"), ("Hide / Invalid", "invalid_hidden"))
+    if bucket == "Hidden / Invalid":
+        return (("Reopen / Active", "active"),)
+    if bucket == "Reviewed":
+        material_action = (
+            ("Open materials", "open_materials")
+            if has_materials
+            else ("Generate package", "generate_package")
+        )
+        return (material_action, ("Mark Applied", "applied"), ("Pass", "pass"))
+    if bucket == "Applied / Follow-up":
+        actions = []
+        if has_materials:
+            actions.append(("Open materials", "open_materials"))
+        if has_posting_url:
+            actions.append(("Open posting", "open_posting"))
+        if str(record.get("follow_up_status") or "") in {
+            "Due soon",
+            "Due now",
+            "Overdue",
+        }:
+            actions.append(("Mark follow-up sent", "follow_up_sent"))
+        return tuple(actions[:4])
+    actions = []
+    if has_posting_url:
+        actions.append(("Open posting", "open_posting"))
+    actions.extend(
+        (("Generate package", "generate_package"), ("Mark Applied", "applied"))
+    )
+    return tuple(actions[:4])
 
 
 def apply_dashboard_status_action(
@@ -576,6 +646,25 @@ def _render_summary_metrics(st: Any, applications: list[Dict[str, Any]]) -> None
         f'<div class="cc-summary-grid">{cards}</div>',
         unsafe_allow_html=True,
     )
+    navigation = (
+        ("View Active", "Active"),
+        ("View Applied", "Applied / Follow-up"),
+        ("View Reviewed", "Reviewed"),
+        ("View Paused", "Paused"),
+        ("View Pass", "Pass"),
+        ("View Hidden", "Hidden / Invalid"),
+    )
+    for row_start in range(0, len(navigation), 3):
+        columns = st.columns(3)
+        for column, (label, bucket) in zip(
+            columns, navigation[row_start : row_start + 3]
+        ):
+            if column.button(
+                label,
+                key=f"summary_{bucket.lower().replace(' ', '_').replace('/', '_')}",
+                use_container_width=True,
+            ):
+                apply_summary_navigation(st.session_state, bucket)
 
 
 def _package_map(project_root: Path = PROJECT_ROOT) -> Dict[str, Dict[str, Any]]:
@@ -863,142 +952,100 @@ def _render_role_card(
             "Use quick actions for common workflow changes. Use Advanced edit only "
             "for manual corrections."
         )
-        with st.expander("Quick actions", expanded=True):
-            utility_columns = st.columns(2)
-            posting_url = record_posting_url(application)
-            if posting_url:
-                utility_columns[0].link_button(
-                    "Open posting", posting_url, use_container_width=True
-                )
-            if files:
-                first_material = next(
-                    (Path(path) for path in files.values() if Path(path).exists()),
-                    None,
-                )
-                if first_material and utility_columns[1].button(
-                    "Open Materials",
-                    key=f"dashboard_open_materials_{tracker_id}",
+        posting_url = record_posting_url(application)
+        first_material = next(
+            (Path(path) for path in files.values() if Path(path).exists()), None
+        )
+        primary_actions = contextual_primary_actions(
+            application,
+            has_materials=first_material is not None,
+            has_posting_url=posting_url is not None,
+            mode=mode,
+        )
+        if primary_actions:
+            action_columns = st.columns(len(primary_actions))
+            for column, (label, action_key) in zip(action_columns, primary_actions):
+                if action_key == "open_posting" and posting_url:
+                    column.link_button(label, posting_url, use_container_width=True)
+                    continue
+                if not column.button(
+                    label,
+                    key=f"dashboard_quick_{tracker_id}_{action_key}",
                     use_container_width=True,
-                    help=str(first_material),
+                    help=str(first_material) if action_key == "open_materials" else None,
                 ):
+                    continue
+                if action_key == "open_materials" and first_material:
                     opened, message = open_local_path(first_material)
                     (st.success if opened else st.warning)(message)
-            actions = dashboard_status_actions(application)
-            for row_start in range(0, len(actions), 4):
-                action_row = actions[row_start : row_start + 4]
-                action_columns = st.columns(4)
-                for column, (label, action_key) in zip(action_columns, action_row):
-                    if column.button(
-                        label,
-                        key=f"dashboard_quick_{tracker_id}_{action_key}",
-                        use_container_width=True,
-                    ):
-                        try:
-                            updated = apply_dashboard_status_action(
-                                tracker_id, action_key, PROJECT_ROOT
-                            )
-                        except (TrackerValidationError, OSError) as error:
-                            st.error(str(error))
-                        else:
-                            message = (
-                                f"Updated {updated.get('company', 'role')} — "
-                                f"{updated.get('role', tracker_id)} to {get_record_status(updated)}."
-                            )
-                            st.session_state[flash_key] = message
-                            st.session_state["dashboard_notice"] = message
-                            st.rerun()
-
-            if st.button(
-                "Verify manually",
-                key=f"dashboard_verify_manually_{tracker_id}",
-                use_container_width=True,
-            ):
-                try:
-                    update_dashboard_role(
-                        tracker_id,
-                        {
-                            "status": get_record_status(application),
-                            "next_action": "Verify the current employer posting and apply path manually.",
-                        },
-                        PROJECT_ROOT,
+                elif action_key == "generate_package":
+                    try:
+                        with st.spinner("Generating application package…"):
+                            generate_package(tracker_id, PROJECT_ROOT)
+                    except PackageGenerationError as error:
+                        st.error(str(error))
+                    else:
+                        st.session_state["dashboard_notice"] = (
+                            f"Generated package for {application.get('company')} — "
+                            f"{application.get('role')}."
+                        )
+                        st.rerun()
+                else:
+                    updated = apply_dashboard_status_action(
+                        tracker_id, action_key, PROJECT_ROOT
                     )
-                except (TrackerValidationError, OSError) as error:
-                    st.error(str(error))
-                else:
-                    st.session_state[flash_key] = "Manual verification added as the next action."
+                    st.session_state["dashboard_notice"] = (
+                        f"Updated {updated.get('company')} — {updated.get('role')} "
+                        f"to {get_record_status(updated)}."
+                    )
                     st.rerun()
 
-            generation_columns = st.columns(3)
-            status_value = get_record_status(application)
-            generation_disabled = status_value in HIDDEN_STATUSES
-            if generation_columns[0].button(
-                "Generate Package",
-                key=f"dashboard_generate_package_{tracker_id}",
-                disabled=generation_disabled,
+        with st.expander("More actions", expanded=False):
+            more_columns = st.columns(4)
+            bucket = workflow_status_bucket(application)
+            if bucket not in {"Paused", "Pass", "Hidden / Invalid"} and more_columns[0].button(
+                "Pause",
+                key=f"dashboard_more_pause_{tracker_id}",
                 use_container_width=True,
             ):
-                try:
-                    with st.spinner("Generating application package…"):
-                        generate_package(tracker_id, PROJECT_ROOT)
-                except PackageGenerationError as error:
-                    st.error(str(error))
-                else:
-                    st.session_state[flash_key] = "Application package generated."
-                    st.rerun()
-            follow_up_disabled = (
-                generation_disabled or status_value not in ACTIVE_STATUSES
-            )
-            if generation_columns[1].button(
+                apply_dashboard_status_action(tracker_id, "paused", PROJECT_ROOT)
+                st.session_state["dashboard_notice"] = "Role paused."
+                st.rerun()
+            if more_columns[1].button(
+                "Verify manually",
+                key=f"dashboard_more_verify_{tracker_id}",
+                use_container_width=True,
+            ):
+                update_dashboard_role(
+                    tracker_id,
+                    {
+                        "status": get_record_status(application),
+                        "next_action": "Verify the current employer posting and apply path manually.",
+                    },
+                    PROJECT_ROOT,
+                )
+                st.session_state["dashboard_notice"] = "Manual verification added."
+                st.rerun()
+            if bucket == "Active" and more_columns[2].button(
+                "Mark Reviewed",
+                key=f"dashboard_more_reviewed_{tracker_id}",
+                use_container_width=True,
+            ):
+                apply_dashboard_status_action(tracker_id, "reviewed", PROJECT_ROOT)
+                st.session_state["dashboard_notice"] = "Role marked reviewed."
+                st.rerun()
+            if bucket == "Applied / Follow-up" and more_columns[3].button(
                 "Generate Follow-Up Materials",
-                key=f"dashboard_generate_followup_{tracker_id}",
-                disabled=follow_up_disabled,
+                key=f"dashboard_more_followup_{tracker_id}",
                 use_container_width=True,
             ):
                 try:
-                    with st.spinner("Generating follow-up / outreach materials…"):
-                        generate_followups(tracker_id, PROJECT_ROOT)
+                    generate_followups(tracker_id, PROJECT_ROOT)
                 except FollowupGenerationError as error:
                     st.error(str(error))
                 else:
-                    st.session_state[flash_key] = "Follow-up / outreach materials generated."
+                    st.session_state["dashboard_notice"] = "Follow-up materials generated."
                     st.rerun()
-            if generation_columns[2].button(
-                "Refresh / Re-score",
-                key=f"dashboard_rescore_{tracker_id}",
-                disabled=generation_disabled,
-                use_container_width=True,
-            ):
-                try:
-                    resolved = resolve_job_reference(tracker_id, PROJECT_ROOT)
-                    report = score_job_match(resolved["job_path"], PROJECT_ROOT)
-                    update_prospect(
-                        tracker_id,
-                        {
-                            key: report[key]
-                            for key in (
-                                "match_score",
-                                "match_tier",
-                                "recommended_action",
-                                "confidence",
-                                "match_summary",
-                                "match_strengths",
-                                "match_gaps",
-                            )
-                            if key in report
-                        },
-                        PROJECT_ROOT,
-                    )
-                except Exception as error:
-                    st.error(f"Could not refresh score: {error}")
-                else:
-                    st.session_state[flash_key] = "Match score refreshed."
-                    st.rerun()
-
-            if status_value == "Paused" and application.get("_follow_up_materials_status") != "Available":
-                st.info(
-                    "Follow-up generation is usually intended for applied roles. "
-                    "Change status to Applied or use package materials."
-                )
 
         with st.expander("Advanced edit role", expanded=False):
             current_status = get_record_status(application)
@@ -1144,69 +1191,17 @@ def _render_recommended_next_steps(
                 f"\n{step['recommendation']}  "
                 f"\n`{step['action_type']}` · `{tracker_id}`"
             )
-            primary_actions = st.columns(5)
-            if primary_actions[0].button(
+            navigation_actions = st.columns(3)
+            if navigation_actions[0].button(
                 "View role",
                 key=f"next_view_{tracker_id}",
                 use_container_width=True,
             ):
                 focus_dashboard_role(st.session_state, tracker_id)
-            for column, label, action_key in (
-                (primary_actions[1], "Pass", "pass"),
-                (primary_actions[2], "Pause", "paused"),
-                (primary_actions[3], "Hide / Invalid", "invalid_hidden"),
-            ):
-                if column.button(
-                    label,
-                    key=f"next_{action_key}_{tracker_id}",
-                    use_container_width=True,
-                ):
-                    updated = apply_dashboard_status_action(
-                        tracker_id, action_key, PROJECT_ROOT
-                    )
-                    st.session_state["dashboard_notice"] = (
-                        f"Updated {updated.get('company')} — {updated.get('role')} "
-                        f"to {get_record_status(updated)}."
-                    )
-                    st.rerun()
-            if primary_actions[4].button(
-                "Verify manually",
-                key=f"next_verify_{tracker_id}",
-                use_container_width=True,
-            ):
-                update_dashboard_role(
-                    tracker_id,
-                    {
-                        "status": get_record_status(record),
-                        "next_action": "Verify the current employer posting and apply path manually.",
-                    },
-                    PROJECT_ROOT,
-                )
-                st.session_state["dashboard_notice"] = (
-                    f"Added manual verification for {step['company']} — {step['title']}."
-                )
-                st.rerun()
-
-            secondary_actions = st.columns(4)
             if step.get("posting_url"):
-                secondary_actions[0].link_button(
+                navigation_actions[1].link_button(
                     "Open posting", step["posting_url"], use_container_width=True
                 )
-            status = get_record_status(record)
-            if status not in HIDDEN_STATUSES and secondary_actions[1].button(
-                "Generate package",
-                key=f"next_package_{tracker_id}",
-                use_container_width=True,
-            ):
-                try:
-                    generate_package(tracker_id, PROJECT_ROOT)
-                except PackageGenerationError as error:
-                    st.error(str(error))
-                else:
-                    st.session_state["dashboard_notice"] = (
-                        f"Generated package for {step['company']} — {step['title']}."
-                    )
-                    st.rerun()
             material_paths = step.get("material_paths") or {}
             first_material = next(
                 (
@@ -1216,7 +1211,7 @@ def _render_recommended_next_steps(
                 ),
                 None,
             )
-            if first_material and secondary_actions[2].button(
+            if first_material and navigation_actions[2].button(
                 "Open materials",
                 key=f"next_materials_{tracker_id}",
                 use_container_width=True,
@@ -1224,36 +1219,49 @@ def _render_recommended_next_steps(
             ):
                 opened, message = open_local_path(first_material)
                 (st.success if opened else st.warning)(message)
-            if status in ACTIVE_STATUSES:
-                if secondary_actions[3].button(
-                    "Generate follow-up",
-                    key=f"next_followup_generate_{tracker_id}",
-                    use_container_width=True,
+
+            status = get_record_status(record)
+            if mode == "Cleanup Mode" and workflow_status_bucket(record) not in {
+                "Pass",
+                "Hidden / Invalid",
+            }:
+                cleanup_actions = st.columns(2)
+                for column, label, action_key in (
+                    (cleanup_actions[0], "Mark Pass", "pass"),
+                    (cleanup_actions[1], "Hide / Invalid", "invalid_hidden"),
                 ):
-                    try:
-                        generate_followups(tracker_id, PROJECT_ROOT)
-                    except FollowupGenerationError as error:
-                        st.error(str(error))
-                    else:
-                        st.session_state["dashboard_notice"] = (
-                            f"Generated follow-up materials for {step['company']} — "
-                            f"{step['title']}."
-                        )
-                        st.rerun()
-                if secondary_actions[3].button(
+                    if not column.button(
+                        label,
+                        key=f"next_{action_key}_{tracker_id}",
+                        use_container_width=True,
+                    ):
+                        continue
+                    updated = apply_dashboard_status_action(
+                        tracker_id, action_key, PROJECT_ROOT
+                    )
+                    st.session_state["dashboard_notice"] = (
+                        f"Updated {updated.get('company')} — {updated.get('role')} "
+                        f"to {get_record_status(updated)}."
+                    )
+                    st.rerun()
+            if (
+                mode == "Follow-Up Mode"
+                and status not in HIDDEN_STATUSES
+                and str(record.get("follow_up_status") or "")
+                in {"Due soon", "Due now", "Overdue"}
+                and st.button(
                     "Mark follow-up sent",
                     key=f"next_followup_sent_{tracker_id}",
                     use_container_width=True,
-                ):
-                    apply_dashboard_status_action(
-                        tracker_id, "follow_up_sent", PROJECT_ROOT
-                    )
-                    st.session_state["dashboard_notice"] = (
-                        f"Marked follow-up sent for {step['company']} — {step['title']}."
-                    )
-                    st.rerun()
-            else:
-                secondary_actions[3].caption("Action available on role card.")
+                )
+            ):
+                apply_dashboard_status_action(
+                    tracker_id, "follow_up_sent", PROJECT_ROOT
+                )
+                st.session_state["dashboard_notice"] = (
+                    f"Marked follow-up sent for {step['company']} — {step['title']}."
+                )
+                st.rerun()
 
     focused_id = str(st.session_state.get("dashboard_focused_role_id") or "")
     focused = by_id.get(focused_id)
@@ -1967,7 +1975,12 @@ def _render_dashboard(st: Any) -> None:
         '<h2 class="cc-section-heading">Dashboard Work Mode</h2>',
         unsafe_allow_html=True,
     )
-    mode = st.selectbox("Mode", DASHBOARD_MODES, key="dashboard_mode")
+    mode = st.selectbox(
+        "Mode",
+        DASHBOARD_MODES,
+        format_func=lambda value: value.replace(" Mode", ""),
+        key="dashboard_mode",
+    )
     search = st.text_input(
         "Search company, title, category, role family, source, or location",
         key="dashboard_search",
