@@ -15,6 +15,7 @@ if __package__:
         HIDDEN_STATUSES,
         VALID_STATUSES,
         TrackerValidationError,
+        get_record_status,
         normalize_tracker_value,
         tracker_company_keys,
         tracker_role_keys,
@@ -37,6 +38,7 @@ else:
         HIDDEN_STATUSES,
         VALID_STATUSES,
         TrackerValidationError,
+        get_record_status,
         normalize_tracker_value,
         tracker_company_keys,
         tracker_role_keys,
@@ -143,7 +145,7 @@ def _applied_date(record: Dict[str, Any]) -> Optional[date]:
 
 
 def _follow_up_was_sent(record: Dict[str, Any]) -> bool:
-    if str(record.get("status") or "").lower() == "follow-up":
+    if get_record_status(record) == "Follow-up":
         return True
     for key in ("follow_up_sent", "followup_sent"):
         value = record.get(key)
@@ -234,7 +236,7 @@ def enrich_dashboard_record(
     ):
         enriched["posting_status"] = verification["posting_status"]
     enriched.update(calculate_follow_up_timing(record, today))
-    if str(enriched.get("status") or "") in HIDDEN_STATUSES:
+    if get_record_status(enriched) in HIDDEN_STATUSES:
         enriched["follow_up_status"] = "Not applicable"
         enriched["suggested_follow_up_date"] = None
     return enriched
@@ -304,7 +306,18 @@ def sort_dashboard_records(
 
 
 def _is_hidden(record: Dict[str, Any]) -> bool:
-    return record.get("show_on_dashboard") is False or str(record.get("status") or "") in HIDDEN_STATUSES
+    status = get_record_status(record)
+    if status in HIDDEN_STATUSES:
+        return True
+    return status not in VALID_STATUSES and record.get("show_on_dashboard") is False
+
+
+def _is_invalid_hidden(record: Dict[str, Any]) -> bool:
+    """Return true for invalid workflow records without conflating explicit Pass."""
+    status = get_record_status(record)
+    return status in {"Invalid", "Invalid/Hidden", "Rejected", "Archived"} or (
+        status not in VALID_STATUSES and record.get("show_on_dashboard") is False
+    )
 
 
 def filter_dashboard_records(
@@ -327,8 +340,8 @@ def filter_dashboard_records(
             continue
         if recommended_action != "All" and record.get("recommended_action") != recommended_action:
             continue
-        status = str(record.get("status") or "Drafted")
-        if application_status == "Invalid/Hidden" and not _is_hidden(record):
+        status = get_record_status(record)
+        if application_status == "Invalid/Hidden" and not _is_invalid_hidden(record):
             continue
         if application_status not in {"All", "Invalid/Hidden"} and status != application_status:
             continue
@@ -352,18 +365,20 @@ def filter_dashboard_records(
 
 
 def _needs_cleanup(record: Dict[str, Any]) -> bool:
-    status = str(record.get("status") or "")
+    status = get_record_status(record)
     freshness = str(record.get("freshness") or record.get("freshness_label") or "").lower()
     posting_status = str(record.get("posting_status") or "").lower()
     salary = str(record.get("salary_range") or "").strip().lower()
     return bool(
         record.get("match_tier") in {"Weak Match", "Pass"}
+        or record.get("recommended_action") == "Pass"
         or _is_hidden(record)
         or status == "Paused"
         or "closed" in posting_status
         or any(value in freshness for value in ("stale", "unknown"))
         or salary in {"", "not disclosed", "unknown"}
         or not record.get("source")
+        or not record.get("location")
         or record.get("verification_status") in {
             "Aggregator Only", "Cannot Verify", "Not Verified", "Stale / Closed Risk"
         }
@@ -380,7 +395,7 @@ def select_dashboard_mode(
             item for item in values
             if item.get("match_tier") in {"Strong Match", "Good Match"}
             and item.get("recommended_action") == "Generate Package"
-            and str(item.get("status") or "") not in ACTIVE_STATUSES
+            and get_record_status(item) not in ACTIVE_STATUSES
             and not _is_hidden(item)
             and str(item.get("posting_status") or "").lower() != "closed"
             and item.get("verification_status") != "Stale / Closed Risk"
@@ -388,12 +403,20 @@ def select_dashboard_mode(
     if mode == "Follow-Up Mode":
         return [
             item for item in values
-            if str(item.get("status") or "") in ACTIVE_STATUSES
+            if get_record_status(item) in ACTIVE_STATUSES
             and item.get("follow_up_status") in {"Due soon", "Due now", "Overdue"}
             and not _is_hidden(item)
         ]
     if mode == "Review Mode":
-        return [item for item in values if item.get("match_tier") == "Stretch Match" or item.get("recommended_action") == "Review First"]
+        return [
+            item
+            for item in values
+            if (
+                item.get("match_tier") == "Stretch Match"
+                or item.get("recommended_action") == "Review First"
+            )
+            and not _is_hidden(item)
+        ]
     if mode == "Cleanup Mode":
         return [item for item in values if _needs_cleanup(item)]
     return [item for item in values if not _is_hidden(item)]
@@ -472,7 +495,7 @@ def recommended_next_steps(
                 continue
             if not item.get("_has_package"):
                 action = "Generate package for"
-            elif item.get("status") == "Reviewed":
+            elif get_record_status(item) == "Reviewed":
                 action = "Apply to"
             else:
                 action = "Review and apply to"
@@ -532,12 +555,19 @@ def recommended_next_steps(
     if mode == "Cleanup Mode":
         steps = []
         for item in values[:5]:
-            if item.get("verification_status") == "Stale / Closed Risk":
+            status = get_record_status(item)
+            if status == "Pass":
+                action = "Already passed; no action needed unless you want to reopen"
+            elif _is_invalid_hidden(item):
+                action = "Hidden from active workflow"
+            elif status == "Paused":
+                action = "Review later or mark pass"
+            elif item.get("verification_status") == "Stale / Closed Risk":
                 action = "Pass unless manually verified active"
             elif item.get("verification_status") in {"Aggregator Only", "Cannot Verify", "Not Verified"} or item.get("source_trust_label") == "Unknown Source":
                 action = "Verify manually, then hide or pass if unresolved"
-            elif _is_hidden(item) or item.get("match_tier") == "Pass":
-                action = "Keep hidden or mark pass"
+            elif item.get("match_tier") == "Pass":
+                action = "Review the pass recommendation or keep active"
             elif str(item.get("freshness") or "").lower() in {"stale", "unknown freshness"}:
                 action = "Verify posting freshness"
             elif not item.get("salary_range") or not item.get("source"):
@@ -547,7 +577,7 @@ def recommended_next_steps(
             steps.append(f"{action}: {_record_label(item)}.")
         return steps
 
-    unapplied = next((item for item in values if str(item.get("status") or "") not in ACTIVE_STATUSES), None)
+    unapplied = next((item for item in values if get_record_status(item) not in ACTIVE_STATUSES), None)
     urgent = next((item for item in values if item.get("follow_up_status") in {"Overdue", "Due now", "Due soon"}), None)
     if urgent:
         steps = [f"Act first on {_record_label(urgent)}; its follow-up is {urgent.get('follow_up_status').lower()}." ]
@@ -861,7 +891,7 @@ def prepare_dashboard_records(
                 label in files
                 for label in ("Recruiter Message", "Hiring Manager Message", "Application Note")
             )
-            status = str(record.get("status") or "Drafted")
+            status = get_record_status(record)
             if status in HIDDEN_STATUSES:
                 material_state = "Not applicable"
                 material_label = "Cleanup state — follow-up not applicable"
@@ -938,7 +968,7 @@ def _status_class(status: str) -> str:
 
 def _render_badges(tracker: Dict[str, Any]) -> str:
     badges = []
-    status = str(tracker.get("status") or "").strip()
+    status = get_record_status(tracker) if tracker else ""
     priority = str(tracker.get("priority") or "").strip()
     if status:
         badges.append(
@@ -1158,9 +1188,13 @@ def _partition_packages(
     }
     for package in packages:
         tracker = package.get("tracker", {})
-        status = str(tracker.get("status") or "Drafted")
+        status = get_record_status(tracker)
         if tracker and (
-            tracker.get("show_on_dashboard") is False or status in HIDDEN_STATUSES
+            status in HIDDEN_STATUSES
+            or (
+                status not in VALID_STATUSES
+                and tracker.get("show_on_dashboard") is False
+            )
         ):
             groups["hidden"].append(package)
         elif status in ACTIVE_STATUSES:
@@ -1192,7 +1226,7 @@ def _summary_counts(
     applied_count = sum(
         1
         for package in groups["active"]
-        if package.get("tracker", {}).get("status") == "Applied"
+        if get_record_status(package.get("tracker", {})) == "Applied"
     )
     return {
         "Total job files": len(

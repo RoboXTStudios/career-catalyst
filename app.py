@@ -17,7 +17,9 @@ from scripts.application_tracker import (
     HIDDEN_STATUSES,
     VALID_STATUSES,
     TrackerValidationError,
+    get_record_status,
     load_application_tracker,
+    normalize_status,
     update_prospect,
     update_status,
 )
@@ -67,9 +69,19 @@ UI_DESCRIPTION = (
     "job search materials from one local workspace."
 )
 TRACKER_GROUPS = (
-    "Active / Applied",
-    "Draft / Reviewed / Paused",
+    "Applied / Follow-Up",
+    "Active",
+    "Drafted / Reviewed",
+    "Paused",
+    "Passed",
     "Hidden / Invalid",
+)
+CLEANUP_TRACKER_GROUPS = (
+    "Needs decision",
+    "Paused",
+    "Passed",
+    "Hidden / Invalid",
+    "Stale / Cannot Verify",
 )
 PRIORITY_OPTIONS = ("High", "Medium", "Low", "Do Not Pursue")
 FOLLOW_UP_EDIT_OPTIONS = (
@@ -291,12 +303,15 @@ def summarize_applications(applications: list[Dict[str, Any]]) -> Dict[str, int]
     """Return the five cockpit metrics without mutating tracker data."""
     return {
         "Total applications": len(applications),
-        "Applied": sum(item.get("status") == "Applied" for item in applications),
-        "Reviewed": sum(item.get("status") == "Reviewed" for item in applications),
-        "Paused": sum(item.get("status") == "Paused" for item in applications),
+        "Applied": sum(get_record_status(item) == "Applied" for item in applications),
+        "Reviewed": sum(get_record_status(item) == "Reviewed" for item in applications),
+        "Paused": sum(get_record_status(item) == "Paused" for item in applications),
         "Invalid/Hidden": sum(
-            item.get("status") in HIDDEN_STATUSES
-            or item.get("show_on_dashboard") is False
+            get_record_status(item) in HIDDEN_STATUSES
+            or (
+                get_record_status(item) not in VALID_STATUSES
+                and item.get("show_on_dashboard") is False
+            )
             for item in applications
         ),
     }
@@ -305,17 +320,39 @@ def summarize_applications(applications: list[Dict[str, Any]]) -> Dict[str, int]
 def group_applications_by_status(
     applications: list[Dict[str, Any]],
     preserve_order: bool = False,
+    mode: str = "All Mode",
 ) -> Dict[str, list[Dict[str, Any]]]:
     """Group tracker records for the interactive dashboard without changing order on disk."""
-    grouped = {label: [] for label in TRACKER_GROUPS}
+    labels = CLEANUP_TRACKER_GROUPS if mode == "Cleanup Mode" else TRACKER_GROUPS
+    grouped = {label: [] for label in labels}
     for application in applications:
-        status = str(application.get("status") or "Drafted")
-        if application.get("show_on_dashboard") is False or status in HIDDEN_STATUSES:
+        status = get_record_status(application)
+        invalid_hidden = status in {"Invalid", "Invalid/Hidden", "Rejected", "Archived"} or (
+            status not in VALID_STATUSES
+            and application.get("show_on_dashboard") is False
+        )
+        stale_or_unverified = (
+            application.get("verification_status")
+            in {"Stale / Closed Risk", "Cannot Verify", "Not Verified"}
+            or application.get("source_trust_label") == "Unknown Source"
+            or str(application.get("posting_status") or "").lower() == "closed"
+        )
+        if status == "Paused":
+            label = "Paused"
+        elif status == "Pass":
+            label = "Passed"
+        elif invalid_hidden:
             label = "Hidden / Invalid"
+        elif mode == "Cleanup Mode" and stale_or_unverified:
+            label = "Stale / Cannot Verify"
+        elif mode == "Cleanup Mode":
+            label = "Needs decision"
         elif status in ACTIVE_STATUSES:
-            label = "Active / Applied"
+            label = "Applied / Follow-Up"
+        elif status == "Active":
+            label = "Active"
         else:
-            label = "Draft / Reviewed / Paused"
+            label = "Drafted / Reviewed"
         grouped[label].append(application)
     if not preserve_order:
         for values in grouped.values():
@@ -330,7 +367,7 @@ def group_applications_by_status(
 
 def status_options(current_status: Any) -> tuple[str, ...]:
     """Return safe status choices while preserving an unknown legacy value."""
-    current = str(current_status or "Drafted")
+    current = normalize_status(current_status)
     return VALID_STATUSES if current in VALID_STATUSES else (current,) + VALID_STATUSES
 
 
@@ -353,7 +390,7 @@ def update_dashboard_role(
     clean_id = str(tracker_id or "").strip()
     if not clean_id:
         raise TrackerValidationError("A stable tracker id is required for dashboard updates.")
-    status = str(values.get("status") or "Drafted")
+    status = normalize_status(values.get("status"))
     updates: Dict[str, Any] = {}
     for field in ("priority", "notes", "next_action", "suggested_follow_up_date"):
         if field in values:
@@ -365,12 +402,70 @@ def update_dashboard_role(
         updates["follow_up_status"] = (
             "" if follow_up_status == "Auto" else follow_up_status
         )
-    if status in HIDDEN_STATUSES:
-        updates["show_on_dashboard"] = False
+    # Workflow status is authoritative for dashboard visibility and grouping.
+    if "status" in values:
+        updates["show_on_dashboard"] = status not in HIDDEN_STATUSES
     if status in VALID_STATUSES:
         return update_status(clean_id, status, project_root, **updates)
     # Unknown legacy statuses remain readable and notes can still be edited safely.
     return update_prospect(clean_id, updates, project_root)
+
+
+def dashboard_status_actions(record: Dict[str, Any]) -> tuple[tuple[str, str], ...]:
+    """Return status-aware quick actions as label/action-key pairs."""
+    status = get_record_status(record)
+    active_label = (
+        "Resume / Active"
+        if status == "Paused"
+        else "Reopen / Active"
+        if status in HIDDEN_STATUSES
+        else "Keep Active"
+    )
+    actions = [
+        ("Mark Applied", "applied"),
+        ("Mark Reviewed", "reviewed"),
+        ("Pause", "paused"),
+        ("Pass", "pass"),
+        ("Hide / Invalid", "invalid_hidden"),
+        (active_label, "active"),
+    ]
+    if status in {"Applied", "Follow-up", "Interviewing"}:
+        actions.extend(
+            (
+                ("Follow-Up Sent", "follow_up_sent"),
+                ("Follow-Up Needed", "follow_up_needed"),
+            )
+        )
+    return tuple(actions)
+
+
+def apply_dashboard_status_action(
+    tracker_id: str,
+    action: str,
+    project_root: Path = PROJECT_ROOT,
+) -> Dict[str, Any]:
+    """Apply one named card action through the canonical dashboard update path."""
+    action_updates: Dict[str, Dict[str, Any]] = {
+        "applied": {"status": "Applied", "show_on_dashboard": True},
+        "reviewed": {"status": "Reviewed", "show_on_dashboard": True},
+        "paused": {"status": "Paused", "show_on_dashboard": True},
+        "pass": {"status": "Pass", "show_on_dashboard": False},
+        "invalid_hidden": {"status": "Invalid/Hidden", "show_on_dashboard": False},
+        "active": {"status": "Active", "show_on_dashboard": True},
+        "follow_up_sent": {
+            "status": "Follow-up",
+            "follow_up_status": "Follow-up sent",
+            "show_on_dashboard": True,
+        },
+        "follow_up_needed": {
+            "status": "Applied",
+            "follow_up_status": "Due now",
+            "show_on_dashboard": True,
+        },
+    }
+    if action not in action_updates:
+        raise TrackerValidationError(f"Unsupported dashboard status action: {action}")
+    return update_dashboard_role(tracker_id, action_updates[action], project_root)
 
 
 def build_prospect_payload(values: Dict[str, Any]) -> Dict[str, Any]:
@@ -430,7 +525,7 @@ def open_local_path(path: Path, project_root: Path = PROJECT_ROOT) -> tuple[bool
 
 
 def _status_badges(application: Dict[str, Any]) -> str:
-    status = str(application.get("status") or "Drafted")
+    status = get_record_status(application)
     priority = str(application.get("priority") or "").strip()
     status_class = re.sub(r"[^a-z0-9]+", "-", status.lower()).strip("-")
     badges = [
@@ -602,13 +697,12 @@ def _render_role_card(
         if flash_key in st.session_state:
             st.success(st.session_state.pop(flash_key))
         persisted_widget_values = {
-            f"dashboard_status_{tracker_id}": str(application.get("status") or "Drafted"),
+            f"dashboard_status_{tracker_id}": get_record_status(application),
             f"dashboard_priority_{tracker_id}": str(application.get("priority") or "Medium"),
             f"dashboard_notes_{tracker_id}": str(application.get("notes") or ""),
             f"dashboard_next_action_{tracker_id}": str(application.get("next_action") or "Review fit"),
             f"dashboard_follow_up_{tracker_id}": str(application.get("follow_up_status") or "Auto"),
             f"dashboard_follow_up_date_{tracker_id}": str(application.get("suggested_follow_up_date") or ""),
-            f"dashboard_visibility_{tracker_id}": bool(application.get("show_on_dashboard", True)),
         }
         for widget_key, persisted_value in persisted_widget_values.items():
             shadow_key = f"{widget_key}_persisted"
@@ -683,53 +777,32 @@ def _render_role_card(
         _material_button_rows(st, tracker_id, package.get("files", {}))
 
         with st.expander("Quick actions", expanded=False):
-            action_columns = st.columns(5)
-            quick_statuses = (
-                ("Mark Applied", "Applied"),
-                ("Mark Reviewed", "Reviewed"),
-                ("Pause", "Paused"),
-                ("Pass", "Pass"),
-                ("Hide / Invalid", "Invalid/Hidden"),
-            )
-            for column, (label, target_status) in zip(action_columns, quick_statuses):
-                if column.button(
-                    label,
-                    key=f"dashboard_quick_{tracker_id}_{target_status}",
-                    use_container_width=True,
-                ):
-                    try:
-                        update_dashboard_role(
-                            tracker_id,
-                            {
-                                "status": target_status,
-                                "show_on_dashboard": target_status not in HIDDEN_STATUSES,
-                            },
-                            PROJECT_ROOT,
-                        )
-                    except (TrackerValidationError, OSError) as error:
-                        st.error(str(error))
-                    else:
-                        st.session_state[flash_key] = f"Updated status to {target_status}."
-                        st.rerun()
+            actions = dashboard_status_actions(application)
+            for row_start in range(0, len(actions), 4):
+                action_row = actions[row_start : row_start + 4]
+                action_columns = st.columns(4)
+                for column, (label, action_key) in zip(action_columns, action_row):
+                    if column.button(
+                        label,
+                        key=f"dashboard_quick_{tracker_id}_{action_key}",
+                        use_container_width=True,
+                    ):
+                        try:
+                            updated = apply_dashboard_status_action(
+                                tracker_id, action_key, PROJECT_ROOT
+                            )
+                        except (TrackerValidationError, OSError) as error:
+                            st.error(str(error))
+                        else:
+                            message = (
+                                f"Updated {updated.get('company', 'role')} — "
+                                f"{updated.get('role', tracker_id)} to {get_record_status(updated)}."
+                            )
+                            st.session_state[flash_key] = message
+                            st.session_state["dashboard_notice"] = message
+                            st.rerun()
 
-            cleanup_columns = st.columns(2)
-            if cleanup_columns[0].button(
-                "Keep Active",
-                key=f"dashboard_keep_active_{tracker_id}",
-                use_container_width=True,
-            ):
-                try:
-                    update_dashboard_role(
-                        tracker_id,
-                        {"status": "Active", "show_on_dashboard": True},
-                        PROJECT_ROOT,
-                    )
-                except (TrackerValidationError, OSError) as error:
-                    st.error(str(error))
-                else:
-                    st.session_state[flash_key] = "Role kept active."
-                    st.rerun()
-            if cleanup_columns[1].button(
+            if st.button(
                 "Verify manually",
                 key=f"dashboard_verify_manually_{tracker_id}",
                 use_container_width=True,
@@ -738,7 +811,7 @@ def _render_role_card(
                     update_dashboard_role(
                         tracker_id,
                         {
-                            "status": str(application.get("status") or "Drafted"),
+                            "status": get_record_status(application),
                             "next_action": "Verify the current employer posting and apply path manually.",
                         },
                         PROJECT_ROOT,
@@ -750,7 +823,7 @@ def _render_role_card(
                     st.rerun()
 
             generation_columns = st.columns(3)
-            status_value = str(application.get("status") or "Drafted")
+            status_value = get_record_status(application)
             generation_disabled = status_value in HIDDEN_STATUSES
             if generation_columns[0].button(
                 "Generate Package",
@@ -767,7 +840,7 @@ def _render_role_card(
                     st.session_state[flash_key] = "Application package generated."
                     st.rerun()
             follow_up_disabled = (
-                generation_disabled or status_value not in FOLLOWUP_ELIGIBLE_STATUSES
+                generation_disabled or status_value not in ACTIVE_STATUSES
             )
             if generation_columns[1].button(
                 "Generate Follow-Up Materials",
@@ -821,8 +894,8 @@ def _render_role_card(
                     "Change status to Applied or use package materials."
                 )
 
-        with st.expander("Edit role", expanded=False):
-            current_status = str(application.get("status") or "Drafted")
+        with st.expander("Advanced edit role", expanded=False):
+            current_status = get_record_status(application)
             choices = status_options(current_status)
             current_priority = str(application.get("priority") or "Medium")
             priority_choices = (
@@ -872,10 +945,9 @@ def _render_role_card(
                     value=str(application.get("suggested_follow_up_date") or ""),
                     key=f"dashboard_follow_up_date_{tracker_id}",
                 )
-                edited_visibility = st.checkbox(
-                    "Show on dashboard",
-                    value=bool(application.get("show_on_dashboard", True)),
-                    key=f"dashboard_visibility_{tracker_id}",
+                st.caption(
+                    "Visibility follows status: Pass and Invalid/Hidden stay in cleanup; "
+                    "active workflow statuses remain visible."
                 )
                 save_clicked = st.form_submit_button(
                     "Save role updates", type="primary", use_container_width=True
@@ -891,14 +963,15 @@ def _render_role_card(
                             "next_action": edited_next_action,
                             "follow_up_status": edited_follow_up,
                             "suggested_follow_up_date": edited_follow_up_date,
-                            "show_on_dashboard": edited_visibility,
                         },
                         PROJECT_ROOT,
                     )
                 except (TrackerValidationError, OSError) as error:
                     st.error(str(error))
                 else:
-                    st.session_state[flash_key] = "Role updates saved."
+                    message = "Role updates saved."
+                    st.session_state[flash_key] = message
+                    st.session_state["dashboard_notice"] = message
                     st.rerun()
 
 
@@ -906,14 +979,16 @@ def _render_application_tracker(
     st: Any,
     applications: list[Dict[str, Any]],
     packages: Dict[str, Dict[str, Any]],
+    mode: str = "All Mode",
 ) -> None:
     st.markdown(
         '<h2 class="cc-section-heading">Application Tracker</h2>',
         unsafe_allow_html=True,
     )
-    grouped = group_applications_by_status(applications, preserve_order=True)
-    for label in TRACKER_GROUPS:
-        group = grouped[label]
+    grouped = group_applications_by_status(
+        applications, preserve_order=True, mode=mode
+    )
+    for label, group in grouped.items():
         count_label = "role" if len(group) == 1 else "roles"
         heading = (
             '<div class="cc-group-heading">'
@@ -921,7 +996,7 @@ def _render_application_tracker(
             f'<span class="cc-group-count">{len(group)} {count_label}</span>'
             "</div>"
         )
-        if label == "Hidden / Invalid":
+        if label == "Hidden / Invalid" and mode != "Cleanup Mode":
             with st.expander(f"{label} ({len(group)})", expanded=False):
                 for application in group:
                     _render_role_card(
@@ -954,7 +1029,7 @@ def _render_recommended_next_steps(
 def _application_label(application: Dict[str, Any]) -> str:
     return (
         f"{application.get('company', 'Company')} — "
-        f"{application.get('role', 'Role')} [{application.get('status', 'Drafted')}]"
+        f"{application.get('role', 'Role')} [{get_record_status(application)}]"
     )
 
 
@@ -1315,8 +1390,7 @@ def submitted_applications(
     return [
         application
         for application in applications
-        if application.get("status") in {"Applied", "Follow-up", "Interviewing"}
-        and application.get("show_on_dashboard") is not False
+        if get_record_status(application) in {"Applied", "Follow-up", "Interviewing"}
     ]
 
 
@@ -1327,8 +1401,7 @@ def networking_applications(
     return [
         application
         for application in applications
-        if application.get("status") in FOLLOWUP_ELIGIBLE_STATUSES
-        and application.get("show_on_dashboard") is not False
+        if get_record_status(application) in FOLLOWUP_ELIGIBLE_STATUSES
     ]
 
 
@@ -1392,7 +1465,7 @@ def _render_generate_package(st: Any) -> None:
     application = by_id[tracker_id]
     generate_followups_too = st.checkbox(
         "Generate follow-up materials after package generation",
-        value=application.get("status") == "Applied",
+        value=get_record_status(application) == "Applied",
         key=f"package_followups_{tracker_id}",
     )
     freshness = voice_context.get("freshness", {}) if "voice_context" in locals() else {}
@@ -1477,7 +1550,7 @@ def _render_followups(st: Any) -> None:
     )
     mode = (
         "Post-application follow-up"
-        if application.get("status") in {"Applied", "Follow-up", "Interviewing"}
+        if get_record_status(application) in {"Applied", "Follow-up", "Interviewing"}
         else "Pre-application networking"
     )
     mode_column.markdown(f"**Outreach mode:** {mode}")
@@ -1548,8 +1621,8 @@ def _render_update_status(st: Any) -> None:
     )
     application = by_id[tracker_id]
     widget_prefix = f"status_{tracker_id}"
-    choices = status_options(application.get("status"))
-    current_status = str(application.get("status") or "Drafted")
+    current_status = get_record_status(application)
+    choices = status_options(current_status)
     status = st.selectbox(
         "Application status",
         choices,
@@ -1576,31 +1649,32 @@ def _render_update_status(st: Any) -> None:
         value=str(application.get("next_action") or ""),
         key=f"{widget_prefix}_next_action",
     )
-    show_on_dashboard = st.checkbox(
-        "Show on dashboard",
-        value=bool(application.get("show_on_dashboard", True)),
-        key=f"{widget_prefix}_show",
+    st.caption(
+        "Visibility follows status: Pass and Invalid/Hidden stay in cleanup; "
+        "active workflow statuses remain visible."
     )
     if st.button("Save Status Update", type="primary"):
         try:
-            updated = update_status(
+            updated = update_dashboard_role(
                 tracker_id,
-                status,
+                {
+                    "status": status,
+                    "notes": notes,
+                    "next_action": next_action,
+                    "priority": priority,
+                },
                 PROJECT_ROOT,
-                notes=notes,
-                next_action=next_action,
-                priority=priority,
-                show_on_dashboard=show_on_dashboard,
             )
-            dashboard = generate_dashboard(PROJECT_ROOT)
         except (TrackerValidationError, OSError) as error:
             st.error(str(error))
         else:
             submitted = (
                 f" Submitted {updated['submitted_date']}." if updated.get("submitted_date") else ""
             )
-            st.success(f"Updated {tracker_id} to {updated['status']}.{submitted}")
-            st.code(dashboard["output_path"], language=None)
+            st.success(
+                f"Updated {updated.get('company', 'Company')} — "
+                f"{updated.get('role', tracker_id)} to {get_record_status(updated)}.{submitted}"
+            )
 
 
 def _render_dashboard(st: Any) -> None:
@@ -1620,7 +1694,7 @@ def _render_dashboard(st: Any) -> None:
         unsafe_allow_html=True,
     )
     if refresh_column.button(
-        "Refresh dashboard", type="primary", use_container_width=True
+        "Regenerate HTML", type="primary", use_container_width=True
     ):
         try:
             result = generate_dashboard(PROJECT_ROOT)
@@ -1628,11 +1702,17 @@ def _render_dashboard(st: Any) -> None:
             st.error(str(error))
         else:
             st.success(
-                f"Dashboard refreshed with {result['application_count']} tracked roles."
+                f"Static HTML regenerated with {result['application_count']} tracked roles."
             )
     if open_column.button("Open HTML dashboard", use_container_width=True):
         opened, message = open_local_path(dashboard_path)
         (st.success if opened else st.warning)(message)
+    st.caption(
+        "Card updates refresh this live dashboard automatically. Regenerate HTML only "
+        "when you want to update the separate static dashboard file."
+    )
+    if "dashboard_notice" in st.session_state:
+        st.success(st.session_state.pop("dashboard_notice"))
 
     _render_summary_metrics(st, applications)
 
@@ -1687,7 +1767,7 @@ def _render_dashboard(st: Any) -> None:
     records = sort_dashboard_records(records, sort_by)
     _render_recommended_next_steps(st, records, mode)
     st.caption(f"{len(records)} roles match the current mode and filters.")
-    _render_application_tracker(st, records, packages)
+    _render_application_tracker(st, records, packages, mode)
 
 
 def _render_recent_outputs(st: Any) -> None:

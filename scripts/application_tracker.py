@@ -33,6 +33,30 @@ VALID_STATUSES = (
     "Invalid/Hidden",
     "Archived",
 )
+LEGACY_STATUS_FIELDS = (
+    "application_status",
+    "submitted_status",
+    "workflow_status",
+    "dashboard_status",
+    "stage",
+)
+STATUS_ALIASES = {
+    "active": "Active",
+    "in progress": "Active",
+    "open": "Active",
+    "submitted": "Applied",
+    "application submitted": "Applied",
+    "follow up": "Follow-up",
+    "followup": "Follow-up",
+    "follow up needed": "Applied",
+    "follow up sent": "Follow-up",
+    "on hold": "Paused",
+    "passed": "Pass",
+    "declined": "Pass",
+    "do not pursue": "Pass",
+    "hidden": "Invalid/Hidden",
+    "invalid hidden": "Invalid/Hidden",
+}
 ACTIVE_STATUSES = {"Applied", "Follow-up", "Interviewing"}
 DRAFT_STATUSES = {"Drafted", "Active", "Reviewed", "Paused"}
 HIDDEN_STATUSES = {"Pass", "Rejected", "Invalid", "Invalid/Hidden", "Archived"}
@@ -77,6 +101,30 @@ def normalize_tracker_value(value: Any) -> str:
     text = str(value or "").lower()
     text = re.sub(r"[^a-z0-9]+", " ", text)
     return " ".join(text.split())
+
+
+def normalize_status(value: Any) -> str:
+    """Return a canonical status while safely preserving unknown legacy values."""
+    clean = str(value or "").strip()
+    if not clean:
+        return "Drafted"
+    normalized = normalize_tracker_value(clean)
+    if normalized in STATUS_ALIASES:
+        return STATUS_ALIASES[normalized]
+    canonical = {
+        normalize_tracker_value(status): status for status in VALID_STATUSES
+    }
+    return canonical.get(normalized, clean)
+
+
+def get_record_status(record: Dict[str, Any]) -> str:
+    """Read canonical tracker status, falling back only when `status` is absent."""
+    if record.get("status") not in (None, ""):
+        return normalize_status(record["status"])
+    for field in LEGACY_STATUS_FIELDS:
+        if record.get(field) not in (None, ""):
+            return normalize_status(record[field])
+    return "Drafted"
 
 
 def make_tracker_id(company: Any, role: Any) -> str:
@@ -196,6 +244,8 @@ def add_prospect(
 
     tracker_id = str(prospect.get("id") or make_tracker_id(company, role)).strip()
     incoming = _clean_updates(dict(prospect))
+    if "status" in incoming:
+        incoming["status"] = normalize_status(incoming["status"])
     incoming["id"] = tracker_id
     incoming["company"] = company
     incoming["role"] = role
@@ -256,6 +306,8 @@ def update_prospect(
 
     cleaned = _explicit_updates(updates)
     cleaned.pop("id", None)
+    if "status" in cleaned:
+        cleaned["status"] = normalize_status(cleaned["status"])
     entry.update(cleaned)
     save_application_tracker(applications, project_root)
     return dict(entry)
@@ -268,6 +320,7 @@ def update_status(
     **updates: Any,
 ) -> Dict[str, Any]:
     """Set application status and stamp the first Applied date when needed."""
+    status = normalize_status(status)
     if status not in VALID_STATUSES:
         raise TrackerUpdateError(
             f"Unsupported status '{status}'. Valid statuses: {', '.join(VALID_STATUSES)}."
@@ -351,7 +404,7 @@ def validate_tracker_entries(
         else:
             seen_ids[tracker_id] = index
 
-        status = str(application["status"])
+        status = get_record_status(application)
         if status not in VALID_STATUSES:
             warnings.append(
                 f"{label} has unsupported status '{status}'. "
