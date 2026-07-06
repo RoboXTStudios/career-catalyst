@@ -1,5 +1,5 @@
-<!-- career-catalyst-job-title: Product Strategy and Operations Director -->
-<!-- career-catalyst-company: Disney Entertainment and ESPN Product & Technology -->
+<!-- career-catalyst-job-title: Director, Concert Communications -->
+<!-- career-catalyst-company: Live Nation Worldwide, Inc. -->
 
 # Trisha Lynch
 
@@ -13,18 +13,18 @@ Marketing and business operations leader with 20+ years of experience designing 
 
 ## Core Competencies
 
-- Operational Strategy
 - Business Operations
-- Marketing Operations
 - Cross-Functional Leadership
+- Marketing Operations
+- Operational Strategy
+- Entertainment Marketing
+- Emerging Media
 - Creative Operations
 - Operational Automation
-- Product Development
-- Process Excellence
 - Workflow Governance
-- Change Management
-- Stakeholder Management
 - AI Workflow Design
+- Process Excellence
+- Change Management
 
 ## Platforms & Technologies
 
@@ -52,13 +52,13 @@ Burbank, CA | 2016-2026
 
 Campaign Manager to Group Director, Ad Operations, Marketing Science & Creative Management
 
+- Owned workflow governance, milestones, QA, measurement readiness, vendor integrations, and scalable execution standards for premium entertainment campaigns.
 - Led cross-functional teams of 60+ across creative management, marketing operations, media, analytics, technology, and campaign operations.
 - Led campaign operations across Disney Studios Theatrical and Disney Streaming/DSS, supporting theatrical and streaming film campaigns across Pixar, Lucasfilm, Marvel, 20th Century Studios, Searchlight Pictures, Disney+, and franchise/IP priorities.
 - Partnered across creative, marketing, media, analytics, engineering, technology, operations, and external partners supporting theatrical releases, streaming launches, and franchise/IP priorities.
-- Introduced scalable workflows, governance practices, and execution standards across marketing, technology, analytics, and creative teams.
-- Owned workflow governance, milestones, QA, measurement readiness, vendor integrations, and scalable execution standards for premium entertainment campaigns.
 - Directed operational execution for multimillion-dollar premium entertainment campaigns across theatrical releases, streaming launches, and franchise/IP priorities.
-- Advanced from Campaign Manager to Group Director while leading campaign operations across Disney Studios Theatrical and Disney Streaming/DSS.
+- Introduced scalable workflows, governance practices, and execution standards across marketing, technology, analytics, and creative teams.
+- Established workflows, milestones, quality standards, and partner coordination for consistent campaign execution at scale.
 - Primary work focused on theatrical and streaming film campaign operations across Disney's Studios, franchise/IP, and streaming ecosystem.
 
 ## Selected Projects

@@ -9,7 +9,7 @@ applications:
   role_aliases:
   - Head Global Creative Product Development Operations
   - Head of Global Creative and Product Development Operations
-  status: Applied
+  status: Follow-up
   priority: High
   source: Official Greenhouse
   submitted_date: '2026-06-27'
@@ -67,7 +67,7 @@ applications:
   role_aliases:
   - Strategy and Operations Lead YouTube Auction Brand
   - Strategy Ops Lead YouTube Auction Brand
-  status: Applied
+  status: Rejected
   priority: High
   source: Official Google Careers
   submitted_date: '2026-06-27'
@@ -123,7 +123,7 @@ applications:
   - Sony Interactive Entertainment
   - SIE
   role: Director, Ad Operations & Technology
-  status: Invalid
+  status: Archived
   priority: Do Not Pursue
   source: Official PlayStation detail page but broken/unavailable apply flow
   notes: Official detail page appeared active, but application flow was broken or unavailable. Do not pursue unless role is reposted with a working application.
@@ -191,13 +191,16 @@ applications:
   role: Director, Marketing Operations
   role_aliases:
   - Director Marketing Operations
-  status: Applied
+  status: Follow-up
   priority: High
   source: Official Paramount Careers
   submitted_date: '2026-06-29'
   salary_range: $130,000-$180,000 USD + bonus eligible
   notes: Submitted application using Paramount-tailored styled resume and cover letter. Strong fit for marketing operations, creative operations, workflow systems, AI enablement, dashboards, capacity planning, and cross-team alignment.
-  next_action: Monitor for response and identify Paramount marketing operations or creative operations contacts for possible follow-up.
+  next_action: 'Monitor for response and identify Paramount marketing operations or creative operations contacts for possible follow-up.
+
+
+    https://career41.sapsf.com/portalcareer?_s.crb=0aWUtq59Ywv9GRClSZlJqZgg3xonBUgkcpHM%252bHXvXro%253d'
   show_on_dashboard: true
   company_category: entertainment_streaming
   role_family: creative_marketing_ops
@@ -246,7 +249,7 @@ applications:
   company_aliases: []
   role: Director, Transformation
   role_aliases: []
-  status: Applied
+  status: Paused
   priority: Medium
   source: Official Ashby
   notes: 'Did not ask for Cover Letter in application process. '
@@ -305,10 +308,10 @@ applications:
   company_aliases: []
   role: Director - Strategy & Operations, Product & Technology
   role_aliases: []
-  status: Applied
+  status: Follow-up
   priority: Medium
   source: Official career page
-  notes: ''
+  notes: https://disney.wd5.myworkdayjobs.com/en-US/disneycareer/userHome
   next_action: Review fit and generate application package.
   show_on_dashboard: true
   official_url: https://www.disneycareers.com/en/job/san-francisco/director-strategy-and-operations-product-and-technology/391/95265580544
@@ -364,7 +367,7 @@ applications:
   company_aliases: []
   role: Director of Matrix Operations & Organizational Efficiency
   role_aliases: []
-  status: Applied
+  status: Paused
   priority: Medium
   source: Official career page
   notes: ''
@@ -422,7 +425,7 @@ applications:
   company_aliases: []
   role: Senior Copywriter & Content Strategist
   role_aliases: []
-  status: Applied
+  status: Paused
   priority: Medium
   source: Official career page
   notes: ''
@@ -481,10 +484,10 @@ applications:
   company_aliases: []
   role: Director, Talent & Growth
   role_aliases: []
-  status: Applied
+  status: Follow-up
   priority: High
   source: Official career page
-  notes: ''
+  notes: https://disney.wd5.myworkdayjobs.com/en-US/disneycareer/userHome
   next_action: Review fit and generate application package.
   show_on_dashboard: true
   official_url: https://www.disneycareers.com/en/job/burbank/director-talent-and-growth/391/96569904576?utm_source=chatgpt.com
@@ -539,10 +542,13 @@ applications:
   company_aliases: []
   role: Sr. Manager, Strategic Integration & Operations
   role_aliases: []
-  status: Applied
+  status: Follow-up
   priority: Medium
   source: Official career page
-  notes: Applied with $100k salary expectation due posted range. Treat as music-industry doorway opportunity, not survival compensation.
+  notes: 'Applied with $100k salary expectation due posted range. Treat as music-industry doorway opportunity, not survival compensation.
+
+
+    https://wmg.wd1.myworkdayjobs.com/en-US/WMGUS/userHome'
   next_action: Review fit and generate application package.
   show_on_dashboard: true
   official_url: https://wmg.wd1.myworkdayjobs.com/en-US/WMGUS/job/Sr-Manager--Strategic-Integration---Operations_R-027620?utm_source=chatgpt.com
@@ -594,3 +600,311 @@ applications:
   - The posting is stale at 56 days old.
   recommended_action: Generate Package
   confidence: High
+- id: live_nation_worldwide_inc_director_concert_communications
+  company: Live Nation Worldwide, Inc.
+  company_aliases: []
+  role: Director, Concert Communications
+  role_aliases: []
+  status: Follow-up
+  priority: High
+  source: Workday
+  notes: https://livenation.wd503.myworkdayjobs.com/en-US/LNExternalSite/userHome?q=media&timeType=def6fe28d9a210a683974354a3d819b6&Location_Region_State_Province=ec3d210e4240442e99a28fa70419aec5&Location_Country=bc33aa3152ec42d4995f4791a106ed09
+  next_action: Review fit and generate application package.
+  show_on_dashboard: true
+  official_url: https://livenation.wd503.myworkdayjobs.com/en-US/LNExternalSite/details/Director--Concert-Communications_JR-89915?q=director%20communications
+  location: Beverly Hills, CA, USA, United States of America
+  salary_range: $120,000-$150,000
+  work_arrangement: Not specified
+  field_warnings:
+  - Work arrangement was not detected. Review before saving.
+  - Salary detected from job text. Review before applying.
+  - Role family was inferred. Review if this is a strategic or product-ops role.
+  job_file: jobs/director_concert_communications_live_nation_worldwide_inc.md
+  company_category: music_live_events
+  role_family: generic_senior_operator
+  company_voice_profile: dynamic_music_live_events
+  company_voice_source: dynamic_inference
+  company_voice_label: Dynamic Music Live Events
+  company_inference_confidence: High
+  posting_date: '2026-06-08'
+  posting_age_days: 23
+  freshness: Aging
+  freshness_label: Aging / Apply if strong fit
+  posting_status: Open
+  match_score: 87
+  match_tier: Strong Match
+  match_summary: Strong alignment across Trisha's core experience, target level, and practical priorities.
+  match_strengths:
+  - Functional alignment includes workflow and process automation, strategic operations.
+  - The seniority is aligned with Trisha's director/head-of target level.
+  - The music context is adjacent to Trisha's target industries.
+  - The disclosed compensation is aligned with or near Trisha's target.
+  - The not specified arrangement supports practical fit.
+  match_gaps:
+  - The posting is aging at 23 days old.
+  recommended_action: Generate Package
+  confidence: High
+  original_source_url: https://livenation.wd503.myworkdayjobs.com/en-US/LNExternalSite/details/Director--Concert-Communications_JR-89915?q=director%20communications
+  source_domain: livenation.wd503.myworkdayjobs.com
+  source_name: Workday
+  source_type: Employer ATS
+  source_trust_label: Verified Company Source
+  verification_status: Employer Source
+  canonical_apply_url: https://livenation.wd503.myworkdayjobs.com/en-US/LNExternalSite/details/Director--Concert-Communications_JR-89915?q=director%20communications
+  canonical_apply_domain: livenation.wd503.myworkdayjobs.com
+  verification_notes: No verification cautions detected.
+  source_confidence: High
+  source_warnings: []
+  freshness_risk: Medium
+  canonical_employer: Live Nation Worldwide, Inc.
+  recommended_next_step: Proceed using the canonical employer application.
+  opportunity_score: 86
+  apply_recommendation: Apply Immediately
+  opportunity_dimensions:
+    Resume Fit: 87
+    Salary Fit: 84
+    Industry Alignment: 86
+    Role Level Fit: 100
+    Location Fit: 100
+    Mission / Personal Alignment: 72
+    Posting Freshness: 58
+    Interview Probability: 88
+  package_quality:
+    resume_tailoring_score: 88
+    cover_letter_score: 89
+    ats_keyword_match: 93
+    voice_match: 88
+    confidence_level: High
+    confidence_score: 90
+  submitted_date: '2026-07-01'
+- id: netflix_associate_manager_ucan_marketing_operations
+  company: Netflix
+  company_aliases: []
+  role: Associate Manager, UCAN Marketing Operations
+  role_aliases: []
+  status: Follow-up
+  priority: High
+  source: Company career page
+  notes: ''
+  next_action: Review fit and generate application package.
+  show_on_dashboard: true
+  official_url: https://explore.jobs.netflix.net/careers/job/790316561268
+  location: Los Angeles, CA,US
+  salary_range: $152,000-$234,000
+  work_arrangement: On-site
+  field_warnings:
+  - Salary detected from job text. Review before applying.
+  - Role family was inferred. Review if this is a strategic or product-ops role.
+  job_file: jobs/associate_manager_ucan_marketing_operations_netflix.md
+  company_category: entertainment_streaming
+  role_family: creative_marketing_ops
+  company_voice_profile: dynamic_entertainment_streaming
+  company_voice_source: dynamic_inference
+  company_voice_label: Dynamic Entertainment Streaming
+  company_inference_confidence: Medium
+  posting_date: '2026-06-24'
+  posting_age_days: 7
+  freshness: Fresh
+  freshness_label: Fresh / High priority
+  posting_status: Open
+  match_score: 89
+  match_tier: Strong Match
+  match_summary: Strong alignment across Trisha's core experience, target level, and practical priorities.
+  match_strengths:
+  - Functional alignment includes ad/media operations, campaign operations, workflow and process automation.
+  - The role has meaningful ownership, though its level should be verified.
+  - The entertainment context is adjacent to Trisha's target industries.
+  - The disclosed compensation is aligned with or near Trisha's target.
+  - Career evidence overlaps in Business Operations, Marketing Operations, Operational Strategy.
+  match_gaps:
+  - The on-site requirement should be weighed against commute and compensation.
+  recommended_action: Generate Package
+  confidence: High
+  original_source_url: https://explore.jobs.netflix.net/careers/job/790316561268
+  source_domain: explore.jobs.netflix.net
+  source_name: Company career page
+  source_type: Direct Employer
+  source_trust_label: Direct Employer
+  verification_status: Employer Source
+  canonical_apply_url: https://explore.jobs.netflix.net/careers/job/790316561268
+  canonical_apply_domain: explore.jobs.netflix.net
+  verification_notes: Source identity inferred from an employer-owned domain or company-named careers label.
+  source_confidence: High
+  source_warnings: []
+  freshness_risk: Low
+  canonical_employer: Netflix
+  recommended_next_step: Proceed using the canonical employer application.
+  opportunity_score: 80
+  apply_recommendation: Apply Immediately
+  opportunity_dimensions:
+    Resume Fit: 89
+    Salary Fit: 100
+    Industry Alignment: 58
+    Role Level Fit: 55
+    Location Fit: 100
+    Mission / Personal Alignment: 72
+    Posting Freshness: 100
+    Interview Probability: 74
+  package_quality:
+    resume_tailoring_score: 90
+    cover_letter_score: 80
+    ats_keyword_match: 96
+    voice_match: 68
+    confidence_level: High
+    confidence_score: 84
+  submitted_date: '2026-07-01'
+- id: disney_entertainment_and_espn_product_technology_product_strategy_and_operations_director
+  company: Disney Entertainment and ESPN Product & Technology
+  company_aliases: []
+  role: Product Strategy and Operations Director
+  role_aliases: []
+  status: Archived
+  priority: High
+  source: Company career page
+  notes: "already applied on 6/28/26 \nhttps://jobs.disneycareers.com/job/san-francisco/product-strategy-and-operations-director/391/95265580544"
+  next_action: Review fit and generate application package.
+  show_on_dashboard: true
+  official_url: https://www.disneycareers.com/en/job/san-francisco/product-strategy-and-operations-director/391/95265580544
+  location: San Francisco, California, United States of America; Glendale, California, United States
+  salary_range: $207,400.00 - $278,100.00
+  work_arrangement: Not specified
+  field_warnings:
+  - Posting date missing or malformed
+  - Work arrangement was not detected. Review before saving.
+  - Salary detected from job text. Review before applying.
+  job_file: jobs/product_strategy_and_operations_director_disney_entertainment_and_espn_product_technology.md
+  company_category: entertainment_streaming
+  role_family: product_strategy_ops
+  company_voice_profile: disney
+  company_voice_source: known_profile
+  company_voice_label: Dynamic Entertainment Streaming
+  company_inference_confidence: High
+  freshness: Unknown freshness
+  freshness_label: Unknown freshness / Verify manually
+  posting_status: Verify manually
+  match_score: 88
+  match_tier: Strong Match
+  match_summary: Strong alignment across Trisha's core experience, target level, and practical priorities.
+  match_strengths:
+  - Functional alignment includes marketing technology and measurement, workflow and process automation, strategic operations.
+  - The seniority is aligned with Trisha's director/head-of target level.
+  - The entertainment context is adjacent to Trisha's target industries.
+  - The disclosed compensation is aligned with or near Trisha's target.
+  - Career evidence overlaps in Business Operations, Marketing Operations, Operational Strategy.
+  match_gaps:
+  - Work arrangement is not specified.
+  - Posting age is unknown; verify that the role is still active.
+  recommended_action: Generate Package
+  confidence: Medium
+  original_source_url: https://www.disneycareers.com/en/job/san-francisco/product-strategy-and-operations-director/391/95265580544
+  source_domain: disneycareers.com
+  source_name: Company career page
+  source_type: Direct Employer
+  source_trust_label: Direct Employer
+  verification_status: Employer Source
+  canonical_apply_url: https://www.disneycareers.com/en/job/san-francisco/product-strategy-and-operations-director/391/95265580544
+  canonical_apply_domain: disneycareers.com
+  verification_notes: posting date missing; verify manually; Source identity inferred from an employer-owned domain or company-named careers label.
+  source_confidence: High
+  source_warnings:
+  - Posting date missing or malformed
+  freshness_risk: Unknown
+  canonical_employer: Disney Entertainment and ESPN Product & Technology
+  recommended_next_step: Proceed using the canonical employer application.
+  posting_date: ''
+  opportunity_score: 82
+  apply_recommendation: Apply Immediately
+  opportunity_dimensions:
+    Resume Fit: 88
+    Salary Fit: 92
+    Industry Alignment: 58
+    Role Level Fit: 100
+    Location Fit: 100
+    Mission / Personal Alignment: 72
+    Posting Freshness: 50
+    Interview Probability: 83
+  package_quality:
+    resume_tailoring_score: 89
+    cover_letter_score: 90
+    ats_keyword_match: 94
+    voice_match: 90
+    confidence_level: High
+    confidence_score: 91
+- id: spotify_associate_director_crm_martech
+  company: Spotify
+  company_aliases: []
+  role: Associate Director, CRM & Martech
+  role_aliases: []
+  status: Follow-up
+  priority: High
+  source: Lever
+  notes: https://www.lifeatspotify.com/jobs/associate-director-crm-martech#
+  next_action: Verify role is still active before generating package.
+  show_on_dashboard: true
+  official_url: https://jobs.lever.co/spotify/b2e65eb5-e558-45d1-b5ee-347cbbf3dae3
+  location: New York, NY
+  salary_range: $160,147 to $228,781
+  work_arrangement: Remote
+  field_warnings:
+  - Posting appears older than 30 days
+  - Salary detected from job text. Review before applying.
+  - Role family was inferred. Review if this is a strategic or product-ops role.
+  job_file: jobs/associate_director_crm_martech_spotify.md
+  company_category: marketing_advertising
+  role_family: generic_senior_operator
+  company_voice_profile: dynamic_marketing_advertising
+  company_voice_source: dynamic_inference
+  company_voice_label: Dynamic Marketing Advertising
+  company_inference_confidence: Medium
+  posting_date: '2026-04-21'
+  posting_age_days: 75
+  freshness: Stale
+  freshness_label: Stale / Verify manually
+  posting_status: Possibly stale
+  match_score: 77
+  match_tier: Good Match
+  match_summary: Good overall alignment, with a few cautions to weigh before investing further.
+  match_strengths:
+  - Functional alignment includes marketing technology and measurement, workflow and process automation.
+  - The seniority is aligned with Trisha's director/head-of target level.
+  - The marketing technology context is adjacent to Trisha's target industries.
+  - The disclosed compensation is aligned with or near Trisha's target.
+  - The remote arrangement supports practical fit.
+  match_gaps:
+  - The posting is stale at 75 days old.
+  recommended_action: Review First
+  confidence: High
+  original_source_url: https://jobs.lever.co/spotify/b2e65eb5-e558-45d1-b5ee-347cbbf3dae3
+  source_domain: jobs.lever.co
+  source_name: Lever
+  source_type: Employer ATS
+  source_trust_label: Verified Company Source
+  verification_status: Employer Source
+  canonical_apply_url: https://jobs.lever.co/spotify/b2e65eb5-e558-45d1-b5ee-347cbbf3dae3
+  canonical_apply_domain: jobs.lever.co
+  verification_notes: posting is 75 days old; verify that it is still active
+  source_confidence: High
+  source_warnings:
+  - Posting appears older than 30 days
+  freshness_risk: High
+  canonical_employer: Spotify
+  recommended_next_step: Verify manually before generating package.
+  opportunity_score: 77
+  apply_recommendation: Apply If Strategic
+  opportunity_dimensions:
+    Resume Fit: 77
+    Salary Fit: 100
+    Industry Alignment: 58
+    Role Level Fit: 100
+    Location Fit: 100
+    Mission / Personal Alignment: 62
+    Posting Freshness: 25
+    Interview Probability: 76
+  package_quality:
+    resume_tailoring_score: 78
+    cover_letter_score: 84
+    ats_keyword_match: 80
+    voice_match: 76
+    confidence_level: High
+    confidence_score: 80
+  submitted_date: '2026-07-05'
