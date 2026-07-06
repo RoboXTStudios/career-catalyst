@@ -123,11 +123,11 @@ applications:
   - Sony Interactive Entertainment
   - SIE
   role: Director, Ad Operations & Technology
-  status: Archived
+  status: Invalid/Hidden
   priority: Do Not Pursue
   source: Official PlayStation detail page but broken/unavailable apply flow
   notes: Official detail page appeared active, but application flow was broken or unavailable. Do not pursue unless role is reposted with a working application.
-  next_action: Do not show in active dashboard.
+  next_action: Verify the current employer posting and apply path manually.
   show_on_dashboard: false
   company_category: gaming_fandom
   role_family: product_strategy_ops
@@ -171,17 +171,21 @@ applications:
     voice_match: 68
     confidence_level: High
     confidence_score: 87
+  status_updated_at: '2026-07-06T08:34:38'
+  suggested_follow_up_date: ''
+  follow_up_status: Not applicable
 - id: crunchyroll_enterprise_strategy_paused
   company: Crunchyroll
   company_aliases:
   - Crunchyroll
   role: Director, Enterprise Strategy & Initiatives
-  status: Archived
+  status: Invalid/Hidden
   priority: Do Not Pursue
   source: Official Crunchyroll / Greenhouse
   notes: Strong potential fit but not applied yet.
   next_action: Revisit after current high-priority applications.
   show_on_dashboard: true
+  status_updated_at: '2026-07-06T08:27:09'
 - id: paramount_director_marketing_operations
   company: Paramount
   company_aliases:
@@ -249,12 +253,12 @@ applications:
   company_aliases: []
   role: Director, Transformation
   role_aliases: []
-  status: Paused
-  priority: Medium
+  status: Pass
+  priority: Do Not Pursue
   source: Official Ashby
   notes: 'Did not ask for Cover Letter in application process. '
   next_action: Review fit and generate application package.
-  show_on_dashboard: true
+  show_on_dashboard: false
   official_url: https://jobs.ashbyhq.com/united-talent-agency/1309ff52-8e7b-4633-8c30-08e4c738399a
   location: New York, New York, United States; Los Angeles, California, United States
   salary_range: $130,000 to $185,000
@@ -303,6 +307,9 @@ applications:
   - This appears to be an agency role; confirm that the scope is strategic and client-side adjacent.
   recommended_action: Review First
   confidence: Medium
+  suggested_follow_up_date: '2026-07-04'
+  follow_up_status: Not applicable
+  status_updated_at: '2026-07-06T08:30:01'
 - id: disney_entertainment_and_espn_product_technology_director_strategy_operations_product_technology
   company: Disney Entertainment and ESPN Product & Technology
   company_aliases: []
@@ -371,7 +378,7 @@ applications:
   priority: Medium
   source: Official career page
   notes: ''
-  next_action: Review fit and generate application package.
+  next_action: Verify the current employer posting and apply path manually.
   show_on_dashboard: true
   official_url: https://jobs.lever.co/field-ai/7effb612-eeba-4d8e-ba15-447ed3e8d7e9
   location: Irvine, CA
@@ -425,12 +432,12 @@ applications:
   company_aliases: []
   role: Senior Copywriter & Content Strategist
   role_aliases: []
-  status: Paused
+  status: Pass
   priority: Medium
   source: Official career page
   notes: ''
   next_action: Review fit and generate application package.
-  show_on_dashboard: true
+  show_on_dashboard: false
   official_url: https://www.company.bandsintown.com/careers
   location: Los Angeles, CA
   work_arrangement: Remote
@@ -479,6 +486,7 @@ applications:
   - Posting age is unknown; verify that the role is still active.
   recommended_action: Review First
   confidence: Medium
+  status_updated_at: '2026-07-06T08:29:33'
 - id: the_walt_disney_company_corporate_director_talent_growth
   company: The Walt Disney Company (Corporate)
   company_aliases: []
@@ -758,7 +766,7 @@ applications:
   company_aliases: []
   role: Product Strategy and Operations Director
   role_aliases: []
-  status: Archived
+  status: Invalid/Hidden
   priority: High
   source: Company career page
   notes: "already applied on 6/28/26 \nhttps://jobs.disneycareers.com/job/san-francisco/product-strategy-and-operations-director/391/95265580544"
@@ -830,6 +838,7 @@ applications:
     voice_match: 90
     confidence_level: High
     confidence_score: 91
+  status_updated_at: '2026-07-06T08:26:42'
 - id: spotify_associate_director_crm_martech
   company: Spotify
   company_aliases: []
