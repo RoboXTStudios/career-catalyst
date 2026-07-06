@@ -18,6 +18,7 @@ from scripts.application_tracker import (
     VALID_STATUSES,
     TrackerValidationError,
     load_application_tracker,
+    update_prospect,
     update_status,
 )
 from scripts.dynamic_role_intelligence import get_effective_voice_profile
@@ -70,6 +71,17 @@ TRACKER_GROUPS = (
     "Draft / Reviewed / Paused",
     "Hidden / Invalid",
 )
+PRIORITY_OPTIONS = ("High", "Medium", "Low", "Do Not Pursue")
+FOLLOW_UP_EDIT_OPTIONS = (
+    "Auto",
+    "Not due yet",
+    "Due soon",
+    "Due now",
+    "Overdue",
+    "Follow-up sent",
+    "Not applicable",
+    "Not verified",
+)
 OUTPUT_LABELS = {
     "job_file": "Job description",
     "resume_markdown": "Tailored resume",
@@ -103,6 +115,10 @@ PACKAGE_MATERIAL_LABELS = {
     "Interview Prep": "Interview prep",
     "Package Summary": "Package summary",
     "Follow-Up Materials": "Follow-up materials",
+    "Recruiter Follow-Up": "Recruiter follow-up",
+    "Hiring Manager Follow-Up": "Hiring manager follow-up",
+    "Warm Contact Message": "Warm contact message",
+    "Referral Ask": "Referral ask",
 }
 APP_CSS = """
 <style>
@@ -210,9 +226,10 @@ APP_CSS = """
     font-weight: 700;
   }
   .cc-status-drafted, .cc-status-reviewed { background: var(--cc-gold-soft); color: var(--cc-gold); }
+  .cc-status-active, .cc-status-paused { background: #eef1f3; color: #4c5963; }
   .cc-status-applied, .cc-status-follow-up { background: var(--cc-blue-soft); color: var(--cc-blue); }
   .cc-status-interviewing { background: var(--cc-accent-soft); color: var(--cc-accent); }
-  .cc-status-rejected, .cc-status-invalid { background: var(--cc-red-soft); color: var(--cc-red); }
+  .cc-status-rejected, .cc-status-invalid, .cc-status-invalid-hidden, .cc-status-pass { background: var(--cc-red-soft); color: var(--cc-red); }
   .cc-priority { border: 1px solid #e1c891; background: #ffffff; color: var(--cc-gold); }
   .cc-metadata {
     display: flex;
@@ -311,6 +328,51 @@ def group_applications_by_status(
     return grouped
 
 
+def status_options(current_status: Any) -> tuple[str, ...]:
+    """Return safe status choices while preserving an unknown legacy value."""
+    current = str(current_status or "Drafted")
+    return VALID_STATUSES if current in VALID_STATUSES else (current,) + VALID_STATUSES
+
+
+def resolve_selected_tracker_id(
+    tracker_ids: list[str], selected_tracker_id: Any = None
+) -> str:
+    """Keep a stable tracker selection when labels or record order change."""
+    selected = str(selected_tracker_id or "")
+    if selected in tracker_ids:
+        return selected
+    return tracker_ids[0] if tracker_ids else ""
+
+
+def update_dashboard_role(
+    tracker_id: str,
+    values: Dict[str, Any],
+    project_root: Path = PROJECT_ROOT,
+) -> Dict[str, Any]:
+    """Persist dashboard card fields against one durable tracker id."""
+    clean_id = str(tracker_id or "").strip()
+    if not clean_id:
+        raise TrackerValidationError("A stable tracker id is required for dashboard updates.")
+    status = str(values.get("status") or "Drafted")
+    updates: Dict[str, Any] = {}
+    for field in ("priority", "notes", "next_action", "suggested_follow_up_date"):
+        if field in values:
+            updates[field] = str(values.get(field) or "")
+    if "show_on_dashboard" in values:
+        updates["show_on_dashboard"] = bool(values["show_on_dashboard"])
+    if "follow_up_status" in values:
+        follow_up_status = str(values.get("follow_up_status") or "").strip()
+        updates["follow_up_status"] = (
+            "" if follow_up_status == "Auto" else follow_up_status
+        )
+    if status in HIDDEN_STATUSES:
+        updates["show_on_dashboard"] = False
+    if status in VALID_STATUSES:
+        return update_status(clean_id, status, project_root, **updates)
+    # Unknown legacy statuses remain readable and notes can still be edited safely.
+    return update_prospect(clean_id, updates, project_root)
+
+
 def build_prospect_payload(values: Dict[str, Any]) -> Dict[str, Any]:
     """Normalize widget values without importing or executing Streamlit."""
     return {
@@ -370,7 +432,7 @@ def open_local_path(path: Path, project_root: Path = PROJECT_ROOT) -> tuple[bool
 def _status_badges(application: Dict[str, Any]) -> str:
     status = str(application.get("status") or "Drafted")
     priority = str(application.get("priority") or "").strip()
-    status_class = status.lower().replace(" ", "-")
+    status_class = re.sub(r"[^a-z0-9]+", "-", status.lower()).strip("-")
     badges = [
         f'<span class="cc-badge cc-status-{html.escape(status_class)}">'
         f"{html.escape(status)}</span>"
@@ -380,6 +442,12 @@ def _status_badges(application: Dict[str, Any]) -> str:
             '<span class="cc-badge cc-priority">'
             f"{html.escape(priority)} priority</span>"
         )
+    for value in (
+        application.get("match_tier"),
+        application.get("verification_status"),
+    ):
+        if value:
+            badges.append(f'<span class="cc-badge">{html.escape(str(value))}</span>')
     return f'<div class="cc-badges">{"".join(badges)}</div>'
 
 
@@ -434,6 +502,7 @@ def _metadata_html(application: Dict[str, Any], package: Dict[str, Any]) -> str:
         ),
         ("Follow-up", application.get("follow_up_status") or "No applied date"),
         ("Suggested follow-up", application.get("suggested_follow_up_date") or "Verify manually"),
+        ("Materials", application.get("_materials_availability_label") or "Materials not verified"),
         (
             "Category",
             humanize(
@@ -529,6 +598,25 @@ def _render_role_card(
 ) -> None:
     tracker_id = str(application.get("id") or "application")
     with st.container(border=True):
+        flash_key = f"dashboard_flash_{tracker_id}"
+        if flash_key in st.session_state:
+            st.success(st.session_state.pop(flash_key))
+        persisted_widget_values = {
+            f"dashboard_status_{tracker_id}": str(application.get("status") or "Drafted"),
+            f"dashboard_priority_{tracker_id}": str(application.get("priority") or "Medium"),
+            f"dashboard_notes_{tracker_id}": str(application.get("notes") or ""),
+            f"dashboard_next_action_{tracker_id}": str(application.get("next_action") or "Review fit"),
+            f"dashboard_follow_up_{tracker_id}": str(application.get("follow_up_status") or "Auto"),
+            f"dashboard_follow_up_date_{tracker_id}": str(application.get("suggested_follow_up_date") or ""),
+            f"dashboard_visibility_{tracker_id}": bool(application.get("show_on_dashboard", True)),
+        }
+        for widget_key, persisted_value in persisted_widget_values.items():
+            shadow_key = f"{widget_key}_persisted"
+            if shadow_key not in st.session_state:
+                st.session_state[shadow_key] = persisted_value
+            elif st.session_state[shadow_key] != persisted_value:
+                st.session_state[widget_key] = persisted_value
+                st.session_state[shadow_key] = persisted_value
         title_column, badge_column = st.columns((4, 2))
         title_column.markdown(
             '<p class="cc-card-company">'
@@ -587,7 +675,231 @@ def _render_role_card(
             '<p class="cc-materials-label">Application materials</p>',
             unsafe_allow_html=True,
         )
+        materials_label = str(
+            application.get("_materials_availability_label")
+            or "Materials not verified"
+        )
+        st.caption(materials_label)
         _material_button_rows(st, tracker_id, package.get("files", {}))
+
+        with st.expander("Quick actions", expanded=False):
+            action_columns = st.columns(5)
+            quick_statuses = (
+                ("Mark Applied", "Applied"),
+                ("Mark Reviewed", "Reviewed"),
+                ("Pause", "Paused"),
+                ("Pass", "Pass"),
+                ("Hide / Invalid", "Invalid/Hidden"),
+            )
+            for column, (label, target_status) in zip(action_columns, quick_statuses):
+                if column.button(
+                    label,
+                    key=f"dashboard_quick_{tracker_id}_{target_status}",
+                    use_container_width=True,
+                ):
+                    try:
+                        update_dashboard_role(
+                            tracker_id,
+                            {
+                                "status": target_status,
+                                "show_on_dashboard": target_status not in HIDDEN_STATUSES,
+                            },
+                            PROJECT_ROOT,
+                        )
+                    except (TrackerValidationError, OSError) as error:
+                        st.error(str(error))
+                    else:
+                        st.session_state[flash_key] = f"Updated status to {target_status}."
+                        st.rerun()
+
+            cleanup_columns = st.columns(2)
+            if cleanup_columns[0].button(
+                "Keep Active",
+                key=f"dashboard_keep_active_{tracker_id}",
+                use_container_width=True,
+            ):
+                try:
+                    update_dashboard_role(
+                        tracker_id,
+                        {"status": "Active", "show_on_dashboard": True},
+                        PROJECT_ROOT,
+                    )
+                except (TrackerValidationError, OSError) as error:
+                    st.error(str(error))
+                else:
+                    st.session_state[flash_key] = "Role kept active."
+                    st.rerun()
+            if cleanup_columns[1].button(
+                "Verify manually",
+                key=f"dashboard_verify_manually_{tracker_id}",
+                use_container_width=True,
+            ):
+                try:
+                    update_dashboard_role(
+                        tracker_id,
+                        {
+                            "status": str(application.get("status") or "Drafted"),
+                            "next_action": "Verify the current employer posting and apply path manually.",
+                        },
+                        PROJECT_ROOT,
+                    )
+                except (TrackerValidationError, OSError) as error:
+                    st.error(str(error))
+                else:
+                    st.session_state[flash_key] = "Manual verification added as the next action."
+                    st.rerun()
+
+            generation_columns = st.columns(3)
+            status_value = str(application.get("status") or "Drafted")
+            generation_disabled = status_value in HIDDEN_STATUSES
+            if generation_columns[0].button(
+                "Generate Package",
+                key=f"dashboard_generate_package_{tracker_id}",
+                disabled=generation_disabled,
+                use_container_width=True,
+            ):
+                try:
+                    with st.spinner("Generating application package…"):
+                        generate_package(tracker_id, PROJECT_ROOT)
+                except PackageGenerationError as error:
+                    st.error(str(error))
+                else:
+                    st.session_state[flash_key] = "Application package generated."
+                    st.rerun()
+            follow_up_disabled = (
+                generation_disabled or status_value not in FOLLOWUP_ELIGIBLE_STATUSES
+            )
+            if generation_columns[1].button(
+                "Generate Follow-Up Materials",
+                key=f"dashboard_generate_followup_{tracker_id}",
+                disabled=follow_up_disabled,
+                use_container_width=True,
+            ):
+                try:
+                    with st.spinner("Generating follow-up / outreach materials…"):
+                        generate_followups(tracker_id, PROJECT_ROOT)
+                except FollowupGenerationError as error:
+                    st.error(str(error))
+                else:
+                    st.session_state[flash_key] = "Follow-up / outreach materials generated."
+                    st.rerun()
+            if generation_columns[2].button(
+                "Refresh / Re-score",
+                key=f"dashboard_rescore_{tracker_id}",
+                disabled=generation_disabled,
+                use_container_width=True,
+            ):
+                try:
+                    resolved = resolve_job_reference(tracker_id, PROJECT_ROOT)
+                    report = score_job_match(resolved["job_path"], PROJECT_ROOT)
+                    update_prospect(
+                        tracker_id,
+                        {
+                            key: report[key]
+                            for key in (
+                                "match_score",
+                                "match_tier",
+                                "recommended_action",
+                                "confidence",
+                                "match_summary",
+                                "match_strengths",
+                                "match_gaps",
+                            )
+                            if key in report
+                        },
+                        PROJECT_ROOT,
+                    )
+                except Exception as error:
+                    st.error(f"Could not refresh score: {error}")
+                else:
+                    st.session_state[flash_key] = "Match score refreshed."
+                    st.rerun()
+
+            if status_value == "Paused" and application.get("_follow_up_materials_status") != "Available":
+                st.info(
+                    "Follow-up generation is usually intended for applied roles. "
+                    "Change status to Applied or use package materials."
+                )
+
+        with st.expander("Edit role", expanded=False):
+            current_status = str(application.get("status") or "Drafted")
+            choices = status_options(current_status)
+            current_priority = str(application.get("priority") or "Medium")
+            priority_choices = (
+                PRIORITY_OPTIONS
+                if current_priority in PRIORITY_OPTIONS
+                else (current_priority,) + PRIORITY_OPTIONS
+            )
+            current_follow_up = str(application.get("follow_up_status") or "Auto")
+            follow_up_choices = (
+                FOLLOW_UP_EDIT_OPTIONS
+                if current_follow_up in FOLLOW_UP_EDIT_OPTIONS
+                else (current_follow_up,) + FOLLOW_UP_EDIT_OPTIONS
+            )
+            with st.form(key=f"dashboard_edit_{tracker_id}"):
+                edit_columns = st.columns(2)
+                edited_status = edit_columns[0].selectbox(
+                    "Status",
+                    choices,
+                    index=choices.index(current_status),
+                    key=f"dashboard_status_{tracker_id}",
+                )
+                edited_priority = edit_columns[1].selectbox(
+                    "Priority",
+                    priority_choices,
+                    index=priority_choices.index(current_priority),
+                    key=f"dashboard_priority_{tracker_id}",
+                )
+                edited_notes = st.text_area(
+                    "Notes",
+                    value=str(application.get("notes") or ""),
+                    key=f"dashboard_notes_{tracker_id}",
+                )
+                edited_next_action = st.text_area(
+                    "Next action",
+                    value=str(application.get("next_action") or "Review fit"),
+                    key=f"dashboard_next_action_{tracker_id}",
+                )
+                follow_up_columns = st.columns(2)
+                edited_follow_up = follow_up_columns[0].selectbox(
+                    "Follow-up status",
+                    follow_up_choices,
+                    index=follow_up_choices.index(current_follow_up),
+                    key=f"dashboard_follow_up_{tracker_id}",
+                )
+                edited_follow_up_date = follow_up_columns[1].text_input(
+                    "Suggested follow-up date",
+                    value=str(application.get("suggested_follow_up_date") or ""),
+                    key=f"dashboard_follow_up_date_{tracker_id}",
+                )
+                edited_visibility = st.checkbox(
+                    "Show on dashboard",
+                    value=bool(application.get("show_on_dashboard", True)),
+                    key=f"dashboard_visibility_{tracker_id}",
+                )
+                save_clicked = st.form_submit_button(
+                    "Save role updates", type="primary", use_container_width=True
+                )
+            if save_clicked:
+                try:
+                    update_dashboard_role(
+                        tracker_id,
+                        {
+                            "status": edited_status,
+                            "priority": edited_priority,
+                            "notes": edited_notes,
+                            "next_action": edited_next_action,
+                            "follow_up_status": edited_follow_up,
+                            "suggested_follow_up_date": edited_follow_up_date,
+                            "show_on_dashboard": edited_visibility,
+                        },
+                        PROJECT_ROOT,
+                    )
+                except (TrackerValidationError, OSError) as error:
+                    st.error(str(error))
+                else:
+                    st.session_state[flash_key] = "Role updates saved."
+                    st.rerun()
 
 
 def _render_application_tracker(
@@ -1214,33 +1526,46 @@ def _render_followups(st: Any) -> None:
 
 def _render_update_status(st: Any) -> None:
     st.markdown(
-        '<h2 class="cc-section-heading">Update Status</h2>',
+        '<h2 class="cc-section-heading">Advanced Status Update</h2>',
         unsafe_allow_html=True,
     )
     applications = _load_applications(st)
     if not applications:
         return
     by_id = {str(item["id"]): item for item in applications}
+    tracker_ids = list(by_id)
+    selected_id = resolve_selected_tracker_id(
+        tracker_ids, st.session_state.get("status_tracker_id")
+    )
+    if st.session_state.get("status_tracker_id") != selected_id:
+        st.session_state["status_tracker_id"] = selected_id
     tracker_id = st.selectbox(
         "Tracker entry",
-        tuple(by_id),
+        tuple(tracker_ids),
+        index=tracker_ids.index(selected_id),
         format_func=lambda value: _application_label(by_id[value]),
         key="status_tracker_id",
     )
     application = by_id[tracker_id]
     widget_prefix = f"status_{tracker_id}"
+    choices = status_options(application.get("status"))
+    current_status = str(application.get("status") or "Drafted")
     status = st.selectbox(
         "Application status",
-        VALID_STATUSES,
-        index=VALID_STATUSES.index(str(application.get("status") or "Drafted")),
+        choices,
+        index=choices.index(current_status),
         key=f"{widget_prefix}_value",
     )
-    priority_options = ("High", "Medium", "Low", "Do Not Pursue")
     current_priority = str(application.get("priority") or "Medium")
+    priority_options = (
+        PRIORITY_OPTIONS
+        if current_priority in PRIORITY_OPTIONS
+        else (current_priority,) + PRIORITY_OPTIONS
+    )
     priority = st.selectbox(
         "Priority",
         priority_options,
-        index=priority_options.index(current_priority) if current_priority in priority_options else 1,
+        index=priority_options.index(current_priority),
         key=f"{widget_prefix}_priority",
     )
     notes = st.text_area(
@@ -1346,7 +1671,7 @@ def _render_dashboard(st: Any) -> None:
     sort_by = st.selectbox("Sort by", SORT_OPTIONS, key="dashboard_sort")
 
     records = prepare_dashboard_records(applications, packages)
-    if not (mode == "All Mode" and application_status == "Invalid/Hidden"):
+    if not (mode == "All Mode" and application_status in HIDDEN_STATUSES):
         records = select_dashboard_mode(records, mode)
     records = filter_dashboard_records(
         records,
@@ -1428,7 +1753,7 @@ def main() -> None:
             "Add Prospect",
             "Generate Package",
             "Follow-Up",
-            "Update Status",
+            "Advanced Status Update",
             "Outputs",
         )
     )

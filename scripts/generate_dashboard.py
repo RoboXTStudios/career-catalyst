@@ -13,6 +13,7 @@ if __package__:
         ACTIVE_STATUSES,
         DRAFT_STATUSES,
         HIDDEN_STATUSES,
+        VALID_STATUSES,
         TrackerValidationError,
         normalize_tracker_value,
         tracker_company_keys,
@@ -34,6 +35,7 @@ else:
         ACTIVE_STATUSES,
         DRAFT_STATUSES,
         HIDDEN_STATUSES,
+        VALID_STATUSES,
         TrackerValidationError,
         normalize_tracker_value,
         tracker_company_keys,
@@ -71,12 +73,23 @@ LINK_ORDER = (
     "Application Note",
     "Strategy Pack",
     "Follow-Up Materials",
+    "Recruiter Follow-Up",
+    "Hiring Manager Follow-Up",
+    "Warm Contact Message",
+    "Referral Ask",
 )
+FOLLOW_UP_ASSET_LABELS = {
+    "Follow-Up Materials",
+    "Recruiter Follow-Up",
+    "Hiring Manager Follow-Up",
+    "Warm Contact Message",
+    "Referral Ask",
+}
 MATCH_TIER_FILTERS = (
     "All", "Strong Match", "Good Match", "Stretch Match", "Weak Match", "Pass", "Not scored yet"
 )
 ACTION_FILTERS = ("All", "Generate Package", "Review First", "Pass")
-STATUS_FILTERS = ("All", "Active", "Applied", "Reviewed", "Paused", "Invalid/Hidden")
+STATUS_FILTERS = ("All",) + VALID_STATUSES
 FOLLOW_UP_FILTERS = (
     "All", "Not due yet", "Due soon", "Due now", "Overdue", "Follow-up sent", "No applied date"
 )
@@ -153,8 +166,11 @@ def calculate_follow_up_timing(
     """Compute non-persistent follow-up guidance from existing tracker dates."""
     reference_date = today or date.today()
     applied = _applied_date(record)
+    explicit_status = str(record.get("follow_up_status") or "").strip()
     if _follow_up_was_sent(record):
         status = "Follow-up sent"
+    elif explicit_status:
+        status = explicit_status
     elif applied is None:
         status = "No applied date"
     else:
@@ -218,6 +234,9 @@ def enrich_dashboard_record(
     ):
         enriched["posting_status"] = verification["posting_status"]
     enriched.update(calculate_follow_up_timing(record, today))
+    if str(enriched.get("status") or "") in HIDDEN_STATUSES:
+        enriched["follow_up_status"] = "Not applicable"
+        enriched["suggested_follow_up_date"] = None
     return enriched
 
 
@@ -309,13 +328,9 @@ def filter_dashboard_records(
         if recommended_action != "All" and record.get("recommended_action") != recommended_action:
             continue
         status = str(record.get("status") or "Drafted")
-        if application_status == "Active" and status not in ACTIVE_STATUSES:
-            continue
-        if application_status == "Applied" and status != "Applied":
-            continue
-        if application_status in {"Reviewed", "Paused"} and status != application_status:
-            continue
         if application_status == "Invalid/Hidden" and not _is_hidden(record):
+            continue
+        if application_status not in {"All", "Invalid/Hidden"} and status != application_status:
             continue
         if follow_up_status != "All" and record.get("follow_up_status") != follow_up_status:
             continue
@@ -734,22 +749,47 @@ def _asset_label(path: Path) -> Optional[str]:
         or name.endswith("_followupstrategy.md")
     ):
         return "Follow-Up Materials"
+    if parent == "followups" and (
+        name.endswith("_recruiter_followup.md")
+        or name.endswith("_recruiterfollowup.md")
+    ):
+        return "Recruiter Follow-Up"
+    if parent == "followups" and (
+        name.endswith("_hiring_manager_followup.md")
+        or name.endswith("_hiringmanagerfollowup.md")
+    ):
+        return "Hiring Manager Follow-Up"
+    if parent == "followups" and (
+        name.endswith("_warm_contact_message.md")
+        or name.endswith("_warmcontactmessage.md")
+    ):
+        return "Warm Contact Message"
+    if parent == "followups" and (
+        name.endswith("_referral_ask.md") or name.endswith("_referralask.md")
+    ):
+        return "Referral Ask"
     return None
+
+
+def _asset_match_key(value: Any) -> str:
+    """Normalize both snake-case and compact generated names for asset matching."""
+    return re.sub(r"[^a-z0-9]+", "", str(value or "").lower())
 
 
 def _package_for_asset(
     path: Path, packages: List[Dict[str, Any]]
 ) -> Optional[Dict[str, Any]]:
-    file_key = _slug(path.stem)
+    file_key = _asset_match_key(path.stem)
     candidates = [
         package
         for package in packages
         if any(
             key in file_key
             for key in (
-                _slug(package["company"]),
-                _slug(short_company_name(package["company"])),
+                _asset_match_key(package["company"]),
+                _asset_match_key(short_company_name(package["company"])),
             )
+            if key
         )
     ]
     if not candidates:
@@ -761,9 +801,10 @@ def _package_for_asset(
         if any(
             key in file_key
             for key in (
-                _slug(package["role"]),
-                _slug(short_role_name(package["role"])),
+                _asset_match_key(package["role"]),
+                _asset_match_key(short_role_name(package["role"])),
             )
+            if key
         )
     ]
     if len(exact_role_matches) == 1:
@@ -815,15 +856,39 @@ def prepare_dashboard_records(
                 record[key] = package[key]
         files = package.get("files") if isinstance(package, dict) else None
         if isinstance(files, dict):
-            record["_follow_up_materials_status"] = (
-                "Available" if "Follow-Up Materials" in files else "Missing"
+            follow_up_available = bool(FOLLOW_UP_ASSET_LABELS.intersection(files))
+            outreach_available = any(
+                label in files
+                for label in ("Recruiter Message", "Hiring Manager Message", "Application Note")
             )
+            status = str(record.get("status") or "Drafted")
+            if status in HIDDEN_STATUSES:
+                material_state = "Not applicable"
+                material_label = "Cleanup state — follow-up not applicable"
+            elif status in ACTIVE_STATUSES:
+                material_state = "Available" if follow_up_available else "Missing"
+                material_label = f"Follow-up materials {material_state.lower()}"
+            elif follow_up_available:
+                material_state = "Available"
+                material_label = "Outreach materials available"
+            elif outreach_available:
+                material_state = "Available"
+                material_label = "Application messages available"
+            elif status == "Paused":
+                material_state = "Missing"
+                material_label = "Outreach materials missing"
+            else:
+                material_state = "Missing"
+                material_label = "Application messages missing"
+            record["_follow_up_materials_status"] = material_state
+            record["_materials_availability_label"] = material_label
             record["_has_package"] = any(
-                label not in {"Job Description", "Follow-Up Materials"}
+                label != "Job Description" and label not in FOLLOW_UP_ASSET_LABELS
                 for label in files
             )
         else:
             record["_follow_up_materials_status"] = "Not verified"
+            record["_materials_availability_label"] = "Materials not verified"
             record["_has_package"] = bool(record.get("package_quality"))
         records.append(enrich_dashboard_record(record, today))
     return records
@@ -861,6 +926,8 @@ def _status_class(status: str) -> str:
         "follow_up",
         "interviewing",
         "invalid",
+        "invalid_hidden",
+        "pass",
         "paused",
         "rejected",
         "reviewed",
@@ -879,6 +946,9 @@ def _render_badges(tracker: Dict[str, Any]) -> str:
         )
     if priority:
         badges.append(f'<span class="badge priority">{html.escape(priority)} priority</span>')
+    for value in (tracker.get("match_tier"), tracker.get("verification_status")):
+        if value:
+            badges.append(f'<span class="badge">{html.escape(str(value))}</span>')
     return "".join(badges)
 
 
@@ -910,6 +980,7 @@ def _render_metadata(package: Dict[str, Any]) -> str:
         ),
         ("Follow-up", tracker.get("follow_up_status") or "No applied date"),
         ("Suggested follow-up", tracker.get("suggested_follow_up_date") or "Verify manually"),
+        ("Materials availability", tracker.get("_materials_availability_label") or "Materials not verified"),
         (
             "Company category",
             _display_taxonomy(
@@ -1266,7 +1337,7 @@ def _render_html(
         dashboard_directory,
     )
     draft_group = _render_group(
-        "Draft / Paused",
+        "Draft / Active / Reviewed / Paused",
         "draft-paused",
         groups["draft"],
         dashboard_directory,
@@ -1410,11 +1481,13 @@ def _render_html(
       font-weight: 700;
     }}
     .status-drafted, .status-reviewed {{ background: var(--gold-soft); color: var(--gold); }}
+    .status-active {{ background: #eef1f3; color: #4c5963; }}
     .status-applied, .status-follow_up {{ background: var(--blue-soft); color: var(--blue); }}
     .status-interviewing {{ background: var(--accent-soft); color: var(--accent); }}
     .status-rejected {{ background: var(--red-soft); color: var(--red); }}
     .status-paused {{ background: #eef1f3; color: #4c5963; }}
     .status-invalid {{ background: var(--red-soft); color: var(--red); }}
+    .status-invalid_hidden, .status-pass {{ background: var(--red-soft); color: var(--red); }}
     .status-archived {{ background: #eef1f3; color: #4c5963; }}
     .priority {{ border: 1px solid #e1c891; background: #ffffff; color: var(--gold); }}
     .match-gate {{

@@ -1,6 +1,6 @@
 """Load, update, and validate the Career Catalyst application tracker."""
 
-from datetime import date
+from datetime import date, datetime
 import re
 from collections import Counter
 from pathlib import Path
@@ -21,24 +21,30 @@ REQUIRED_FIELDS = (
 )
 VALID_STATUSES = (
     "Drafted",
+    "Active",
     "Reviewed",
     "Applied",
     "Follow-up",
     "Interviewing",
     "Paused",
+    "Pass",
     "Rejected",
     "Invalid",
+    "Invalid/Hidden",
     "Archived",
 )
 ACTIVE_STATUSES = {"Applied", "Follow-up", "Interviewing"}
-DRAFT_STATUSES = {"Drafted", "Reviewed", "Paused"}
-HIDDEN_STATUSES = {"Rejected", "Invalid", "Archived"}
+DRAFT_STATUSES = {"Drafted", "Active", "Reviewed", "Paused"}
+HIDDEN_STATUSES = {"Pass", "Rejected", "Invalid", "Invalid/Hidden", "Archived"}
 INTAKE_PROTECTED_STATUSES = {
+    "Active",
     "Applied",
     "Follow-up",
     "Interviewing",
+    "Pass",
     "Rejected",
     "Invalid",
+    "Invalid/Hidden",
     "Archived",
 }
 OPTIONAL_INTELLIGENCE_FIELDS = (
@@ -275,8 +281,11 @@ def update_status(
     if entry is None:
         raise TrackerUpdateError(f"Tracker entry not found: {tracker_id}")
 
+    previous_status = str(entry.get("status") or "Drafted")
     entry["status"] = status
     entry.update(_explicit_updates(updates))
+    if status != previous_status:
+        entry["status_updated_at"] = datetime.now().isoformat(timespec="seconds")
     if status == "Applied" and not entry.get("submitted_date"):
         entry["submitted_date"] = date.today().isoformat()
     save_application_tracker(applications, project_root)
@@ -344,9 +353,9 @@ def validate_tracker_entries(
 
         status = str(application["status"])
         if status not in VALID_STATUSES:
-            errors.append(
+            warnings.append(
                 f"{label} has unsupported status '{status}'. "
-                f"Valid statuses: {', '.join(VALID_STATUSES)}."
+                "It is being preserved as a legacy status until explicitly updated."
             )
         else:
             status_counts[status] += 1

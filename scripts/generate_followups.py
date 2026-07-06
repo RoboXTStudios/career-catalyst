@@ -29,6 +29,7 @@ except ImportError:
 
 PathInput = Union[str, Path]
 FOLLOWUP_ELIGIBLE_STATUSES = (
+    "Active",
     "Applied",
     "Follow-up",
     "Interviewing",
@@ -701,8 +702,8 @@ def generate_followups(
         if status not in FOLLOWUP_ELIGIBLE_STATUSES:
             raise FollowupGenerationError(
                 f"Tracker entry '{tracker_id}' is {status or 'missing a status'}; follow-ups are "
-                "available by explicit request for Applied, Follow-up, Interviewing, Reviewed, "
-                "Drafted, or Paused roles."
+                "available by explicit request for Active, Applied, Follow-up, Interviewing, "
+                "Reviewed, Drafted, or Paused roles."
             )
         post_application = status in POST_APPLICATION_STATUSES
         job_path: Optional[Path] = None
