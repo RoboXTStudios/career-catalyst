@@ -9,7 +9,7 @@ applications:
   role_aliases:
   - Head Global Creative Product Development Operations
   - Head of Global Creative and Product Development Operations
-  status: Follow-up
+  status: Paused
   priority: High
   source: Official Greenhouse
   submitted_date: '2026-06-27'
@@ -58,6 +58,7 @@ applications:
   - Posting age is unknown; verify that the role is still active.
   recommended_action: Generate Package
   confidence: High
+  status_updated_at: '2026-07-06T10:02:51'
 - id: google_strategy_ops_youtube_auction_brand
   company: Google
   company_aliases:
@@ -195,7 +196,7 @@ applications:
   role: Director, Marketing Operations
   role_aliases:
   - Director Marketing Operations
-  status: Follow-up
+  status: Active
   priority: High
   source: Official Paramount Careers
   submitted_date: '2026-06-29'
@@ -248,6 +249,8 @@ applications:
   - Posting age is unknown; verify that the role is still active.
   recommended_action: Generate Package
   confidence: High
+  follow_up_status: Due now
+  status_updated_at: '2026-07-06T09:59:39'
 - id: united_talent_agency_director_transformation
   company: United Talent Agency
   company_aliases: []
@@ -315,11 +318,11 @@ applications:
   company_aliases: []
   role: Director - Strategy & Operations, Product & Technology
   role_aliases: []
-  status: Follow-up
+  status: Active
   priority: Medium
   source: Official career page
   notes: https://disney.wd5.myworkdayjobs.com/en-US/disneycareer/userHome
-  next_action: Review fit and generate application package.
+  next_action: Verify the current employer posting and apply path manually.
   show_on_dashboard: true
   official_url: https://www.disneycareers.com/en/job/san-francisco/director-strategy-and-operations-product-and-technology/391/95265580544
   location: San Francisco, California, United States of America; Glendale, California, United States
@@ -369,6 +372,7 @@ applications:
   - Posting age is unknown; verify that the role is still active.
   recommended_action: Generate Package
   confidence: Medium
+  status_updated_at: '2026-07-06T09:59:27'
 - id: fieldai_director_of_matrix_operations_organizational_efficiency
   company: FieldAI
   company_aliases: []
@@ -492,7 +496,7 @@ applications:
   company_aliases: []
   role: Director, Talent & Growth
   role_aliases: []
-  status: Follow-up
+  status: Active
   priority: High
   source: Official career page
   notes: https://disney.wd5.myworkdayjobs.com/en-US/disneycareer/userHome
@@ -545,12 +549,13 @@ applications:
   - Posting age is unknown; verify that the role is still active.
   recommended_action: Generate Package
   confidence: Medium
+  status_updated_at: '2026-07-06T10:00:16'
 - id: warner_chappell_music_inc_sr_manager_strategic_integration_operations
   company: Warner Chappell Music Inc
   company_aliases: []
   role: Sr. Manager, Strategic Integration & Operations
   role_aliases: []
-  status: Follow-up
+  status: Active
   priority: Medium
   source: Official career page
   notes: 'Applied with $100k salary expectation due posted range. Treat as music-industry doorway opportunity, not survival compensation.
@@ -608,12 +613,13 @@ applications:
   - The posting is stale at 56 days old.
   recommended_action: Generate Package
   confidence: High
+  status_updated_at: '2026-07-06T10:00:27'
 - id: live_nation_worldwide_inc_director_concert_communications
   company: Live Nation Worldwide, Inc.
   company_aliases: []
   role: Director, Concert Communications
   role_aliases: []
-  status: Follow-up
+  status: Active
   priority: High
   source: Workday
   notes: https://livenation.wd503.myworkdayjobs.com/en-US/LNExternalSite/userHome?q=media&timeType=def6fe28d9a210a683974354a3d819b6&Location_Region_State_Province=ec3d210e4240442e99a28fa70419aec5&Location_Country=bc33aa3152ec42d4995f4791a106ed09
@@ -685,16 +691,17 @@ applications:
     confidence_level: High
     confidence_score: 90
   submitted_date: '2026-07-01'
+  status_updated_at: '2026-07-06T09:57:56'
 - id: netflix_associate_manager_ucan_marketing_operations
   company: Netflix
   company_aliases: []
   role: Associate Manager, UCAN Marketing Operations
   role_aliases: []
-  status: Follow-up
+  status: Active
   priority: High
   source: Company career page
   notes: ''
-  next_action: Review fit and generate application package.
+  next_action: Verify the current employer posting and apply path manually.
   show_on_dashboard: true
   official_url: https://explore.jobs.netflix.net/careers/job/790316561268
   location: Los Angeles, CA,US
@@ -715,7 +722,7 @@ applications:
   freshness: Fresh
   freshness_label: Fresh / High priority
   posting_status: Open
-  match_score: 89
+  match_score: 88
   match_tier: Strong Match
   match_summary: Strong alignment across Trisha's core experience, target level, and practical priorities.
   match_strengths:
@@ -761,6 +768,9 @@ applications:
     confidence_level: High
     confidence_score: 84
   submitted_date: '2026-07-01'
+  status_updated_at: '2026-07-06T09:59:07'
+  suggested_follow_up_date: '2026-07-06'
+  follow_up_status: Due now
 - id: disney_entertainment_and_espn_product_technology_product_strategy_and_operations_director
   company: Disney Entertainment and ESPN Product & Technology
   company_aliases: []
