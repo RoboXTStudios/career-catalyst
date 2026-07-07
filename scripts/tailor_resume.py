@@ -5,14 +5,14 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 try:
-    from .filename_utils import safe_filename
+    from .filename_utils import safe_filename, short_company_name
     from .load_data import load_all_yaml
     from .parse_job import parse_job_description
     from .role_context import is_google_youtube_role
     from .score_match import score_job_match
     from .text_cleanup import cleanup_repeated_words
 except ImportError:
-    from filename_utils import safe_filename
+    from filename_utils import safe_filename, short_company_name
     from load_data import load_all_yaml
     from parse_job import parse_job_description
     from role_context import is_google_youtube_role
@@ -545,7 +545,7 @@ def tailor_resume(
     export_dir = root / "exports" / "markdown"
     export_dir.mkdir(parents=True, exist_ok=True)
     output_path = export_dir / safe_filename(
-        f"Trisha_Lynch_{resume_profile}_{parsed_job.get('company') or 'sample'}_Resume",
+        f"Trisha_Lynch_{resume_profile}_{short_company_name(parsed_job.get('company') or 'sample')}_Resume",
         "md",
     )
     output_path.write_text(markdown, encoding="utf-8")

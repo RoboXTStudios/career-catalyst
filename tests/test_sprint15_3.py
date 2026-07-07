@@ -240,7 +240,7 @@ class ClarityAndActionTests(unittest.TestCase):
         for label in ("View role", "Open posting", "Open materials"):
             self.assertIn(label, source)
         self.assertNotIn("Generate package", source)
-        self.assertNotIn("Verify manually", source)
+        self.assertIn("Verify manually", source)
         self.assertIn('mode == "Cleanup Mode"', source)
         self.assertIn('mode == "Follow-Up Mode"', source)
 

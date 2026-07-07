@@ -67,7 +67,7 @@ class DashboardSimplificationTests(unittest.TestCase):
         source = inspect.getsource(app._render_role_card)
         for label in (
             'st.expander("Match details"',
-            'st.expander("Source verification details"',
+            'st.expander("Source Verification"',
             'st.expander("Notes"',
             'with st.expander("Advanced edit role"',
         ):

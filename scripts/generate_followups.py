@@ -10,7 +10,7 @@ from typing import Any, Dict, Optional, Union
 try:
     from .application_tracker import load_application_tracker, update_prospect
     from .dynamic_role_intelligence import get_effective_voice_profile
-    from .filename_utils import build_upload_filename
+    from .filename_utils import build_upload_filename, company_display_name
     from .generate_cover_letter import load_generation_context
     from .generate_dashboard import generate_dashboard
     from .load_data import load_all_yaml
@@ -19,7 +19,7 @@ try:
 except ImportError:
     from application_tracker import load_application_tracker, update_prospect
     from dynamic_role_intelligence import get_effective_voice_profile
-    from filename_utils import build_upload_filename
+    from filename_utils import build_upload_filename, company_display_name
     from generate_cover_letter import load_generation_context
     from generate_dashboard import generate_dashboard
     from load_data import load_all_yaml
@@ -731,7 +731,8 @@ def generate_followups(
                 "voice": career_data["config"].get("voice", {}),
                 "parsed_job": parsed_job,
             }
-        company = _clean(application.get("company") or parsed_job.get("company"))
+        raw_company = _clean(application.get("company") or parsed_job.get("company"))
+        company = company_display_name(raw_company)
         role = _clean(application.get("role") or parsed_job.get("job_title"))
         effective_profile = get_effective_voice_profile(
             company_name=company,
@@ -756,7 +757,7 @@ def generate_followups(
             root,
         )
         angle = _role_angle(parsed_job, career_data, effective_profile)
-        package_materials = _package_materials(root, role, company)
+        package_materials = _package_materials(root, role, raw_company)
         messages = {
             "recruiter_followup": _recruiter_message(
                 company, role, angle, post_application

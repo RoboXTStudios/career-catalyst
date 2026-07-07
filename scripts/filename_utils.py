@@ -11,6 +11,15 @@ COMPANY_SHORT_NAMES: Dict[str, str] = {
     "google": "Google",
     "netflix": "Netflix",
     "tencent": "Tencent",
+    "universal music group": "UMG",
+    "600 umg recordings": "UMG",
+    "600 umg recordings inc": "UMG",
+    "paramount": "Paramount",
+    "paramount streaming": "Paramount",
+    "aeg worldwide axs": "AEGAXS",
+    "warner music group": "WMG",
+    "warner chappell music": "WMG",
+    "warner chappell music inc": "WMG",
 }
 
 ROLE_SHORT_NAMES: Dict[str, str] = {
@@ -128,15 +137,40 @@ def compact_candidate_name(candidate_name: str) -> str:
     return _pascal_case(_tokens(candidate_name)) or "Candidate"
 
 
+def company_display_name(company: Any) -> str:
+    """Return the familiar public company name for human-facing materials."""
+    raw = re.sub(r"\s+", " ", str(company or "").strip())
+    key = _key(raw)
+    if not raw:
+        return "Company"
+    if "umg recordings" in key or "universal music group" in key:
+        return "Universal Music Group"
+    if "paramount" in key:
+        return "Paramount"
+    if "aeg" in key and ("axs" in key or "worldwide" in key):
+        return "AEG/AXS"
+    if "warner chappell" in key or "warner music group" in key:
+        return "WMG"
+    return re.sub(
+        r"\s+(?:incorporated|inc\.?|llc|ltd\.?|limited|corporation|corp\.?)$",
+        "",
+        raw,
+        flags=re.I,
+    ).strip()
+
+
 def short_company_name(company: str) -> str:
     """Return a concise company label, preferring known public-facing names."""
-    known_name = COMPANY_SHORT_NAMES.get(_key(company))
+    display_name = company_display_name(company)
+    known_name = COMPANY_SHORT_NAMES.get(_key(company)) or COMPANY_SHORT_NAMES.get(
+        _key(display_name)
+    )
     if known_name:
         return known_name
 
     tokens = [
         token
-        for token in _tokens(company)
+        for token in _tokens(display_name)
         if token.lower() not in COMPANY_SUFFIXES
     ]
     return _pascal_case(tokens[:4]) or "Company"

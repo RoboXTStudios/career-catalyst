@@ -11,7 +11,7 @@ from docx.shared import Inches, Pt, RGBColor
 
 try:
     from .company_voice import company_voice_context
-    from .filename_utils import build_upload_filename
+    from .filename_utils import build_upload_filename, company_display_name
     from .load_data import load_all_yaml
     from .parse_job import parse_job_description
     from .role_context import (
@@ -22,7 +22,7 @@ try:
     from .text_cleanup import cleanup_repeated_words
 except ImportError:
     from company_voice import company_voice_context
-    from filename_utils import build_upload_filename
+    from filename_utils import build_upload_filename, company_display_name
     from load_data import load_all_yaml
     from parse_job import parse_job_description
     from role_context import google_claim_violations, is_google_youtube_role
@@ -53,6 +53,9 @@ def load_generation_context(
         parsed_job,
         career_data["config"].get("company_voice_profiles", {}),
     )
+    parsed_job = dict(parsed_job)
+    parsed_job["company_legal_name"] = parsed_job.get("company")
+    parsed_job["company"] = company_display_name(parsed_job.get("company"))
     return {
         "root": root,
         "career_data": career_data,
@@ -421,25 +424,25 @@ def _technical_operations_cover_letter_content(context: Dict[str, Any]) -> str:
         else "technical and operational systems"
     )
     opening = (
-        f"The {role} role at {company} is compelling because it sits where technical delivery, "
-        "stakeholder alignment, and dependable execution meet. The opportunity to coordinate requirements, "
-        "timelines, dependencies, and delivery risk across business and technical teams matches the work I "
-        "have led throughout my career."
+        f"The {role} role at {company} caught my attention because it brings together the work I have "
+        "built my career around: giving complex initiatives a clear plan, aligning people with different "
+        "priorities, and helping teams deliver without losing sight of the work itself. I enjoy building "
+        "the operational foundation that lets creative and technical partners do their best work together."
     )
     experience = (
-        "At OMG23 / OMD Entertainment, Omnicom Media Group, I progressed to Group Director and led "
-        "cross-functional teams of 60+ across creative, marketing, media, analytics, technology, and "
-        "operations. Supporting Disney theatrical and streaming campaigns required translating business "
-        "priorities into executable plans, coordinating internal teams and external partners, resolving "
-        "handoff issues, and giving senior stakeholders a concise view of milestones, decisions, and risk."
+        "At OMG23 / OMD Entertainment, I progressed to Group Director and led cross-functional teams of "
+        "more than 60 people across creative, marketing, media, analytics, technology, and "
+        "operations. Supporting Disney theatrical and streaming campaigns required turning business "
+        "requirements into executable plans, coordinating internal teams and external partners, managing "
+        "dependencies, and giving senior stakeholders clear visibility into milestones, risks, and decisions. "
+        "The pace was fast, but the processes still had to be practical enough for teams to trust and use."
     )
     fit = (
-        f"I also built governance, QA standards, reporting handoffs, and repeatable workflows around {platform_focus}. "
-        "More recently, I designed CampaignOS to standardize intake and validation, surface operational risk "
-        "earlier, and improve measurement readiness. That combination of delivery leadership and hands-on "
-        "systems thinking helps me translate between technical and non-technical partners while keeping scope, "
-        "quality, and accountability visible. I am also accustomed to coordinating vendors and platform "
-        "owners when delivery depends on tools, data, approvals, and measurement teams outside the core project group."
+        f"That same mindset led me to create CampaignOS, an AI-powered operations platform built around {platform_focus}. "
+        "It standardizes intake and validation, automates QA, identifies operational risk earlier, "
+        "and improves reporting and measurement readiness. Building it strengthened my product thinking and my "
+        "ability to translate between technical and non-technical partners, especially when delivery depends on "
+        "tools, data, approvals, vendors, and teams outside the core project group."
     )
     adjacency = (
         " My entertainment background also gives me useful context for a live and fan-facing ecosystem where "
@@ -448,9 +451,10 @@ def _technical_operations_cover_letter_content(context: Dict[str, Any]) -> str:
         else ""
     )
     closing = (
-        f"I would welcome the chance to help {company} deliver complex initiatives with stronger coordination, "
-        "clearer technical and business handoffs, and fewer surprises at launch. I would bring senior stakeholder "
-        f"leadership, operational discipline, and a practical commitment to measurable delivery.{adjacency}"
+        f"I would be excited to bring that experience to {company}. I can help strengthen project delivery, "
+        "improve cross-functional collaboration, and create the consistency teams need to move faster without "
+        "sacrificing quality. I bring steady stakeholder leadership, a collaborative approach to problem solving, "
+        f"and genuine enthusiasm for building systems that enable great work.{adjacency}"
     )
     return _signed_content(opening, experience, fit, closing)
 
@@ -941,6 +945,8 @@ def _cover_letter_content(context: Dict[str, Any]) -> str:
         return _bandsintown_cover_letter_content(context)
     if profile_key in builders:
         return builders[profile_key](context)
+    if _is_creative_product_operations_role(context["parsed_job"]):
+        return _default_cover_letter_content(context)
     if _is_technical_operations_role(context["parsed_job"]):
         return _technical_operations_cover_letter_content(context)
     effective = context.get("effective_voice_profile", {})

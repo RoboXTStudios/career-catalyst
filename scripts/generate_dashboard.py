@@ -31,7 +31,7 @@ if __package__:
         VERIFICATION_STATUSES,
         normalize_job_source,
     )
-    from .filename_utils import short_company_name, short_role_name
+    from .filename_utils import company_display_name, short_company_name, short_role_name
     from .parse_job import JobParseError, parse_job_description
 else:
     from application_tracker import (
@@ -55,7 +55,7 @@ else:
         VERIFICATION_STATUSES,
         normalize_job_source,
     )
-    from filename_utils import short_company_name, short_role_name
+    from filename_utils import company_display_name, short_company_name, short_role_name
     from parse_job import JobParseError, parse_job_description
 
 
@@ -720,7 +720,7 @@ def structured_recommended_next_steps(
         steps.append(
             {
                 "tracker_id": record_dashboard_reference(record),
-                "company": str(record.get("company") or "Unknown company"),
+                "company": company_display_name(record.get("company") or "Unknown company"),
                 "title": str(record.get("role") or record.get("job_title") or "Unknown role"),
                 "recommendation": recommendation,
                 "action_type": action_type,
@@ -1349,7 +1349,7 @@ def _render_package(package: Dict[str, Any], dashboard_directory: Path) -> str:
         '<article class="application-card">'
         '<div class="application-heading">'
         '<div class="application-title">'
-        f'<p class="company">{html.escape(package["company"])}</p>'
+        f'<p class="company">{html.escape(company_display_name(package["company"]))}</p>'
         f'<h3>{html.escape(package["role"])}</h3>'
         "</div>"
         f'<div class="badges">{_render_badges(tracker)}</div>'

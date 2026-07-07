@@ -43,8 +43,11 @@ CURRENT_PHRASES = (
     "status - open",
 )
 DATE_PATTERNS = (
+    r'["\']?datePosted["\']?\s*:\s*["\']?(?P<date>\d{4}-\d{2}-\d{2})',
     r"(?:date posted|dateposted|posted(?: on)?|posting date|published)\s*[:\-]?\s*"
     r"(?P<date>\d{4}-\d{2}-\d{2})",
+    r"(?:date posted|dateposted|posted(?: on)?|posting date|published)\s*[:\-]?\s*"
+    r"(?P<date>\d{1,2}/\d{1,2}/\d{4})",
     r"(?:date posted|dateposted|posted(?: on)?|posting date|published)\s*[:\-]?\s*"
     r"(?P<date>(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|"
     r"Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)"
@@ -54,7 +57,14 @@ DATE_PATTERNS = (
 
 def _parse_date(value: str) -> Optional[date]:
     clean = re.sub(r"\s+", " ", str(value or "").strip())
-    for pattern in ("%Y-%m-%d", "%B %d, %Y", "%B %d %Y", "%b %d, %Y", "%b %d %Y"):
+    for pattern in (
+        "%Y-%m-%d",
+        "%m/%d/%Y",
+        "%B %d, %Y",
+        "%B %d %Y",
+        "%b %d, %Y",
+        "%b %d %Y",
+    ):
         try:
             return datetime.strptime(clean, pattern).date()
         except ValueError:
@@ -164,6 +174,7 @@ def detect_job_freshness(text: str, today: Optional[date] = None) -> Dict[str, A
         "is_stale": is_stale,
         "closed_reason": closed_match or possible_match,
         "posting_date": posting_date.isoformat() if posting_date else None,
+        "posting_date_label": posting_date.isoformat() if posting_date else "Posting date unknown",
         "age_days": age_days,
         "score": score,
     }

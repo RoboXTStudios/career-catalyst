@@ -25,7 +25,7 @@ from scripts.application_tracker import (
     workflow_status_bucket,
 )
 from scripts.dynamic_role_intelligence import get_effective_voice_profile
-from scripts.filename_utils import build_upload_filename
+from scripts.filename_utils import build_upload_filename, company_display_name
 from scripts.filename_utils import is_valid_role_title
 from scripts.generate_dashboard import (
     ACTION_FILTERS,
@@ -437,6 +437,28 @@ def focus_dashboard_role(session_state: Any, role_reference: str) -> str:
 def clear_focused_dashboard_role(session_state: Any) -> None:
     """Clear focused role state without changing dashboard filters."""
     session_state.pop("dashboard_focused_role_id", None)
+    session_state.pop("dashboard_materials_role_id", None)
+    session_state.pop("dashboard_source_verification_role_id", None)
+
+
+def focus_source_verification(session_state: Any, role_reference: str) -> str:
+    """Focus one role and reveal its editable source-verification panel."""
+    stable_id = focus_dashboard_role(session_state, role_reference)
+    if stable_id:
+        session_state["dashboard_source_verification_role_id"] = stable_id
+        session_state["dashboard_expand_all"] = False
+    return stable_id
+
+
+def needs_source_verification(record: Dict[str, Any]) -> bool:
+    """Return whether a role needs a useful manual source/date check."""
+    return bool(
+        not record.get("posting_date")
+        or str(record.get("freshness") or "").lower() in {"", "unknown freshness", "stale"}
+        or record.get("verification_status")
+        in {"Not Verified", "Cannot Verify", "Stale / Closed Risk"}
+        or record.get("source_verified") is False
+    )
 
 
 def safe_source_metadata(record: Dict[str, Any]) -> Dict[str, str]:
@@ -501,11 +523,22 @@ def update_dashboard_role(
         raise TrackerValidationError("A stable tracker id is required for dashboard updates.")
     status = normalize_status(values.get("status"))
     updates: Dict[str, Any] = {}
-    for field in ("priority", "notes", "next_action", "suggested_follow_up_date"):
+    for field in (
+        "priority",
+        "notes",
+        "next_action",
+        "suggested_follow_up_date",
+        "posting_date",
+        "verification_status",
+        "freshness",
+        "verification_notes",
+    ):
         if field in values:
             updates[field] = str(values.get(field) or "")
     if "show_on_dashboard" in values:
         updates["show_on_dashboard"] = bool(values["show_on_dashboard"])
+    if "source_verified" in values:
+        updates["source_verified"] = bool(values["source_verified"])
     if "follow_up_status" in values:
         follow_up_status = str(values.get("follow_up_status") or "").strip()
         updates["follow_up_status"] = (
@@ -768,6 +801,7 @@ def _metadata_html(application: Dict[str, Any], package: Dict[str, Any]) -> str:
         ("Location", application.get("location") or package.get("location")),
         ("Salary", application.get("salary_range") or package.get("salary_range")),
         ("Freshness", application.get("freshness_label") or application.get("freshness")),
+        ("Posting date", application.get("posting_date") or "Posting date unknown"),
         ("Freshness Risk", application.get("freshness_risk") or "Unknown"),
         ("Posting Status", application.get("posting_status") or "Verify manually"),
         ("Source", source_display),
@@ -827,6 +861,7 @@ def _primary_facts_html(application: Dict[str, Any], package: Dict[str, Any]) ->
         ("Salary", application.get("salary_range") or package.get("salary_range")),
         ("Source type", application.get("source_type") or "Unknown Source"),
         ("Verification", application.get("verification_status") or "Not Verified"),
+        ("Posting date", application.get("posting_date") or "Posting date unknown"),
         (
             "Applied / status date",
             application.get("submitted_date")
@@ -942,8 +977,33 @@ def _render_role_card(
     application: Dict[str, Any],
     package: Dict[str, Any],
     mode: str = "All Mode",
+    compact: bool = False,
 ) -> None:
     tracker_id = str(application.get("id") or "application")
+    if compact:
+        with st.container(border=True):
+            title_column, badge_column, action_column = st.columns((4, 2, 1))
+            title_column.markdown(
+                '<p class="cc-card-company">'
+                f"{html.escape(company_display_name(application.get('company') or 'Company not listed'))}</p>"
+                '<p class="cc-card-role">'
+                f"{html.escape(str(application.get('role') or 'Role not listed'))}</p>",
+                unsafe_allow_html=True,
+            )
+            badge_column.markdown(_status_badges(application), unsafe_allow_html=True)
+            if action_column.button(
+                "View role",
+                key=f"compact_view_{tracker_id}",
+                use_container_width=True,
+            ):
+                focus_dashboard_role(
+                    st.session_state, dashboard_role_reference(application)
+                )
+                st.rerun()
+            metadata = _primary_facts_html(application, package)
+            if metadata:
+                st.markdown(metadata, unsafe_allow_html=True)
+        return
     with st.container(border=True):
         flash_key = f"dashboard_flash_{tracker_id}"
         if flash_key in st.session_state:
@@ -966,7 +1026,7 @@ def _render_role_card(
         title_column, badge_column = st.columns((4, 2))
         title_column.markdown(
             '<p class="cc-card-company">'
-            f"{html.escape(str(application.get('company') or 'Company not listed'))}</p>"
+            f"{html.escape(company_display_name(application.get('company') or 'Company not listed'))}</p>"
             '<p class="cc-card-role">'
             f"{html.escape(str(application.get('role') or 'Role not listed'))}</p>",
             unsafe_allow_html=True,
@@ -995,7 +1055,10 @@ def _render_role_card(
             with st.expander("Match details", expanded=False):
                 st.markdown(_match_score_html(application), unsafe_allow_html=True)
 
-        with st.expander("Source verification details", expanded=False):
+        source_panel_open = str(
+            st.session_state.get("dashboard_source_verification_role_id") or ""
+        ) in {tracker_id, dashboard_role_reference(application)}
+        with st.expander("Source Verification", expanded=source_panel_open):
             posting_url = record_posting_url(application)
             if not posting_url:
                 st.caption("No posting URL stored.")
@@ -1017,6 +1080,72 @@ def _render_role_card(
                     field_warnings.append(str(warning_values))
             for warning in dict.fromkeys(field_warnings):
                 st.caption(f"• {warning}")
+            st.markdown("**Manual verification**")
+            posting_date = st.text_input(
+                "Posting date",
+                value=str(application.get("posting_date") or ""),
+                key=f"source_posting_date_{tracker_id}",
+                placeholder="YYYY-MM-DD",
+            )
+            verification_options = tuple(VERIFICATION_STATUSES)
+            current_verification = str(
+                application.get("verification_status") or "Not Verified"
+            )
+            if current_verification not in verification_options:
+                verification_options = (current_verification,) + verification_options
+            verified_status = st.selectbox(
+                "Verified status",
+                verification_options,
+                index=verification_options.index(current_verification),
+                key=f"source_verified_status_{tracker_id}",
+            )
+            source_verified = st.checkbox(
+                "Source verified",
+                value=bool(application.get("source_verified", False)),
+                key=f"source_verified_{tracker_id}",
+            )
+            freshness_options = (
+                "Unknown freshness",
+                "Fresh",
+                "Active",
+                "Aging",
+                "Stale",
+            )
+            current_freshness = str(
+                application.get("freshness") or "Unknown freshness"
+            )
+            if current_freshness not in freshness_options:
+                freshness_options = (current_freshness,) + freshness_options
+            freshness = st.selectbox(
+                "Freshness",
+                freshness_options,
+                index=freshness_options.index(current_freshness),
+                key=f"source_freshness_{tracker_id}",
+            )
+            source_notes = st.text_area(
+                "Verification notes",
+                value=str(application.get("verification_notes") or ""),
+                key=f"source_notes_{tracker_id}",
+            )
+            if st.button(
+                "Save source verification",
+                key=f"source_save_{tracker_id}",
+                use_container_width=True,
+            ):
+                update_dashboard_role(
+                    tracker_id,
+                    {
+                        "status": get_record_status(application),
+                        "posting_date": posting_date,
+                        "verification_status": verified_status,
+                        "source_verified": source_verified,
+                        "freshness": freshness,
+                        "verification_notes": source_notes,
+                    },
+                    PROJECT_ROOT,
+                )
+                st.session_state["dashboard_notice"] = "Source verification updated."
+                st.rerun()
 
         notes = str(application.get("notes") or "").strip()
         if notes:
@@ -1117,15 +1246,9 @@ def _render_role_card(
                 key=f"dashboard_more_verify_{tracker_id}",
                 use_container_width=True,
             ):
-                update_dashboard_role(
-                    tracker_id,
-                    {
-                        "status": get_record_status(application),
-                        "next_action": "Verify the current employer posting and apply path manually.",
-                    },
-                    PROJECT_ROOT,
+                focus_source_verification(
+                    st.session_state, dashboard_role_reference(application)
                 )
-                st.session_state["dashboard_notice"] = "Manual verification added."
                 st.rerun()
             if bucket == "Active" and more_columns[2].button(
                 "Mark Reviewed",
@@ -1242,6 +1365,7 @@ def _render_application_tracker(
     grouped = group_applications_by_status(
         applications, preserve_order=True, mode=mode
     )
+    compact_cards = not bool(st.session_state.get("dashboard_expand_all", False))
     for label, group in grouped.items():
         count_label = "role" if len(group) == 1 else "roles"
         heading = (
@@ -1258,6 +1382,7 @@ def _render_application_tracker(
                         application,
                         packages.get(str(application.get("id")), {}),
                         mode,
+                        compact=compact_cards,
                     )
             continue
         st.markdown(heading, unsafe_allow_html=True)
@@ -1269,6 +1394,7 @@ def _render_application_tracker(
                 application,
                 packages.get(str(application.get("id")), {}),
                 mode,
+                compact=compact_cards,
             )
 
 
@@ -1294,7 +1420,7 @@ def _render_recommended_next_steps(
                 f"\n{step['recommendation']}  "
                 f"\n`{step['action_type']}` · `{tracker_id}`"
             )
-            navigation_actions = st.columns(3)
+            navigation_actions = st.columns(4)
             if navigation_actions[0].button(
                 "View role",
                 key=f"next_view_{role_reference}",
@@ -1323,6 +1449,13 @@ def _render_recommended_next_steps(
             ):
                 focus_dashboard_role(st.session_state, role_reference)
                 st.session_state["dashboard_materials_role_id"] = tracker_id
+                st.rerun()
+            if needs_source_verification(record) and navigation_actions[3].button(
+                "Verify manually",
+                key=f"next_verify_{tracker_id}",
+                use_container_width=True,
+            ):
+                focus_source_verification(st.session_state, role_reference)
                 st.rerun()
 
             status = get_record_status(record)
@@ -1402,7 +1535,7 @@ def _render_recommended_next_steps(
 
 def _application_label(application: Dict[str, Any]) -> str:
     return (
-        f"{application.get('company', 'Company')} — "
+        f"{company_display_name(application.get('company', 'Company'))} — "
         f"{application.get('role', 'Role')} [{get_record_status(application)}]"
     )
 
@@ -1411,7 +1544,7 @@ def _application_selection_label(application: Dict[str, Any]) -> str:
     """Return a unique, status-independent label for role selection widgets."""
     tracker_id = str(application.get("id") or "unknown-id")
     return (
-        f"{application.get('company', 'Company')} — "
+        f"{company_display_name(application.get('company', 'Company'))} — "
         f"{application.get('role', 'Role')} · {tracker_id}"
     )
 
@@ -2373,6 +2506,23 @@ def _render_dashboard(st: Any) -> None:
         trust_label=trust_label,
     )
     records = sort_dashboard_records(records, sort_by)
+    workspace_controls = st.columns(3)
+    if workspace_controls[0].button(
+        "Collapse All", key="dashboard_collapse_all", use_container_width=True
+    ):
+        st.session_state["dashboard_expand_all"] = False
+        clear_focused_dashboard_role(st.session_state)
+        st.rerun()
+    if workspace_controls[1].button(
+        "Expand Focused", key="dashboard_expand_focused", use_container_width=True
+    ):
+        st.session_state["dashboard_expand_all"] = False
+        st.rerun()
+    if workspace_controls[2].button(
+        "Clear Focus", key="dashboard_clear_focus_control", use_container_width=True
+    ):
+        clear_focused_dashboard_role(st.session_state)
+        st.rerun()
     focused_id = _render_recommended_next_steps(
         st, records, mode, packages, focus_records=all_records
     )
