@@ -62,7 +62,7 @@ from scripts.package_generator import (
     generate_package,
     resolve_job_reference,
 )
-from scripts.parse_job import parse_job_description, salary_parsing_warning
+from scripts.parse_job import extract_metadata, parse_job_description, salary_parsing_warning
 from scripts.prospect_intake import ProspectIntakeError, create_prospect
 from scripts.score_match import score_job_data, score_job_match
 
@@ -105,12 +105,20 @@ OUTPUT_LABELS = {
     "ats_docx": "ATS resume",
     "cover_letter": "Cover letter",
     "cover_letter_text": "Cover letter text",
+    "cover_letter_docx": "Cover letter DOCX",
+    "resume_text": "Tailored resume text",
     "recruiter_message": "Recruiter message",
+    "recruiter_message_text": "Recruiter message text",
     "hiring_manager_message": "Hiring manager message",
+    "hiring_manager_message_text": "Hiring manager message text",
     "application_note": "Application note",
+    "application_note_text": "Application note text",
     "strategy_pack": "Strategy pack",
+    "strategy_pack_text": "Strategy pack text",
     "interview_prep": "Interview prep",
+    "interview_prep_text": "Interview prep text",
     "package_summary": "Package quality summary",
+    "package_summary_text": "Package quality summary text",
     "recruiter_followup": "Recruiter follow-up",
     "hiring_manager_followup": "Hiring manager follow-up",
     "warm_contact_message": "Warm contact message",
@@ -123,6 +131,8 @@ PACKAGE_MATERIAL_LABELS = {
     "Tailored Markdown Resume": "Tailored resume",
     "Styled DOCX": "Styled resume",
     "ATS DOCX": "ATS resume",
+    "Cover Letter DOCX": "Cover letter",
+    "Cover Letter Text": "Cover letter text",
     "Cover Letter": "Cover letter",
     "Recruiter Message": "Recruiter message",
     "Hiring Manager Message": "Hiring manager message",
@@ -137,6 +147,14 @@ PACKAGE_MATERIAL_LABELS = {
     "Referral Ask": "Referral ask",
     "PDF Resume": "PDF resume",
     "Resume Text": "Resume text",
+}
+MATERIAL_GROUPS = {
+    "Resumes": ("ATS DOCX", "Styled DOCX", "PDF Resume", "Resume Text", "Tailored Markdown Resume"),
+    "Letter/Application": ("Cover Letter DOCX", "Cover Letter Text", "Cover Letter", "Application Note"),
+    "Outreach": ("Recruiter Message", "Hiring Manager Message"),
+    "Strategy/Prep": ("Strategy Pack", "Interview Prep", "Package Summary"),
+    "Follow-up": ("Follow-Up Materials", "Recruiter Follow-Up", "Hiring Manager Follow-Up", "Warm Contact Message", "Referral Ask"),
+    "Source": ("Job Description",),
 }
 APP_CSS = """
 <style>
@@ -536,6 +554,10 @@ def contextual_primary_actions(
 ) -> tuple[tuple[str, str], ...]:
     """Return at most four calm, status-specific primary card actions."""
     bucket = workflow_status_bucket(record)
+    if record.get("match_score") is None and str(
+        record.get("recommended_action") or ""
+    ).startswith("Complete Import"):
+        return (("Open posting", "open_posting"),) if has_posting_url else ()
     if mode == "Cleanup Mode" and bucket in {"Active", "Reviewed"}:
         return (
             ("Pass", "pass"),
@@ -824,10 +846,20 @@ def _match_score_html(
 ) -> str:
     score = report.get("match_score")
     if score is None:
+        action = html.escape(
+            str(report.get("recommended_action") or "Complete Import / Paste Job Description")
+        )
+        summary = html.escape(
+            str(
+                report.get("match_summary")
+                or "Paste the job description and re-score before generating package."
+            )
+        )
         return (
             '<section class="cc-match-gate cc-match-unscored">'
             '<span class="cc-match-label">Match Score</span><strong>Not scored yet</strong>'
-            '<p class="cc-match-summary">Re-import or update this role to calculate the pre-package recommendation.</p>'
+            f'<div class="cc-match-action"><span>Recommended action</span><strong>{action}</strong></div>'
+            f'<p class="cc-match-summary">{summary}</p>'
             '</section>'
         )
 
@@ -872,25 +904,31 @@ def _material_button_rows(
     files: Dict[str, Path],
 ) -> None:
     materials = [
-        (display_label, Path(files[source_label]))
+        (source_label, display_label, Path(files[source_label]))
         for source_label, display_label in PACKAGE_MATERIAL_LABELS.items()
         if source_label in files and Path(files[source_label]).exists()
     ]
     if not materials:
         st.caption("No generated application materials yet.")
         return
-    for row_start in range(0, len(materials), 4):
-        row = materials[row_start : row_start + 4]
-        columns = st.columns(4)
-        for index, (label, path) in enumerate(row):
-            if columns[index].button(
-                label,
-                key=f"material_{tracker_id}_{row_start}_{index}",
-                use_container_width=True,
-                help=str(path),
-            ):
-                opened, message = open_local_path(path)
-                (st.success if opened else st.warning)(message)
+    by_label = {source_label: (display_label, path) for source_label, display_label, path in materials}
+    for group, labels in MATERIAL_GROUPS.items():
+        grouped = [(label, *by_label[label]) for label in labels if label in by_label]
+        if not grouped:
+            continue
+        st.markdown(f'<p class="cc-materials-label">{html.escape(group)}</p>', unsafe_allow_html=True)
+        for row_start in range(0, len(grouped), 4):
+            row = grouped[row_start : row_start + 4]
+            columns = st.columns(4)
+            for index, (source_label, label, path) in enumerate(row):
+                if columns[index].button(
+                    f"{label} .{path.suffix.lower().lstrip('.')}",
+                    key=f"material_{tracker_id}_{source_label}_{row_start}_{index}",
+                    use_container_width=True,
+                    help=str(path),
+                ):
+                    opened, message = open_local_path(path)
+                    (st.success if opened else st.warning)(message)
 
 
 def _render_role_card(
@@ -981,8 +1019,9 @@ def _render_role_card(
 
         files = package.get("files", {})
         material_count = sum(Path(path).exists() for path in files.values())
+        materials_focused = str(st.session_state.get("dashboard_materials_role_id") or "") == tracker_id
         with st.expander(
-            f"Application & outreach materials ({material_count})", expanded=False
+            f"Application & outreach materials ({material_count})", expanded=materials_focused
         ):
             st.caption(
                 "Current materials available."
@@ -1031,8 +1070,9 @@ def _render_role_card(
                 ):
                     continue
                 if action_key == "open_materials" and first_material:
-                    opened, message = open_local_path(first_material)
-                    (st.success if opened else st.warning)(message)
+                    focus_dashboard_role(st.session_state, dashboard_role_reference(application))
+                    st.session_state["dashboard_materials_role_id"] = tracker_id
+                    st.rerun()
                 elif action_key == "generate_package":
                     try:
                         with st.spinner("Generating application package…"):
@@ -1275,8 +1315,9 @@ def _render_recommended_next_steps(
                 use_container_width=True,
                 help=str(first_material),
             ):
-                opened, message = open_local_path(first_material)
-                (st.success if opened else st.warning)(message)
+                focus_dashboard_role(st.session_state, role_reference)
+                st.session_state["dashboard_materials_role_id"] = tracker_id
+                st.rerun()
 
             status = get_record_status(record)
             if mode == "Cleanup Mode" and workflow_status_bucket(record) not in {
@@ -1388,6 +1429,8 @@ def _show_output_paths(st: Any, outputs: Dict[str, str], key_prefix: str) -> Non
                 path,
                 f"{key_prefix}_{label}",
             )
+        else:
+            st.caption("Missing / not generated.")
 
 
 def _render_package_summary(st: Any, package_result: Dict[str, Any]) -> None:
@@ -1415,6 +1458,20 @@ def _render_package_summary(st: Any, package_result: Dict[str, Any]) -> None:
         ):
             value = quality.get(key, "—")
             column.metric(label, f"{value}/100" if isinstance(value, int) else value)
+    checklist = package_result.get("package_checklist") or []
+    if checklist:
+        st.markdown("**Generated package checklist**")
+        for index, item in enumerate(checklist):
+            label = str(item.get("display_label") or item.get("material_type") or "Material")
+            path_value = item.get("preferred_open_path")
+            if item.get("exists") and path_value and Path(str(path_value)).is_file():
+                path = Path(str(path_value))
+                row = st.columns((3, 1))
+                row[0].caption(f"Generated / available: {label} (.{path.suffix.lower().lstrip('.')})")
+                _show_open_button(row[1], "Open", path, f"package_check_{index}_{label}")
+            else:
+                reason = str(item.get("missing_reason") or "Missing / not generated")
+                st.caption(f"{reason}: {label}")
 
 
 def _initialize_intake_state(st: Any) -> None:
@@ -1461,6 +1518,26 @@ def detect_prospect_intelligence(values: Dict[str, Any]) -> Dict[str, Any]:
     return intelligence
 
 
+def reparse_prospect_fields(values: Dict[str, Any]) -> Dict[str, Any]:
+    """Refresh detected form metadata while preserving explicit user-entered identity."""
+    refreshed = dict(values)
+    description = str(values.get("job_description") or "")
+    metadata = extract_metadata(description) if description else {}
+    for target, source in (
+        ("company", "company"),
+        ("job_title", "job_title"),
+        ("location", "location"),
+        ("salary_range", "salary_range"),
+        ("posting_date", "posting_date"),
+        ("work_arrangement", "work_arrangement"),
+    ):
+        if metadata.get(source):
+            refreshed[target] = metadata[source]
+    refreshed["match_report"] = score_job_data(refreshed, PROJECT_ROOT)
+    refreshed["source_verification"] = normalize_job_source(refreshed)
+    return refreshed
+
+
 def import_failure_preview(url: str, error_message: str) -> Dict[str, Any]:
     """Preserve URL source trust when automated import needs a manual paste."""
     verification = normalize_job_source({"official_url": url})
@@ -1470,6 +1547,11 @@ def import_failure_preview(url: str, error_message: str) -> Dict[str, Any]:
         message = (
             "Greenhouse source verified, but the page did not provide a complete job "
             "description. Paste the job description manually before saving or generating a package."
+        )
+    elif verification.get("source_type") == "Direct Employer":
+        message = (
+            "Import partially failed. Official employer source detected. Paste the job "
+            "description below, then re-parse and re-score."
         )
     elif verification.get("source_type") in {
         "Industry Job Board",
@@ -1528,6 +1610,11 @@ def prospect_warning_messages(intelligence: Dict[str, Any]) -> list[str]:
         messages.append(
             "Greenhouse source verified, but the page did not provide a complete job description. "
             "Paste the job description manually before saving or generating a package."
+        )
+    if verification.get("source_type") == "Direct Employer" and len(description) < MINIMUM_DESCRIPTION_LENGTH:
+        messages.append(
+            "Import partially failed. Official employer source detected. Paste the job "
+            "description below, then re-parse and re-score."
         )
     if verification.get("source_type") == "Employer ATS" and (
         verification.get("freshness_risk") in {"Unknown", "High"}
@@ -1607,6 +1694,9 @@ def _render_add_prospect(st: Any) -> None:
             if verification.get("source_name") and verification.get("source_name") != "Unknown":
                 st.session_state["prospect_source"] = verification["source_name"]
             st.session_state["prospect_import_result"] = ("error", preview["message"])
+            st.session_state["prospect_next_action"] = (
+                "Paste the job description and re-score before generating package."
+            )
             return
         st.session_state["prospect_company"] = imported.get("company", "")
         st.session_state["prospect_role"] = imported.get("job_title", "")
@@ -1657,6 +1747,39 @@ def _render_add_prospect(st: Any) -> None:
         help="Manual paste is always supported and is required when a career page blocks import.",
     )
 
+    def reparse_current_fields() -> None:
+        refreshed = reparse_prospect_fields(
+            {
+                "official_url": st.session_state["prospect_url"],
+                "company": st.session_state["prospect_company"],
+                "job_title": st.session_state["prospect_role"],
+                "location": st.session_state["prospect_location"],
+                "salary_range": st.session_state["prospect_salary"],
+                "posting_date": st.session_state["prospect_posting_date"],
+                "work_arrangement": st.session_state["prospect_work_arrangement"],
+                "job_description": st.session_state["prospect_description"],
+            }
+        )
+        for state_key, value_key in (
+            ("prospect_company", "company"),
+            ("prospect_role", "job_title"),
+            ("prospect_location", "location"),
+            ("prospect_salary", "salary_range"),
+            ("prospect_posting_date", "posting_date"),
+            ("prospect_work_arrangement", "work_arrangement"),
+        ):
+            if refreshed.get(value_key):
+                st.session_state[state_key] = refreshed[value_key]
+        report = refreshed["match_report"]
+        st.session_state["prospect_import_result"] = (
+            "success" if report.get("match_score") is not None else "error",
+            "Re-parsed current fields and refreshed the match score."
+            if report.get("match_score") is not None
+            else "Import partially failed. Paste the job description below, then re-parse and re-score.",
+        )
+
+    st.button("Re-parse details and re-score", on_click=reparse_current_fields)
+
     values = {
         "official_url": st.session_state["prospect_url"],
         "company": st.session_state["prospect_company"],
@@ -1672,15 +1795,26 @@ def _render_add_prospect(st: Any) -> None:
         "notes": st.session_state["prospect_notes"],
         "next_action": st.session_state["prospect_next_action"],
     }
+    match_report = None
     if any(
         values.get(key)
         for key in ("company", "job_title", "job_description", "official_url")
     ):
-        _render_intelligence_preview(st, detect_prospect_intelligence(values))
+        intelligence = detect_prospect_intelligence(values)
+        match_report = intelligence.get("match_report")
+        _render_intelligence_preview(st, intelligence)
+    complete_for_save = bool(
+        values["company"]
+        and values["job_title"]
+        and len(values["job_description"].strip()) >= MINIMUM_DESCRIPTION_LENGTH
+    )
     save_column, generate_column = st.columns(2)
-    save_clicked = save_column.button("Save Prospect", use_container_width=True)
+    save_clicked = save_column.button(
+        "Save Prospect", use_container_width=True, disabled=not complete_for_save
+    )
     generate_clicked = generate_column.button(
-        "Save Prospect + Generate Package", use_container_width=True, type="primary"
+        "Save Prospect + Generate Package", use_container_width=True, type="primary",
+        disabled=not complete_for_save or bool(match_report and match_report.get("match_score") is None),
     )
     if not (save_clicked or generate_clicked):
         return
@@ -1692,6 +1826,8 @@ def _render_add_prospect(st: Any) -> None:
                 package = generate_package(intake["tracker_id"], PROJECT_ROOT)
                 st.session_state["last_package_outputs"] = package["outputs"]
                 st.session_state["last_package_result"] = package
+                focus_dashboard_role(st.session_state, intake["tracker_id"])
+                st.session_state["dashboard_materials_role_id"] = intake["tracker_id"]
             else:
                 dashboard = generate_dashboard(PROJECT_ROOT)
                 st.session_state["last_package_outputs"] = {
@@ -1830,6 +1966,8 @@ def _render_generate_package(st: Any) -> None:
             st.metric("Match score", result.get("match_score") or "—")
             st.session_state["last_package_outputs"] = result["outputs"]
             st.session_state["last_package_result"] = result
+            focus_dashboard_role(st.session_state, tracker_id)
+            st.session_state["dashboard_materials_role_id"] = tracker_id
     package_result = st.session_state.get("last_package_result")
     if package_result and package_result.get("tracker_id") != tracker_id:
         package_result = None

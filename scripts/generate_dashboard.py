@@ -73,6 +73,8 @@ LINK_ORDER = (
     "Tailored Markdown Resume",
     "Styled DOCX",
     "ATS DOCX",
+    "Cover Letter DOCX",
+    "Cover Letter Text",
     "Cover Letter",
     "Recruiter Message",
     "Hiring Manager Message",
@@ -243,7 +245,7 @@ def enrich_dashboard_record(
                 "source_warnings",
                 "recommended_next_step",
             }
-            and verification.get("source_confidence") == "High"
+            and verification.get("source_confidence") in {"High", "Medium"}
             and (enriched.get("original_source_url") or enriched.get("official_url"))
         ):
             enriched[key] = value
@@ -689,7 +691,11 @@ def structured_recommended_next_steps(
     steps: List[Dict[str, Any]] = []
     for priority, record in enumerate(values[:5], start=1):
         bucket = workflow_status_bucket(record)
-        if bucket == "Pass":
+        if record.get("match_score") is None and str(
+            record.get("recommended_action") or ""
+        ).startswith("Complete Import"):
+            action_type = "complete_import"
+        elif bucket == "Pass":
             action_type = "passed"
         elif bucket == "Hidden / Invalid":
             action_type = "hidden"
@@ -703,7 +709,14 @@ def structured_recommended_next_steps(
             action_type = "verify"
         else:
             action_type = "review"
-        recommendation = recommended_next_steps([record], mode)[0]
+        recommendation = (
+            str(
+                record.get("next_action")
+                or "Paste the job description and re-score before generating package."
+            )
+            if action_type == "complete_import"
+            else recommended_next_steps([record], mode)[0]
+        )
         steps.append(
             {
                 "tracker_id": record_dashboard_reference(record),
@@ -873,57 +886,42 @@ def _asset_label(path: Path) -> Optional[str]:
         return "Styled DOCX"
     if parent == "docx" and name.endswith("_ats.docx"):
         return "ATS DOCX"
-    if parent == "messages" and (
-        name.endswith("_cover_letter.md") or name.endswith("_coverletter.md")
-    ):
+    if parent == "messages" and re.search(r"_(?:cover_letter|coverletter)\.docx$", name):
+        return "Cover Letter DOCX"
+    if parent == "messages" and re.search(r"_(?:cover_letter|coverletter)\.txt$", name):
+        return "Cover Letter Text"
+    if parent == "messages" and re.search(r"_(?:cover_letter|coverletter)\.md$", name):
         return "Cover Letter"
-    if parent == "messages" and (
-        name.endswith("_recruiter_message.md") or name.endswith("_recruitermessage.md")
-    ):
+    if parent == "messages" and re.search(r"_(?:recruiter_message|recruitermessage)\.(?:txt|md)$", name):
         return "Recruiter Message"
-    if parent == "messages" and (
-        name.endswith("_hiring_manager_message.md")
-        or name.endswith("_hiringmanagermessage.md")
-    ):
+    if parent == "messages" and re.search(r"_(?:hiring_manager_message|hiringmanagermessage)\.(?:txt|md)$", name):
         return "Hiring Manager Message"
-    if parent == "messages" and (
-        name.endswith("_application_note.md") or name.endswith("_applicationnote.md")
-    ):
+    if parent == "messages" and re.search(r"_(?:application_note|applicationnote)\.(?:txt|md)$", name):
         return "Application Note"
-    if parent == "strategy_packs" and (
-        name.endswith("_strategy_pack.md") or name.endswith("_strategypack.md")
-    ):
+    if parent == "strategy_packs" and re.search(r"_(?:strategy_pack|strategypack)\.(?:txt|md)$", name):
         return "Strategy Pack"
-    if parent == "strategy_packs" and (
-        name.endswith("_interview_prep.md") or name.endswith("_interviewprep.md")
-    ):
+    if parent == "strategy_packs" and re.search(r"_(?:interview_prep|interviewprep)\.(?:txt|md)$", name):
         return "Interview Prep"
-    if parent == "strategy_packs" and (
-        name.endswith("_package_summary.md") or name.endswith("_packagesummary.md")
-    ):
+    if parent == "strategy_packs" and re.search(r"_(?:package_summary|packagesummary)\.(?:txt|md)$", name):
         return "Package Summary"
     if parent == "followups" and (
-        name.endswith("_followup_strategy.md")
-        or name.endswith("_followupstrategy.md")
+        re.search(r"_(?:followup_strategy|followupstrategy)\.(?:txt|md)$", name)
     ):
         return "Follow-Up Materials"
     if parent == "followups" and (
-        name.endswith("_recruiter_followup.md")
-        or name.endswith("_recruiterfollowup.md")
+        re.search(r"_(?:recruiter_followup|recruiterfollowup)\.(?:txt|md)$", name)
     ):
         return "Recruiter Follow-Up"
     if parent == "followups" and (
-        name.endswith("_hiring_manager_followup.md")
-        or name.endswith("_hiringmanagerfollowup.md")
+        re.search(r"_(?:hiring_manager_followup|hiringmanagerfollowup)\.(?:txt|md)$", name)
     ):
         return "Hiring Manager Follow-Up"
     if parent == "followups" and (
-        name.endswith("_warm_contact_message.md")
-        or name.endswith("_warmcontactmessage.md")
+        re.search(r"_(?:warm_contact_message|warmcontactmessage)\.(?:txt|md)$", name)
     ):
         return "Warm Contact Message"
     if parent == "followups" and (
-        name.endswith("_referral_ask.md") or name.endswith("_referralask.md")
+        re.search(r"_(?:referral_ask|referralask)\.(?:txt|md)$", name)
     ):
         return "Referral Ask"
     return None
@@ -998,9 +996,14 @@ def _attach_assets(root: Path, packages: List[Dict[str, Any]]) -> List[Tuple[str
         package = packages_by_identity[package_identity]
         existing = package["files"].get(label)
         candidates = list(dict.fromkeys([*(paths), *([existing] if existing else [])]))
-        current = max(
+        format_rank = {".docx": 0, ".pdf": 1, ".txt": 2, ".md": 3}
+        current = min(
             candidates,
-            key=lambda path: (path.stat().st_mtime, path.name.lower()),
+            key=lambda path: (
+                format_rank.get(path.suffix.lower(), 9),
+                -path.stat().st_mtime,
+                path.name.lower(),
+            ),
         )
         package["files"][label] = current
         for older in candidates:
@@ -1232,11 +1235,21 @@ def _render_match_score(
 ) -> str:
     score = tracker.get("match_score")
     if score is None:
+        action = html.escape(
+            str(tracker.get("recommended_action") or "Complete Import / Paste Job Description")
+        )
+        summary = html.escape(
+            str(
+                tracker.get("match_summary")
+                or "Paste the job description and re-score before generating package."
+            )
+        )
         return (
             '<section class="match-gate match-unscored" aria-label="Match Score">'
             '<div><span class="match-label">Match Score</span>'
             '<strong>Not scored yet</strong></div>'
-            '<p>Re-import or update this role to calculate the pre-package recommendation.</p>'
+            f'<div class="match-action"><span>Recommended action</span><strong>{action}</strong></div>'
+            f'<p>{summary}</p>'
             '</section>'
         )
 

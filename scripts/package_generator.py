@@ -24,6 +24,11 @@ try:
     from .job_freshness import detect_job_freshness
     from .opportunity_scoring import score_opportunity
     from .package_quality import calculate_package_quality, save_package_summary
+    from .package_materials import (
+        create_text_companion,
+        preferred_material_paths,
+        validate_package_outputs,
+    )
     from .parse_job import JobParseError, parse_job_description
     from .prospect_intake import add_prospect_from_job_file
     from .score_match import persisted_match_fields, score_job_match
@@ -47,6 +52,11 @@ except ImportError:
     from job_freshness import detect_job_freshness
     from opportunity_scoring import score_opportunity
     from package_quality import calculate_package_quality, save_package_summary
+    from package_materials import (
+        create_text_companion,
+        preferred_material_paths,
+        validate_package_outputs,
+    )
     from parse_job import JobParseError, parse_job_description
     from prospect_intake import add_prospect_from_job_file
     from score_match import persisted_match_fields, score_job_match
@@ -151,6 +161,14 @@ def _output_path(result: Dict[str, Any]) -> Optional[str]:
     return str(value) if value else None
 
 
+def _safe_docx_export(exporter: Any, source_path: Any, root: Path, label: str) -> Dict[str, Any]:
+    """Keep DOCX convenience exports from crashing an otherwise usable package."""
+    try:
+        return exporter(source_path, root)
+    except Exception as error:
+        return {"error": f"{label} missing / unsupported: {error}"}
+
+
 def generate_package(
     job_file_or_tracker_id: PathInput,
     project_root: Optional[PathInput] = None,
@@ -174,6 +192,10 @@ def generate_package(
         )
         freshness = detect_job_freshness(str(parsed.get("raw_text") or ""))
         score = score_job_match(job_reference, root)
+        if score.get("match_score") is None:
+            raise PackageGenerationError(
+                "Package generation paused: paste the complete job description and re-score first."
+            )
         application = update_prospect(
             str(application["id"]),
             {
@@ -206,8 +228,12 @@ def generate_package(
         )
         opportunity = score_opportunity(parsed, score, intelligence, freshness)
         resume = tailor_resume("executive_operations", job_reference, root)
-        styled = export_styled_docx(resume["output_path"], root)
-        ats = export_ats_docx(resume["output_path"], root)
+        styled = _safe_docx_export(
+            export_styled_docx, resume["output_path"], root, "Styled resume DOCX"
+        )
+        ats = _safe_docx_export(
+            export_ats_docx, resume["output_path"], root, "ATS resume DOCX"
+        )
         cover_letter = generate_cover_letter(job_reference, root)
         recruiter = generate_message("recruiter", job_reference, root)
         hiring_manager = generate_message("hiring-manager", job_reference, root)
@@ -247,7 +273,60 @@ def generate_package(
             except Exception as error:
                 # The core package remains useful if optional networking materials fail.
                 followup_error = str(error)
+
+        outputs = {
+            "job_file": str(job_path),
+            "resume_markdown": _output_path(resume),
+            "styled_docx": _output_path(styled),
+            "ats_docx": _output_path(ats),
+            "cover_letter": _output_path(cover_letter),
+            "cover_letter_text": cover_letter.get("txt_output_path"),
+            "cover_letter_docx": cover_letter.get("docx_output_path"),
+            "recruiter_message": _output_path(recruiter),
+            "recruiter_message_text": recruiter.get("txt_output_path"),
+            "hiring_manager_message": _output_path(hiring_manager),
+            "hiring_manager_message_text": hiring_manager.get("txt_output_path"),
+            "application_note": _output_path(application_note),
+            "application_note_text": application_note.get("txt_output_path"),
+            "strategy_pack": _output_path(strategy_pack),
+            "interview_prep": _output_path(interview_prep),
+            "package_summary": _output_path(package_summary),
+            **followup_outputs,
+        }
+        for source_key, text_key in (
+            ("resume_markdown", "resume_text"),
+            ("strategy_pack", "strategy_pack_text"),
+            ("interview_prep", "interview_prep_text"),
+            ("package_summary", "package_summary_text"),
+            ("recruiter_followup", "recruiter_followup_text"),
+            ("hiring_manager_followup", "hiring_manager_followup_text"),
+            ("warm_contact_message", "warm_contact_message_text"),
+            ("referral_ask", "referral_ask_text"),
+            ("followup_strategy", "followup_strategy_text"),
+        ):
+            companion = create_text_companion(outputs.get(source_key))
+            if companion:
+                outputs[text_key] = companion
+        outputs = {key: value for key, value in outputs.items() if value}
+        material_errors = {
+            key: value
+            for key, value in {
+                "styled_docx": styled.get("error"),
+                "ats_docx": ats.get("error"),
+                "cover_letter_docx": cover_letter.get("docx_error"),
+            }.items()
+            if value
+        }
+        checklist = validate_package_outputs(outputs, material_errors)
+        application = update_prospect(
+            tracker_id,
+            {"material_paths": preferred_material_paths(checklist)},
+            root,
+        )
         dashboard = generate_dashboard(root)
+        dashboard_path = _output_path(dashboard)
+        if dashboard_path:
+            outputs["dashboard"] = dashboard_path
     except PackageGenerationError:
         raise
     except (OSError, TrackerValidationError, ValueError) as error:
@@ -256,22 +335,6 @@ def generate_package(
         # Existing generators expose several focused exception types. Preserve their useful text.
         raise PackageGenerationError(f"Could not generate package: {error}") from error
 
-    outputs = {
-        "job_file": str(job_path),
-        "resume_markdown": _output_path(resume),
-        "styled_docx": _output_path(styled),
-        "ats_docx": _output_path(ats),
-        "cover_letter": _output_path(cover_letter),
-        "cover_letter_text": cover_letter.get("txt_output_path"),
-        "recruiter_message": _output_path(recruiter),
-        "hiring_manager_message": _output_path(hiring_manager),
-        "application_note": _output_path(application_note),
-        "strategy_pack": _output_path(strategy_pack),
-        "interview_prep": _output_path(interview_prep),
-        "package_summary": _output_path(package_summary),
-        **followup_outputs,
-        "dashboard": _output_path(dashboard),
-    }
     return {
         "tracker_id": tracker_id,
         "status": application.get("status"),
@@ -294,5 +357,7 @@ def generate_package(
         "opportunity": opportunity,
         "package_quality": quality,
         "followup_error": followup_error,
-        "outputs": {key: value for key, value in outputs.items() if value},
+        "material_errors": material_errors,
+        "outputs": outputs,
+        "package_checklist": checklist,
     }

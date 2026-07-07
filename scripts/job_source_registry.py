@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from datetime import date, datetime
 from typing import Any, Dict, Iterable, Optional
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 try:
     from .job_freshness import detect_job_freshness
@@ -78,6 +78,26 @@ def _source(
 
 
 SOURCE_REGISTRY = (
+    _source(
+        "aeg_worldwide",
+        "AEG Worldwide Careers",
+        ("aegworldwide.com",),
+        "Direct Employer",
+        1,
+        "Direct Employer",
+        False,
+        notes="Official AEG Worldwide employer careers source.",
+    ),
+    _source(
+        "axs",
+        "AEG/AXS Careers",
+        ("axs.com",),
+        "Direct Employer",
+        1,
+        "Direct Employer",
+        False,
+        notes="Official AEG/AXS employer source.",
+    ),
     _source("workday", "Workday", ("myworkdayjobs.com", "workday.com", "workdayjobs.com"), "Employer ATS", 1, "Verified Company Source", False),
     _source("greenhouse", "Greenhouse", ("greenhouse.io",), "Employer ATS", 1, "Verified Company Source", False),
     _source("lever", "Lever", ("lever.co",), "Employer ATS", 1, "Verified Company Source", False),
@@ -468,12 +488,20 @@ def normalize_job_source(record: Dict[str, Any], today: Optional[date] = None) -
     elif verification_status == "Industry Board" and not canonical_url:
         next_step = "Verify on employer site before generating package or applying."
         warnings.append("Industry job board source requires employer-site verification")
+    elif source_type in EMPLOYER_TYPES and age_days is None:
+        next_step = "Official employer source detected; verify posting freshness if date is missing."
     else:
         next_step = "Proceed using the canonical employer application."
 
     source_name = registry["display_name"] if original_url or apply_url else supplied_source if inferred_employer else "Unknown"
     if original_url and registry["source_type"] == "Unknown Source":
         source_name = _display_from_domain(original_url)
+
+    greenhouse_job_id = ""
+    if original_url:
+        greenhouse_job_id = str(
+            (parse_qs(urlparse(original_url).query).get("gh_jid") or [""])[0]
+        ).strip()
 
     return {
         "original_source_url": original_url,
@@ -490,6 +518,7 @@ def normalize_job_source(record: Dict[str, Any], today: Optional[date] = None) -
             else "Medium" if inferred_employer
             else "Low"
         ),
+        "requires_verification": bool(registry["requires_verification"]),
         "source_warnings": list(dict.fromkeys(warnings)),
         "freshness_risk": freshness["freshness_risk"],
         "freshness": freshness_signal["category"],
@@ -502,4 +531,6 @@ def normalize_job_source(record: Dict[str, Any], today: Optional[date] = None) -
             else ""
         ),
         "recommended_next_step": next_step,
+        "greenhouse_job_id": greenhouse_job_id,
+        "greenhouse_backed_hint": bool(greenhouse_job_id),
     }

@@ -4,6 +4,11 @@ import re
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
 
+from docx import Document
+from docx.enum.text import WD_LINE_SPACING
+from docx.oxml.ns import qn
+from docx.shared import Inches, Pt, RGBColor
+
 try:
     from .company_voice import company_voice_context
     from .filename_utils import build_upload_filename
@@ -125,6 +130,8 @@ def save_material(
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(content.rstrip() + "\n", encoding="utf-8")
+    text_path = output_path.with_suffix(".txt")
+    text_path.write_text(content.rstrip() + "\n", encoding="utf-8")
 
     return {
         "job_title": parsed_job.get("job_title"),
@@ -136,6 +143,7 @@ def save_material(
         "role_family": context.get("role_family", "creative_marketing_ops"),
         "voice_confidence": context.get("effective_voice_profile", {}).get("confidence"),
         "output_path": str(output_path),
+        "txt_output_path": str(text_path),
         "word_count": word_count,
         "repair_attempts": attempts,
     }
@@ -337,6 +345,114 @@ def _validate_cover_letter_repetition(content: str) -> None:
                 )
         if "role role" in lowered:
             raise ApplicationMaterialError("Cover letter paragraph contains repeated role wording.")
+    lowered_content = content.lower()
+    for phrase in (
+        "clear ownership",
+        "move the work forward",
+        "calm senior judgment",
+        "builder's mindset",
+        "practical operating style",
+        "recurring friction",
+    ):
+        if lowered_content.count(phrase) > 1:
+            raise ApplicationMaterialError(
+                f"Cover letter repeats the operating theme '{phrase}'."
+            )
+
+
+def _job_text(parsed_job: Dict[str, Any]) -> str:
+    return " ".join(
+        str(value or "")
+        for value in (parsed_job.get("job_title"), parsed_job.get("raw_text"))
+    ).lower()
+
+
+def _editorial_evidence_relevant(parsed_job: Dict[str, Any]) -> bool:
+    text = _job_text(parsed_job)
+    return any(
+        signal in text
+        for signal in (
+            "content",
+            "editorial",
+            "community",
+            "audience programming",
+            "storytelling",
+            "brand voice",
+            "publication",
+            "social media",
+            "creator",
+            "communications",
+            "culture",
+        )
+    )
+
+
+def _is_technical_operations_role(parsed_job: Dict[str, Any]) -> bool:
+    text = _job_text(parsed_job)
+    return any(
+        signal in text
+        for signal in (
+            "technical project manager",
+            "technical program manager",
+            "project management",
+            "product operations",
+            "marketing operations",
+            "martech",
+            "adtech",
+            "ad tech",
+            "crm",
+            "systems operations",
+        )
+    )
+
+
+def _technical_operations_cover_letter_content(context: Dict[str, Any]) -> str:
+    """Build four distinct paragraphs for TPM, martech, product-ops, and systems roles."""
+    parsed_job = context["parsed_job"]
+    company = str(parsed_job.get("company") or "the organization")
+    role = str(parsed_job.get("job_title") or "technical operations role")
+    text = _job_text(parsed_job)
+    live_context = any(
+        signal in text for signal in ("live entertainment", "ticketing", "concert", "fan experience", "axs", "aeg")
+    )
+    platform_focus = (
+        "campaign, adtech, and martech systems"
+        if any(signal in text for signal in ("martech", "adtech", "ad tech", "campaign", "marketing technology"))
+        else "technical and operational systems"
+    )
+    opening = (
+        f"The {role} role at {company} is compelling because it sits where technical delivery, "
+        "stakeholder alignment, and dependable execution meet. The opportunity to coordinate requirements, "
+        "timelines, dependencies, and delivery risk across business and technical teams matches the work I "
+        "have led throughout my career."
+    )
+    experience = (
+        "At OMG23 / OMD Entertainment, Omnicom Media Group, I progressed to Group Director and led "
+        "cross-functional teams of 60+ across creative, marketing, media, analytics, technology, and "
+        "operations. Supporting Disney theatrical and streaming campaigns required translating business "
+        "priorities into executable plans, coordinating internal teams and external partners, resolving "
+        "handoff issues, and giving senior stakeholders a concise view of milestones, decisions, and risk."
+    )
+    fit = (
+        f"I also built governance, QA standards, reporting handoffs, and repeatable workflows around {platform_focus}. "
+        "More recently, I designed CampaignOS to standardize intake and validation, surface operational risk "
+        "earlier, and improve measurement readiness. That combination of delivery leadership and hands-on "
+        "systems thinking helps me translate between technical and non-technical partners while keeping scope, "
+        "quality, and accountability visible. I am also accustomed to coordinating vendors and platform "
+        "owners when delivery depends on tools, data, approvals, and measurement teams outside the core project group."
+    )
+    adjacency = (
+        " My entertainment background also gives me useful context for a live and fan-facing ecosystem where "
+        "reliability affects both internal teams and the customer experience."
+        if live_context
+        else ""
+    )
+    closing = (
+        f"I would welcome the chance to help {company} deliver complex initiatives with stronger coordination, "
+        "clearer technical and business handoffs, and fewer surprises at launch. I would bring senior stakeholder "
+        f"leadership, operational discipline, and a practical commitment to measurable delivery.{adjacency}"
+    )
+    return _signed_content(opening, experience, fit, closing)
 
 
 def _campaignos_is_relevant(context: Dict[str, Any]) -> bool:
@@ -759,7 +875,8 @@ def _dynamic_cover_letter_content(context: Dict[str, Any]) -> str:
         "I have returned to throughout my career."
     )
 
-    if role_family in {"editorial_content_strategy", "community_growth"}:
+    editorial_relevant = _editorial_evidence_relevant(parsed_job)
+    if role_family in {"editorial_content_strategy", "community_growth"} and editorial_relevant:
         experience = (
             "My experience combines large-scale entertainment marketing with editorial and community "
             "work. I created and managed Multiverse, an internal publication focused on creativity, "
@@ -784,7 +901,7 @@ def _dynamic_cover_letter_content(context: Dict[str, Any]) -> str:
             "challenge was broadly transferable: create clarity and consistency without slowing the team down."
         )
 
-    if role_family in {"editorial_content_strategy", "community_growth"}:
+    if role_family in {"editorial_content_strategy", "community_growth"} and editorial_relevant:
         proof = (
             "Those editorial projects strengthened more than my writing. They required content planning, "
             "audience judgment, contributor management, repeatable workflows, and care for tone across different "
@@ -824,6 +941,8 @@ def _cover_letter_content(context: Dict[str, Any]) -> str:
         return _bandsintown_cover_letter_content(context)
     if profile_key in builders:
         return builders[profile_key](context)
+    if _is_technical_operations_role(context["parsed_job"]):
+        return _technical_operations_cover_letter_content(context)
     effective = context.get("effective_voice_profile", {})
     if effective.get("company_category") == "gaming_fandom":
         return _default_cover_letter_content(context)
@@ -866,4 +985,51 @@ def generate_cover_letter(
     text_path = markdown_path.with_suffix(".txt")
     text_path.write_text(plain_text, encoding="utf-8")
     result["txt_output_path"] = str(text_path)
+    try:
+        docx_path = _export_cover_letter_docx(context, plain_text, markdown_path)
+    except Exception as error:
+        # DOCX is a user-facing convenience; Markdown and TXT remain usable if it fails.
+        result["docx_error"] = f"DOCX missing / unsupported: {error}"
+    else:
+        result["docx_output_path"] = str(docx_path)
     return result
+
+
+def _export_cover_letter_docx(
+    context: Dict[str, Any], plain_text: str, markdown_path: Path
+) -> Path:
+    """Export a restrained, application-ready DOCX using explicit business-letter tokens."""
+    document = Document()
+    section = document.sections[0]
+    section.page_width = Inches(8.5)
+    section.page_height = Inches(11)
+    section.top_margin = Inches(1)
+    section.right_margin = Inches(1)
+    section.bottom_margin = Inches(1)
+    section.left_margin = Inches(1)
+    section.header_distance = Inches(0.492)
+    section.footer_distance = Inches(0.492)
+
+    normal = document.styles["Normal"]
+    normal.font.name = "Calibri"
+    normal.font.size = Pt(11)
+    normal.font.color.rgb = RGBColor(0x20, 0x27, 0x2D)
+    normal._element.rPr.rFonts.set(qn("w:ascii"), "Calibri")
+    normal._element.rPr.rFonts.set(qn("w:hAnsi"), "Calibri")
+    normal.paragraph_format.space_before = Pt(0)
+    normal.paragraph_format.space_after = Pt(6)
+    normal.paragraph_format.line_spacing_rule = WD_LINE_SPACING.MULTIPLE
+    normal.paragraph_format.line_spacing = 1.10
+
+    for block in re.split(r"\n\s*\n", plain_text.strip()):
+        paragraph = document.add_paragraph()
+        lines = block.splitlines()
+        for index, line in enumerate(lines):
+            if index:
+                paragraph.add_run().add_break()
+            paragraph.add_run(line)
+        paragraph.paragraph_format.keep_together = True
+
+    docx_path = markdown_path.with_suffix(".docx")
+    document.save(docx_path)
+    return docx_path

@@ -119,6 +119,47 @@ OBVIOUS_NON_FIT_SIGNALS = (
     "software engineering degree required",
 )
 
+MINIMUM_MEANINGFUL_DESCRIPTION_LENGTH = 80
+
+
+def incomplete_match_report(job_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Return a safe no-score gate when required import fields are incomplete."""
+    company = str(job_data.get("company") or "").strip()
+    title = str(job_data.get("job_title") or job_data.get("role") or "").strip()
+    description = str(
+        job_data.get("job_description") or job_data.get("description") or ""
+    ).strip()
+    missing = []
+    if not company:
+        missing.append("company")
+    if not title:
+        missing.append("role title")
+    if len(description) < MINIMUM_MEANINGFUL_DESCRIPTION_LENGTH:
+        missing.append("job description")
+    if not missing:
+        return None
+    return {
+        "job_title": title or None,
+        "company": company or None,
+        "match_score": None,
+        "match_band": "Not scored",
+        "match_tier": "Not scored",
+        "match_summary": "Import is incomplete, so Career Catalyst has not scored this role.",
+        "match_strengths": [],
+        "match_gaps": ["Missing " + ", ".join(missing) + "."],
+        "recommended_action": "Complete Import / Paste Job Description",
+        "next_action": "Paste the job description and re-score before generating package.",
+        "confidence": "Low",
+        "top_matching_skills": [],
+        "top_matching_projects": [],
+        "top_matching_experience": [],
+        "missing_keywords": [],
+        "recommended_resume_profile": None,
+        "tailoring_notes": [],
+        "incomplete_import": True,
+        "missing_required_fields": missing,
+    }
+
 
 def _flatten_strings(value: Any) -> List[str]:
     if value is None:
@@ -787,6 +828,9 @@ def _score_parsed_job(parsed_job: Dict[str, Any], root: Path) -> Dict[str, Any]:
 
 def score_job_data(job_data: Dict[str, Any], project_root: Optional[PathInput] = None) -> Dict[str, Any]:
     """Score unsaved intake data so the UI can show the gate before generation."""
+    incomplete = incomplete_match_report(job_data)
+    if incomplete:
+        return incomplete
     root = Path(project_root) if project_root is not None else Path.cwd()
     raw_text = str(job_data.get("raw_text") or job_data.get("job_description") or "")
     metadata_lines = "\n".join(
@@ -820,4 +864,18 @@ def score_job_match(job_path: PathInput, project_root: Optional[PathInput] = Non
     """Return the legacy tailoring report plus the Sprint 13 decision gate."""
     root = Path(project_root) if project_root is not None else Path.cwd()
     parsed_job = parse_job_description(root / job_path)
+    raw_text = str(parsed_job.get("raw_text") or "")
+    description_match = re.search(
+        r"^##\s+Job Description\s*$\n(.*)", raw_text, flags=re.I | re.M | re.S
+    )
+    incomplete = incomplete_match_report(
+        {
+            **parsed_job,
+            "job_description": (
+                description_match.group(1).strip() if description_match else raw_text
+            ),
+        }
+    )
+    if incomplete:
+        return incomplete
     return _score_parsed_job(parsed_job, root)
