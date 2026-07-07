@@ -1,7 +1,8 @@
 """Build concise, upload-friendly filenames for generated career materials."""
 
+import hashlib
 import re
-from typing import Dict, Iterable, List
+from typing import Any, Dict, Iterable, List, Optional
 
 
 COMPANY_SHORT_NAMES: Dict[str, str] = {
@@ -37,6 +38,18 @@ ROLE_ABBREVIATIONS = {
 }
 COMPANY_SUFFIXES = {"inc", "incorporated", "llc", "ltd", "limited", "corporation", "corp"}
 ACRONYMS = {"ai": "AI", "ats": "ATS", "qa": "QA", "dss": "DSS"}
+MAX_FILENAME_STEM_LENGTH = 120
+MAX_ROLE_TITLE_LENGTH = 120
+TITLE_SENTENCE_MARKERS = (
+    "you will",
+    "this role",
+    "responsible for",
+    "reports to",
+    "as director",
+    "as senior",
+    "the role",
+    "will own",
+)
 
 
 def _key(value: str) -> str:
@@ -53,6 +66,61 @@ def _pascal_case(tokens: Iterable[str]) -> str:
         lowered = token.lower()
         parts.append(ACRONYMS.get(lowered, lowered.capitalize()))
     return "".join(parts)
+
+
+def role_title_issue(value: Any) -> Optional[str]:
+    """Return why a value looks like description prose rather than a role title."""
+    title = re.sub(r"\s+", " ", str(value or "").strip())
+    lowered = title.lower()
+    if not title:
+        return "missing"
+    if len(title) > MAX_ROLE_TITLE_LENGTH:
+        return "too long"
+    if any(marker in lowered for marker in TITLE_SENTENCE_MARKERS):
+        return "contains job-description language"
+    sentence_text = re.sub(r"\b(?:Sr|Jr|St)\.", "", title, flags=re.I)
+    if (
+        re.search(r"[.!?]\s*$", sentence_text)
+        or re.search(r"[.!?]\s+[A-Z]", sentence_text)
+        or len(re.findall(r"[.!?]", sentence_text)) > 1
+    ):
+        return "looks like a sentence"
+    if len(title.split()) > 18:
+        return "contains too many words"
+    if title.count(",") >= 4 and re.search(
+        r"\b(?:own|lead|manage|build|drive|support|develop|deliver)\b", lowered
+    ):
+        return "looks like job-description copy"
+    return None
+
+
+def is_valid_role_title(value: Any) -> bool:
+    return role_title_issue(value) is None
+
+
+def safe_filename(
+    stem: Any,
+    extension: str,
+    *,
+    lowercase: bool = False,
+    max_stem_length: int = MAX_FILENAME_STEM_LENGTH,
+) -> str:
+    """Return a filesystem-safe, length-capped filename with stable collision hash."""
+    safe_extension = "".join(re.findall(r"[A-Za-z0-9]+", str(extension or ""))).lower()
+    if not safe_extension:
+        raise ValueError("A filename extension is required.")
+    raw_stem = re.sub(r"\s+", " ", str(stem or "").strip()).replace("&", " and ")
+    clean_stem = re.sub(r"[^A-Za-z0-9]+", "_", raw_stem).strip("_")
+    clean_stem = re.sub(r"_+", "_", clean_stem)
+    if lowercase:
+        clean_stem = clean_stem.lower()
+    if not clean_stem:
+        raise ValueError("A non-empty filename stem is required.")
+    if len(clean_stem) > max_stem_length:
+        digest = hashlib.sha256(clean_stem.encode("utf-8")).hexdigest()[:8]
+        prefix_length = max(1, max_stem_length - len(digest) - 1)
+        clean_stem = f"{clean_stem[:prefix_length].rstrip('_')}_{digest}"
+    return f"{clean_stem}.{safe_extension}"
 
 
 def compact_candidate_name(candidate_name: str) -> str:
@@ -107,14 +175,12 @@ def build_upload_filename(
     extension: str,
 ) -> str:
     """Build a safe filename from candidate, role, company, and export type."""
-    safe_extension = "".join(re.findall(r"[A-Za-z0-9]+", extension)).lower()
-    if not safe_extension:
-        raise ValueError("A filename extension is required.")
-
+    if not is_valid_role_title(role_title):
+        raise ValueError("Please confirm the role title before generating filenames.")
     components = (
         compact_candidate_name(candidate_name),
         short_role_name(role_title),
         short_company_name(company),
         short_export_type(export_type),
     )
-    return "_".join(components) + f".{safe_extension}"
+    return safe_filename("_".join(components), extension)

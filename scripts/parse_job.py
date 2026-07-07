@@ -5,6 +5,11 @@ from collections import Counter
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
+try:
+    from .filename_utils import is_valid_role_title
+except ImportError:
+    from filename_utils import is_valid_role_title
+
 
 IMPORTANT_PHRASES = (
     "enterprise strategy",
@@ -294,13 +299,14 @@ def _extract_location(text: str) -> Optional[str]:
 
 def _extract_job_title(text: str) -> Optional[str]:
     labeled_title = _extract_labeled_value(text, METADATA_LABELS["job_title"])
-    if labeled_title:
+    if labeled_title and is_valid_role_title(labeled_title):
         return labeled_title
 
     for line in text.splitlines():
         match = re.match(r"^\s*#\s+(.+?)\s*$", line)
         if match:
-            return match.group(1).strip()
+            title = match.group(1).strip()
+            return title if is_valid_role_title(title) else None
     return None
 
 

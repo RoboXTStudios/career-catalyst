@@ -26,6 +26,7 @@ from scripts.application_tracker import (
 )
 from scripts.dynamic_role_intelligence import get_effective_voice_profile
 from scripts.filename_utils import build_upload_filename
+from scripts.filename_utils import is_valid_role_title
 from scripts.generate_dashboard import (
     ACTION_FILTERS,
     DASHBOARD_MODES,
@@ -55,6 +56,7 @@ from scripts.generate_followups import (
     generate_missing_followups,
 )
 from scripts.job_importer import MINIMUM_DESCRIPTION_LENGTH, JobImportError, import_job_from_url
+from scripts.job_identity import infer_job_fields_from_url, preferred_role_title
 from scripts.job_freshness import detect_job_freshness
 from scripts.job_source_registry import normalize_job_source
 from scripts.package_generator import (
@@ -636,6 +638,10 @@ def build_prospect_payload(values: Dict[str, Any]) -> Dict[str, Any]:
     """Normalize widget values without importing or executing Streamlit."""
     return {
         "official_url": str(values.get("official_url") or "").strip(),
+        "source_url": str(values.get("source_url") or values.get("official_url") or "").strip(),
+        "original_source_url": str(values.get("original_source_url") or values.get("official_url") or "").strip(),
+        "canonical_apply_url": str(values.get("canonical_apply_url") or values.get("official_url") or "").strip(),
+        "job_id": str(values.get("job_id") or "").strip(),
         "company": str(values.get("company") or "").strip(),
         "job_title": str(values.get("job_title") or "").strip(),
         "location": str(values.get("location") or "").strip(),
@@ -1477,6 +1483,9 @@ def _render_package_summary(st: Any, package_result: Dict[str, Any]) -> None:
 def _initialize_intake_state(st: Any) -> None:
     defaults = {
         "prospect_url": "",
+        "prospect_original_source_url": "",
+        "prospect_canonical_url": "",
+        "prospect_job_id": "",
         "prospect_company": "",
         "prospect_role": "",
         "prospect_location": "",
@@ -1523,9 +1532,12 @@ def reparse_prospect_fields(values: Dict[str, Any]) -> Dict[str, Any]:
     refreshed = dict(values)
     description = str(values.get("job_description") or "")
     metadata = extract_metadata(description) if description else {}
+    fallback = infer_job_fields_from_url(values.get("official_url"))
+    refreshed["job_title"] = preferred_role_title(
+        values.get("job_title"), metadata.get("job_title"), values.get("official_url")
+    )
     for target, source in (
         ("company", "company"),
-        ("job_title", "job_title"),
         ("location", "location"),
         ("salary_range", "salary_range"),
         ("posting_date", "posting_date"),
@@ -1533,6 +1545,9 @@ def reparse_prospect_fields(values: Dict[str, Any]) -> Dict[str, Any]:
     ):
         if metadata.get(source):
             refreshed[target] = metadata[source]
+    for key in ("company", "location", "job_id", "source"):
+        if not refreshed.get(key) and fallback.get(key):
+            refreshed[key] = fallback[key]
     refreshed["match_report"] = score_job_data(refreshed, PROJECT_ROOT)
     refreshed["source_verification"] = normalize_job_source(refreshed)
     return refreshed
@@ -1550,7 +1565,7 @@ def import_failure_preview(url: str, error_message: str) -> Dict[str, Any]:
         )
     elif verification.get("source_type") == "Direct Employer":
         message = (
-            "Import partially failed. Official employer source detected. Paste the job "
+            "Import partially failed. The source URL was saved. Paste the job "
             "description below, then re-parse and re-score."
         )
     elif verification.get("source_type") in {
@@ -1565,6 +1580,89 @@ def import_failure_preview(url: str, error_message: str) -> Dict[str, Any]:
             "the employer site before applying or generating a full package."
         )
     return {"message": message, "verification": verification}
+
+
+def apply_prospect_url_import_state(
+    session_state: Any, importer: Any = None
+) -> Dict[str, Any]:
+    """Run the shared Enter/button URL import path while preserving safe fallback state."""
+    import_callable = importer or import_job_from_url
+    url = str(session_state.get("prospect_url") or "").strip()
+    session_state["prospect_url"] = url
+    session_state["prospect_original_source_url"] = url
+    fallback = infer_job_fields_from_url(url)
+    verification = normalize_job_source({"official_url": url})
+    canonical = str(verification.get("canonical_apply_url") or url)
+    session_state["prospect_canonical_url"] = canonical
+    if fallback.get("job_id"):
+        session_state["prospect_job_id"] = fallback["job_id"]
+    if verification.get("source_name") and verification.get("source_name") != "Unknown":
+        session_state["prospect_source"] = verification["source_name"]
+    for state_key, fallback_key in (
+        ("prospect_company", "company"),
+        ("prospect_location", "location"),
+    ):
+        if fallback.get(fallback_key) and not session_state.get(state_key):
+            session_state[state_key] = fallback[fallback_key]
+    current_title = session_state.get("prospect_role")
+    fallback_title = preferred_role_title(current_title, "", url)
+    if fallback_title:
+        session_state["prospect_role"] = fallback_title
+
+    try:
+        imported = import_callable(url)
+    except (JobImportError, OSError, ValueError):
+        message = (
+            "Import partially failed. The source URL was saved. Paste the job "
+            "description below, then re-parse and re-score."
+        )
+        session_state["prospect_import_result"] = ("error", message)
+        session_state["prospect_next_action"] = (
+            "Paste the job description and re-score before generating package."
+        )
+        return {"status": "partial", "message": message, "verification": verification}
+
+    imported_title = imported.get("job_title")
+    selected_title = preferred_role_title(current_title, imported_title, url)
+    title_rejected = bool(imported_title and not is_valid_role_title(imported_title))
+    if selected_title:
+        session_state["prospect_role"] = selected_title
+    elif title_rejected:
+        session_state["prospect_role"] = ""
+    for state_key, imported_key in (
+        ("prospect_company", "company"),
+        ("prospect_location", "location"),
+        ("prospect_salary", "salary_range"),
+        ("prospect_posting_date", "posting_date"),
+        ("prospect_description", "job_description"),
+        ("prospect_job_id", "job_id"),
+    ):
+        if imported.get(imported_key):
+            session_state[state_key] = imported[imported_key]
+    if imported.get("source_name") or imported.get("source"):
+        session_state["prospect_source"] = imported.get("source_name") or imported.get("source")
+    incomplete = bool(
+        not session_state.get("prospect_company")
+        or not session_state.get("prospect_role")
+        or len(str(session_state.get("prospect_description") or "").strip())
+        < MINIMUM_DESCRIPTION_LENGTH
+    )
+    message = (
+        "Imported title looked like job description text. Please confirm the role title before saving."
+        if title_rejected
+        else "Import partially failed. Paste the job description below, then re-parse and re-score."
+        if incomplete
+        else "Imported the role details. Review them before saving."
+    )
+    session_state["prospect_import_result"] = (
+        "error" if title_rejected or incomplete else "success",
+        message,
+    )
+    return {
+        "status": "partial" if title_rejected or incomplete else "success",
+        "message": message,
+        "imported": imported,
+    }
 
 
 def prospect_warning_messages(intelligence: Dict[str, Any]) -> list[str]:
@@ -1683,36 +1781,13 @@ def _render_add_prospect(st: Any) -> None:
     )
     _initialize_intake_state(st)
 
-    st.text_input("Job listing URL", key="prospect_url")
+    def trigger_url_import() -> None:
+        apply_prospect_url_import_state(st.session_state)
 
-    def try_import() -> None:
-        try:
-            imported = import_job_from_url(st.session_state.get("prospect_url", ""))
-        except JobImportError as error:
-            preview = import_failure_preview(st.session_state.get("prospect_url", ""), str(error))
-            verification = preview["verification"]
-            if verification.get("source_name") and verification.get("source_name") != "Unknown":
-                st.session_state["prospect_source"] = verification["source_name"]
-            st.session_state["prospect_import_result"] = ("error", preview["message"])
-            st.session_state["prospect_next_action"] = (
-                "Paste the job description and re-score before generating package."
-            )
-            return
-        st.session_state["prospect_company"] = imported.get("company", "")
-        st.session_state["prospect_role"] = imported.get("job_title", "")
-        st.session_state["prospect_location"] = imported.get("location", "")
-        st.session_state["prospect_salary"] = imported.get("salary_range", "")
-        st.session_state["prospect_posting_date"] = imported.get("posting_date", "")
-        st.session_state["prospect_source"] = imported.get(
-            "source_name", imported.get("source", "Official career page")
-        )
-        st.session_state["prospect_description"] = imported.get("job_description", "")
-        st.session_state["prospect_import_result"] = (
-            "success",
-            "Imported the role details. Review them before saving.",
-        )
-
-    st.button("Try Import From URL", on_click=try_import)
+    st.text_input(
+        "Job listing URL", key="prospect_url", on_change=trigger_url_import
+    )
+    st.button("Try Import From URL", on_click=trigger_url_import)
     import_result = st.session_state.get("prospect_import_result")
     if import_result:
         level, message = import_result
@@ -1782,6 +1857,10 @@ def _render_add_prospect(st: Any) -> None:
 
     values = {
         "official_url": st.session_state["prospect_url"],
+        "source_url": st.session_state["prospect_url"],
+        "original_source_url": st.session_state["prospect_original_source_url"],
+        "canonical_apply_url": st.session_state["prospect_canonical_url"],
+        "job_id": st.session_state["prospect_job_id"],
         "company": st.session_state["prospect_company"],
         "job_title": st.session_state["prospect_role"],
         "location": st.session_state["prospect_location"],
@@ -1803,9 +1882,18 @@ def _render_add_prospect(st: Any) -> None:
         intelligence = detect_prospect_intelligence(values)
         match_report = intelligence.get("match_report")
         _render_intelligence_preview(st, intelligence)
+    title_is_valid = is_valid_role_title(values["job_title"])
+    if values["job_title"] and not title_is_valid:
+        st.warning("Please confirm the role title before saving.")
+    if (
+        values["company"]
+        and title_is_valid
+        and len(values["job_description"].strip()) < MINIMUM_DESCRIPTION_LENGTH
+    ):
+        st.warning("Paste the job description before generating a package.")
     complete_for_save = bool(
         values["company"]
-        and values["job_title"]
+        and title_is_valid
         and len(values["job_description"].strip()) >= MINIMUM_DESCRIPTION_LENGTH
     )
     save_column, generate_column = st.columns(2)

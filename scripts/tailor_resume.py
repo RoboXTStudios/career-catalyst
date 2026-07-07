@@ -5,12 +5,14 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 try:
+    from .filename_utils import safe_filename
     from .load_data import load_all_yaml
     from .parse_job import parse_job_description
     from .role_context import is_google_youtube_role
     from .score_match import score_job_match
     from .text_cleanup import cleanup_repeated_words
 except ImportError:
+    from filename_utils import safe_filename
     from load_data import load_all_yaml
     from parse_job import parse_job_description
     from role_context import is_google_youtube_role
@@ -410,13 +412,6 @@ def _professional_development(career_data: Dict[str, Any]) -> List[str]:
     return certification_lines
 
 
-def _company_slug(company: Optional[str]) -> str:
-    if not company:
-        return "sample"
-    slug = re.sub(r"[^A-Za-z0-9]+", "_", company).strip("_")
-    return slug or "sample"
-
-
 def _render_markdown(
     career_data: Dict[str, Any],
     parsed_job: Dict[str, Any],
@@ -549,8 +544,9 @@ def tailor_resume(
 
     export_dir = root / "exports" / "markdown"
     export_dir.mkdir(parents=True, exist_ok=True)
-    output_path = export_dir / (
-        f"Trisha_Lynch_{resume_profile}_{_company_slug(parsed_job.get('company'))}_Resume.md"
+    output_path = export_dir / safe_filename(
+        f"Trisha_Lynch_{resume_profile}_{parsed_job.get('company') or 'sample'}_Resume",
+        "md",
     )
     output_path.write_text(markdown, encoding="utf-8")
 

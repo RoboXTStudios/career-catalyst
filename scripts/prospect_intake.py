@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import errno
 import re
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
@@ -9,6 +10,8 @@ from typing import Any, Dict, Optional, Union
 try:
     from .application_tracker import add_prospect, make_tracker_id
     from .dynamic_role_intelligence import get_effective_voice_profile
+    from .filename_utils import is_valid_role_title, safe_filename
+    from .job_identity import infer_job_fields_from_url, preferred_role_title
     from .job_importer import (
         MINIMUM_DESCRIPTION_LENGTH,
         JobImportError,
@@ -23,6 +26,8 @@ try:
 except ImportError:
     from application_tracker import add_prospect, make_tracker_id
     from dynamic_role_intelligence import get_effective_voice_profile
+    from filename_utils import is_valid_role_title, safe_filename
+    from job_identity import infer_job_fields_from_url, preferred_role_title
     from job_importer import (
         MINIMUM_DESCRIPTION_LENGTH,
         JobImportError,
@@ -63,10 +68,6 @@ class ProspectIntakeError(Exception):
     """Raised when prospect intake is missing required local data."""
 
 
-def _slug(value: Any) -> str:
-    return re.sub(r"[^a-z0-9]+", "_", str(value or "").lower()).strip("_")
-
-
 def _project_relative(path: Path, root: Path) -> str:
     try:
         return path.resolve().relative_to(root.resolve()).as_posix()
@@ -74,11 +75,18 @@ def _project_relative(path: Path, root: Path) -> str:
         return str(path.resolve())
 
 
-def _job_filename(role: str, company: str) -> str:
-    clean = "_".join(value for value in (_slug(role), _slug(company)) if value)
-    if not clean:
+def _job_filename(role: str, company: str, job_id: Any = "") -> str:
+    if not company or not is_valid_role_title(role):
         raise ProspectIntakeError("A company and role title are required to name the job file.")
-    return f"{clean}.md"
+    stem = "_".join(
+        str(value).strip() for value in (company, role, job_id) if str(value or "").strip()
+    )
+    try:
+        return safe_filename(stem, "md", lowercase=True)
+    except ValueError as error:
+        raise ProspectIntakeError(
+            "Career Catalyst prevented an unsafe filename. Confirm the title and try again."
+        ) from error
 
 
 def _infer_pasted_identity(description: str) -> tuple[str, str]:
@@ -218,6 +226,13 @@ def create_prospect(
     role = str(normalized_input.get("role") or normalized_input.get("job_title") or "").strip()
     description = str(normalized_input.get("job_description") or "").strip()
     raw_url = str(normalized_input.get("official_url") or "").strip()
+    url_fallback = infer_job_fields_from_url(raw_url)
+    if url_fallback:
+        company = company or url_fallback.get("company", "")
+        role = preferred_role_title(role, "", raw_url)
+        for key in ("location", "job_id", "source"):
+            if url_fallback.get(key) and not normalized_input.get(key):
+                normalized_input[key] = url_fallback[key]
     if raw_url and (not company or not role or len(description) < MINIMUM_DESCRIPTION_LENGTH):
         try:
             imported = import_job_from_url(raw_url)
@@ -229,14 +244,18 @@ def create_prospect(
                 if value and not normalized_input.get(key):
                     normalized_input[key] = value
             company = str(normalized_input.get("company") or "").strip()
-            role = str(normalized_input.get("role") or normalized_input.get("job_title") or "").strip()
+            role = preferred_role_title(
+                role,
+                normalized_input.get("role") or normalized_input.get("job_title"),
+                raw_url,
+            )
             description = str(normalized_input.get("job_description") or "").strip()
 
     if description and (not company or not role):
         metadata = extract_metadata(description)
         inferred_company, inferred_role = _infer_pasted_identity(description)
         company = company or inferred_company
-        role = role or inferred_role
+        role = preferred_role_title(role, inferred_role, raw_url)
         normalized_input.setdefault("posting_date", metadata.get("posting_date") or "")
         normalized_input.setdefault("location", metadata.get("location") or "")
         normalized_input.setdefault("work_arrangement", metadata.get("work_arrangement") or "")
@@ -244,6 +263,7 @@ def create_prospect(
     else:
         metadata = extract_metadata(description) if description else {}
     company, role = _clean_identity(company, role)
+    role = preferred_role_title("", role, raw_url)
     location = (
         str(normalized_input.get("location") or metadata.get("location") or "").strip()
         or "Not specified"
@@ -260,6 +280,8 @@ def create_prospect(
         raise ProspectIntakeError(str(error)) from error
     if not company or not role:
         raise ProspectIntakeError("Company and role title are required.")
+    if not is_valid_role_title(role):
+        raise ProspectIntakeError("Please confirm the role title before saving.")
     if len(description) < MINIMUM_DESCRIPTION_LENGTH:
         raise ProspectIntakeError(
             "Paste the job description text before saving (at least 80 characters)."
@@ -277,6 +299,9 @@ def create_prospect(
             "salary_range": salary_range,
             "job_description": description,
             "official_url": official_url,
+            "source_url": official_url,
+            "original_source_url": official_url,
+            "job_id": str(normalized_input.get("job_id") or "").strip(),
         }
     )
     verification = normalize_job_source(normalized)
@@ -288,11 +313,20 @@ def create_prospect(
 
     job_directory = root / "jobs"
     job_directory.mkdir(parents=True, exist_ok=True)
-    job_path = job_directory / _job_filename(role, company)
+    job_path = job_directory / _job_filename(
+        role, company, normalized_input.get("job_id")
+    )
     try:
         job_path.write_text(markdown, encoding="utf-8")
     except OSError as error:
-        raise ProspectIntakeError(f"Unable to save job file {job_path}: {error}") from error
+        if error.errno == errno.ENAMETOOLONG:
+            raise ProspectIntakeError(
+                "Career Catalyst could not save this prospect because the generated filename "
+                "was too long. It will use a shorter safe filename after you confirm the role title."
+            ) from error
+        raise ProspectIntakeError(
+            f"Career Catalyst could not save this prospect. Confirm the title and try again: {error}"
+        ) from error
 
     intelligence = get_effective_voice_profile(
         company_name=company,
@@ -314,6 +348,8 @@ def create_prospect(
             "priority": str(job_data.get("priority") or "Medium"),
             "source": verification["source_name"],
             "official_url": official_url,
+            "source_url": official_url,
+            "job_id": str(normalized.get("job_id") or ""),
             "location": location,
             "salary_range": salary_range,
             "work_arrangement": work_arrangement,

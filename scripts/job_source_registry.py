@@ -79,6 +79,16 @@ def _source(
 
 SOURCE_REGISTRY = (
     _source(
+        "paramount",
+        "Paramount Careers",
+        ("careers.paramount.com", "paramount.com"),
+        "Direct Employer",
+        1,
+        "Direct Employer",
+        False,
+        notes="Official Paramount employer careers source.",
+    ),
+    _source(
         "aeg_worldwide",
         "AEG Worldwide Careers",
         ("aegworldwide.com",),

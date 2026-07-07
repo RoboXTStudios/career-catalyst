@@ -12,9 +12,13 @@ from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 try:
+    from .filename_utils import is_valid_role_title
+    from .job_identity import infer_job_fields_from_url, preferred_role_title
     from .job_source_registry import classify_source, normalize_job_source
     from .parse_job import extract_metadata
 except ImportError:
+    from filename_utils import is_valid_role_title
+    from job_identity import infer_job_fields_from_url, preferred_role_title
     from job_source_registry import classify_source, normalize_job_source
     from parse_job import extract_metadata
 
@@ -239,6 +243,8 @@ def _clean_identity(title: Any, company: Any = "") -> tuple[str, str]:
             flags=re.I,
         ).strip()
     clean_company = re.sub(r"\s*(?:jobs?|careers?|job\s+opening|hiring)\s*$", "", clean_company, flags=re.I).strip()
+    if clean_title and not is_valid_role_title(clean_title):
+        clean_title = ""
     return clean_title, clean_company
 
 
@@ -251,10 +257,14 @@ def _source_name(url: str) -> str:
 
 def create_job_markdown(job_data: Dict[str, Any]) -> str:
     """Render normalized job data into Career Catalyst's Markdown format."""
+    source_url = job_data.get("official_url") or job_data.get("source_url") or ""
+    fallback = infer_job_fields_from_url(source_url)
     title, company = _clean_identity(
         job_data.get("job_title") or job_data.get("role") or "",
         job_data.get("company") or "",
     )
+    title = preferred_role_title("", title, source_url)
+    company = company or fallback.get("company", "")
     description = str(job_data.get("job_description") or job_data.get("description") or "").strip()
     if not title or not company or len(description) < MINIMUM_DESCRIPTION_LENGTH:
         raise _manual_fallback(
@@ -270,6 +280,7 @@ def create_job_markdown(job_data: Dict[str, Any]) -> str:
     lines = [f"# {title}", "", f"Company: {company}"]
     optional_fields = (
         ("Tracker ID", job_data.get("tracker_id")),
+        ("Job ID", job_data.get("job_id") or fallback.get("job_id")),
         ("Location", location),
         ("Work arrangement", work_arrangement),
         ("Salary range", job_data.get("salary_range")),
@@ -349,8 +360,11 @@ def parse_imported_job(raw_text: str, url: str) -> Dict[str, Any]:
         r"^##\s+Job Description\s*$\n(.*)", raw_text, flags=re.I | re.M | re.S
     )
     description = (description_match.group(1) if description_match else raw_text).strip()
+    fallback = infer_job_fields_from_url(url)
     title, company = _clean_identity(metadata.get("job_title"), metadata.get("company"))
-    location = metadata.get("location") or "Not specified"
+    title = preferred_role_title("", title, url)
+    company = company or fallback.get("company", "")
+    location = metadata.get("location") or fallback.get("location") or "Not specified"
     work_arrangement = metadata.get("work_arrangement") or _work_arrangement(location, description)
     parsed: Dict[str, Any] = {
         "job_title": title,
@@ -359,6 +373,7 @@ def parse_imported_job(raw_text: str, url: str) -> Dict[str, Any]:
         "work_arrangement": work_arrangement or "Not specified",
         "salary_range": metadata.get("salary_range") or "",
         "posting_date": metadata.get("posting_date") or "",
+        "job_id": fallback.get("job_id") or "",
         "source": _source_name(url),
         "official_url": url,
         "job_description": description,
