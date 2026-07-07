@@ -69,13 +69,13 @@ applications:
   - Strategy and Operations Lead YouTube Auction Brand
   - Strategy Ops Lead YouTube Auction Brand
   status: Rejected
-  priority: High
+  priority: Do Not Pursue
   source: Official Google Careers
   submitted_date: '2026-06-27'
   salary_range: US $152,000-$222,000 USD + 15% bonus target + equity + benefits
   notes: Submitted application using Google-tailored styled resume and cover letter. Strong YouTube, GTM operations, product activation, large advertiser, Google advertising product familiarity, and operational excellence fit.
-  next_action: Monitor for response and identify Google/YouTube professional contacts for possible follow-up.
-  show_on_dashboard: true
+  next_action: ''
+  show_on_dashboard: false
   company_category: product_technology
   role_family: gtm_product_activation
   company_voice_profile: google_youtube
@@ -256,7 +256,7 @@ applications:
   company_aliases: []
   role: Director, Transformation
   role_aliases: []
-  status: Pass
+  status: Invalid/Hidden
   priority: Do Not Pursue
   source: Official Ashby
   notes: 'Did not ask for Cover Letter in application process. '
@@ -312,7 +312,7 @@ applications:
   confidence: Medium
   suggested_follow_up_date: '2026-07-04'
   follow_up_status: Not applicable
-  status_updated_at: '2026-07-06T08:30:01'
+  status_updated_at: '2026-07-07T13:40:14'
 - id: disney_entertainment_and_espn_product_technology_director_strategy_operations_product_technology
   company: Disney Entertainment and ESPN Product & Technology
   company_aliases: []
@@ -436,8 +436,8 @@ applications:
   company_aliases: []
   role: Senior Copywriter & Content Strategist
   role_aliases: []
-  status: Pass
-  priority: Medium
+  status: Invalid/Hidden
+  priority: Low
   source: Official career page
   notes: ''
   next_action: Review fit and generate application package.
@@ -490,7 +490,9 @@ applications:
   - Posting age is unknown; verify that the role is still active.
   recommended_action: Review First
   confidence: Medium
-  status_updated_at: '2026-07-06T08:29:33'
+  status_updated_at: '2026-07-07T13:40:08'
+  suggested_follow_up_date: ''
+  follow_up_status: Not applicable
 - id: the_walt_disney_company_corporate_director_talent_growth
   company: The Walt Disney Company (Corporate)
   company_aliases: []
@@ -1017,7 +1019,7 @@ applications:
   priority: High
   source: Workday
   notes: https://umusic.wd5.myworkdayjobs.com/en-US/UMGUS/userHome
-  next_action: Review fit and generate application package.
+  next_action: Verify the current employer posting and apply path manually.
   show_on_dashboard: true
   official_url: https://umusic.wd5.myworkdayjobs.com/UMGUS/job/New-York-New-York/Senior-Director--Team-Operations_UMG-26857?utm_source=chatgpt.com
   location: Santa Monica, CA
@@ -1166,3 +1168,263 @@ applications:
   submitted_date: '2026-07-06'
   suggested_follow_up_date: '2026-07-11'
   follow_up_status: Not due yet
+- id: paramount_director_product_martech_and_engagement_platforms
+  company: Paramount
+  company_aliases: []
+  role: Director, Product, MarTech and Engagement Platforms
+  role_aliases: []
+  status: Invalid/Hidden
+  priority: Low
+  source: Paramount Careers
+  notes: ''
+  next_action: Verify the current employer posting and apply path manually.
+  show_on_dashboard: false
+  official_url: https://careers.paramount.com/job/Burbank-Director%2C-Product%2C-MarTech-and-Engagement-Platforms-CA-91505/1395690500/
+  source_url: https://careers.paramount.com/job/Burbank-Director%2C-Product%2C-MarTech-and-Engagement-Platforms-CA-91505/1395690500/
+  job_id: '1395690500'
+  location: Burbank, CA
+  salary_range: $176,800.00 - 265,200.00
+  work_arrangement: On-site
+  field_warnings:
+  - Posting date missing or malformed
+  - Salary detected from job text. Review before applying.
+  job_file: jobs/paramount_director_product_martech_and_engagement_platforms_1395690500.md
+  company_category: entertainment_streaming
+  role_family: product_strategy_ops
+  company_voice_profile: paramount
+  company_voice_source: known_profile
+  company_voice_label: Dynamic Entertainment Streaming
+  company_inference_confidence: High
+  freshness: Unknown freshness
+  freshness_label: Unknown freshness / Verify manually
+  posting_status: Verify manually
+  match_score: 67
+  match_tier: Stretch Match
+  match_summary: There is credible alignment, but the tradeoffs deserve review before package generation.
+  match_strengths:
+  - Functional alignment includes marketing technology and measurement.
+  - The seniority is aligned with Trisha's director/head-of target level.
+  - The entertainment context is adjacent to Trisha's target industries.
+  - The disclosed compensation is aligned with or near Trisha's target.
+  - Career evidence overlaps in Cross-Functional Leadership, Product Development.
+  match_gaps:
+  - The on-site requirement should be weighed against commute and compensation.
+  - Posting age is unknown; verify that the role is still active.
+  recommended_action: Review First
+  confidence: High
+  original_source_url: https://careers.paramount.com/job/Burbank-Director%2C-Product%2C-MarTech-and-Engagement-Platforms-CA-91505/1395690500/
+  source_domain: careers.paramount.com
+  source_name: Paramount Careers
+  source_type: Direct Employer
+  source_trust_label: Direct Employer
+  verification_status: Employer Source
+  canonical_apply_url: https://careers.paramount.com/job/Burbank-Director%2C-Product%2C-MarTech-and-Engagement-Platforms-CA-91505/1395690500/
+  canonical_apply_domain: careers.paramount.com
+  verification_notes: posting date missing; verify manually; Official Paramount employer careers source.
+  source_confidence: High
+  requires_verification: false
+  source_warnings:
+  - Posting date missing or malformed
+  freshness_risk: Unknown
+  canonical_employer: Paramount
+  recommended_next_step: Official employer source detected; verify posting freshness if date is missing.
+  greenhouse_backed_hint: false
+  posting_date: ''
+  status_updated_at: '2026-07-07T13:39:47'
+  opportunity_score: 75
+  apply_recommendation: Apply If Strategic
+  opportunity_dimensions:
+    Resume Fit: 67
+    Salary Fit: 92
+    Industry Alignment: 58
+    Role Level Fit: 100
+    Location Fit: 100
+    Mission / Personal Alignment: 62
+    Posting Freshness: 50
+    Interview Probability: 71
+  package_quality:
+    resume_tailoring_score: 67
+    cover_letter_score: 94
+    ats_keyword_match: 65
+    voice_match: 99
+    confidence_level: High
+    confidence_score: 81
+  material_paths:
+    ATS Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/docx/TrishaLynch_DirectorProductMartechEngagementPlatforms_Paramount_ATS.docx
+    Styled Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/docx/TrishaLynch_DirectorProductMartechEngagementPlatforms_Paramount_Styled.docx
+    Tailored Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/markdown/Trisha_Lynch_executive_operations_Paramount_Resume.txt
+    Cover Letter: /Users/trisha.lynch/Documents/career-catalyst/exports/messages/TrishaLynch_DirectorProductMartechEngagementPlatforms_Paramount_CoverLetter.docx
+    Application Note: /Users/trisha.lynch/Documents/career-catalyst/exports/messages/TrishaLynch_DirectorProductMartechEngagementPlatforms_Paramount_ApplicationNote.txt
+    Recruiter Message: /Users/trisha.lynch/Documents/career-catalyst/exports/messages/TrishaLynch_DirectorProductMartechEngagementPlatforms_Paramount_RecruiterMessage.txt
+    Hiring Manager Message: /Users/trisha.lynch/Documents/career-catalyst/exports/messages/TrishaLynch_DirectorProductMartechEngagementPlatforms_Paramount_HiringManagerMessage.txt
+    Strategy Pack: /Users/trisha.lynch/Documents/career-catalyst/exports/strategy_packs/TrishaLynch_DirectorProductMartechEngagementPlatforms_Paramount_StrategyPack.txt
+    Interview Prep: /Users/trisha.lynch/Documents/career-catalyst/exports/strategy_packs/TrishaLynch_DirectorProductMartechEngagementPlatforms_Paramount_InterviewPrep.txt
+    Package Summary: /Users/trisha.lynch/Documents/career-catalyst/exports/strategy_packs/TrishaLynch_DirectorProductMartechEngagementPlatforms_Paramount_PackageSummary.txt
+    Recruiter Follow-Up: /Users/trisha.lynch/Documents/career-catalyst/exports/followups/TrishaLynch_DirectorProductMartechEngagementPlatforms_Paramount_RecruiterFollowup.txt
+    Hiring Manager Follow-Up: /Users/trisha.lynch/Documents/career-catalyst/exports/followups/TrishaLynch_DirectorProductMartechEngagementPlatforms_Paramount_HiringManagerFollowup.txt
+    Warm Contact Message: /Users/trisha.lynch/Documents/career-catalyst/exports/followups/TrishaLynch_DirectorProductMartechEngagementPlatforms_Paramount_WarmContactMessage.txt
+    Referral Ask: /Users/trisha.lynch/Documents/career-catalyst/exports/followups/TrishaLynch_DirectorProductMartechEngagementPlatforms_Paramount_ReferralAsk.txt
+    Follow-Up Strategy: /Users/trisha.lynch/Documents/career-catalyst/exports/followups/TrishaLynch_DirectorProductMartechEngagementPlatforms_Paramount_FollowupStrategy.txt
+    Job Description: /Users/trisha.lynch/Documents/career-catalyst/jobs/paramount_director_product_martech_and_engagement_platforms_1395690500.md
+  suggested_follow_up_date: ''
+  follow_up_status: Not applicable
+- id: 600_umg_recordings_inc_vice_president_planning_and_forecasting_coe_lead
+  company: 600 UMG Recordings Inc
+  company_aliases: []
+  role: Vice President, Planning and Forecasting (COE Lead)
+  role_aliases: []
+  status: Invalid/Hidden
+  priority: Do Not Pursue
+  source: Workday
+  notes: ''
+  next_action: Verify the current employer posting and apply path manually.
+  show_on_dashboard: false
+  official_url: https://umusic.wd5.myworkdayjobs.com/en-US/UMGUS/details/Vice-President--Planning-and-Forecasting--CEO-Lead-_UMG-26853?locations=448dd8b6f52e10017253a5c3ba3d0000&locations=3c818403cbba0113f4708c861723e448&locations=448dd8b6f52e100172539dd99f100000&locations=448dd8b6f52e10017251dc9b02b70000&locations=448dd8b6f52e10017253785b2e480000&locations=448dd8b6f52e10017253ad06ac310000&locations=448dd8b6f52e10017253969def3a0000
+  source_url: https://umusic.wd5.myworkdayjobs.com/en-US/UMGUS/details/Vice-President--Planning-and-Forecasting--CEO-Lead-_UMG-26853?locations=448dd8b6f52e10017253a5c3ba3d0000&locations=3c818403cbba0113f4708c861723e448&locations=448dd8b6f52e100172539dd99f100000&locations=448dd8b6f52e10017251dc9b02b70000&locations=448dd8b6f52e10017253785b2e480000&locations=448dd8b6f52e10017253ad06ac310000&locations=448dd8b6f52e10017253969def3a0000
+  job_id: '1395690500'
+  location: USA-CA SMO 2220 Colorado Ave, United States of America
+  salary_range: $ 181,650 - $365,000
+  work_arrangement: Not specified
+  field_warnings:
+  - Work arrangement was not detected. Review before saving.
+  - Salary detected from job text. Review before applying.
+  - Role family was inferred. Review if this is a strategic or product-ops role.
+  job_file: jobs/600_umg_recordings_inc_vice_president_planning_and_forecasting_coe_lead_1395690500.md
+  company_category: music_entertainment_operations
+  role_family: transformation_advisory
+  company_voice_profile: dynamic_music_entertainment_operations
+  company_voice_source: dynamic_inference
+  company_voice_label: Music + Operational Transformation
+  company_inference_confidence: Medium
+  posting_date: '2026-07-07'
+  posting_age_days: 0
+  freshness: Fresh
+  freshness_label: Fresh / High priority
+  posting_status: Open
+  match_score: 66
+  match_tier: Stretch Match
+  match_summary: There is credible alignment, but the tradeoffs deserve review before package generation.
+  match_strengths:
+  - Functional alignment includes strategic operations.
+  - The seniority is aligned with Trisha's director/head-of target level.
+  - The music context is adjacent to Trisha's target industries.
+  - The disclosed compensation is aligned with or near Trisha's target.
+  - The not specified arrangement supports practical fit.
+  match_gaps:
+  - Confirm the reporting line and decision authority before generating the package.
+  recommended_action: Review First
+  confidence: High
+  original_source_url: https://umusic.wd5.myworkdayjobs.com/en-US/UMGUS/details/Vice-President--Planning-and-Forecasting--CEO-Lead-_UMG-26853?locations=448dd8b6f52e10017253a5c3ba3d0000&locations=3c818403cbba0113f4708c861723e448&locations=448dd8b6f52e100172539dd99f100000&locations=448dd8b6f52e10017251dc9b02b70000&locations=448dd8b6f52e10017253785b2e480000&locations=448dd8b6f52e10017253ad06ac310000&locations=448dd8b6f52e10017253969def3a0000
+  source_domain: umusic.wd5.myworkdayjobs.com
+  source_name: Workday
+  source_type: Employer ATS
+  source_trust_label: Verified Company Source
+  verification_status: Employer Source
+  canonical_apply_url: https://umusic.wd5.myworkdayjobs.com/en-US/UMGUS/details/Vice-President--Planning-and-Forecasting--CEO-Lead-_UMG-26853?locations=448dd8b6f52e10017253a5c3ba3d0000&locations=3c818403cbba0113f4708c861723e448&locations=448dd8b6f52e100172539dd99f100000&locations=448dd8b6f52e10017251dc9b02b70000&locations=448dd8b6f52e10017253785b2e480000&locations=448dd8b6f52e10017253ad06ac310000&locations=448dd8b6f52e10017253969def3a0000
+  canonical_apply_domain: umusic.wd5.myworkdayjobs.com
+  verification_notes: No verification cautions detected.
+  source_confidence: High
+  requires_verification: false
+  source_warnings: []
+  freshness_risk: Low
+  canonical_employer: 600 UMG Recordings Inc
+  recommended_next_step: Proceed using the canonical employer application.
+  greenhouse_backed_hint: false
+  status_updated_at: '2026-07-07T13:39:56'
+  suggested_follow_up_date: ''
+  follow_up_status: Not applicable
+- id: 600_umg_recordings_inc_senior_director_project_and_pmo_lead
+  company: 600 UMG Recordings Inc
+  company_aliases: []
+  role: Senior Director, Project and PMO Lead
+  role_aliases: []
+  status: Applied
+  priority: High
+  source: Workday
+  notes: ''
+  next_action: Verify the current employer posting and apply path manually.
+  show_on_dashboard: true
+  official_url: https://umusic.wd5.myworkdayjobs.com/en-US/UMGUS/details/Senior-Director--Project-and-PMO-Lead_UMG-26888?locations=448dd8b6f52e10017253a5c3ba3d0000&locations=3c818403cbba0113f4708c861723e448&locations=448dd8b6f52e100172539dd99f100000&locations=448dd8b6f52e10017251dc9b02b70000&locations=448dd8b6f52e10017253785b2e480000&locations=448dd8b6f52e10017253ad06ac310000&locations=448dd8b6f52e10017253969def3a0000
+  source_url: https://umusic.wd5.myworkdayjobs.com/en-US/UMGUS/details/Senior-Director--Project-and-PMO-Lead_UMG-26888?locations=448dd8b6f52e10017253a5c3ba3d0000&locations=3c818403cbba0113f4708c861723e448&locations=448dd8b6f52e100172539dd99f100000&locations=448dd8b6f52e10017251dc9b02b70000&locations=448dd8b6f52e10017253785b2e480000&locations=448dd8b6f52e10017253ad06ac310000&locations=448dd8b6f52e10017253969def3a0000
+  location: USA-CA SMO 2220 Colorado Ave, United States of America
+  salary_range: $107,990 - $235,000
+  work_arrangement: Not specified
+  field_warnings:
+  - Work arrangement was not detected. Review before saving.
+  - Salary detected from job text. Review before applying.
+  - Role family was inferred. Review if this is a strategic or product-ops role.
+  job_file: jobs/600_umg_recordings_inc_senior_director_project_and_pmo_lead.md
+  company_category: music_entertainment_operations
+  role_family: transformation_advisory
+  company_voice_profile: dynamic_music_entertainment_operations
+  company_voice_source: dynamic_inference
+  company_voice_label: Music + Operational Transformation
+  company_inference_confidence: Medium
+  posting_date: '2026-07-01'
+  posting_age_days: 6
+  freshness: Fresh
+  freshness_label: Fresh / High priority
+  posting_status: Open
+  match_score: 75
+  match_tier: Good Match
+  match_summary: Good overall alignment, with a few cautions to weigh before investing further.
+  match_strengths:
+  - Functional alignment includes workflow and process automation, strategic operations.
+  - The seniority is aligned with Trisha's director/head-of target level.
+  - The music context is adjacent to Trisha's target industries.
+  - The disclosed compensation is aligned with or near Trisha's target.
+  - The not specified arrangement supports practical fit.
+  match_gaps:
+  - Confirm the reporting line and decision authority before generating the package.
+  recommended_action: Generate Package
+  confidence: High
+  original_source_url: https://umusic.wd5.myworkdayjobs.com/en-US/UMGUS/details/Senior-Director--Project-and-PMO-Lead_UMG-26888?locations=448dd8b6f52e10017253a5c3ba3d0000&locations=3c818403cbba0113f4708c861723e448&locations=448dd8b6f52e100172539dd99f100000&locations=448dd8b6f52e10017251dc9b02b70000&locations=448dd8b6f52e10017253785b2e480000&locations=448dd8b6f52e10017253ad06ac310000&locations=448dd8b6f52e10017253969def3a0000
+  source_domain: umusic.wd5.myworkdayjobs.com
+  source_name: Workday
+  source_type: Employer ATS
+  source_trust_label: Verified Company Source
+  verification_status: Employer Source
+  canonical_apply_url: https://umusic.wd5.myworkdayjobs.com/en-US/UMGUS/details/Senior-Director--Project-and-PMO-Lead_UMG-26888?locations=448dd8b6f52e10017253a5c3ba3d0000&locations=3c818403cbba0113f4708c861723e448&locations=448dd8b6f52e100172539dd99f100000&locations=448dd8b6f52e10017251dc9b02b70000&locations=448dd8b6f52e10017253785b2e480000&locations=448dd8b6f52e10017253ad06ac310000&locations=448dd8b6f52e10017253969def3a0000
+  canonical_apply_domain: umusic.wd5.myworkdayjobs.com
+  verification_notes: No verification cautions detected.
+  source_confidence: High
+  requires_verification: false
+  source_warnings: []
+  freshness_risk: Low
+  canonical_employer: 600 UMG Recordings Inc
+  recommended_next_step: Proceed using the canonical employer application.
+  greenhouse_backed_hint: false
+  suggested_follow_up_date: ''
+  follow_up_status: No applied date
+  status_updated_at: '2026-07-07T13:22:54'
+  opportunity_score: 82
+  apply_recommendation: Apply Immediately
+  opportunity_dimensions:
+    Resume Fit: 75
+    Salary Fit: 92
+    Industry Alignment: 72
+    Role Level Fit: 100
+    Location Fit: 78
+    Mission / Personal Alignment: 62
+    Posting Freshness: 100
+    Interview Probability: 78
+  package_quality:
+    resume_tailoring_score: 75
+    cover_letter_score: 86
+    ats_keyword_match: 75
+    voice_match: 68
+    confidence_level: Medium
+    confidence_score: 76
+  material_paths:
+    ATS Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/docx/TrishaLynch_SeniorDirectorProjectPmoLead_600UmgRecordings_ATS.docx
+    Styled Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/docx/TrishaLynch_SeniorDirectorProjectPmoLead_600UmgRecordings_Styled.docx
+    Tailored Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/markdown/Trisha_Lynch_executive_operations_600_UMG_Recordings_Inc_Resume.txt
+    Cover Letter: /Users/trisha.lynch/Documents/career-catalyst/exports/messages/TrishaLynch_SeniorDirectorProjectPmoLead_600UmgRecordings_CoverLetter.docx
+    Application Note: /Users/trisha.lynch/Documents/career-catalyst/exports/messages/TrishaLynch_SeniorDirectorProjectPmoLead_600UmgRecordings_ApplicationNote.txt
+    Recruiter Message: /Users/trisha.lynch/Documents/career-catalyst/exports/messages/TrishaLynch_SeniorDirectorProjectPmoLead_600UmgRecordings_RecruiterMessage.txt
+    Hiring Manager Message: /Users/trisha.lynch/Documents/career-catalyst/exports/messages/TrishaLynch_SeniorDirectorProjectPmoLead_600UmgRecordings_HiringManagerMessage.txt
+    Strategy Pack: /Users/trisha.lynch/Documents/career-catalyst/exports/strategy_packs/TrishaLynch_SeniorDirectorProjectPmoLead_600UmgRecordings_StrategyPack.txt
+    Interview Prep: /Users/trisha.lynch/Documents/career-catalyst/exports/strategy_packs/TrishaLynch_SeniorDirectorProjectPmoLead_600UmgRecordings_InterviewPrep.txt
+    Package Summary: /Users/trisha.lynch/Documents/career-catalyst/exports/strategy_packs/TrishaLynch_SeniorDirectorProjectPmoLead_600UmgRecordings_PackageSummary.txt
+    Job Description: /Users/trisha.lynch/Documents/career-catalyst/jobs/600_umg_recordings_inc_senior_director_project_and_pmo_lead.md
+  submitted_date: '2026-07-07'

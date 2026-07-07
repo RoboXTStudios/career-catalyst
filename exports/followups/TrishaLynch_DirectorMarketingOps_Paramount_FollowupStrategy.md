@@ -4,8 +4,8 @@
 
 ### Current Status
 
-- Status: Applied
-- Outreach mode: Post-application follow-up
+- Status: Active
+- Outreach mode: Pre-application networking
 - Submitted: 2026-06-29
 - Grounding reviewed:
   - jobs/paramount_director_marketing_operations.md
@@ -37,7 +37,7 @@ Lead with creative and marketing priorities, workflow, quality, capacity, and de
 
 ### Suggested Timing
 
-Send the first targeted note 5 to 7 business days after the 2026-06-29 submission. If there is no reply, send one concise follow-up 7 to 10 business days later. Pause after that unless there is a meaningful update or a response.
+Use one targeted networking note before applying, ideally after the role and likely team have been reviewed. If there is no reply, apply on schedule rather than waiting, and send one concise update after submission if the contact is relevant.
 
 ### Core Value Point
 
@@ -49,7 +49,7 @@ I bring operational structure to creative and marketing work while protecting th
 
 Hello,
 
-I recently applied for the Director, Marketing Operations role at Paramount. The opportunity caught my attention because it connects creative and marketing priorities, workflow, quality, capacity, and dependable delivery. My background includes leading complex cross-functional operations and building clearer workflows and execution standards. If you support this search, I would be glad to share more context. If not, would you be able to point me toward the right recruiter or talent acquisition partner?
+I'm preparing an application for the Director, Marketing Operations role at Paramount. The opportunity caught my attention because it connects creative and marketing priorities, workflow, quality, capacity, and dependable delivery. My background includes leading complex cross-functional operations and building clearer workflows and execution standards. If you support this search, I would be glad to share more context. If not, would you be able to point me toward the right recruiter or talent acquisition partner?
 
 Best,
 
@@ -59,7 +59,7 @@ Trisha Lynch
 
 Hello,
 
-I recently applied for the Director, Marketing Operations role at Paramount. What stands out to me is the operational challenge behind it: creating workflow visibility and cross-team alignment without adding process for its own sake. I led cross-functional teams of 60+ across creative management, marketing operations, media, analytics, technology, and campaign operations. I bring operational structure to creative and marketing work while protecting the momentum teams need to execute. I would welcome the chance to learn how the team is thinking about its priorities and where this role can create the most useful leverage for the team right now.
+I'm preparing an application for the Director, Marketing Operations role at Paramount. What stands out to me is the operational challenge behind it: creating workflow visibility and cross-team alignment without adding process for its own sake. I led cross-functional teams of 60+ across creative management, marketing operations, media, analytics, technology, and campaign operations. I bring operational structure to creative and marketing work while protecting the momentum teams need to execute. I would welcome the chance to learn how the team is thinking about its priorities and where this role can create the most useful leverage for the team right now.
 
 Best,
 
@@ -69,7 +69,7 @@ Trisha Lynch
 
 Hi,
 
-I recently applied for the Director, Marketing Operations role at Paramount. Since we have worked together before, you have some context for how I approach cross-functional work and operational problem solving. The role's focus on creative and marketing priorities, workflow, quality, capacity, and dependable delivery felt closely aligned. If you have perspective on the team or know who would be the best person to contact, I would appreciate your guidance. No introduction is necessary; even a little direction would be helpful.
+I'm preparing an application for the Director, Marketing Operations role at Paramount. Since we have worked together before, you have some context for how I approach cross-functional work and operational problem solving. The role's focus on creative and marketing priorities, workflow, quality, capacity, and dependable delivery felt closely aligned. If you have perspective on the team or know who would be the best person to contact, I would appreciate your guidance. No introduction is necessary; even a little direction would be helpful.
 
 Warmly,
 
@@ -79,7 +79,7 @@ Trisha Lynch
 
 Hi,
 
-I recently applied for the Director, Marketing Operations role at Paramount. Because you know my work, I wanted to ask whether you would consider referring me or sharing my application with the right person, only if you feel comfortable. The focus on creative and marketing priorities, workflow, quality, capacity, and dependable delivery connects closely with the kind of work I have led. There is no obligation at all. Your candid perspective on the role or the best path forward would be valuable either way.
+I'm preparing an application for the Director, Marketing Operations role at Paramount. Because you know my work, I wanted to ask whether you would consider referring me or sharing my application with the right person, only if you feel comfortable. The focus on creative and marketing priorities, workflow, quality, capacity, and dependable delivery connects closely with the kind of work I have led. There is no obligation at all. Your candid perspective on the role or the best path forward would be valuable either way.
 
 Warmly,
 

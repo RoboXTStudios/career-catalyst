@@ -1,4 +1,4 @@
-<!-- career-catalyst-job-title: Strategic Operations Senior Manager -->
+<!-- career-catalyst-job-title: Director, Enterprise Strategy & Initiatives -->
 <!-- career-catalyst-company: Crunchyroll -->
 
 # Trisha Lynch
@@ -14,17 +14,17 @@ Marketing and business operations leader with 20+ years of experience designing 
 ## Core Competencies
 
 - Business Operations
-- Marketing Operations
+- Change Management
 - Cross-Functional Leadership
+- Marketing Operations
+- Process Excellence
 - Operational Strategy
+- Stakeholder Management
+- Program Leadership
+- Team Leadership
 - Creative Operations
-- Operational Automation
 - Workflow Governance
 - AI Workflow Design
-- Process Excellence
-- Change Management
-- Stakeholder Management
-- Schema-Driven Workflows
 
 ## Platforms & Technologies
 
@@ -56,10 +56,10 @@ Campaign Manager to Group Director, Ad Operations, Marketing Science & Creative 
 - Led campaign operations across Disney Studios Theatrical and Disney Streaming/DSS, supporting theatrical and streaming film campaigns across Pixar, Lucasfilm, Marvel, 20th Century Studios, Searchlight Pictures, Disney+, and franchise/IP priorities.
 - Owned workflow governance, milestones, QA, measurement readiness, vendor integrations, and scalable execution standards for premium entertainment campaigns.
 - Partnered across creative, marketing, media, analytics, engineering, technology, operations, and external partners supporting theatrical releases, streaming launches, and franchise/IP priorities.
-- Introduced scalable workflows, governance practices, and execution standards across marketing, technology, analytics, and creative teams.
 - Directed operational execution for multimillion-dollar premium entertainment campaigns across theatrical releases, streaming launches, and franchise/IP priorities.
+- Introduced scalable workflows, governance practices, and execution standards across marketing, technology, analytics, and creative teams.
+- Advanced from Campaign Manager to Group Director while leading campaign operations across Disney Studios Theatrical and Disney Streaming/DSS.
 - Primary work focused on theatrical and streaming film campaign operations across Disney's Studios, franchise/IP, and streaming ecosystem.
-- Established workflows, milestones, quality standards, and partner coordination for consistent campaign execution at scale.
 
 ## Selected Projects
 

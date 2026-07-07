@@ -4,9 +4,9 @@
 
 ### Current Status
 
-- Status: Reviewed
-- Outreach mode: Pre-application networking
-- Submitted: Not recorded
+- Status: Follow-up
+- Outreach mode: Post-application follow-up
+- Submitted: 2026-07-05
 - Grounding reviewed:
   - jobs/associate_director_crm_martech_spotify.md
   - data/positions.yml
@@ -37,7 +37,7 @@ Lead with strategic clarity, stakeholder alignment, scalable systems, and reliab
 
 ### Suggested Timing
 
-Use one targeted networking note before applying, ideally after the role and likely team have been reviewed. If there is no reply, apply on schedule rather than waiting, and send one concise update after submission if the contact is relevant.
+Send the first targeted note 5 to 7 business days after the 2026-07-05 submission. If there is no reply, send one concise follow-up 7 to 10 business days later. Pause after that unless there is a meaningful update or a response.
 
 ### Core Value Point
 
@@ -49,7 +49,7 @@ I help complex teams create the clarity and systems needed to move from strategy
 
 Hello,
 
-I'm preparing an application for the Associate Director, CRM & Martech role at Spotify. The opportunity caught my attention because it connects strategic clarity, stakeholder alignment, scalable systems, and reliable execution. My background includes leading complex cross-functional operations and building clearer workflows and execution standards. If you support this search, I would be glad to share more context. If not, would you be able to point me toward the right recruiter or talent acquisition partner?
+I recently applied for the Associate Director, CRM & Martech role at Spotify. The opportunity caught my attention because it connects strategic clarity, stakeholder alignment, scalable systems, and reliable execution. My background includes leading complex cross-functional operations and building clearer workflows and execution standards. If you support this search, I would be glad to share more context. If not, would you be able to point me toward the right recruiter or talent acquisition partner?
 
 Best,
 
@@ -59,7 +59,7 @@ Trisha Lynch
 
 Hello,
 
-I'm preparing an application for the Associate Director, CRM & Martech role at Spotify. What stands out to me is the operational challenge behind it: turning complex priorities into clear ownership, useful operating rhythms, and dependable cross-functional execution. I led cross-functional teams of 60+ across creative management, marketing operations, media, analytics, technology, and campaign operations. I help complex teams create the clarity and systems needed to move from strategy to execution. I would welcome the chance to learn how the team is thinking about its priorities and where this role can create the most useful leverage for the team right now.
+I recently applied for the Associate Director, CRM & Martech role at Spotify. What stands out to me is the operational challenge behind it: turning complex priorities into clear ownership, useful operating rhythms, and dependable cross-functional execution. I led cross-functional teams of 60+ across creative management, marketing operations, media, analytics, technology, and campaign operations. I help complex teams create the clarity and systems needed to move from strategy to execution. I would welcome the chance to learn how the team is thinking about its priorities and where this role can create the most useful leverage for the team right now.
 
 Best,
 
@@ -69,7 +69,7 @@ Trisha Lynch
 
 Hi,
 
-I'm preparing an application for the Associate Director, CRM & Martech role at Spotify. Since we have worked together before, you have some context for how I approach cross-functional work and operational problem solving. The role's focus on strategic clarity, stakeholder alignment, scalable systems, and reliable execution felt closely aligned. If you have perspective on the team or know who would be the best person to contact, I would appreciate your guidance. No introduction is necessary; even a little direction would be helpful.
+I recently applied for the Associate Director, CRM & Martech role at Spotify. Since we have worked together before, you have some context for how I approach cross-functional work and operational problem solving. The role's focus on strategic clarity, stakeholder alignment, scalable systems, and reliable execution felt closely aligned. If you have perspective on the team or know who would be the best person to contact, I would appreciate your guidance. No introduction is necessary; even a little direction would be helpful.
 
 Warmly,
 
@@ -79,7 +79,7 @@ Trisha Lynch
 
 Hi,
 
-I'm preparing an application for the Associate Director, CRM & Martech role at Spotify. Because you know my work, I wanted to ask whether you would consider referring me or sharing my application with the right person, only if you feel comfortable. The focus on strategic clarity, stakeholder alignment, scalable systems, and reliable execution connects closely with the kind of work I have led. There is no obligation at all. Your candid perspective on the role or the best path forward would be valuable either way.
+I recently applied for the Associate Director, CRM & Martech role at Spotify. Because you know my work, I wanted to ask whether you would consider referring me or sharing my application with the right person, only if you feel comfortable. The focus on strategic clarity, stakeholder alignment, scalable systems, and reliable execution connects closely with the kind of work I have led. There is no obligation at all. Your candid perspective on the role or the best path forward would be valuable either way.
 
 Warmly,
 

@@ -1,4 +1,4 @@
-<!-- career-catalyst-job-title: Director, Marketing Operations -->
+<!-- career-catalyst-job-title: Director, Product, MarTech and Engagement Platforms -->
 <!-- career-catalyst-company: Paramount -->
 
 # Trisha Lynch
@@ -13,18 +13,16 @@ Marketing and business operations leader with 20+ years of experience designing 
 
 ## Core Competencies
 
-- Marketing Operations
-- Business Operations
-- Operational Strategy
 - Cross-Functional Leadership
-- Creative Operations
+- Product Development
+- Business Operations
+- Marketing Operations
+- Process Excellence
 - Workflow Governance
-- AI Workflow Design
-- Program Leadership
-- Team Leadership
-- Entertainment Marketing
+- Operational Strategy
 - Change Management
 - Stakeholder Management
+- AI Workflow Design
 
 ## Platforms & Technologies
 
@@ -53,11 +51,11 @@ Burbank, CA | 2016-2026
 Campaign Manager to Group Director, Ad Operations, Marketing Science & Creative Management
 
 - Led cross-functional teams of 60+ across creative management, marketing operations, media, analytics, technology, and campaign operations.
-- Aligned creative, marketing, media, analytics, technology, and operations teams supporting theatrical and streaming entertainment campaigns.
 - Led campaign operations across Disney Studios Theatrical and Disney Streaming/DSS, supporting theatrical and streaming film campaigns across Pixar, Lucasfilm, Marvel, 20th Century Studios, Searchlight Pictures, Disney+, and franchise/IP priorities.
-- Introduced scalable workflows, governance practices, and execution standards across marketing, technology, analytics, and creative teams.
 - Owned workflow governance, milestones, QA, measurement readiness, vendor integrations, and scalable execution standards for premium entertainment campaigns.
+- Partnered across creative, marketing, media, analytics, engineering, technology, operations, and external partners supporting theatrical releases, streaming launches, and franchise/IP priorities.
 - Directed operational execution for multimillion-dollar premium entertainment campaigns across theatrical releases, streaming launches, and franchise/IP priorities.
+- Introduced scalable workflows, governance practices, and execution standards across marketing, technology, analytics, and creative teams.
 - Advanced from Campaign Manager to Group Director while leading campaign operations across Disney Studios Theatrical and Disney Streaming/DSS.
 - Primary work focused on theatrical and streaming film campaign operations across Disney's Studios, franchise/IP, and streaming ecosystem.
 
