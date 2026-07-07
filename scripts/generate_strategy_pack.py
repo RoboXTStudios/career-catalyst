@@ -18,6 +18,7 @@ try:
     )
     from .text_cleanup import cleanup_repeated_words
     from .role_context import google_claim_violations, is_google_youtube_role
+    from .package_context import validate_material_context
 except ImportError:
     from filename_utils import build_upload_filename
     from generate_cover_letter import (
@@ -33,6 +34,7 @@ except ImportError:
     )
     from text_cleanup import cleanup_repeated_words
     from role_context import google_claim_violations, is_google_youtube_role
+    from package_context import validate_material_context
 
 
 PathInput = Union[str, Path]
@@ -521,6 +523,7 @@ def generate_strategy_pack(
     context = load_generation_context(job_path, project_root)
     content = cleanup_repeated_words(_render_strategy_pack(context))
     _validate_strategy_pack(context, content)
+    validate_material_context(content, context["parsed_job"], "Strategy_Pack")
 
     parsed_job = context["parsed_job"]
     personal_brand = context["career_data"]["data"].get("personal_brand", {})

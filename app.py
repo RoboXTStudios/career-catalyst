@@ -458,6 +458,7 @@ def clear_focused_dashboard_role(session_state: Any) -> None:
 def collapse_dashboard_working_view(session_state: Any) -> None:
     """Collapse dashboard content while retaining the selected role and filters."""
     session_state["dashboard_compact_mode"] = True
+    session_state["dashboard_next_steps_collapsed"] = True
     session_state.pop("dashboard_materials_role_id", None)
     session_state.pop("dashboard_source_verification_role_id", None)
 
@@ -467,6 +468,25 @@ def expand_focused_dashboard_role(session_state: Any) -> bool:
     if not str(session_state.get("dashboard_focused_role_id") or "").strip():
         return False
     session_state["dashboard_compact_mode"] = False
+    return True
+
+
+def expand_recommended_next_steps(session_state: Any) -> None:
+    """Expand next-step navigation without changing role filters or card state."""
+    session_state["dashboard_next_steps_collapsed"] = False
+
+
+def reset_package_preview_for_selection(
+    session_state: Any, prospect_id: str
+) -> bool:
+    """Discard stale package preview state when the selected prospect changes."""
+    selected = str(prospect_id or "").strip()
+    previous = str(session_state.get("package_preview_prospect_id") or "").strip()
+    if previous == selected:
+        return False
+    session_state.pop("last_package_outputs", None)
+    session_state.pop("last_package_result", None)
+    session_state["package_preview_prospect_id"] = selected
     return True
 
 
@@ -784,6 +804,10 @@ def _status_badges(application: Dict[str, Any]) -> str:
         badges.append(
             '<span class="cc-badge cc-priority">'
             f"{html.escape(priority)} priority</span>"
+        )
+    if application.get("match_score") is not None:
+        badges.append(
+            f'<span class="cc-badge">{html.escape(str(application["match_score"]))}/100</span>'
         )
     for value in (
         application.get("match_tier"),
@@ -1450,39 +1474,33 @@ def _render_recommended_next_steps(
     steps = structured_recommended_next_steps(applications, mode)
     all_focus_records = focus_records if focus_records is not None else applications
     compact_mode = bool(st.session_state.get("dashboard_compact_mode", False))
+    next_steps_collapsed = bool(
+        st.session_state.get("dashboard_next_steps_collapsed", False)
+    )
     with st.container(border=True):
-        st.markdown("**Recommended Next Steps**")
-        if not steps:
-            st.caption(recommended_next_steps([], mode)[0])
-        for step in steps:
+        if next_steps_collapsed:
+            heading, control = st.columns((5, 1))
+            heading.markdown(f"**Recommended Next Steps ({len(steps)})**")
+            if control.button(
+                "Expand",
+                key="dashboard_expand_next_steps",
+                use_container_width=True,
+            ):
+                expand_recommended_next_steps(st.session_state)
+                st.rerun()
+        else:
+            st.markdown(f"**Recommended Next Steps ({len(steps)})**")
+            if not steps:
+                st.caption(recommended_next_steps([], mode)[0])
+        for step in (() if next_steps_collapsed else steps):
             tracker_id = step["tracker_id"]
             record = find_dashboard_role(applications, tracker_id) or {}
             role_reference = dashboard_role_reference(record) or tracker_id
-            if compact_mode:
-                st.markdown(
-                    f"**{step['company']} — {step['title']}**  "
-                    f"\n{str(step['recommendation']).strip()} · "
-                    f"`{get_record_status(record)}`"
-                )
-                compact_actions = st.columns(2)
-                if compact_actions[0].button(
-                    "View role",
-                    key=f"next_view_{role_reference}",
-                    use_container_width=True,
-                ):
-                    focus_dashboard_role(st.session_state, role_reference)
-                    st.rerun()
-                if step.get("posting_url"):
-                    compact_actions[1].link_button(
-                        "Open posting", step["posting_url"], use_container_width=True
-                    )
-                continue
             st.markdown(
-                f"**{step['priority']}. {step['company']} — {step['title']}**  "
-                f"\n{step['recommendation']}  "
-                f"\n`{step['action_type']}` · `{tracker_id}`"
+                f"**{step['company']} — {step['title']}**  "
+                f"\n{step['recommendation']}"
             )
-            navigation_actions = st.columns(4)
+            navigation_actions = st.columns(3)
             if navigation_actions[0].button(
                 "View role",
                 key=f"next_view_{role_reference}",
@@ -1512,65 +1530,15 @@ def _render_recommended_next_steps(
                 focus_dashboard_role(st.session_state, role_reference)
                 st.session_state["dashboard_materials_role_id"] = tracker_id
                 st.rerun()
-            if needs_source_verification(record) and navigation_actions[3].button(
-                "Verify manually",
-                key=f"next_verify_{tracker_id}",
-                use_container_width=True,
-            ):
-                focus_source_verification(st.session_state, role_reference)
-                st.rerun()
-
-            status = get_record_status(record)
-            if mode == "Cleanup Mode" and workflow_status_bucket(record) not in {
-                "Pass",
-                "Hidden / Invalid",
-            }:
-                cleanup_actions = st.columns(2)
-                for column, label, action_key in (
-                    (cleanup_actions[0], "Mark Pass", "pass"),
-                    (cleanup_actions[1], "Hide / Invalid", "invalid_hidden"),
-                ):
-                    if not column.button(
-                        label,
-                        key=f"next_{action_key}_{tracker_id}",
-                        use_container_width=True,
-                    ):
-                        continue
-                    updated = apply_dashboard_status_action(
-                        tracker_id, action_key, PROJECT_ROOT
-                    )
-                    st.session_state["dashboard_notice"] = (
-                        f"Updated {updated.get('company')} — {updated.get('role')} "
-                        f"to {get_record_status(updated)}."
-                    )
-                    st.rerun()
-            if (
-                mode == "Follow-Up Mode"
-                and status not in HIDDEN_STATUSES
-                and str(record.get("follow_up_status") or "")
-                in {"Due soon", "Due now", "Overdue"}
-                and st.button(
-                    "Mark follow-up sent",
-                    key=f"next_followup_sent_{tracker_id}",
-                    use_container_width=True,
-                )
-            ):
-                apply_dashboard_status_action(
-                    tracker_id, "follow_up_sent", PROJECT_ROOT
-                )
-                st.session_state["dashboard_notice"] = (
-                    f"Marked follow-up sent for {step['company']} — {step['title']}."
-                )
-                st.rerun()
 
     focused_id = str(st.session_state.get("dashboard_focused_role_id") or "")
     focused = find_dashboard_role(all_focus_records, focused_id)
-    if focused:
+    if focused and not compact_mode:
         visible_references = {
             dashboard_role_reference(record) for record in applications
         }
         focus_heading, clear_column = st.columns((5, 1))
-        focus_heading.markdown("### Focused role")
+        focus_heading.markdown("### Focused Role Workspace")
         if clear_column.button(
             "Clear focus", key="dashboard_clear_focus", use_container_width=True
         ):
@@ -1582,7 +1550,7 @@ def _render_recommended_next_steps(
         package = packages.get(str(focused.get("id") or ""), {})
         _render_role_card(st, focused, package, mode, compact_mode)
         return str(focused.get("id") or focused_reference)
-    if focused_id:
+    if focused_id and not focused:
         warning_column, clear_column = st.columns((5, 1))
         warning_column.warning(
             "Focused role could not be found. It may be hidden by current filters."
@@ -2107,6 +2075,7 @@ def _render_add_prospect(st: Any) -> None:
             intake = create_prospect(build_prospect_payload(values), PROJECT_ROOT)
             if generate_clicked:
                 package = generate_package(intake["tracker_id"], PROJECT_ROOT)
+                st.session_state["package_preview_prospect_id"] = intake["tracker_id"]
                 st.session_state["last_package_outputs"] = package["outputs"]
                 st.session_state["last_package_result"] = package
                 focus_dashboard_role(st.session_state, intake["tracker_id"])
@@ -2211,6 +2180,7 @@ def _render_generate_package(st: Any) -> None:
         format_func=lambda value: _application_label(by_id[value]),
         key="package_tracker_id",
     )
+    reset_package_preview_for_selection(st.session_state, tracker_id)
     try:
         voice_context = detected_application_voice(tracker_id, PROJECT_ROOT)
     except Exception as error:
@@ -2242,6 +2212,10 @@ def _render_generate_package(st: Any) -> None:
                 )
         except PackageGenerationError as error:
             st.error(str(error))
+            if error.checklist:
+                _render_package_summary(
+                    st, {"package_checklist": error.checklist}
+                )
         else:
             st.success(
                 f"Generated {result['job_title']} at {result['company']} — status: {result['status']}."
@@ -2249,6 +2223,7 @@ def _render_generate_package(st: Any) -> None:
             st.metric("Match score", result.get("match_score") or "—")
             st.session_state["last_package_outputs"] = result["outputs"]
             st.session_state["last_package_result"] = result
+            st.session_state["package_preview_prospect_id"] = tracker_id
             focus_dashboard_role(st.session_state, tracker_id)
             st.session_state["dashboard_materials_role_id"] = tracker_id
     package_result = st.session_state.get("last_package_result")
@@ -2569,6 +2544,7 @@ def _render_dashboard(st: Any) -> None:
     )
     records = sort_dashboard_records(records, sort_by)
     st.session_state.setdefault("dashboard_compact_mode", False)
+    st.session_state.setdefault("dashboard_next_steps_collapsed", False)
     has_focused_role = bool(
         str(st.session_state.get("dashboard_focused_role_id") or "").strip()
     )

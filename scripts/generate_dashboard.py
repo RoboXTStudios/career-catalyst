@@ -840,7 +840,11 @@ def _matching_package(
     return None
 
 
-def _merge_tracker(packages: List[Dict[str, Any]], tracker: List[Dict[str, Any]]) -> None:
+def _merge_tracker(
+    packages: List[Dict[str, Any]],
+    tracker: List[Dict[str, Any]],
+    root: Path = Path.cwd(),
+) -> None:
     for application in tracker:
         company = str(application.get("company") or "Company not listed")
         role = str(application.get("role") or "Role not listed")
@@ -870,6 +874,21 @@ def _merge_tracker(packages: List[Dict[str, Any]], tracker: List[Dict[str, Any]]
         if not package.get("tracker"):
             package["tracker"] = application
             package["tracker_id"] = application.get("id")
+        manifest = application.get("package_manifest")
+        manifest_paths: Dict[str, Any] = {}
+        if isinstance(manifest, dict):
+            if str(manifest.get("prospect_id") or "") == str(application.get("id") or ""):
+                manifest_paths = dict(manifest.get("materials") or {})
+            else:
+                package["material_manifest_error"] = "Missing exact package manifest"
+        else:
+            manifest_paths = dict(application.get("material_paths") or {})
+        for label, path_value in manifest_paths.items():
+            path = Path(str(path_value))
+            resolved = (path if path.is_absolute() else root / path).resolve()
+            if resolved.is_file():
+                package["files"][str(label)] = resolved
+        package["has_exact_material_manifest"] = bool(manifest_paths)
 
 
 def _asset_label(path: Path) -> Optional[str]:
@@ -939,6 +958,7 @@ def _package_for_asset(
     candidates = [
         package
         for package in packages
+        if not package.get("tracker_id")
         if any(
             key in file_key
             for key in (
@@ -1863,7 +1883,7 @@ def load_application_packages(project_root: PathInput = Path.cwd()) -> Dict[str,
     root = Path(project_root).resolve()
     packages = _load_jobs(root)
     tracker = validate_application_tracker(root)["applications"]
-    _merge_tracker(packages, tracker)
+    _merge_tracker(packages, tracker, root)
     unassigned = _attach_assets(root, packages)
     for package in packages:
         package["archived_materials_available"] = archived_materials_exist(

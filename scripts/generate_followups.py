@@ -15,6 +15,7 @@ try:
     from .generate_dashboard import generate_dashboard
     from .load_data import load_all_yaml
     from .package_generator import PackageGenerationError, resolve_job_reference
+    from .package_context import validate_material_context
     from .role_context import is_google_youtube_role
 except ImportError:
     from application_tracker import load_application_tracker, update_prospect
@@ -24,6 +25,7 @@ except ImportError:
     from generate_dashboard import generate_dashboard
     from load_data import load_all_yaml
     from package_generator import PackageGenerationError, resolve_job_reference
+    from package_context import validate_material_context
     from role_context import is_google_youtube_role
 
 
@@ -779,6 +781,7 @@ def generate_followups(
         )
         for key, message in messages.items():
             _validate_message(key, message, parsed_job, voice_avoid)
+            validate_material_context(message, parsed_job, key)
 
         output_specs = (
             ("recruiter_followup", "Recruiter Followup"),
@@ -801,6 +804,7 @@ def generate_followups(
         )
         if "—" in strategy:
             raise FollowupGenerationError("Follow-up strategy must not contain em dashes.")
+        validate_material_context(strategy, parsed_job, "Followup_Strategy")
         outputs["followup_strategy"] = str(
             _write_output(root, role, company, "Followup Strategy", strategy)
         )

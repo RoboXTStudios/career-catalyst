@@ -14,6 +14,7 @@ try:
     from .filename_utils import build_upload_filename, company_display_name
     from .load_data import load_all_yaml
     from .parse_job import parse_job_description
+    from .package_context import validate_material_context
     from .role_context import (
         google_claim_violations,
         is_google_youtube_role,
@@ -25,6 +26,7 @@ except ImportError:
     from filename_utils import build_upload_filename, company_display_name
     from load_data import load_all_yaml
     from parse_job import parse_job_description
+    from package_context import validate_material_context
     from role_context import google_claim_violations, is_google_youtube_role
     from score_match import score_job_match
     from text_cleanup import cleanup_repeated_words
@@ -109,6 +111,8 @@ def save_material(
         raise ApplicationMaterialError(
             f"Generated {suffix} must be {minimum_words}-{maximum_words} words; got {word_count}."
         )
+
+    validate_material_context(content, context["parsed_job"], suffix)
 
     parsed_job = context["parsed_job"]
     personal_brand = context["career_data"]["data"].get("personal_brand", {})

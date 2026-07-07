@@ -8,9 +8,11 @@ from typing import Any, Dict, Optional, Union
 try:
     from .filename_utils import build_upload_filename
     from .generate_cover_letter import load_generation_context
+    from .package_context import validate_material_context
 except ImportError:
     from filename_utils import build_upload_filename
     from generate_cover_letter import load_generation_context
+    from package_context import validate_material_context
 
 
 PathInput = Union[str, Path]
@@ -62,6 +64,7 @@ def generate_interview_prep(
             "",
         )
     )
+    validate_material_context(content, parsed, "Interview_Prep")
     filename = build_upload_filename(
         "Trisha Lynch", role, company, "Interview Prep", "md"
     )
@@ -74,4 +77,3 @@ def generate_interview_prep(
         "company": company,
         "output_path": str(output_path),
     }
-

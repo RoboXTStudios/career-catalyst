@@ -53,17 +53,13 @@ class VerificationPanelHotfixTests(unittest.TestCase):
         self.assertEqual(options[0], "Legacy Verified")
 
     def test_verify_manually_focuses_role_and_opens_source_panel(self):
-        record = _record(posting_date="", freshness="Unknown freshness")
-        st = _FakeStreamlit(clicks={"next_verify_stable-role"})
-        with patch.object(app, "_render_role_card"):
-            app._render_recommended_next_steps(
-                st, [record], "All Mode", {}, focus_records=[record]
-            )
-        self.assertEqual(st.session_state["dashboard_focused_role_id"], "stable-role")
+        state = {"dashboard_compact_mode": True}
+        app.focus_source_verification(state, "stable-role")
+        self.assertEqual(state["dashboard_focused_role_id"], "stable-role")
         self.assertEqual(
-            st.session_state["dashboard_source_verification_role_id"], "stable-role"
+            state["dashboard_source_verification_role_id"], "stable-role"
         )
-        self.assertFalse(st.session_state["dashboard_compact_mode"])
+        self.assertFalse(state["dashboard_compact_mode"])
 
 
 class DashboardCollapseHotfixTests(unittest.TestCase):
@@ -80,20 +76,26 @@ class DashboardCollapseHotfixTests(unittest.TestCase):
         self.assertEqual(state["dashboard_mode"], "Follow-Up Mode")
         self.assertNotIn("dashboard_materials_role_id", state)
 
-    def test_recommended_next_steps_use_compact_navigation_only(self):
+    def test_recommended_next_steps_collapse_to_header_only(self):
         record = _record(
             canonical_apply_url="https://jobs.example.com/role",
             posting_date="",
             freshness="Unknown freshness",
             _material_paths={"resume": __file__},
         )
-        st = _FakeStreamlit(state={"dashboard_compact_mode": True})
+        st = _FakeStreamlit(
+            state={
+                "dashboard_compact_mode": True,
+                "dashboard_next_steps_collapsed": True,
+            }
+        )
         app._render_recommended_next_steps(st, [record], "All Mode", {})
 
-        self.assertEqual({label for label, _ in st.buttons}, {"View role"})
-        self.assertEqual(st.links, [("Open posting", record["canonical_apply_url"])])
+        self.assertEqual({label for label, _ in st.buttons}, {"Expand"})
+        self.assertEqual(st.links, [])
         rendered = "\n".join(value for kind, value in st.messages if kind == "markdown")
-        self.assertNotIn("Generate Package", rendered)
+        self.assertIn("Recommended Next Steps (1)", rendered)
+        self.assertNotIn("Director, Operations", rendered)
 
     def test_application_tracker_renders_nonfocused_roles_compact(self):
         st = _FakeStreamlit(state={"dashboard_compact_mode": True})
@@ -121,7 +123,7 @@ class DashboardCollapseHotfixTests(unittest.TestCase):
         self.assertFalse(app.expand_focused_dashboard_role(no_focus))
         self.assertTrue(no_focus["dashboard_compact_mode"])
 
-    def test_compact_mode_keeps_focused_card_compact_until_expanded(self):
+    def test_compact_mode_hides_focused_workspace_until_expanded(self):
         record = _record()
         st = _FakeStreamlit(
             state={
@@ -133,7 +135,7 @@ class DashboardCollapseHotfixTests(unittest.TestCase):
             app._render_recommended_next_steps(
                 st, [record], "All Mode", {}, focus_records=[record]
             )
-        self.assertTrue(render_role.call_args.args[4])
+        render_role.assert_not_called()
 
     def test_clear_focus_preserves_compact_mode_and_filters(self):
         state = {

@@ -8,6 +8,7 @@ try:
     from .filename_utils import safe_filename, short_company_name
     from .load_data import load_all_yaml
     from .parse_job import parse_job_description
+    from .package_context import validate_material_context
     from .role_context import is_google_youtube_role
     from .score_match import score_job_match
     from .text_cleanup import cleanup_repeated_words
@@ -15,6 +16,7 @@ except ImportError:
     from filename_utils import safe_filename, short_company_name
     from load_data import load_all_yaml
     from parse_job import parse_job_description
+    from package_context import validate_material_context
     from role_context import is_google_youtube_role
     from score_match import score_job_match
     from text_cleanup import cleanup_repeated_words
@@ -541,6 +543,7 @@ def tailor_resume(
     markdown = cleanup_repeated_words(
         _render_markdown(career_data, parsed_job, match_report, resume_profile)
     )
+    validate_material_context(markdown, parsed_job, "Tailored_Resume")
 
     export_dir = root / "exports" / "markdown"
     export_dir.mkdir(parents=True, exist_ok=True)

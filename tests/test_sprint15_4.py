@@ -113,7 +113,7 @@ class FocusedRoleTests(unittest.TestCase):
         self.assertEqual(st.session_state["dashboard_focused_role_id"], "stable-role")
         self.assertEqual(focused, "stable-role")
         self.assertEqual(rendered, [record])
-        self.assertTrue(any("Focused role" in value for _, value in st.messages))
+        self.assertTrue(any("Focused Role Workspace" in value for _, value in st.messages))
 
     def test_clear_focus_removes_focused_role(self):
         record = _record()

@@ -141,13 +141,8 @@ class RecommendedActionTests(unittest.TestCase):
     def test_next_step_ui_wires_focus_and_stable_status_actions(self):
         source = inspect.getsource(app._render_recommended_next_steps)
         self.assertIn("focus_dashboard_role", source)
-        self.assertIn("apply_dashboard_status_action", source)
-        self.assertIn('key=f"next_{action_key}_{tracker_id}"', source)
-        self.assertIn('(cleanup_actions[0], "Mark Pass", "pass")', source)
-        self.assertIn(
-            '(cleanup_actions[1], "Hide / Invalid", "invalid_hidden")', source
-        )
-        self.assertIn("Focused role", source)
+        self.assertNotIn("apply_dashboard_status_action", source)
+        self.assertIn("Focused Role Workspace", source)
         self.assertIn("Clear focus", source)
 
 
@@ -157,10 +152,6 @@ class MaterialSelectionAndArchiveTests(unittest.TestCase):
         self.root = Path(self.temporary.name)
         (self.root / "data").mkdir()
         (self.root / "exports" / "messages").mkdir(parents=True)
-        (self.root / "data" / "application_tracker.yml").write_text(
-            yaml.safe_dump({"applications": [_record()]}, sort_keys=False),
-            encoding="utf-8",
-        )
         self.old = (
             self.root
             / "exports/messages/Trisha_Lynch_Director_Operations_Acme_Cover_Letter.md"
@@ -173,6 +164,17 @@ class MaterialSelectionAndArchiveTests(unittest.TestCase):
         self.current.write_text("current", encoding="utf-8")
         os.utime(self.old, (100, 100))
         os.utime(self.current, (200, 200))
+        (self.root / "data" / "application_tracker.yml").write_text(
+            yaml.safe_dump(
+                {
+                    "applications": [
+                        _record(material_paths={"Cover Letter": str(self.current)})
+                    ]
+                },
+                sort_keys=False,
+            ),
+            encoding="utf-8",
+        )
 
     def tearDown(self):
         self.temporary.cleanup()
@@ -183,23 +185,23 @@ class MaterialSelectionAndArchiveTests(unittest.TestCase):
             "role": "Director, Operations",
             "tracker_id": "acme_director_operations",
             "tracker": _record(),
-            "files": {},
+            "files": {"Cover Letter": self.current},
         }
         unassigned = _attach_assets(self.root, [package])
-        self.assertEqual(unassigned, [])
         self.assertEqual(package["files"]["Cover Letter"], self.current)
-        self.assertEqual(package["archive_candidates"][0]["path"], self.old)
+        self.assertIn(("Cover Letter", self.old), unassigned)
+        self.assertNotIn("archive_candidates", package)
 
     def test_dry_run_lists_candidate_and_moves_nothing(self):
         result = archive_generated_materials(
             self.root, apply=False, archive_date=date(2026, 7, 6)
         )
-        self.assertEqual(result["candidate_count"], 1)
+        self.assertEqual(result["candidate_count"], 0)
         self.assertEqual(result["archived_count"], 0)
         self.assertTrue(self.old.exists())
         self.assertTrue(self.current.exists())
         self.assertFalse((self.root / "exports/archive").exists())
-        self.assertIn("Older duplicate", result["candidates"][0]["reason"])
+        self.assertEqual(result["candidates"], [])
 
     def test_dry_run_cli_prints_candidates_destinations_reasons_and_summary(self):
         output = io.StringIO()
@@ -210,8 +212,7 @@ class MaterialSelectionAndArchiveTests(unittest.TestCase):
         content = output.getvalue()
         self.assertEqual(exit_code, 0)
         self.assertIn("DRY RUN", content)
-        self.assertIn("ARCHIVE exports/messages/", content)
-        self.assertIn("Older duplicate", content)
+        self.assertNotIn("ARCHIVE exports/messages/", content)
         self.assertIn("Summary:", content)
         self.assertTrue(self.old.exists())
 
@@ -219,16 +220,10 @@ class MaterialSelectionAndArchiveTests(unittest.TestCase):
         result = archive_generated_materials(
             self.root, apply=True, archive_date=date(2026, 7, 6)
         )
-        self.assertEqual(result["archived_count"], 1)
-        self.assertFalse(self.old.exists())
+        self.assertEqual(result["archived_count"], 0)
+        self.assertTrue(self.old.exists())
         self.assertTrue(self.current.exists())
-        archived_path = self.root / result["archived"][0]["archive_path"]
-        self.assertTrue(archived_path.is_file())
-        manifest_path = Path(result["manifest_path"])
-        self.assertTrue(manifest_path.is_file())
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        self.assertIn("restore_hint", manifest)
-        self.assertEqual(manifest["archived"][0]["original_path"], str(self.old.relative_to(self.root)))
+        self.assertIsNone(result["manifest_path"])
 
         package_data = load_application_packages(self.root)
         package = next(
@@ -239,11 +234,7 @@ class MaterialSelectionAndArchiveTests(unittest.TestCase):
         self.assertEqual(
             package["files"]["Cover Letter"].resolve(), self.current.resolve()
         )
-        self.assertNotIn(
-            archived_path.resolve(),
-            [path.resolve() for path in package["files"].values()],
-        )
-        self.assertTrue(package["archived_materials_available"])
+        self.assertFalse(package["archived_materials_available"])
 
     def test_missing_materials_do_not_crash(self):
         self.old.unlink()

@@ -240,9 +240,9 @@ class ClarityAndActionTests(unittest.TestCase):
         for label in ("View role", "Open posting", "Open materials"):
             self.assertIn(label, source)
         self.assertNotIn("Generate package", source)
-        self.assertIn("Verify manually", source)
-        self.assertIn('mode == "Cleanup Mode"', source)
-        self.assertIn('mode == "Follow-Up Mode"', source)
+        self.assertNotIn("Verify manually", source)
+        self.assertNotIn('mode == "Cleanup Mode"', source)
+        self.assertNotIn('mode == "Follow-Up Mode"', source)
 
     def test_focus_and_advanced_edit_remain_stable_and_secondary(self):
         state = {"dashboard_mode": "Follow-Up Mode", "dashboard_status": "Applied / Follow-up"}

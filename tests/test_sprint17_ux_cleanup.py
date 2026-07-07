@@ -120,17 +120,12 @@ class PostingDateAndVerificationTests(unittest.TestCase):
         self.assertEqual(unknown["posting_date_label"], "Posting date unknown")
 
     def test_verify_navigation_focuses_role_and_opens_source_panel(self):
-        record = _record(posting_date="", freshness="Unknown freshness")
-        st = _FakeStreamlit(clicks={"next_verify_stable-role"})
-        with patch.object(app, "_render_role_card") as render_role:
-            app._render_recommended_next_steps(
-                st, [record], "All Mode", {}, focus_records=[record]
-            )
-        self.assertEqual(st.session_state["dashboard_focused_role_id"], "stable-role")
+        state = {"dashboard_compact_mode": True}
+        app.focus_source_verification(state, "stable-role")
+        self.assertEqual(state["dashboard_focused_role_id"], "stable-role")
         self.assertEqual(
-            st.session_state["dashboard_source_verification_role_id"], "stable-role"
+            state["dashboard_source_verification_role_id"], "stable-role"
         )
-        render_role.assert_called_once()
 
     def test_manual_source_fields_persist_through_canonical_update_helper(self):
         with tempfile.TemporaryDirectory() as temporary:
