@@ -186,7 +186,10 @@ class CompactDashboardTests(unittest.TestCase):
             self.assertIn(label, source)
 
     def test_source_verification_panel_exposes_all_manual_fields(self):
-        source = __import__("inspect").getsource(app._render_role_card)
+        inspect = __import__("inspect")
+        source = inspect.getsource(app._render_role_card) + inspect.getsource(
+            app._render_source_verification_panel
+        )
         for label in (
             "Source Verification",
             "Posting date",

@@ -59,6 +59,12 @@ from scripts.job_importer import MINIMUM_DESCRIPTION_LENGTH, JobImportError, imp
 from scripts.job_identity import infer_job_fields_from_url, preferred_role_title
 from scripts.job_freshness import detect_job_freshness
 from scripts.job_source_registry import normalize_job_source
+try:
+    from scripts.job_source_registry import (
+        VERIFICATION_STATUSES as CANONICAL_VERIFICATION_STATUSES,
+    )
+except (AttributeError, ImportError):
+    CANONICAL_VERIFICATION_STATUSES = ()
 from scripts.package_generator import (
     PackageGenerationError,
     generate_package,
@@ -99,6 +105,13 @@ FOLLOW_UP_EDIT_OPTIONS = (
     "Follow-up sent",
     "Not applicable",
     "Not verified",
+)
+FALLBACK_VERIFICATION_STATUSES = (
+    "Not Verified",
+    "Employer Source",
+    "Verified Manually",
+    "Needs Review",
+    "Stale / Inactive",
 )
 OUTPUT_LABELS = {
     "job_file": "Job description",
@@ -431,6 +444,7 @@ def focus_dashboard_role(session_state: Any, role_reference: str) -> str:
     stable_id = str(role_reference or "").strip()
     if stable_id:
         session_state["dashboard_focused_role_id"] = stable_id
+        session_state["dashboard_compact_mode"] = False
     return stable_id
 
 
@@ -441,12 +455,27 @@ def clear_focused_dashboard_role(session_state: Any) -> None:
     session_state.pop("dashboard_source_verification_role_id", None)
 
 
+def collapse_dashboard_working_view(session_state: Any) -> None:
+    """Collapse dashboard content while retaining the selected role and filters."""
+    session_state["dashboard_compact_mode"] = True
+    session_state.pop("dashboard_materials_role_id", None)
+    session_state.pop("dashboard_source_verification_role_id", None)
+
+
+def expand_focused_dashboard_role(session_state: Any) -> bool:
+    """Expand only the current focused role, returning whether one exists."""
+    if not str(session_state.get("dashboard_focused_role_id") or "").strip():
+        return False
+    session_state["dashboard_compact_mode"] = False
+    return True
+
+
 def focus_source_verification(session_state: Any, role_reference: str) -> str:
     """Focus one role and reveal its editable source-verification panel."""
     stable_id = focus_dashboard_role(session_state, role_reference)
     if stable_id:
         session_state["dashboard_source_verification_role_id"] = stable_id
-        session_state["dashboard_expand_all"] = False
+        session_state["dashboard_compact_mode"] = False
     return stable_id
 
 
@@ -480,6 +509,22 @@ def safe_source_metadata(record: Dict[str, Any]) -> Dict[str, str]:
         "source_trust_label": text("source_trust_label", "Unknown Source"),
         "freshness_risk": text("freshness_risk", "Unknown"),
     }
+
+
+def verification_status_options(current_status: Any = "") -> tuple[str, ...]:
+    """Return canonical verification labels with a safe local fallback."""
+    canonical = globals().get("CANONICAL_VERIFICATION_STATUSES", ())
+    options = tuple(
+        str(value).strip()
+        for value in canonical
+        if isinstance(value, str) and value.strip()
+    )
+    if not options:
+        options = FALLBACK_VERIFICATION_STATUSES
+    current = str(current_status or "").strip()
+    if current and current not in options:
+        options = (current,) + options
+    return options
 
 
 def _sync_persisted_widget_value(
@@ -972,6 +1017,93 @@ def _material_button_rows(
                     (st.success if opened else st.warning)(message)
 
 
+def _render_source_verification_panel(
+    st: Any, application: Dict[str, Any], tracker_id: str
+) -> None:
+    """Render source verification safely for complete and legacy tracker records."""
+    posting_url = record_posting_url(application)
+    if not posting_url:
+        st.caption("No posting URL stored.")
+    verification_notes = str(
+        application.get("verification_notes") or "Verify manually"
+    )
+    st.markdown(f"**Verification notes:** {html.escape(verification_notes)}")
+    caution = source_verification_caution(application)
+    if caution:
+        st.warning(caution)
+    field_warnings = []
+    for warning_key in ("field_warnings", "source_warnings"):
+        warning_values = application.get(warning_key)
+        if isinstance(warning_values, list):
+            field_warnings.extend(str(value) for value in warning_values if value)
+        elif warning_values:
+            field_warnings.append(str(warning_values))
+    for warning in dict.fromkeys(field_warnings):
+        st.caption(f"• {warning}")
+    st.markdown("**Manual verification**")
+    posting_date = st.text_input(
+        "Posting date",
+        value=str(application.get("posting_date") or ""),
+        key=f"source_posting_date_{tracker_id}",
+        placeholder="YYYY-MM-DD",
+    )
+    current_verification = str(
+        application.get("verification_status") or "Not Verified"
+    )
+    verification_options = verification_status_options(current_verification)
+    verified_status = st.selectbox(
+        "Verified status",
+        verification_options,
+        index=verification_options.index(current_verification),
+        key=f"source_verified_status_{tracker_id}",
+    )
+    source_verified = st.checkbox(
+        "Source verified",
+        value=bool(application.get("source_verified", False)),
+        key=f"source_verified_{tracker_id}",
+    )
+    freshness_options = (
+        "Unknown freshness",
+        "Fresh",
+        "Active",
+        "Aging",
+        "Stale",
+    )
+    current_freshness = str(application.get("freshness") or "Unknown freshness")
+    if current_freshness not in freshness_options:
+        freshness_options = (current_freshness,) + freshness_options
+    freshness = st.selectbox(
+        "Freshness",
+        freshness_options,
+        index=freshness_options.index(current_freshness),
+        key=f"source_freshness_{tracker_id}",
+    )
+    source_notes = st.text_area(
+        "Verification notes",
+        value=str(application.get("verification_notes") or ""),
+        key=f"source_notes_{tracker_id}",
+    )
+    if st.button(
+        "Save source verification",
+        key=f"source_save_{tracker_id}",
+        use_container_width=True,
+    ):
+        update_dashboard_role(
+            tracker_id,
+            {
+                "status": get_record_status(application),
+                "posting_date": posting_date,
+                "verification_status": verified_status,
+                "source_verified": source_verified,
+                "freshness": freshness,
+                "verification_notes": source_notes,
+            },
+            PROJECT_ROOT,
+        )
+        st.session_state["dashboard_notice"] = "Source verification updated."
+        st.rerun()
+
+
 def _render_role_card(
     st: Any,
     application: Dict[str, Any],
@@ -1000,9 +1132,6 @@ def _render_role_card(
                     st.session_state, dashboard_role_reference(application)
                 )
                 st.rerun()
-            metadata = _primary_facts_html(application, package)
-            if metadata:
-                st.markdown(metadata, unsafe_allow_html=True)
         return
     with st.container(border=True):
         flash_key = f"dashboard_flash_{tracker_id}"
@@ -1059,93 +1188,7 @@ def _render_role_card(
             st.session_state.get("dashboard_source_verification_role_id") or ""
         ) in {tracker_id, dashboard_role_reference(application)}
         with st.expander("Source Verification", expanded=source_panel_open):
-            posting_url = record_posting_url(application)
-            if not posting_url:
-                st.caption("No posting URL stored.")
-            verification_notes = str(
-                application.get("verification_notes") or "Verify manually"
-            )
-            st.markdown(f"**Verification notes:** {html.escape(verification_notes)}")
-            caution = source_verification_caution(application)
-            if caution:
-                st.warning(caution)
-            field_warnings = []
-            for warning_key in ("field_warnings", "source_warnings"):
-                warning_values = application.get(warning_key)
-                if isinstance(warning_values, list):
-                    field_warnings.extend(
-                        str(value) for value in warning_values if value
-                    )
-                elif warning_values:
-                    field_warnings.append(str(warning_values))
-            for warning in dict.fromkeys(field_warnings):
-                st.caption(f"• {warning}")
-            st.markdown("**Manual verification**")
-            posting_date = st.text_input(
-                "Posting date",
-                value=str(application.get("posting_date") or ""),
-                key=f"source_posting_date_{tracker_id}",
-                placeholder="YYYY-MM-DD",
-            )
-            verification_options = tuple(VERIFICATION_STATUSES)
-            current_verification = str(
-                application.get("verification_status") or "Not Verified"
-            )
-            if current_verification not in verification_options:
-                verification_options = (current_verification,) + verification_options
-            verified_status = st.selectbox(
-                "Verified status",
-                verification_options,
-                index=verification_options.index(current_verification),
-                key=f"source_verified_status_{tracker_id}",
-            )
-            source_verified = st.checkbox(
-                "Source verified",
-                value=bool(application.get("source_verified", False)),
-                key=f"source_verified_{tracker_id}",
-            )
-            freshness_options = (
-                "Unknown freshness",
-                "Fresh",
-                "Active",
-                "Aging",
-                "Stale",
-            )
-            current_freshness = str(
-                application.get("freshness") or "Unknown freshness"
-            )
-            if current_freshness not in freshness_options:
-                freshness_options = (current_freshness,) + freshness_options
-            freshness = st.selectbox(
-                "Freshness",
-                freshness_options,
-                index=freshness_options.index(current_freshness),
-                key=f"source_freshness_{tracker_id}",
-            )
-            source_notes = st.text_area(
-                "Verification notes",
-                value=str(application.get("verification_notes") or ""),
-                key=f"source_notes_{tracker_id}",
-            )
-            if st.button(
-                "Save source verification",
-                key=f"source_save_{tracker_id}",
-                use_container_width=True,
-            ):
-                update_dashboard_role(
-                    tracker_id,
-                    {
-                        "status": get_record_status(application),
-                        "posting_date": posting_date,
-                        "verification_status": verified_status,
-                        "source_verified": source_verified,
-                        "freshness": freshness,
-                        "verification_notes": source_notes,
-                    },
-                    PROJECT_ROOT,
-                )
-                st.session_state["dashboard_notice"] = "Source verification updated."
-                st.rerun()
+            _render_source_verification_panel(st, application, tracker_id)
 
         notes = str(application.get("notes") or "").strip()
         if notes:
@@ -1365,7 +1408,6 @@ def _render_application_tracker(
     grouped = group_applications_by_status(
         applications, preserve_order=True, mode=mode
     )
-    compact_cards = not bool(st.session_state.get("dashboard_expand_all", False))
     for label, group in grouped.items():
         count_label = "role" if len(group) == 1 else "roles"
         heading = (
@@ -1382,7 +1424,7 @@ def _render_application_tracker(
                         application,
                         packages.get(str(application.get("id")), {}),
                         mode,
-                        compact=compact_cards,
+                        compact=True,
                     )
             continue
         st.markdown(heading, unsafe_allow_html=True)
@@ -1394,7 +1436,7 @@ def _render_application_tracker(
                 application,
                 packages.get(str(application.get("id")), {}),
                 mode,
-                compact=compact_cards,
+                compact=True,
             )
 
 
@@ -1407,6 +1449,7 @@ def _render_recommended_next_steps(
 ) -> str:
     steps = structured_recommended_next_steps(applications, mode)
     all_focus_records = focus_records if focus_records is not None else applications
+    compact_mode = bool(st.session_state.get("dashboard_compact_mode", False))
     with st.container(border=True):
         st.markdown("**Recommended Next Steps**")
         if not steps:
@@ -1415,6 +1458,25 @@ def _render_recommended_next_steps(
             tracker_id = step["tracker_id"]
             record = find_dashboard_role(applications, tracker_id) or {}
             role_reference = dashboard_role_reference(record) or tracker_id
+            if compact_mode:
+                st.markdown(
+                    f"**{step['company']} — {step['title']}**  "
+                    f"\n{str(step['recommendation']).strip()} · "
+                    f"`{get_record_status(record)}`"
+                )
+                compact_actions = st.columns(2)
+                if compact_actions[0].button(
+                    "View role",
+                    key=f"next_view_{role_reference}",
+                    use_container_width=True,
+                ):
+                    focus_dashboard_role(st.session_state, role_reference)
+                    st.rerun()
+                if step.get("posting_url"):
+                    compact_actions[1].link_button(
+                        "Open posting", step["posting_url"], use_container_width=True
+                    )
+                continue
             st.markdown(
                 f"**{step['priority']}. {step['company']} — {step['title']}**  "
                 f"\n{step['recommendation']}  "
@@ -1518,7 +1580,7 @@ def _render_recommended_next_steps(
         if focused_reference not in visible_references:
             st.caption("Showing focused role outside current filters for convenience.")
         package = packages.get(str(focused.get("id") or ""), {})
-        _render_role_card(st, focused, package, mode)
+        _render_role_card(st, focused, package, mode, compact_mode)
         return str(focused.get("id") or focused_reference)
     if focused_id:
         warning_column, clear_column = st.columns((5, 1))
@@ -2506,20 +2568,29 @@ def _render_dashboard(st: Any) -> None:
         trust_label=trust_label,
     )
     records = sort_dashboard_records(records, sort_by)
+    st.session_state.setdefault("dashboard_compact_mode", False)
+    has_focused_role = bool(
+        str(st.session_state.get("dashboard_focused_role_id") or "").strip()
+    )
     workspace_controls = st.columns(3)
     if workspace_controls[0].button(
         "Collapse All", key="dashboard_collapse_all", use_container_width=True
     ):
-        st.session_state["dashboard_expand_all"] = False
-        clear_focused_dashboard_role(st.session_state)
+        collapse_dashboard_working_view(st.session_state)
         st.rerun()
     if workspace_controls[1].button(
-        "Expand Focused", key="dashboard_expand_focused", use_container_width=True
+        "Expand Focused",
+        key="dashboard_expand_focused",
+        use_container_width=True,
+        disabled=not has_focused_role,
     ):
-        st.session_state["dashboard_expand_all"] = False
+        expand_focused_dashboard_role(st.session_state)
         st.rerun()
     if workspace_controls[2].button(
-        "Clear Focus", key="dashboard_clear_focus_control", use_container_width=True
+        "Clear Focus",
+        key="dashboard_clear_focus_control",
+        use_container_width=True,
+        disabled=not has_focused_role,
     ):
         clear_focused_dashboard_role(st.session_state)
         st.rerun()
