@@ -562,7 +562,13 @@ def detect_role_family(job_title: str = "", job_description: str = "") -> str:
         signal in combined for signal in ("strategy", "operations", "roadmap", "okr")
     ):
         return "product_strategy_ops"
-    if any(signal in combined for signal in ("gtm", "go to market", "seller enablement", "product activation", "product adoption")):
+    if (
+        any(
+            signal in combined
+            for signal in ("seller enablement", "product activation", "product adoption")
+        )
+        or any(signal in title for signal in ("gtm", "go to market"))
+    ):
         return "gtm_product_activation"
     if any(signal in combined for signal in ("streaming", "franchise", "content slate", "studios")) and any(
         signal in title for signal in ("strategy", "operations", "initiatives")

@@ -7,10 +7,6 @@ GOOGLE_YOUTUBE_SIGNALS = (
     "youtube",
     "google ads",
     "brand auction",
-    "go-to-market",
-    "gtm",
-    "product activation",
-    "ai-powered campaign",
 )
 
 GOOGLE_IMPLICATION_PHRASES = (
@@ -49,7 +45,9 @@ def is_google_youtube_role(parsed_job: Dict[str, Any]) -> bool:
             *parsed_job.get("keywords", []),
         )
     ).lower()
-    return company == "google" or any(signal in text for signal in GOOGLE_YOUTUBE_SIGNALS)
+    return company == "google" or any(
+        signal in text for signal in GOOGLE_YOUTUBE_SIGNALS
+    )
 
 
 def google_claim_violations(text: str) -> List[str]:

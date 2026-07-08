@@ -484,10 +484,29 @@ def reset_package_preview_for_selection(
     previous = str(session_state.get("package_preview_prospect_id") or "").strip()
     if previous == selected:
         return False
-    session_state.pop("last_package_outputs", None)
-    session_state.pop("last_package_result", None)
+    for key in (
+        "last_package_outputs",
+        "last_package_result",
+        "package_role_intelligence",
+        "package_intelligence_preview",
+        "package_suggested_cover_letter_angle",
+        "package_suggested_proof_points",
+        "package_company_voice",
+        "package_company_category",
+        "package_role_family",
+    ):
+        session_state.pop(key, None)
     session_state["package_preview_prospect_id"] = selected
     return True
+
+
+def mark_prospect_intelligence_stale(session_state: Any) -> None:
+    """Mark intake analysis stale after role-defining fields change."""
+    session_state["prospect_intelligence_stale"] = True
+    session_state["prospect_import_result"] = (
+        "error",
+        "Role details changed. Re-parse and re-score before generating a package.",
+    )
 
 
 def focus_source_verification(session_state: Any, role_reference: str) -> str:
@@ -1646,6 +1665,7 @@ def _render_package_summary(st: Any, package_result: Dict[str, Any]) -> None:
 def _initialize_intake_state(st: Any) -> None:
     defaults = {
         "prospect_url": "",
+        "prospect_context_url": "",
         "prospect_original_source_url": "",
         "prospect_canonical_url": "",
         "prospect_job_id": "",
@@ -1661,6 +1681,7 @@ def _initialize_intake_state(st: Any) -> None:
         "prospect_description": "",
         "prospect_notes": "",
         "prospect_next_action": "Review fit and generate application package.",
+        "prospect_intelligence_stale": False,
     }
     for key, value in defaults.items():
         st.session_state.setdefault(key, value)
@@ -1751,6 +1772,20 @@ def apply_prospect_url_import_state(
     """Run the shared Enter/button URL import path while preserving safe fallback state."""
     import_callable = importer or import_job_from_url
     url = str(session_state.get("prospect_url") or "").strip()
+    previous_context_url = session_state.get("prospect_context_url")
+    if previous_context_url is not None and str(previous_context_url) != url:
+        for key in (
+            "prospect_company",
+            "prospect_role",
+            "prospect_location",
+            "prospect_salary",
+            "prospect_posting_date",
+            "prospect_description",
+            "prospect_job_id",
+        ):
+            session_state[key] = ""
+        mark_prospect_intelligence_stale(session_state)
+    session_state["prospect_context_url"] = url
     session_state["prospect_url"] = url
     session_state["prospect_original_source_url"] = url
     fallback = infer_job_fields_from_url(url)
@@ -1783,6 +1818,7 @@ def apply_prospect_url_import_state(
         session_state["prospect_next_action"] = (
             "Paste the job description and re-score before generating package."
         )
+        session_state["prospect_intelligence_stale"] = True
         return {"status": "partial", "message": message, "verification": verification}
 
     imported_title = imported.get("job_title")
@@ -1821,6 +1857,7 @@ def apply_prospect_url_import_state(
         "error" if title_rejected or incomplete else "success",
         message,
     )
+    session_state["prospect_intelligence_stale"] = bool(title_rejected or incomplete)
     return {
         "status": "partial" if title_rejected or incomplete else "success",
         "message": message,
@@ -1947,6 +1984,9 @@ def _render_add_prospect(st: Any) -> None:
     def trigger_url_import() -> None:
         apply_prospect_url_import_state(st.session_state)
 
+    def mark_intelligence_stale() -> None:
+        mark_prospect_intelligence_stale(st.session_state)
+
     st.text_input(
         "Job listing URL", key="prospect_url", on_change=trigger_url_import
     )
@@ -1958,8 +1998,12 @@ def _render_add_prospect(st: Any) -> None:
 
     left, right = st.columns(2)
     with left:
-        st.text_input("Company", key="prospect_company")
-        st.text_input("Role title", key="prospect_role")
+        st.text_input(
+            "Company", key="prospect_company", on_change=mark_intelligence_stale
+        )
+        st.text_input(
+            "Role title", key="prospect_role", on_change=mark_intelligence_stale
+        )
         st.text_input("Location", key="prospect_location")
         st.text_input("Salary range", key="prospect_salary")
         st.text_input("Source", key="prospect_source")
@@ -1983,6 +2027,7 @@ def _render_add_prospect(st: Any) -> None:
         key="prospect_description",
         height=360,
         help="Manual paste is always supported and is required when a career page blocks import.",
+        on_change=mark_intelligence_stale,
     )
 
     def reparse_current_fields() -> None:
@@ -2014,6 +2059,9 @@ def _render_add_prospect(st: Any) -> None:
             "Re-parsed current fields and refreshed the match score."
             if report.get("match_score") is not None
             else "Import partially failed. Paste the job description below, then re-parse and re-score.",
+        )
+        st.session_state["prospect_intelligence_stale"] = bool(
+            report.get("match_score") is None
         )
 
     st.button("Re-parse details and re-score", on_click=reparse_current_fields)

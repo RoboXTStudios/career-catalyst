@@ -12,7 +12,9 @@ except ImportError:
 
 
 CONTEXT_MISMATCH_MESSAGE = (
-    "Package context mismatch detected. Regenerate from the selected role."
+    "Package context mismatch detected. Career Catalyst blocked this material because "
+    "it appears to include stale context from another role. Regenerate after reloading "
+    "the selected role."
 )
 
 STALE_CONTEXT_SIGNALS = {

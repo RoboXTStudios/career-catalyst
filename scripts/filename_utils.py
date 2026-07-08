@@ -156,7 +156,7 @@ def company_display_name(company: Any) -> str:
         "",
         raw,
         flags=re.I,
-    ).strip()
+    ).strip().rstrip(" ,.")
 
 
 def short_company_name(company: str) -> str:
