@@ -150,7 +150,7 @@ class FocusedRoleTests(unittest.TestCase):
 class NavigationActionTests(unittest.TestCase):
     def test_posting_and_material_buttons_only_render_when_available(self):
         with tempfile.TemporaryDirectory() as temporary:
-            material = Path(temporary) / "resume.md"
+            material = Path(temporary) / "resume.txt"
             material.write_text("resume", encoding="utf-8")
             record = _record(
                 canonical_apply_url="https://jobs.netflix.com/example",

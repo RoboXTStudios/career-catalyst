@@ -66,7 +66,7 @@ def generate_interview_prep(
     )
     validate_material_context(content, parsed, "Interview_Prep")
     filename = build_upload_filename(
-        "Trisha Lynch", role, company, "Interview Prep", "md"
+        "Trisha Lynch", role, company, "Interview Prep", "txt"
     )
     root = Path(project_root) if project_root is not None else Path.cwd()
     output_path = root / "exports" / "strategy_packs" / filename

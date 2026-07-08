@@ -545,13 +545,15 @@ def tailor_resume(
     )
     validate_material_context(markdown, parsed_job, "Tailored_Resume")
 
-    export_dir = root / "exports" / "markdown"
+    export_dir = root / "exports" / "internal" / "resumes"
     export_dir.mkdir(parents=True, exist_ok=True)
     output_path = export_dir / safe_filename(
         f"Trisha_Lynch_{resume_profile}_{short_company_name(parsed_job.get('company') or 'sample')}_Resume",
         "md",
     )
     output_path.write_text(markdown, encoding="utf-8")
+    text_path = output_path.with_suffix(".txt")
+    text_path.write_text(markdown, encoding="utf-8")
 
     return {
         "job_title": parsed_job.get("job_title"),
@@ -562,4 +564,5 @@ def tailor_resume(
         "match_band": match_report.get("match_band"),
         "tailoring_notes": match_report.get("tailoring_notes", []),
         "output_path": str(output_path),
+        "txt_output_path": str(text_path),
     }

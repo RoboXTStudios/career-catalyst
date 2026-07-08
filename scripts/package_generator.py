@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
@@ -31,6 +32,7 @@ try:
         validate_package_outputs,
     )
     from .package_context import PackageContextMismatchError
+    from .materials_library import organize_package_outputs
     from .filename_utils import company_display_name
     from .parse_job import JobParseError, parse_job_description
     from .prospect_intake import add_prospect_from_job_file
@@ -61,6 +63,7 @@ except ImportError:
         validate_package_outputs,
     )
     from package_context import PackageContextMismatchError
+    from materials_library import organize_package_outputs
     from filename_utils import company_display_name
     from parse_job import JobParseError, parse_job_description
     from prospect_intake import add_prospect_from_job_file
@@ -404,6 +407,7 @@ def generate_package(
         outputs = {
             "job_file": str(job_path),
             "resume_markdown": _output_path(resume),
+            "resume_text": resume.get("txt_output_path"),
             "styled_docx": _output_path(styled),
             "ats_docx": _output_path(ats),
             "cover_letter": _output_path(cover_letter),
@@ -435,6 +439,8 @@ def generate_package(
             if companion:
                 outputs[text_key] = companion
         outputs = {key: value for key, value in outputs.items() if value}
+        organized = organize_package_outputs(root, application, outputs)
+        outputs = dict(organized["outputs"])
         material_errors = {
             key: value
             for key, value in {
@@ -445,14 +451,28 @@ def generate_package(
             if value
         }
         checklist = validate_package_outputs(outputs, material_errors)
+        preferred_paths = preferred_material_paths(checklist)
+        manifest = organized.get("manifest")
+        if manifest:
+            manifest["materials"] = preferred_paths
+            manifest_path = Path(str(manifest["manifest_path"]))
+            manifest_path.write_text(
+                json.dumps(
+                    {key: value for key, value in manifest.items() if key != "manifest_path"},
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
         application = update_prospect(
             tracker_id,
             {
-                "material_paths": preferred_material_paths(checklist),
-                "package_manifest": {
-                    "prospect_id": tracker_id,
-                    "materials": preferred_material_paths(checklist),
-                },
+                "material_paths": preferred_paths,
+                "package_manifest": (
+                    manifest
+                    if manifest
+                    else {"prospect_id": tracker_id, "materials": preferred_paths}
+                ),
             },
             root,
         )

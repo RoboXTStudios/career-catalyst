@@ -1250,24 +1250,69 @@ applications:
     confidence_level: High
     confidence_score: 81
   material_paths:
-    ATS Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/docx/TrishaLynch_DirectorProductMartechEngagementPlatforms_Paramount_ATS.docx
-    Styled Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/docx/TrishaLynch_DirectorProductMartechEngagementPlatforms_Paramount_Styled.docx
-    Tailored Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/markdown/Trisha_Lynch_executive_operations_Paramount_Resume.txt
-    Cover Letter: /Users/trisha.lynch/Documents/career-catalyst/exports/messages/TrishaLynch_DirectorProductMartechEngagementPlatforms_Paramount_CoverLetter.docx
-    Application Note: /Users/trisha.lynch/Documents/career-catalyst/exports/messages/TrishaLynch_DirectorProductMartechEngagementPlatforms_Paramount_ApplicationNote.txt
-    Recruiter Message: /Users/trisha.lynch/Documents/career-catalyst/exports/messages/TrishaLynch_DirectorProductMartechEngagementPlatforms_Paramount_RecruiterMessage.txt
-    Hiring Manager Message: /Users/trisha.lynch/Documents/career-catalyst/exports/messages/TrishaLynch_DirectorProductMartechEngagementPlatforms_Paramount_HiringManagerMessage.txt
-    Strategy Pack: /Users/trisha.lynch/Documents/career-catalyst/exports/strategy_packs/TrishaLynch_DirectorProductMartechEngagementPlatforms_Paramount_StrategyPack.txt
-    Interview Prep: /Users/trisha.lynch/Documents/career-catalyst/exports/strategy_packs/TrishaLynch_DirectorProductMartechEngagementPlatforms_Paramount_InterviewPrep.txt
-    Package Summary: /Users/trisha.lynch/Documents/career-catalyst/exports/strategy_packs/TrishaLynch_DirectorProductMartechEngagementPlatforms_Paramount_PackageSummary.txt
-    Recruiter Follow-Up: /Users/trisha.lynch/Documents/career-catalyst/exports/followups/TrishaLynch_DirectorProductMartechEngagementPlatforms_Paramount_RecruiterFollowup.txt
-    Hiring Manager Follow-Up: /Users/trisha.lynch/Documents/career-catalyst/exports/followups/TrishaLynch_DirectorProductMartechEngagementPlatforms_Paramount_HiringManagerFollowup.txt
-    Warm Contact Message: /Users/trisha.lynch/Documents/career-catalyst/exports/followups/TrishaLynch_DirectorProductMartechEngagementPlatforms_Paramount_WarmContactMessage.txt
-    Referral Ask: /Users/trisha.lynch/Documents/career-catalyst/exports/followups/TrishaLynch_DirectorProductMartechEngagementPlatforms_Paramount_ReferralAsk.txt
-    Follow-Up Strategy: /Users/trisha.lynch/Documents/career-catalyst/exports/followups/TrishaLynch_DirectorProductMartechEngagementPlatforms_Paramount_FollowupStrategy.txt
-    Job Description: /Users/trisha.lynch/Documents/career-catalyst/jobs/paramount_director_product_martech_and_engagement_platforms_1395690500.md
+    ATS Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/ats_resume.docx
+    Styled Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/styled_resume.docx
+    Tailored Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/resume.txt
+    Cover Letter: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/cover_letter.docx
+    Application Note: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/application_note.txt
+    Recruiter Message: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/recruiter_message.txt
+    Hiring Manager Message: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/hiring_manager_message.txt
+    Strategy Pack: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/strategy_pack.txt
+    Interview Prep: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/interview_prep.txt
+    Package Summary: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/package_summary.txt
+    Recruiter Follow-Up: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/recruiter_followup.txt
+    Hiring Manager Follow-Up: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/hiring_manager_followup.txt
+    Warm Contact Message: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/warm_contact_message.txt
+    Referral Ask: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/referral_ask.txt
+    Follow-Up Strategy: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/followup_strategy.txt
   suggested_follow_up_date: ''
   follow_up_status: Not applicable
+  package_manifest:
+    prospect_id: paramount_director_product_martech_and_engagement_platforms
+    slug: paramount_director_product_martech_and_engagement_platforms
+    company: Paramount
+    role_title: Director, Product, MarTech and Engagement Platforms
+    status: Invalid/Hidden
+    generated_at: '2026-07-08T01:19:30.473963+00:00'
+    applied_date: ''
+    status_date: ''
+    source_url: https://careers.paramount.com/job/Burbank-Director%2C-Product%2C-MarTech-and-Engagement-Platforms-CA-91505/1395690500/
+    files:
+      ATS Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/ats_resume.docx
+      Styled Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/styled_resume.docx
+      Tailored Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/resume.txt
+      Cover Letter: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/cover_letter.docx
+      Application Note: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/application_note.txt
+      Recruiter Message: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/recruiter_message.txt
+      Hiring Manager Message: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/hiring_manager_message.txt
+      Strategy Pack: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/strategy_pack.txt
+      Interview Prep: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/interview_prep.txt
+      Package Summary: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/package_summary.txt
+      Recruiter Follow-Up: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/recruiter_followup.txt
+      Hiring Manager Follow-Up: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/hiring_manager_followup.txt
+      Warm Contact Message: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/warm_contact_message.txt
+      Referral Ask: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/referral_ask.txt
+      Follow-Up Strategy: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/followup_strategy.txt
+    archived: true
+    archive_reason: 'Status: Invalid/Hidden'
+    legacy_files_moved: []
+    manifest_path: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/manifest.json
+    materials:
+      ATS Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/ats_resume.docx
+      Styled Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/styled_resume.docx
+      Tailored Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/resume.txt
+      Cover Letter: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/cover_letter.docx
+      Application Note: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/application_note.txt
+      Recruiter Message: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/recruiter_message.txt
+      Hiring Manager Message: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/hiring_manager_message.txt
+      Strategy Pack: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/strategy_pack.txt
+      Interview Prep: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/interview_prep.txt
+      Package Summary: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/package_summary.txt
+      Recruiter Follow-Up: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/recruiter_followup.txt
+      Hiring Manager Follow-Up: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/hiring_manager_followup.txt
+      Warm Contact Message: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/warm_contact_message.txt
+      Referral Ask: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/referral_ask.txt
+      Follow-Up Strategy: /Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/paramount_director_product_martech_and_engagement_platforms/followup_strategy.txt
 - id: 600_umg_recordings_inc_vice_president_planning_and_forecasting_coe_lead
   company: 600 UMG Recordings Inc
   company_aliases: []
@@ -1416,18 +1461,50 @@ applications:
     confidence_level: Medium
     confidence_score: 76
   material_paths:
-    ATS Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/docx/TrishaLynch_SeniorDirectorProjectPmoLead_600UmgRecordings_ATS.docx
-    Styled Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/docx/TrishaLynch_SeniorDirectorProjectPmoLead_600UmgRecordings_Styled.docx
-    Tailored Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/markdown/Trisha_Lynch_executive_operations_600_UMG_Recordings_Inc_Resume.txt
-    Cover Letter: /Users/trisha.lynch/Documents/career-catalyst/exports/messages/TrishaLynch_SeniorDirectorProjectPmoLead_600UmgRecordings_CoverLetter.docx
-    Application Note: /Users/trisha.lynch/Documents/career-catalyst/exports/messages/TrishaLynch_SeniorDirectorProjectPmoLead_600UmgRecordings_ApplicationNote.txt
-    Recruiter Message: /Users/trisha.lynch/Documents/career-catalyst/exports/messages/TrishaLynch_SeniorDirectorProjectPmoLead_600UmgRecordings_RecruiterMessage.txt
-    Hiring Manager Message: /Users/trisha.lynch/Documents/career-catalyst/exports/messages/TrishaLynch_SeniorDirectorProjectPmoLead_600UmgRecordings_HiringManagerMessage.txt
-    Strategy Pack: /Users/trisha.lynch/Documents/career-catalyst/exports/strategy_packs/TrishaLynch_SeniorDirectorProjectPmoLead_600UmgRecordings_StrategyPack.txt
-    Interview Prep: /Users/trisha.lynch/Documents/career-catalyst/exports/strategy_packs/TrishaLynch_SeniorDirectorProjectPmoLead_600UmgRecordings_InterviewPrep.txt
-    Package Summary: /Users/trisha.lynch/Documents/career-catalyst/exports/strategy_packs/TrishaLynch_SeniorDirectorProjectPmoLead_600UmgRecordings_PackageSummary.txt
-    Job Description: /Users/trisha.lynch/Documents/career-catalyst/jobs/600_umg_recordings_inc_senior_director_project_and_pmo_lead.md
+    Styled Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead/styled_resume.docx
+    Tailored Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead/resume.txt
+    Cover Letter: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead/cover_letter.docx
+    Application Note: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead/application_note.txt
+    Recruiter Message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead/recruiter_message.txt
+    Hiring Manager Message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead/hiring_manager_message.txt
+    Strategy Pack: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead/strategy_pack.txt
+    Interview Prep: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead/interview_prep.txt
+    Package Summary: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead/package_summary.txt
   submitted_date: '2026-07-07'
+  package_manifest:
+    prospect_id: 600_umg_recordings_inc_senior_director_project_and_pmo_lead
+    slug: 600_umg_recordings_inc_senior_director_project_and_pmo_lead
+    company: 600 UMG Recordings Inc
+    role_title: Senior Director, Project and PMO Lead
+    status: Applied
+    generated_at: '2026-07-08T01:19:30.703425+00:00'
+    applied_date: '2026-07-07'
+    status_date: ''
+    source_url: https://umusic.wd5.myworkdayjobs.com/en-US/UMGUS/details/Senior-Director--Project-and-PMO-Lead_UMG-26888?locations=448dd8b6f52e10017253a5c3ba3d0000&locations=3c818403cbba0113f4708c861723e448&locations=448dd8b6f52e100172539dd99f100000&locations=448dd8b6f52e10017251dc9b02b70000&locations=448dd8b6f52e10017253785b2e480000&locations=448dd8b6f52e10017253ad06ac310000&locations=448dd8b6f52e10017253969def3a0000
+    files:
+      Styled Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead/styled_resume.docx
+      Tailored Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead/resume.txt
+      Cover Letter: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead/cover_letter.docx
+      Application Note: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead/application_note.txt
+      Recruiter Message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead/recruiter_message.txt
+      Hiring Manager Message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead/hiring_manager_message.txt
+      Strategy Pack: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead/strategy_pack.txt
+      Interview Prep: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead/interview_prep.txt
+      Package Summary: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead/package_summary.txt
+    archived: false
+    archive_reason: ''
+    legacy_files_moved: []
+    manifest_path: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead/manifest.json
+    materials:
+      Styled Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead/styled_resume.docx
+      Tailored Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead/resume.txt
+      Cover Letter: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead/cover_letter.docx
+      Application Note: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead/application_note.txt
+      Recruiter Message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead/recruiter_message.txt
+      Hiring Manager Message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead/hiring_manager_message.txt
+      Strategy Pack: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead/strategy_pack.txt
+      Interview Prep: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead/interview_prep.txt
+      Package Summary: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead/package_summary.txt
 - id: netflix_inc_program_manager_design
   company: Netflix, Inc.
   company_aliases: []
@@ -1509,29 +1586,50 @@ applications:
     confidence_level: Medium
     confidence_score: 74
   material_paths:
-    ATS Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/docx/TrishaLynch_ProgramManagerDesign_Netflix_ATS.docx
-    Styled Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/docx/TrishaLynch_ProgramManagerDesign_Netflix_Styled.docx
-    Tailored Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/markdown/Trisha_Lynch_executive_operations_Netflix_Resume.txt
-    Cover Letter: /Users/trisha.lynch/Documents/career-catalyst/exports/messages/TrishaLynch_ProgramManagerDesign_Netflix_CoverLetter.docx
-    Application Note: /Users/trisha.lynch/Documents/career-catalyst/exports/messages/TrishaLynch_ProgramManagerDesign_Netflix_ApplicationNote.txt
-    Recruiter Message: /Users/trisha.lynch/Documents/career-catalyst/exports/messages/TrishaLynch_ProgramManagerDesign_Netflix_RecruiterMessage.txt
-    Hiring Manager Message: /Users/trisha.lynch/Documents/career-catalyst/exports/messages/TrishaLynch_ProgramManagerDesign_Netflix_HiringManagerMessage.txt
-    Strategy Pack: /Users/trisha.lynch/Documents/career-catalyst/exports/strategy_packs/TrishaLynch_ProgramManagerDesign_Netflix_StrategyPack.txt
-    Interview Prep: /Users/trisha.lynch/Documents/career-catalyst/exports/strategy_packs/TrishaLynch_ProgramManagerDesign_Netflix_InterviewPrep.txt
-    Package Summary: /Users/trisha.lynch/Documents/career-catalyst/exports/strategy_packs/TrishaLynch_ProgramManagerDesign_Netflix_PackageSummary.txt
-    Job Description: /Users/trisha.lynch/Documents/career-catalyst/jobs/netflix_inc_program_manager_design.md
+    ATS Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/ats_resume.docx
+    Styled Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/styled_resume.docx
+    Tailored Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/resume.txt
+    Cover Letter: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/cover_letter.docx
+    Application Note: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/application_note.txt
+    Recruiter Message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/recruiter_message.txt
+    Hiring Manager Message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/hiring_manager_message.txt
+    Strategy Pack: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/strategy_pack.txt
+    Interview Prep: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/interview_prep.txt
+    Package Summary: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/package_summary.txt
   package_manifest:
     prospect_id: netflix_inc_program_manager_design
+    slug: netflix_inc_program_manager_design
+    company: Netflix, Inc.
+    role_title: Program Manager, Design
+    status: Applied
+    generated_at: '2026-07-08T01:19:30.931272+00:00'
+    applied_date: '2026-07-07'
+    status_date: ''
+    source_url: https://netflix.wd108.myworkdayjobs.com/en-US/Netflix/job/Program-Manager--Design_JR40464?locations=84a618b29e90102fcd70873d84b807f4
+    files:
+      ATS Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/ats_resume.docx
+      Styled Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/styled_resume.docx
+      Tailored Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/resume.txt
+      Cover Letter: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/cover_letter.docx
+      Application Note: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/application_note.txt
+      Recruiter Message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/recruiter_message.txt
+      Hiring Manager Message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/hiring_manager_message.txt
+      Strategy Pack: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/strategy_pack.txt
+      Interview Prep: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/interview_prep.txt
+      Package Summary: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/package_summary.txt
+    archived: false
+    archive_reason: ''
+    legacy_files_moved: []
+    manifest_path: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/manifest.json
     materials:
-      ATS Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/docx/TrishaLynch_ProgramManagerDesign_Netflix_ATS.docx
-      Styled Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/docx/TrishaLynch_ProgramManagerDesign_Netflix_Styled.docx
-      Tailored Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/markdown/Trisha_Lynch_executive_operations_Netflix_Resume.txt
-      Cover Letter: /Users/trisha.lynch/Documents/career-catalyst/exports/messages/TrishaLynch_ProgramManagerDesign_Netflix_CoverLetter.docx
-      Application Note: /Users/trisha.lynch/Documents/career-catalyst/exports/messages/TrishaLynch_ProgramManagerDesign_Netflix_ApplicationNote.txt
-      Recruiter Message: /Users/trisha.lynch/Documents/career-catalyst/exports/messages/TrishaLynch_ProgramManagerDesign_Netflix_RecruiterMessage.txt
-      Hiring Manager Message: /Users/trisha.lynch/Documents/career-catalyst/exports/messages/TrishaLynch_ProgramManagerDesign_Netflix_HiringManagerMessage.txt
-      Strategy Pack: /Users/trisha.lynch/Documents/career-catalyst/exports/strategy_packs/TrishaLynch_ProgramManagerDesign_Netflix_StrategyPack.txt
-      Interview Prep: /Users/trisha.lynch/Documents/career-catalyst/exports/strategy_packs/TrishaLynch_ProgramManagerDesign_Netflix_InterviewPrep.txt
-      Package Summary: /Users/trisha.lynch/Documents/career-catalyst/exports/strategy_packs/TrishaLynch_ProgramManagerDesign_Netflix_PackageSummary.txt
-      Job Description: /Users/trisha.lynch/Documents/career-catalyst/jobs/netflix_inc_program_manager_design.md
+      ATS Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/ats_resume.docx
+      Styled Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/styled_resume.docx
+      Tailored Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/resume.txt
+      Cover Letter: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/cover_letter.docx
+      Application Note: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/application_note.txt
+      Recruiter Message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/recruiter_message.txt
+      Hiring Manager Message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/hiring_manager_message.txt
+      Strategy Pack: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/strategy_pack.txt
+      Interview Prep: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/interview_prep.txt
+      Package Summary: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/package_summary.txt
   submitted_date: '2026-07-07'

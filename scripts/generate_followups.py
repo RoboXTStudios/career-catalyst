@@ -679,7 +679,7 @@ def _write_output(
     output_directory = root / "exports" / "followups"
     output_directory.mkdir(parents=True, exist_ok=True)
     filename = build_upload_filename(
-        "Trisha Lynch", role, company, export_type, "md"
+        "Trisha Lynch", role, company, export_type, "txt"
     )
     output_path = output_directory / filename
     output_path.write_text(content.rstrip() + "\n", encoding="utf-8")

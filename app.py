@@ -59,6 +59,11 @@ from scripts.job_importer import MINIMUM_DESCRIPTION_LENGTH, JobImportError, imp
 from scripts.job_identity import infer_job_fields_from_url, preferred_role_title
 from scripts.job_freshness import detect_job_freshness
 from scripts.job_source_registry import normalize_job_source
+from scripts.materials_library import (
+    find_exact_role_package,
+    material_route,
+    move_role_package,
+)
 try:
     from scripts.job_source_registry import (
         VERIFICATION_STATUSES as CANONICAL_VERIFICATION_STATUSES,
@@ -637,6 +642,31 @@ def update_dashboard_role(
     return update_prospect(clean_id, updates, project_root)
 
 
+def move_dashboard_role_materials(
+    tracker_id: str,
+    *,
+    archive: bool,
+    project_root: Path = PROJECT_ROOT,
+) -> Dict[str, Any]:
+    """Archive or restore one exact role package and persist its manifest paths."""
+    application = find_dashboard_role(load_application_tracker(project_root), tracker_id)
+    if application is None:
+        raise TrackerValidationError(f"Tracker entry not found: {tracker_id}")
+    result = move_role_package(project_root, application, archive=archive)
+    if not result.get("moved"):
+        return result
+    manifest = dict(result["manifest"])
+    update_prospect(
+        str(application["id"]),
+        {
+            "material_paths": dict(manifest.get("materials") or {}),
+            "package_manifest": manifest,
+        },
+        project_root,
+    )
+    return result
+
+
 def dashboard_status_actions(record: Dict[str, Any]) -> tuple[tuple[str, str], ...]:
     """Return status-aware quick actions as label/action-key pairs."""
     status = get_record_status(record)
@@ -1035,7 +1065,9 @@ def _material_button_rows(
     materials = [
         (source_label, display_label, Path(files[source_label]))
         for source_label, display_label in PACKAGE_MATERIAL_LABELS.items()
-        if source_label in files and Path(files[source_label]).exists()
+        if source_label in files
+        and Path(files[source_label]).exists()
+        and Path(files[source_label]).suffix.lower() != ".md"
     ]
     if not materials:
         st.caption("No generated application materials yet.")
@@ -1244,17 +1276,53 @@ def _render_role_card(
         with st.expander(
             f"Application & outreach materials ({material_count})", expanded=materials_focused
         ):
-            st.caption(
-                "Current materials available."
-                if material_count
-                else "Missing materials."
+            exact_package = find_exact_role_package(PROJECT_ROOT, application)
+            archived_materials = bool(
+                package.get("materials_archived") or exact_package.get("archived")
             )
+            if archived_materials:
+                st.caption("Archived materials available")
+            elif material_count:
+                st.caption("Current exact materials available")
+            else:
+                st.caption("No exact package materials yet")
             materials_label = str(
                 application.get("_materials_availability_label")
                 or "Materials not verified"
             )
             st.caption(materials_label)
             _material_button_rows(st, tracker_id, files)
+            route = material_route(get_record_status(application))
+            if route.get("archived") and material_count and not archived_materials:
+                st.caption("Archive recommended")
+            package_folder = exact_package.get("folder") or package.get("package_folder")
+            if package_folder:
+                library_actions = st.columns(2)
+                if library_actions[0].button(
+                    "Open Package Folder",
+                    key=f"materials_open_folder_{tracker_id}",
+                    use_container_width=True,
+                ):
+                    opened, message = open_local_path(Path(package_folder))
+                    (st.success if opened else st.warning)(message)
+                action_label = "Restore Materials" if archived_materials else "Archive Materials"
+                if library_actions[1].button(
+                    action_label,
+                    key=f"materials_move_{tracker_id}",
+                    use_container_width=True,
+                ):
+                    result = move_dashboard_role_materials(
+                        tracker_id, archive=not archived_materials
+                    )
+                    if result.get("moved"):
+                        st.session_state["dashboard_notice"] = (
+                            "Materials archived."
+                            if not archived_materials
+                            else "Materials restored."
+                        )
+                        st.rerun()
+                    else:
+                        st.warning(str(result.get("reason") or "No exact package materials yet"))
             archive_candidates = int(application.get("_archive_candidate_count") or 0)
             if archive_candidates:
                 st.caption(
@@ -1269,7 +1337,12 @@ def _render_role_card(
         )
         posting_url = record_posting_url(application)
         first_material = next(
-            (Path(path) for path in files.values() if Path(path).exists()), None
+            (
+                Path(path)
+                for path in files.values()
+                if Path(path).exists() and Path(path).suffix.lower() != ".md"
+            ),
+            None,
         )
         primary_actions = contextual_primary_actions(
             application,
@@ -1536,7 +1609,7 @@ def _render_recommended_next_steps(
                 (
                     Path(path)
                     for path in material_paths.values()
-                    if Path(path).exists()
+                    if Path(path).exists() and Path(path).suffix.lower() != ".md"
                 ),
                 None,
             )
@@ -2629,45 +2702,67 @@ def _render_dashboard(st: Any) -> None:
 
 
 def _render_recent_outputs(st: Any) -> None:
+    """Render a compact material-library summary instead of every generated file."""
     st.markdown(
-        '<h2 class="cc-section-heading">Recent Outputs</h2>',
+        '<h2 class="cc-section-heading">Materials Library</h2>',
         unsafe_allow_html=True,
     )
-    dashboard_path = PROJECT_ROOT / "exports" / "dashboard" / "index.html"
-    with st.container(border=True):
-        st.markdown("**Quick access**")
-        dashboard_column, docx_column, messages_column, strategy_column, followup_column = st.columns(5)
-        quick_links = (
-            (dashboard_column, "Dashboard", dashboard_path),
-            (docx_column, "DOCX resumes", PROJECT_ROOT / "exports" / "docx"),
-            (messages_column, "Messages", PROJECT_ROOT / "exports" / "messages"),
-            (
-                strategy_column,
-                "Strategy packs",
-                PROJECT_ROOT / "exports" / "strategy_packs",
-            ),
-            (followup_column, "Follow-ups", PROJECT_ROOT / "exports" / "followups"),
+    applications = _load_applications(st)
+    active_packages = []
+    archived_packages = []
+    for application in applications:
+        package = find_exact_role_package(PROJECT_ROOT, application)
+        if not package.get("folder"):
+            continue
+        entry = (application, package)
+        (archived_packages if package.get("archived") else active_packages).append(entry)
+    legacy_files = [
+        path
+        for relative in ("messages", "followups", "strategy_packs", "markdown")
+        for path in (PROJECT_ROOT / "exports" / relative).glob("*")
+        if path.is_file()
+    ]
+    metrics = st.columns(3)
+    metrics[0].metric("Active packages", len(active_packages))
+    metrics[1].metric("Archived packages", len(archived_packages))
+    metrics[2].metric("Needs cleanup / legacy", len(legacy_files))
+
+    st.markdown("**Active Materials**")
+    if not active_packages:
+        st.caption("No exact active package folders yet.")
+    for application, package in active_packages:
+        row = st.columns((5, 1))
+        row[0].markdown(
+            f"**{company_display_name(application.get('company'))} — {application.get('role')}**"
         )
-        for column, label, path in quick_links:
-            if column.button(label, key=f"quick_{path.name}", use_container_width=True):
-                opened, message = open_local_path(path)
+        if row[1].button(
+            "Open",
+            key=f"library_active_{application.get('id')}",
+            use_container_width=True,
+        ):
+            opened, message = open_local_path(Path(package["folder"]))
+            (st.success if opened else st.warning)(message)
+
+    with st.expander(f"Archived Packages ({len(archived_packages)})", expanded=False):
+        if not archived_packages:
+            st.caption("No archived package folders yet.")
+        for application, package in archived_packages:
+            row = st.columns((5, 1))
+            row[0].markdown(
+                f"**{company_display_name(application.get('company'))} — {application.get('role')}**"
+            )
+            if row[1].button(
+                "Open",
+                key=f"library_archive_{application.get('id')}",
+                use_container_width=True,
+            ):
+                opened, message = open_local_path(Path(package["folder"]))
                 (st.success if opened else st.warning)(message)
 
-    st.markdown("**Most recently generated**")
-    files = recent_output_files()
-    if not files:
-        st.info("No generated files yet.")
-        return
-    for index, path in enumerate(files):
-        relative = path.relative_to(PROJECT_ROOT)
-        with st.container(border=True):
-            left, right = st.columns((5, 1))
-            left.code(str(relative), language=None)
-            if right.button(
-                "Open", key=f"recent_{index}_{path.name}", use_container_width=True
-            ):
-                opened, message = open_local_path(path)
-                (st.success if opened else st.warning)(message)
+    with st.expander("Needs Cleanup / Legacy Materials", expanded=False):
+        st.caption(
+            f"{len(legacy_files)} legacy files remain outside exact role package folders."
+        )
 
 
 def main() -> None:

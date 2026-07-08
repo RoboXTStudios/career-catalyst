@@ -127,7 +127,7 @@ def save_material(
         str(parsed_job.get("job_title") or "Role"),
         str(parsed_job.get("company") or "Company"),
         suffix,
-        "md",
+        "txt",
     )
     output_path = (
         context["root"]
@@ -137,8 +137,6 @@ def save_material(
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(content.rstrip() + "\n", encoding="utf-8")
-    text_path = output_path.with_suffix(".txt")
-    text_path.write_text(content.rstrip() + "\n", encoding="utf-8")
 
     return {
         "job_title": parsed_job.get("job_title"),
@@ -150,7 +148,7 @@ def save_material(
         "role_family": context.get("role_family", "creative_marketing_ops"),
         "voice_confidence": context.get("effective_voice_profile", {}).get("confidence"),
         "output_path": str(output_path),
-        "txt_output_path": str(text_path),
+        "txt_output_path": str(output_path),
         "word_count": word_count,
         "repair_attempts": attempts,
     }
@@ -976,7 +974,7 @@ def generate_cover_letter(
     job_path: PathInput,
     project_root: Optional[PathInput] = None,
 ) -> Dict[str, Any]:
-    """Generate and save a concise Markdown cover letter."""
+    """Generate and save a concise TXT cover letter with safe DOCX when available."""
     context = load_generation_context(job_path, project_root)
     result = save_material(
         context,

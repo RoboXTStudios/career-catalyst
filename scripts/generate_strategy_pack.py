@@ -538,7 +538,7 @@ def generate_strategy_pack(
         str(parsed_job.get("job_title") or "Role"),
         str(parsed_job.get("company") or "Company"),
         "Strategy_Pack",
-        "md",
+        "txt",
     )
     output_path = (
         context["root"]

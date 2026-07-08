@@ -879,6 +879,11 @@ def _merge_tracker(
         if isinstance(manifest, dict):
             if str(manifest.get("prospect_id") or "") == str(application.get("id") or ""):
                 manifest_paths = dict(manifest.get("materials") or {})
+                manifest_path_value = manifest.get("manifest_path")
+                if manifest_path_value and Path(str(manifest_path_value)).is_file():
+                    package["package_manifest_path"] = Path(str(manifest_path_value))
+                    package["package_folder"] = Path(str(manifest_path_value)).parent
+                package["materials_archived"] = bool(manifest.get("archived"))
             else:
                 package["material_manifest_error"] = "Missing exact package manifest"
         else:

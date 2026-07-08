@@ -150,9 +150,9 @@ class Sprint16PackageMaterialTests(unittest.TestCase):
 
     def test_open_materials_focuses_role_and_reveals_hub_instead_of_opening_first_file(self):
         with tempfile.TemporaryDirectory() as temporary:
-            material = Path(temporary) / "job.md"
-            material.write_text("job", encoding="utf-8")
-            record = _record(_material_paths={"Job Description": str(material)})
+            material = Path(temporary) / "recruiter_message.txt"
+            material.write_text("message", encoding="utf-8")
+            record = _record(_material_paths={"Recruiter Message": str(material)})
             st = _FakeStreamlit(clicks={"next_materials_stable-role"})
             with patch.object(app, "_render_role_card") as render_role, patch.object(
                 app, "open_local_path"
@@ -296,11 +296,13 @@ class Sprint16PackageMaterialTests(unittest.TestCase):
                 item["material_type"]: item for item in result["package_checklist"]
             }
             self.assertTrue(checklist["ATS Resume"]["exists"])
-            self.assertEqual(
-                checklist["ATS Resume"]["preferred_open_path"], ats["output_path"]
-            )
+            ats_path = Path(checklist["ATS Resume"]["preferred_open_path"])
+            self.assertEqual(ats_path.name, "ats_resume.docx")
+            self.assertIn("exports/active/in_progress/aeg_tpm", ats_path.as_posix())
             tracker = load_application_tracker(root)[0]
-            self.assertEqual(tracker["material_paths"]["ATS Resume"], ats["output_path"])
+            self.assertEqual(
+                tracker["material_paths"]["ATS Resume"], str(ats_path)
+            )
             self.assertNotIn("Recruiter Follow-Up", tracker["material_paths"])
 
 

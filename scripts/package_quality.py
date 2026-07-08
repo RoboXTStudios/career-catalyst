@@ -68,7 +68,7 @@ def save_package_summary(
         str(parsed_job.get("job_title") or "Role"),
         str(parsed_job.get("company") or "Company"),
         "Package Summary",
-        "md",
+        "txt",
     )
     path = root / "exports" / "strategy_packs" / filename
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -100,4 +100,3 @@ def save_package_summary(
 """
     path.write_text(content, encoding="utf-8")
     return {"output_path": str(path)}
-
