@@ -31,6 +31,22 @@ class ParseJobTests(unittest.TestCase):
         self.assertEqual(parsed["salary_range"], "$183,000 - $228,000")
         self.assertEqual(parsed["employment_type"], "Full-time")
 
+    def test_parser_extracts_salary_range_when_second_amount_omits_currency_symbol(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            job_file = Path(temp_dir) / "salary_range_job.txt"
+            job_file.write_text(
+                "# Director, Media Operations\n\n"
+                "Company: Signal Media\n\n"
+                "## Job Description\n\n"
+                "Lead media operations and campaign execution for a streaming platform. "
+                "The annual salary range for this role is $170,000 - 205,000 plus benefits.",
+                encoding="utf-8",
+            )
+
+            parsed = parse_job_description(job_file)
+
+        self.assertEqual(parsed["salary_range"], "$170,000 - 205,000")
+
     def test_parser_extracts_keywords(self):
         parsed = parse_job_description(SAMPLE_JOB)
 

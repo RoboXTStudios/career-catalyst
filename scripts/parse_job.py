@@ -209,8 +209,9 @@ def _extract_salary(text: str) -> Optional[str]:
         return labeled_salary
 
     amount = r"\$\s*(?:\d{1,3}(?:,\d{3})+|\d{2,3}(?:\.\d+)?\s*[kK])"
+    trailing_range_amount = r"(?:\$\s*)?(?:\d{1,3}(?:,\d{3})+|\d{2,3}(?:\.\d+)?\s*[kK])"
     patterns = (
-        rf"{amount}\s*(?:-|–|—|to)\s*{amount}(?:\s*(?:USD|per\s+year|annually|/year|a\s+year))?",
+        rf"{amount}\s*(?:-|–|—|to)\s*{trailing_range_amount}(?:\s*(?:USD|per\s+year|annually|/year|a\s+year))?",
         r"\$\s*\d{1,3}(?:\.\d+)?\s*(?:/\s*(?:hr|hour)|per\s+hour|hourly|an\s+hour)",
         rf"{amount}\s*(?:USD|per\s+year|annually|/year|a\s+year)",
     )
