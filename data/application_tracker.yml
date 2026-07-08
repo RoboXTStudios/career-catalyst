@@ -10,7 +10,7 @@ applications:
   - Head Global Creative Product Development Operations
   - Head of Global Creative and Product Development Operations
   status: Paused
-  priority: High
+  priority: Low
   source: Official Greenhouse
   submitted_date: '2026-06-27'
   salary_range: $184,100-$276,100 USD
@@ -138,7 +138,7 @@ applications:
   company_inference_confidence: Medium
   salary_range: $224,400-$336,600 USD
   posting_date: ''
-  freshness: Unknown freshness
+  freshness: Stale
   freshness_label: Unknown freshness / Verify manually
   posting_status: Open
   match_score: 94
@@ -175,6 +175,9 @@ applications:
   status_updated_at: '2026-07-06T08:34:38'
   suggested_follow_up_date: ''
   follow_up_status: Not applicable
+  verification_status: Cannot Verify
+  verification_notes: source URL is missing; posting date missing; verify manually
+  source_verified: true
 - id: crunchyroll_enterprise_strategy_paused
   company: Crunchyroll
   company_aliases:
@@ -213,8 +216,8 @@ applications:
   company_voice_source: known_profile
   company_voice_label: Dynamic Entertainment Streaming
   company_inference_confidence: High
-  posting_date: ''
-  freshness: Unknown freshness
+  posting_date: 2026/06/29
+  freshness: Active
   freshness_label: Unknown freshness / Verify manually
   posting_status: Open
   opportunity_score: 76
@@ -249,8 +252,12 @@ applications:
   - Posting age is unknown; verify that the role is still active.
   recommended_action: Generate Package
   confidence: High
-  follow_up_status: Due now
-  status_updated_at: '2026-07-06T09:59:39'
+  follow_up_status: Follow-up sent
+  status_updated_at: '2026-07-08T10:22:27'
+  suggested_follow_up_date: '2026-07-04'
+  verification_status: Employer Source
+  verification_notes: Source label indicates an employer careers page, but the original source URL was not stored. Verify manually if needed.; posting date missing; verify manually
+  source_verified: true
 - id: united_talent_agency_director_transformation
   company: United Talent Agency
   company_aliases: []
@@ -318,10 +325,13 @@ applications:
   company_aliases: []
   role: Director - Strategy & Operations, Product & Technology
   role_aliases: []
-  status: Active
-  priority: Medium
+  status: Follow-up
+  priority: High
   source: Official career page
-  notes: https://disney.wd5.myworkdayjobs.com/en-US/disneycareer/userHome
+  notes: 'https://disney.wd5.myworkdayjobs.com/en-US/disneycareer/userHome
+
+
+    Workday Status: Application Received'
   next_action: Verify the current employer posting and apply path manually.
   show_on_dashboard: true
   official_url: https://www.disneycareers.com/en/job/san-francisco/director-strategy-and-operations-product-and-technology/391/95265580544
@@ -336,8 +346,8 @@ applications:
   company_voice_source: known_profile
   company_voice_label: Dynamic Entertainment Streaming
   company_inference_confidence: High
-  posting_date: ''
-  freshness: Unknown freshness
+  posting_date: 2026/06/29
+  freshness: Active
   freshness_label: Unknown freshness / Verify manually
   posting_status: Open
   opportunity_score: 83
@@ -372,7 +382,12 @@ applications:
   - Posting age is unknown; verify that the role is still active.
   recommended_action: Generate Package
   confidence: Medium
-  status_updated_at: '2026-07-06T09:59:27'
+  status_updated_at: '2026-07-08T09:49:30'
+  verification_status: Employer Source
+  verification_notes: posting date missing; verify manually; Source identity inferred from an employer-owned domain or company-named careers label.
+  source_verified: true
+  follow_up_status: Follow-up sent
+  suggested_follow_up_date: '2026-07-04'
 - id: fieldai_director_of_matrix_operations_organizational_efficiency
   company: FieldAI
   company_aliases: []
@@ -501,10 +516,13 @@ applications:
   company_aliases: []
   role: Director, Talent & Growth
   role_aliases: []
-  status: Active
-  priority: High
+  status: Paused
+  priority: Medium
   source: Official career page
-  notes: https://disney.wd5.myworkdayjobs.com/en-US/disneycareer/userHome
+  notes: 'https://disney.wd5.myworkdayjobs.com/en-US/disneycareer/userHome
+
+
+    Workday Status: Application Received; Job posting no longer redirects so it may have been filled. '
   next_action: Review fit and generate application package.
   show_on_dashboard: true
   official_url: https://www.disneycareers.com/en/job/burbank/director-talent-and-growth/391/96569904576?utm_source=chatgpt.com
@@ -518,10 +536,10 @@ applications:
   company_voice_source: known_profile
   company_voice_label: Dynamic Entertainment Streaming
   company_inference_confidence: High
-  freshness: Unknown freshness
+  freshness: Stale
   freshness_label: Unknown freshness / Verify manually
   posting_status: Open
-  posting_date: ''
+  posting_date: 2026/06/29
   opportunity_score: 74
   apply_recommendation: Apply If Strategic
   opportunity_dimensions:
@@ -554,19 +572,30 @@ applications:
   - Posting age is unknown; verify that the role is still active.
   recommended_action: Generate Package
   confidence: Medium
-  status_updated_at: '2026-07-06T10:00:16'
+  status_updated_at: '2026-07-08T10:18:02'
+  follow_up_status: Follow-up sent
+  suggested_follow_up_date: '2026-07-05'
+  verification_status: Employer Source
+  verification_notes: 'posting date missing; verify manually; Source identity inferred from an employer-owned domain or company-named careers label.
+
+
+    Workday Status: Application Received; Job posting no longer redirects so it may have been filled. '
+  source_verified: true
 - id: warner_chappell_music_inc_sr_manager_strategic_integration_operations
   company: Warner Chappell Music Inc
   company_aliases: []
   role: Sr. Manager, Strategic Integration & Operations
   role_aliases: []
-  status: Active
+  status: Paused
   priority: Medium
   source: Official career page
   notes: 'Applied with $100k salary expectation due posted range. Treat as music-industry doorway opportunity, not survival compensation.
 
 
-    https://wmg.wd1.myworkdayjobs.com/en-US/WMGUS/userHome'
+    https://wmg.wd1.myworkdayjobs.com/en-US/WMGUS/userHome
+
+
+    Workday Status: None - may be stale'
   next_action: Review fit and generate application package.
   show_on_dashboard: true
   official_url: https://wmg.wd1.myworkdayjobs.com/en-US/WMGUS/job/Sr-Manager--Strategic-Integration---Operations_R-027620?utm_source=chatgpt.com
@@ -618,7 +647,12 @@ applications:
   - The posting is stale at 56 days old.
   recommended_action: Generate Package
   confidence: High
-  status_updated_at: '2026-07-06T10:00:27'
+  status_updated_at: '2026-07-08T10:14:50'
+  verification_status: Employer Source
+  verification_notes: posting is 64 days old; verify that it is still active
+  source_verified: true
+  suggested_follow_up_date: '2026-07-05'
+  follow_up_status: Due now
 - id: live_nation_worldwide_inc_director_concert_communications
   company: Live Nation Worldwide, Inc.
   company_aliases: []
@@ -627,7 +661,13 @@ applications:
   status: Active
   priority: High
   source: Workday
-  notes: https://livenation.wd503.myworkdayjobs.com/en-US/LNExternalSite/userHome?q=media&timeType=def6fe28d9a210a683974354a3d819b6&Location_Region_State_Province=ec3d210e4240442e99a28fa70419aec5&Location_Country=bc33aa3152ec42d4995f4791a106ed09
+  notes: 'https://livenation.wd503.myworkdayjobs.com/en-US/LNExternalSite/userHome?q=media&timeType=def6fe28d9a210a683974354a3d819b6&Location_Region_State_Province=ec3d210e4240442e99a28fa70419aec5&Location_Country=bc33aa3152ec42d4995f4791a106ed09
+
+
+    Workday Status: Under Consideration
+
+
+    Workday Status: Under Consideration'
   next_action: Review fit and generate application package.
   show_on_dashboard: true
   official_url: https://livenation.wd503.myworkdayjobs.com/en-US/LNExternalSite/details/Director--Concert-Communications_JR-89915?q=director%20communications
@@ -696,17 +736,20 @@ applications:
     confidence_level: High
     confidence_score: 90
   submitted_date: '2026-07-01'
-  status_updated_at: '2026-07-06T09:57:56'
+  status_updated_at: '2026-07-08T10:09:42'
+  source_verified: true
+  follow_up_status: Follow-up sent
+  suggested_follow_up_date: '2026-07-06'
 - id: netflix_associate_manager_ucan_marketing_operations
   company: Netflix
   company_aliases: []
   role: Associate Manager, UCAN Marketing Operations
   role_aliases: []
-  status: Active
+  status: Follow-up
   priority: High
   source: Company career page
   notes: ''
-  next_action: Verify the current employer posting and apply path manually.
+  next_action: 'Workday Status: N/A'
   show_on_dashboard: true
   official_url: https://explore.jobs.netflix.net/careers/job/790316561268
   location: Los Angeles, CA,US
@@ -724,7 +767,7 @@ applications:
   company_inference_confidence: Medium
   posting_date: '2026-06-24'
   posting_age_days: 7
-  freshness: Fresh
+  freshness: Active
   freshness_label: Fresh / High priority
   posting_status: Open
   match_score: 88
@@ -773,9 +816,10 @@ applications:
     confidence_level: High
     confidence_score: 84
   submitted_date: '2026-07-01'
-  status_updated_at: '2026-07-06T09:59:07'
+  status_updated_at: '2026-07-08T09:46:20'
   suggested_follow_up_date: '2026-07-06'
-  follow_up_status: Due now
+  follow_up_status: Follow-up sent
+  source_verified: true
 - id: disney_entertainment_and_espn_product_technology_product_strategy_and_operations_director
   company: Disney Entertainment and ESPN Product & Technology
   company_aliases: []
@@ -859,7 +903,7 @@ applications:
   company_aliases: []
   role: Associate Director, CRM & Martech
   role_aliases: []
-  status: Follow-up
+  status: Active
   priority: High
   source: Lever
   notes: https://www.lifeatspotify.com/jobs/associate-director-crm-martech#
@@ -903,10 +947,10 @@ applications:
   source_name: Lever
   source_type: Employer ATS
   source_trust_label: Verified Company Source
-  verification_status: Employer Source
+  verification_status: Possibly Active
   canonical_apply_url: https://jobs.lever.co/spotify/b2e65eb5-e558-45d1-b5ee-347cbbf3dae3
   canonical_apply_domain: jobs.lever.co
-  verification_notes: posting is 75 days old; verify that it is still active
+  verification_notes: posting is 78 days old; verify that it is still active
   source_confidence: High
   source_warnings:
   - Posting appears older than 30 days
@@ -932,6 +976,10 @@ applications:
     confidence_level: High
     confidence_score: 80
   submitted_date: '2026-07-05'
+  source_verified: true
+  suggested_follow_up_date: '2026-07-10'
+  follow_up_status: Due soon
+  status_updated_at: '2026-07-08T10:23:52'
 - id: aeg_worldwide_axs_sr_technical_project_manager
   company: AEG Worldwide/AXS
   company_aliases: []
@@ -959,7 +1007,7 @@ applications:
   company_voice_source: dynamic_inference
   company_voice_label: Dynamic Music Live Events
   company_inference_confidence: Medium
-  freshness: Unknown freshness
+  freshness: Fresh
   freshness_label: Unknown freshness / Verify manually
   posting_status: Verify manually
   match_score: 75
@@ -980,17 +1028,17 @@ applications:
   source_name: Company career page
   source_type: Direct Employer
   source_trust_label: Direct Employer
-  verification_status: Employer Source
+  verification_status: Verified Active
   canonical_apply_url: https://aegworldwide.com/careers/jobs/AXSDG9363/sr.-technical-project-manager?gh_jid=8606676002
   canonical_apply_domain: aegworldwide.com
-  verification_notes: posting date missing; verify manually; Source identity inferred from an employer-owned domain or company-named careers label.
+  verification_notes: posting date missing; verify manually; Official AEG Worldwide employer careers source.
   source_confidence: High
   source_warnings:
   - Posting date missing or malformed
   freshness_risk: Unknown
   canonical_employer: AEG Worldwide/AXS
   recommended_next_step: Proceed using the canonical employer application.
-  posting_date: ''
+  posting_date: 2026/07/06
   status_updated_at: '2026-07-06T12:53:44'
   opportunity_score: 77
   apply_recommendation: Apply If Strategic
@@ -1013,16 +1061,20 @@ applications:
   submitted_date: '2026-07-06'
   suggested_follow_up_date: '2026-07-11'
   follow_up_status: Not due yet
+  source_verified: true
 - id: universal_music_group_umg_recordings_inc_senior_director_team_operations
   company: Universal Music Group (UMG Recordings Inc)
   company_aliases: []
   role: Senior Director, Team Operations
   role_aliases: []
-  status: Applied
+  status: Active
   priority: High
   source: Workday
-  notes: https://umusic.wd5.myworkdayjobs.com/en-US/UMGUS/userHome
-  next_action: Verify the current employer posting and apply path manually.
+  notes: 'https://umusic.wd5.myworkdayjobs.com/en-US/UMGUS/userHome
+
+
+    Workday Status: Under Consideration'
+  next_action: 'Workday Status: Under Consideration'
   show_on_dashboard: true
   official_url: https://umusic.wd5.myworkdayjobs.com/UMGUS/job/New-York-New-York/Senior-Director--Team-Operations_UMG-26857?utm_source=chatgpt.com
   location: Santa Monica, CA
@@ -1071,7 +1123,7 @@ applications:
   freshness_risk: Low
   canonical_employer: Universal Music Group (UMG Recordings Inc)
   recommended_next_step: Proceed using the canonical employer application.
-  status_updated_at: '2026-07-06T13:38:35'
+  status_updated_at: '2026-07-08T10:09:05'
   opportunity_score: 88
   apply_recommendation: Apply Immediately
   opportunity_dimensions:
@@ -1093,6 +1145,7 @@ applications:
   submitted_date: '2026-07-06'
   suggested_follow_up_date: '2026-07-11'
   follow_up_status: Not due yet
+  source_verified: true
 - id: crunchyroll_strategic_operations_senior_manager
   company: Crunchyroll
   company_aliases: []
@@ -1389,7 +1442,10 @@ applications:
   status: Applied
   priority: High
   source: Workday
-  notes: ''
+  notes: 'Applied: 7/7/26
+
+
+    Workday Status: Under Consideration'
   next_action: Verify the current employer posting and apply path manually.
   show_on_dashboard: true
   official_url: https://umusic.wd5.myworkdayjobs.com/en-US/UMGUS/details/Senior-Director--Project-and-PMO-Lead_UMG-26888?locations=448dd8b6f52e10017253a5c3ba3d0000&locations=3c818403cbba0113f4708c861723e448&locations=448dd8b6f52e100172539dd99f100000&locations=448dd8b6f52e10017251dc9b02b70000&locations=448dd8b6f52e10017253785b2e480000&locations=448dd8b6f52e10017253ad06ac310000&locations=448dd8b6f52e10017253969def3a0000
@@ -1442,8 +1498,8 @@ applications:
   canonical_employer: 600 UMG Recordings Inc
   recommended_next_step: Proceed using the canonical employer application.
   greenhouse_backed_hint: false
-  suggested_follow_up_date: ''
-  follow_up_status: No applied date
+  suggested_follow_up_date: '2026-07-12'
+  follow_up_status: Not due yet
   status_updated_at: '2026-07-07T13:22:54'
   opportunity_score: 82
   apply_recommendation: Apply Immediately
@@ -1508,6 +1564,7 @@ applications:
       Strategy Pack: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead/strategy_pack.txt
       Interview Prep: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead/interview_prep.txt
       Package Summary: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead/package_summary.txt
+  source_verified: true
 - id: netflix_inc_program_manager_design
   company: Netflix, Inc.
   company_aliases: []
