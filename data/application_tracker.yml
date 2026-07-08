@@ -378,12 +378,12 @@ applications:
   company_aliases: []
   role: Director of Matrix Operations & Organizational Efficiency
   role_aliases: []
-  status: Paused
-  priority: Medium
+  status: Rejected
+  priority: Do Not Pursue
   source: Official career page
   notes: ''
   next_action: Verify the current employer posting and apply path manually.
-  show_on_dashboard: true
+  show_on_dashboard: false
   official_url: https://jobs.lever.co/field-ai/7effb612-eeba-4d8e-ba15-447ed3e8d7e9
   location: Irvine, CA
   salary_range: $70,000 - $300,000
@@ -431,6 +431,9 @@ applications:
   - Posting age is unknown; verify that the role is still active.
   recommended_action: Review First
   confidence: Medium
+  suggested_follow_up_date: '2026-07-04'
+  follow_up_status: Follow-up sent
+  status_updated_at: '2026-07-07T18:30:20'
 - id: bandsintown_senior_copywriter_content_strategist
   company: BandsInTown
   company_aliases: []
