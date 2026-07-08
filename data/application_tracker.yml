@@ -1428,3 +1428,63 @@ applications:
     Package Summary: /Users/trisha.lynch/Documents/career-catalyst/exports/strategy_packs/TrishaLynch_SeniorDirectorProjectPmoLead_600UmgRecordings_PackageSummary.txt
     Job Description: /Users/trisha.lynch/Documents/career-catalyst/jobs/600_umg_recordings_inc_senior_director_project_and_pmo_lead.md
   submitted_date: '2026-07-07'
+- id: netflix_inc_program_manager_design
+  company: Netflix, Inc.
+  company_aliases: []
+  role: Program Manager, Design
+  role_aliases: []
+  status: Drafted
+  priority: Medium
+  source: Workday
+  notes: ''
+  next_action: Review fit and generate application package.
+  show_on_dashboard: true
+  official_url: https://netflix.wd108.myworkdayjobs.com/en-US/Netflix/job/Program-Manager--Design_JR40464?locations=84a618b29e90102fcd70873d84b807f4
+  source_url: https://netflix.wd108.myworkdayjobs.com/en-US/Netflix/job/Program-Manager--Design_JR40464?locations=84a618b29e90102fcd70873d84b807f4
+  location: Los Angeles, United States of America
+  salary_range: $220,000.00 - $352,000.00
+  work_arrangement: Flexible
+  field_warnings:
+  - Salary detected from job text. Review before applying.
+  - Role family was inferred. Review if this is a strategic or product-ops role.
+  job_file: jobs/netflix_inc_program_manager_design.md
+  company_category: entertainment_streaming
+  role_family: gtm_product_activation
+  company_voice_profile: dynamic_entertainment_streaming
+  company_voice_source: dynamic_inference
+  company_voice_label: Dynamic Entertainment Streaming
+  company_inference_confidence: Medium
+  posting_date: '2026-06-30'
+  posting_age_days: 7
+  freshness: Fresh
+  freshness_label: Fresh / High priority
+  posting_status: Open
+  match_score: 71
+  match_tier: Good Match
+  match_summary: Good overall alignment, with a few cautions to weigh before investing further.
+  match_strengths:
+  - Functional alignment includes workflow and process automation.
+  - The role has meaningful ownership, though its level should be verified.
+  - The entertainment context is adjacent to Trisha's target industries.
+  - The disclosed compensation is aligned with or near Trisha's target.
+  - The flexible arrangement supports practical fit.
+  match_gaps:
+  - Confirm the reporting line and decision authority before generating the package.
+  recommended_action: Generate Package
+  confidence: High
+  original_source_url: https://netflix.wd108.myworkdayjobs.com/en-US/Netflix/job/Program-Manager--Design_JR40464?locations=84a618b29e90102fcd70873d84b807f4
+  source_domain: netflix.wd108.myworkdayjobs.com
+  source_name: Workday
+  source_type: Employer ATS
+  source_trust_label: Verified Company Source
+  verification_status: Employer Source
+  canonical_apply_url: https://netflix.wd108.myworkdayjobs.com/en-US/Netflix/job/Program-Manager--Design_JR40464?locations=84a618b29e90102fcd70873d84b807f4
+  canonical_apply_domain: netflix.wd108.myworkdayjobs.com
+  verification_notes: No verification cautions detected.
+  source_confidence: High
+  requires_verification: false
+  source_warnings: []
+  freshness_risk: Low
+  canonical_employer: Netflix, Inc.
+  recommended_next_step: Proceed using the canonical employer application.
+  greenhouse_backed_hint: false
