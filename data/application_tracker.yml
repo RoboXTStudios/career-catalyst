@@ -1433,7 +1433,7 @@ applications:
   company_aliases: []
   role: Program Manager, Design
   role_aliases: []
-  status: Drafted
+  status: Applied
   priority: Medium
   source: Workday
   notes: ''
@@ -1449,7 +1449,7 @@ applications:
   - Role family was inferred. Review if this is a strategic or product-ops role.
   job_file: jobs/netflix_inc_program_manager_design.md
   company_category: entertainment_streaming
-  role_family: gtm_product_activation
+  role_family: generic_senior_operator
   company_voice_profile: dynamic_entertainment_streaming
   company_voice_source: dynamic_inference
   company_voice_label: Dynamic Entertainment Streaming
@@ -1488,3 +1488,50 @@ applications:
   canonical_employer: Netflix, Inc.
   recommended_next_step: Proceed using the canonical employer application.
   greenhouse_backed_hint: false
+  source_verified: true
+  status_updated_at: '2026-07-07T17:46:51'
+  opportunity_score: 76
+  apply_recommendation: Apply If Strategic
+  opportunity_dimensions:
+    Resume Fit: 71
+    Salary Fit: 92
+    Industry Alignment: 58
+    Role Level Fit: 72
+    Location Fit: 100
+    Mission / Personal Alignment: 62
+    Posting Freshness: 100
+    Interview Probability: 68
+  package_quality:
+    resume_tailoring_score: 72
+    cover_letter_score: 80
+    ats_keyword_match: 78
+    voice_match: 68
+    confidence_level: Medium
+    confidence_score: 74
+  material_paths:
+    ATS Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/docx/TrishaLynch_ProgramManagerDesign_Netflix_ATS.docx
+    Styled Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/docx/TrishaLynch_ProgramManagerDesign_Netflix_Styled.docx
+    Tailored Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/markdown/Trisha_Lynch_executive_operations_Netflix_Resume.txt
+    Cover Letter: /Users/trisha.lynch/Documents/career-catalyst/exports/messages/TrishaLynch_ProgramManagerDesign_Netflix_CoverLetter.docx
+    Application Note: /Users/trisha.lynch/Documents/career-catalyst/exports/messages/TrishaLynch_ProgramManagerDesign_Netflix_ApplicationNote.txt
+    Recruiter Message: /Users/trisha.lynch/Documents/career-catalyst/exports/messages/TrishaLynch_ProgramManagerDesign_Netflix_RecruiterMessage.txt
+    Hiring Manager Message: /Users/trisha.lynch/Documents/career-catalyst/exports/messages/TrishaLynch_ProgramManagerDesign_Netflix_HiringManagerMessage.txt
+    Strategy Pack: /Users/trisha.lynch/Documents/career-catalyst/exports/strategy_packs/TrishaLynch_ProgramManagerDesign_Netflix_StrategyPack.txt
+    Interview Prep: /Users/trisha.lynch/Documents/career-catalyst/exports/strategy_packs/TrishaLynch_ProgramManagerDesign_Netflix_InterviewPrep.txt
+    Package Summary: /Users/trisha.lynch/Documents/career-catalyst/exports/strategy_packs/TrishaLynch_ProgramManagerDesign_Netflix_PackageSummary.txt
+    Job Description: /Users/trisha.lynch/Documents/career-catalyst/jobs/netflix_inc_program_manager_design.md
+  package_manifest:
+    prospect_id: netflix_inc_program_manager_design
+    materials:
+      ATS Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/docx/TrishaLynch_ProgramManagerDesign_Netflix_ATS.docx
+      Styled Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/docx/TrishaLynch_ProgramManagerDesign_Netflix_Styled.docx
+      Tailored Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/markdown/Trisha_Lynch_executive_operations_Netflix_Resume.txt
+      Cover Letter: /Users/trisha.lynch/Documents/career-catalyst/exports/messages/TrishaLynch_ProgramManagerDesign_Netflix_CoverLetter.docx
+      Application Note: /Users/trisha.lynch/Documents/career-catalyst/exports/messages/TrishaLynch_ProgramManagerDesign_Netflix_ApplicationNote.txt
+      Recruiter Message: /Users/trisha.lynch/Documents/career-catalyst/exports/messages/TrishaLynch_ProgramManagerDesign_Netflix_RecruiterMessage.txt
+      Hiring Manager Message: /Users/trisha.lynch/Documents/career-catalyst/exports/messages/TrishaLynch_ProgramManagerDesign_Netflix_HiringManagerMessage.txt
+      Strategy Pack: /Users/trisha.lynch/Documents/career-catalyst/exports/strategy_packs/TrishaLynch_ProgramManagerDesign_Netflix_StrategyPack.txt
+      Interview Prep: /Users/trisha.lynch/Documents/career-catalyst/exports/strategy_packs/TrishaLynch_ProgramManagerDesign_Netflix_InterviewPrep.txt
+      Package Summary: /Users/trisha.lynch/Documents/career-catalyst/exports/strategy_packs/TrishaLynch_ProgramManagerDesign_Netflix_PackageSummary.txt
+      Job Description: /Users/trisha.lynch/Documents/career-catalyst/jobs/netflix_inc_program_manager_design.md
+  submitted_date: '2026-07-07'
