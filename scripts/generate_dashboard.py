@@ -1368,25 +1368,80 @@ def _render_links(files: Dict[str, Path], dashboard_directory: Path) -> str:
     return f'<div class="file-links">{"".join(links)}</div>'
 
 
+def _role_anchor_id(tracker: Dict[str, Any], package: Dict[str, Any]) -> str:
+    reference = record_dashboard_reference(tracker) or f"{package.get('company', '')}-{package.get('role', '')}"
+    anchor = re.sub(r"[^a-z0-9]+", "-", str(reference).lower()).strip("-")
+    return f"role-{anchor or 'application'}"
+
+
+def _primary_material_href(files: Dict[str, Path], dashboard_directory: Path) -> str:
+    for label in LINK_ORDER:
+        if label == "Job Description":
+            continue
+        path = files.get(label)
+        if path is not None:
+            return _relative_href(path, dashboard_directory)
+    return "#"
+
+
+def _render_primary_actions(package: Dict[str, Any], dashboard_directory: Path, anchor_id: str) -> str:
+    material_href = _primary_material_href(package.get("files", {}), dashboard_directory)
+    material = (
+        f'<a class="action-button" href="{html.escape(material_href, quote=True)}" target="_blank" rel="noopener">Open Materials</a>'
+        if material_href != "#"
+        else '<button class="action-button action-disabled" type="button" disabled>Open Materials</button>'
+    )
+    return (
+        '<nav class="card-actions" aria-label="Primary role actions">'
+        f'<button class="action-button" type="button" data-focus-role="{html.escape(anchor_id, quote=True)}">View Role</button>'
+        '<button class="action-button action-disabled" type="button" disabled>Open Posting</button>'
+        f'{material}'
+        '</nav>'
+    )
+
+def _compact_status_line(package: Dict[str, Any]) -> str:
+    tracker = package.get("tracker", {})
+    score = tracker.get("match_score")
+    score_label = "Not scored" if score is None else f"{score} {tracker.get('match_tier') or ''}".strip()
+    values = (
+        ("Status", get_record_status(tracker) if tracker else "Active"),
+        ("Follow-up", tracker.get("follow_up_status") or "No applied date"),
+        ("Match", score_label),
+        ("Action", tracker.get("recommended_action") or tracker.get("next_action") or "Review"),
+        ("Verification", tracker.get("source_trust_label") or tracker.get("verification_status") or "Needs manual check"),
+        ("Freshness", tracker.get("posting_status") or tracker.get("freshness_label") or tracker.get("freshness")),
+    )
+    items = []
+    for label, value in values:
+        if value:
+            items.append(f'<span><b>{html.escape(label)}:</b> {html.escape(str(value))}</span>')
+    return f'<div class="compact-facts">{"".join(items)}</div>'
+
+
 def _render_package(package: Dict[str, Any], dashboard_directory: Path) -> str:
     tracker = package.get("tracker", {})
+    anchor_id = _role_anchor_id(tracker, package)
     return (
-        '<article class="application-card">'
-        '<div class="application-heading">'
+        f'<article class="application-card compact-role-card" id="{html.escape(anchor_id, quote=True)}" data-role-anchor="{html.escape(anchor_id, quote=True)}">'
+        '<div class="application-heading compact-heading">'
         '<div class="application-title">'
         f'<p class="company">{html.escape(company_display_name(package["company"]))}</p>'
         f'<h3>{html.escape(package["role"])}</h3>'
         "</div>"
+        f'{_render_primary_actions(package, dashboard_directory, anchor_id)}'
         f'<div class="badges">{_render_badges(tracker)}</div>'
         "</div>"
-        f"{_render_match_score(tracker, include_details=False)}"
-        f"{_render_metadata(package, primary_only=True)}"
+        f"{_compact_status_line(package)}"
+        '<details class="role-details">'
+        '<summary>Details</summary>'
+        f"{_render_match_score(tracker, include_details=True)}"
+        f"{_render_metadata(package)}"
         f"{_render_notes(tracker)}"
         '<div class="materials"><h4>Application materials</h4>'
         f'{_render_links(package["files"], dashboard_directory)}</div>'
+        '</details>'
         "</article>"
     )
-
 
 def _render_unassigned(
     files: List[Tuple[str, Path]], dashboard_directory: Path
@@ -1530,20 +1585,27 @@ def _render_priority_queue(
     )
 
 
-def _render_priority_sections(groups: Dict[str, List[Dict[str, Any]]]) -> str:
-    if "draft" in groups:
-        visible = groups.get("active", []) + groups.get("draft", [])
-    else:
-        visible = (
-            groups.get("active", [])
-            + groups.get("applied", [])
-            + groups.get("reviewed", [])
-            + groups.get("paused", [])
-        )
+def _render_priority_sections(groups: Dict[str, List[Dict[str, Any]]], dashboard_directory: Path) -> str:
+    visible = groups.get("active", []) + groups.get("applied", []) + groups.get("reviewed", []) + groups.get("paused", [])
     all_packages = visible + groups.get("pass", []) + groups.get("hidden", [])
     visible_records = [_package_record(package) for package in visible]
-    steps = recommended_next_steps(visible_records, "All Mode")
-    rendered_steps = "".join(f"<li>{html.escape(step)}</li>" for step in steps)
+    steps = structured_recommended_next_steps(visible_records, "All Mode")
+    package_by_ref = {
+        record_dashboard_reference(_package_record(package)): package
+        for package in all_packages
+    }
+    if steps:
+        rendered_steps = "".join(
+            '<li class="next-step-row">'
+            f'<span class="next-step-title"><strong>{html.escape(step["company"])} — {html.escape(step["title"])}</strong></span>'
+            f'<span class="next-step-action">{html.escape(step["recommendation"])}</span>'
+            f'<span class="badge">{html.escape(step["action_type"].replace("_", " ").title())}</span>'
+            f'{_render_primary_actions(package_by_ref.get(step["tracker_id"], {"tracker": {"id": step["tracker_id"]}, "files": {}}), dashboard_directory, _role_anchor_id({"id": step["tracker_id"]}, {"company": step["company"], "role": step["title"]}))}'
+            '</li>'
+            for step in steps
+        )
+    else:
+        rendered_steps = '<li class="empty-state">No roles match the current dashboard filters.</li>'
 
     def matching(source: List[Dict[str, Any]], predicate: Any) -> List[Dict[str, Any]]:
         return [package for package in source if predicate(_package_record(package))]
@@ -1568,14 +1630,13 @@ def _render_priority_sections(groups: Dict[str, List[Dict[str, Any]]]) -> str:
         for title, queue_id, packages, empty_message in queues
     )
     return (
-        '<section class="recommended-steps" aria-labelledby="recommended-next-steps">'
-        '<h2 id="recommended-next-steps">Recommended Next Steps</h2>'
-        f'<ol>{rendered_steps}</ol></section>'
-        '<section class="priority-section" aria-labelledby="priority-queues">'
-        '<h2 id="priority-queues">Priority Queues</h2>'
-        f'<div class="priority-grid">{rendered_queues}</div></section>'
+        '<details class="recommended-steps compact-next-steps" aria-labelledby="recommended-next-steps" open>'
+        '<summary><h2 id="recommended-next-steps">Recommended Next Steps</h2></summary>'
+        f'<ol>{rendered_steps}</ol></details>'
+        '<details class="priority-section" aria-labelledby="priority-queues">'
+        '<summary><h2 id="priority-queues">Priority Queues</h2></summary>'
+        f'<div class="priority-grid">{rendered_queues}</div></details>'
     )
-
 
 def _render_html(
     groups: Dict[str, List[Dict[str, Any]]],
@@ -1588,12 +1649,12 @@ def _render_html(
         f'<span class="summary-value">{count}</span>'
         f'<span class="summary-label">{html.escape(label)}</span>'
         "</div>"
-        for label, count in counts.items()
+        for label, count in {"Total job files": counts.get("Total", 0), "Active applications": counts.get("Active", 0), "Applied applications": counts.get("Applied / Follow-up", 0), "Reviewed": counts.get("Reviewed", 0), "Draft or paused roles": counts.get("Paused", 0), "Pass": counts.get("Pass", 0), "Hidden/invalid roles": counts.get("Hidden / Invalid", 0)}.items()
     )
     active_group = _render_group(
         "Active",
-        "active",
-        groups["active"],
+        "active-applied",
+        groups["active"] + groups["applied"],
         dashboard_directory,
     )
     applied_group = _render_group(
@@ -1610,8 +1671,8 @@ def _render_html(
     )
     paused_group = _render_group(
         "Paused",
-        "paused",
-        groups["paused"],
+        "draft-paused",
+        groups["reviewed"] + groups["paused"],
         dashboard_directory,
     )
     passed_group = _render_group(
@@ -1621,7 +1682,7 @@ def _render_html(
         dashboard_directory,
     )
     hidden_group = _render_hidden_group(groups["hidden"], dashboard_directory)
-    priority_sections = _render_priority_sections(groups)
+    priority_sections = _render_priority_sections(groups, dashboard_directory)
     visible_count = sum(
         len(groups[key]) for key in ("active", "applied", "reviewed", "paused")
     )
@@ -1710,9 +1771,18 @@ def _render_html(
     .summary-card {{ min-height: 96px; padding: 16px; }}
     .summary-value {{ display: block; font-size: 26px; font-weight: 700; line-height: 1; }}
     .summary-label {{ display: block; margin-top: 8px; color: var(--muted); font-size: 13px; }}
-    .recommended-steps, .priority-section {{ margin-top: 30px; }}
-    .recommended-steps ol {{ margin: 10px 0 0; border: 1px solid var(--border); border-radius: 6px; padding: 16px 20px 16px 42px; background: var(--surface); }}
+    .command-controls {{ display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }}
+    .control-button, .action-button {{ border: 1px solid #c9d1d6; border-radius: 5px; padding: 6px 10px; background: #fff; color: #34414a; font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer; }}
+    .control-button:hover, .control-button:focus-visible, .action-button:hover, .action-button:focus-visible {{ border-color: var(--accent); color: var(--accent); }}
+    .action-disabled {{ opacity: .55; pointer-events: none; }}
+    .recommended-steps, .priority-section {{ margin-top: 18px; }}
+    details > summary {{ cursor: pointer; }}
+    details > summary h2 {{ display: inline; }}
+    .recommended-steps ol {{ margin: 10px 0 0; border: 1px solid var(--border); border-radius: 6px; padding: 8px; background: var(--surface); list-style: none; }}
     .recommended-steps li + li {{ margin-top: 7px; }}
+    .next-step-row {{ display: grid; grid-template-columns: minmax(180px, 1.2fr) minmax(240px, 2fr) auto auto; align-items: center; gap: 8px; padding: 8px; border-bottom: 1px solid #eef1f3; }}
+    .next-step-row:last-child {{ border-bottom: 0; }}
+    .next-step-action {{ color: var(--muted); font-size: 13px; }}
     .priority-grid {{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }}
     .priority-queue {{ border: 1px solid var(--border); border-radius: 6px; padding: 15px; background: var(--surface); }}
     .priority-queue h3 {{ font-size: 15px; }}
@@ -1737,8 +1807,9 @@ def _render_html(
       margin-bottom: 10px;
     }}
     .group-title {{ margin: 0; font-size: 15px; }}
-    .application-list {{ display: grid; gap: 14px; }}
-    .application-card {{ padding: 20px; }}
+    .application-list {{ display: grid; gap: 10px; }}
+    .application-card {{ padding: 12px 14px; scroll-margin-top: 18px; }}
+    .application-card.role-focused {{ outline: 3px solid var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }}
     .application-heading {{
       display: flex;
       align-items: flex-start;
@@ -1770,8 +1841,12 @@ def _render_html(
     .status-invalid_hidden, .status-pass {{ background: var(--red-soft); color: var(--red); }}
     .status-archived {{ background: #eef1f3; color: #4c5963; }}
     .priority {{ border: 1px solid #e1c891; background: #ffffff; color: var(--gold); }}
+    .card-actions {{ display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }}
+    .compact-facts {{ display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px; color: var(--muted); font-size: 13px; }}
+    .role-details {{ margin-top: 10px; border-top: 1px solid #e8ebed; padding-top: 8px; }}
+    .role-details > summary {{ color: var(--accent); font-size: 13px; font-weight: 700; }}
     .match-gate {{
-      margin-top: 16px;
+      margin-top: 10px;
       border: 1px solid #b8d7d0;
       border-radius: 6px;
       padding: 15px;
@@ -1833,6 +1908,8 @@ def _render_html(
     @media (max-width: 900px) {{
       .summary-grid {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
       .priority-grid {{ grid-template-columns: 1fr; }}
+      .next-step-row {{ grid-template-columns: 1fr; }}
+      .card-actions {{ justify-content: flex-start; }}
     }}
     @media (max-width: 620px) {{
       .header-inner, .page {{ width: min(100% - 24px, 1180px); }}
@@ -1862,6 +1939,11 @@ def _render_html(
     <section aria-labelledby="summary-heading">
       <h2 id="summary-heading">Workspace Summary</h2>
       <div class="summary-grid">{summary_cards}</div>
+      <div class="command-controls" aria-label="Dashboard controls">
+        <button class="control-button" type="button" data-collapse-all>Collapse All</button>
+        <button class="control-button" type="button" data-expand-focused>Expand Focused</button>
+        <button class="control-button" type="button" data-clear-focus>Clear Focus</button>
+      </div>
     </section>
     {priority_sections}
     <section class="packages" aria-labelledby="packages-heading">
@@ -1878,6 +1960,32 @@ def _render_html(
     </section>
     {_render_unassigned(unassigned, dashboard_directory)}
   </main>
+<script>
+  const focusRole = (id, expand = false) => {{
+    document.querySelectorAll('.application-card.role-focused').forEach((node) => node.classList.remove('role-focused'));
+    const card = document.getElementById(id);
+    if (!card) return;
+    card.classList.add('role-focused');
+    if (expand) card.querySelectorAll('details.role-details').forEach((node) => node.open = true);
+    card.scrollIntoView({{ behavior: 'smooth', block: 'start' }});
+  }};
+  document.querySelectorAll('[data-focus-role]').forEach((link) => {{
+    link.addEventListener('click', (event) => {{
+      const id = link.getAttribute('data-focus-role');
+      if (id) {{ event.preventDefault(); focusRole(id, false); history.replaceState(null, '', '#' + id); }}
+    }});
+  }});
+  document.querySelector('[data-collapse-all]')?.addEventListener('click', () => {{
+    document.querySelectorAll('details').forEach((node) => node.open = false);
+  }});
+  document.querySelector('[data-expand-focused]')?.addEventListener('click', () => {{
+    const focused = document.querySelector('.application-card.role-focused') || (location.hash ? document.querySelector(location.hash) : null);
+    if (focused) focusRole(focused.id, true);
+  }});
+  document.querySelector('[data-clear-focus]')?.addEventListener('click', () => {{
+    document.querySelectorAll('.application-card.role-focused').forEach((node) => node.classList.remove('role-focused'));
+  }});
+</script>
 </body>
 </html>
 """

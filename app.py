@@ -1198,8 +1198,27 @@ def _render_role_card(
                 unsafe_allow_html=True,
             )
             badge_column.markdown(_status_badges(application), unsafe_allow_html=True)
-            if action_column.button(
-                "View role",
+            compact_facts = [
+                f"Status: {get_record_status(application)}",
+                f"Follow-up: {application.get('follow_up_status') or 'No applied date'}",
+                f"Match: {(str(application.get('match_score')) + ' ' + str(application.get('match_tier') or '')).strip() if application.get('match_score') is not None else 'Not scored'}",
+                f"Action: {application.get('recommended_action') or application.get('next_action') or 'Review'}",
+                f"Verification: {application.get('source_trust_label') or application.get('verification_status') or 'Needs manual check'}",
+            ]
+            st.caption(" · ".join(compact_facts))
+            files = package.get("files", {})
+            posting_url = record_posting_url(application)
+            first_material = next(
+                (
+                    Path(path)
+                    for path in files.values()
+                    if Path(path).exists() and Path(path).suffix.lower() != ".md"
+                ),
+                None,
+            )
+            actions = st.columns(3)
+            if actions[0].button(
+                "View Role",
                 key=f"compact_view_{tracker_id}",
                 use_container_width=True,
             ):
@@ -1207,6 +1226,21 @@ def _render_role_card(
                     st.session_state, dashboard_role_reference(application)
                 )
                 st.rerun()
+            if posting_url:
+                actions[1].link_button("Open Posting", posting_url, use_container_width=True)
+            else:
+                actions[1].button("Open Posting", key=f"compact_posting_missing_{tracker_id}", disabled=True, use_container_width=True)
+            if first_material and actions[2].button(
+                "Open Materials",
+                key=f"compact_materials_{tracker_id}",
+                use_container_width=True,
+                help=str(first_material),
+            ):
+                focus_dashboard_role(st.session_state, dashboard_role_reference(application))
+                st.session_state["dashboard_materials_role_id"] = tracker_id
+                st.rerun()
+            elif not first_material:
+                actions[2].button("Open Materials", key=f"compact_materials_missing_{tracker_id}", disabled=True, use_container_width=True)
         return
     with st.container(border=True):
         flash_key = f"dashboard_flash_{tracker_id}"
@@ -1565,7 +1599,7 @@ def _render_recommended_next_steps(
 ) -> str:
     steps = structured_recommended_next_steps(applications, mode)
     all_focus_records = focus_records if focus_records is not None else applications
-    compact_mode = bool(st.session_state.get("dashboard_compact_mode", False))
+    compact_mode = bool(st.session_state.get("dashboard_compact_mode", True))
     next_steps_collapsed = bool(
         st.session_state.get("dashboard_next_steps_collapsed", False)
     )
@@ -2664,7 +2698,7 @@ def _render_dashboard(st: Any) -> None:
         trust_label=trust_label,
     )
     records = sort_dashboard_records(records, sort_by)
-    st.session_state.setdefault("dashboard_compact_mode", False)
+    st.session_state.setdefault("dashboard_compact_mode", True)
     st.session_state.setdefault("dashboard_next_steps_collapsed", False)
     has_focused_role = bool(
         str(st.session_state.get("dashboard_focused_role_id") or "").strip()

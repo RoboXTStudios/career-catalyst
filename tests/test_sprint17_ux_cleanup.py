@@ -13,7 +13,7 @@ from scripts.filename_utils import (
     short_company_name,
 )
 from scripts.generate_cover_letter import generate_cover_letter
-from scripts.generate_dashboard import _render_package
+from scripts.generate_dashboard import _render_html, _render_package
 from scripts.generate_messages import generate_message
 from scripts.job_freshness import detect_job_freshness
 from tests.test_sprint15_4 import _FakeStreamlit, _record
@@ -174,6 +174,65 @@ class CompactDashboardTests(unittest.TestCase):
         app._render_role_card(st, record, {}, compact=True)
         self.assertEqual(st.session_state["dashboard_focused_role_id"], "stable-role")
         self.assertEqual(st.reruns, 1)
+
+
+    def test_static_dashboard_renders_compact_command_center_cards(self):
+        package = {
+            "company": "Acme Inc",
+            "role": "Director of Operations",
+            "tracker": {
+                "id": "acme-director-ops",
+                "status": "Applied",
+                "follow_up_status": "Due now",
+                "match_score": 88,
+                "match_tier": "Strong Match",
+                "recommended_action": "Follow Up",
+                "source_trust_label": "Verified Company Source",
+                "verification_status": "Employer Source",
+                "match_strengths": ["Operations leadership"],
+                "verification_notes": "Confirmed on employer site.",
+                "original_source_url": "https://example.com/job",
+            },
+            "files": {},
+        }
+        rendered = _render_package(package, Path("/tmp"))
+        self.assertIn('class="application-card compact-role-card"', rendered)
+        self.assertIn('id="role-acme-director-ops"', rendered)
+        self.assertIn("View Role", rendered)
+        self.assertIn("Open Posting", rendered)
+        self.assertIn("Open Materials", rendered)
+        self.assertIn('<details class="role-details">', rendered)
+        self.assertNotIn('<details class="role-details" open', rendered)
+        self.assertIn('class="match-details"', rendered)
+        self.assertIn("Verification Status", rendered)
+
+    def test_static_dashboard_next_steps_and_controls_are_compact(self):
+        package = {
+            "company": "Acme Inc",
+            "role": "Director of Operations",
+            "tracker": {
+                "id": "acme-director-ops",
+                "status": "Applied",
+                "follow_up_status": "Due now",
+                "match_score": 88,
+                "match_tier": "Strong Match",
+                "recommended_action": "Follow Up",
+                "source_trust_label": "Verified Company Source",
+                "verification_status": "Employer Source",
+                "original_source_url": "https://example.com/job",
+            },
+            "files": {},
+        }
+        groups = {"active": [], "applied": [package], "reviewed": [], "paused": [], "pass": [], "hidden": []}
+        counts = {"Total": 1, "Active": 0, "Applied / Follow-up": 1, "Reviewed": 0, "Paused": 0, "Pass": 0, "Hidden / Invalid": 0}
+        content = _render_html(groups, counts, [], Path("/tmp/dashboard"))
+        self.assertIn('class="recommended-steps compact-next-steps"', content)
+        self.assertIn('class="next-step-row"', content)
+        self.assertIn('data-collapse-all', content)
+        self.assertIn('data-focus-role="role-acme-director-ops"', content)
+        self.assertIn("Source Type", content)
+        self.assertIn("Verification Status", content)
+        self.assertIn("Sort by", __import__("inspect").getsource(app._render_dashboard))
 
     def test_dashboard_exposes_requested_workspace_controls(self):
         source = __import__("inspect").getsource(app._render_dashboard)
