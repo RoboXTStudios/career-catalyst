@@ -8,7 +8,7 @@ from html import unescape
 from html.parser import HTMLParser
 from typing import Any, Dict, Iterable, Optional
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 from urllib.request import Request, urlopen
 
 try:
@@ -78,6 +78,90 @@ class _VisibleTextParser(HTMLParser):
         elif self.current_heading == "h1":
             self.h1_parts.append(cleaned)
 
+
+
+def _greenhouse_board_job_api_url(url: str) -> str:
+    """Return the Greenhouse Boards API URL for job-board posting URLs."""
+    parsed = urlparse(url)
+    host = (parsed.hostname or "").lower()
+    segments = [segment for segment in parsed.path.split("/") if segment]
+    if host != "job-boards.greenhouse.io" or len(segments) < 3:
+        return ""
+    if segments[1] != "jobs" or not segments[2].isdigit():
+        return ""
+    board_token = quote(segments[0], safe="")
+    job_id = quote(segments[2], safe="")
+    return f"https://boards-api.greenhouse.io/v1/boards/{board_token}/jobs/{job_id}"
+
+
+def _fetch_json(url: str, timeout: int = 12) -> Dict[str, Any]:
+    request = Request(
+        url,
+        headers={
+            "User-Agent": "CareerCatalyst/0.0.20 (local personal career-page importer)",
+            "Accept": "application/json",
+        },
+    )
+    try:
+        with urlopen(request, timeout=timeout) as response:  # nosec: derived from supported ATS URL
+            content_type = response.headers.get_content_type()
+            if content_type not in {"application/json", "text/json", "text/plain"}:
+                raise _manual_fallback(
+                    f"The job API returned {content_type or 'non-JSON content'} instead of job details."
+                )
+            charset = response.headers.get_content_charset() or "utf-8"
+            return json.loads(response.read().decode(charset, errors="replace"))
+    except JobImportError:
+        raise
+    except HTTPError as error:
+        raise _manual_fallback(
+            f"The job API returned HTTP {error.code} and could not be imported."
+        ) from error
+    except (json.JSONDecodeError, URLError, TimeoutError, OSError) as error:
+        raise _manual_fallback(f"The job API could not be reached or parsed ({error}).") from error
+
+
+def _greenhouse_company_from_url(url: str) -> str:
+    segments = [segment for segment in urlparse(url).path.split("/") if segment]
+    if not segments:
+        return ""
+    return re.sub(r"[-_]+", " ", segments[0]).strip().title()
+
+
+def _greenhouse_location(value: Any) -> str:
+    if isinstance(value, dict):
+        return str(value.get("name") or "").strip()
+    return str(value or "").strip()
+
+
+def _extract_greenhouse_job(url: str, timeout: int = 12) -> Optional[Dict[str, Any]]:
+    api_url = _greenhouse_board_job_api_url(url)
+    if not api_url:
+        return None
+    payload = _fetch_json(api_url, timeout)
+    description = _plain_html_text(payload.get("content"))
+    company = _greenhouse_company_from_url(url)
+    canonical_url = str(payload.get("absolute_url") or url).strip()
+    parsed = {
+        "job_title": payload.get("title") or "",
+        "company": company,
+        "location": _greenhouse_location(payload.get("location")) or "Not specified",
+        "work_arrangement": _work_arrangement(_greenhouse_location(payload.get("location")), description),
+        "job_id": str(payload.get("id") or "").strip(),
+        "source": _source_name(url),
+        "source_url": url,
+        "official_url": url,
+        "original_source_url": url,
+        "canonical_apply_url": canonical_url,
+        "job_description": description,
+    }
+    parsed.update(normalize_job_source(parsed))
+    parsed["source_url"] = url
+    parsed["official_url"] = url
+    parsed["original_source_url"] = url
+    parsed["canonical_apply_url"] = canonical_url or parsed.get("canonical_apply_url") or url
+    create_job_markdown(parsed)
+    return parsed
 
 def _manual_fallback(message: str) -> JobImportError:
     return JobImportError(
@@ -375,10 +459,17 @@ def parse_imported_job(raw_text: str, url: str) -> Dict[str, Any]:
         "posting_date": metadata.get("posting_date") or "",
         "job_id": fallback.get("job_id") or "",
         "source": _source_name(url),
+        "source_url": url,
         "official_url": url,
+        "original_source_url": url,
+        "canonical_apply_url": url,
         "job_description": description,
     }
     parsed.update(normalize_job_source(parsed))
+    parsed["source_url"] = url
+    parsed["official_url"] = url
+    parsed["original_source_url"] = url
+    parsed["canonical_apply_url"] = parsed.get("canonical_apply_url") or url
     # Validate the minimum useful payload before a UI can treat import as successful.
     create_job_markdown(parsed)
     return parsed
@@ -386,6 +477,10 @@ def parse_imported_job(raw_text: str, url: str) -> Dict[str, Any]:
 
 def import_job_from_url(url: str) -> Dict[str, Any]:
     """Fetch, extract, and parse an official job page in one UI-friendly call."""
-    html = fetch_job_page(url)
-    raw_text = extract_job_text(html, url)
-    return parse_imported_job(raw_text, url)
+    clean_url = _validated_url(url)
+    greenhouse_job = _extract_greenhouse_job(clean_url)
+    if greenhouse_job:
+        return greenhouse_job
+    html = fetch_job_page(clean_url)
+    raw_text = extract_job_text(html, clean_url)
+    return parse_imported_job(raw_text, clean_url)

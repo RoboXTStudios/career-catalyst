@@ -94,6 +94,96 @@ class ParseJobTests(unittest.TestCase):
 
         self.assertIn("Job description file not found", str(context.exception))
 
+class GreenhouseUrlImportRegressionTests(unittest.TestCase):
+    def test_airtable_greenhouse_job_board_url_extracts_via_boards_api(self):
+        from unittest.mock import patch
+
+        from scripts import job_importer
+
+        url = "https://job-boards.greenhouse.io/airtable/jobs/8597950002"
+        payload = {
+            "id": 8597950002,
+            "title": "Strategic Operations Lead",
+            "absolute_url": url,
+            "location": {"name": "San Francisco, CA"},
+            "content": (
+                "<p>Lead cross-functional planning, operations, stakeholder alignment, "
+                "business reviews, launch readiness, and execution governance across Airtable teams.</p>"
+            ),
+        }
+
+        class FakeHeaders:
+            def get_content_type(self):
+                return "application/json"
+
+            def get_content_charset(self):
+                return "utf-8"
+
+        class FakeResponse:
+            headers = FakeHeaders()
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+            def read(self):
+                import json
+
+                return json.dumps(payload).encode("utf-8")
+
+        requested_urls = []
+
+        def fake_urlopen(request, timeout=12):
+            requested_urls.append(request.full_url)
+            return FakeResponse()
+
+        with patch.object(job_importer, "urlopen", fake_urlopen):
+            imported = job_importer.import_job_from_url(url)
+
+        self.assertEqual(
+            requested_urls,
+            ["https://boards-api.greenhouse.io/v1/boards/airtable/jobs/8597950002"],
+        )
+        self.assertEqual(imported["company"], "Airtable")
+        self.assertEqual(imported["job_title"], "Strategic Operations Lead")
+        self.assertEqual(imported["location"], "San Francisco, CA")
+        self.assertIn("cross-functional planning", imported["job_description"])
+        self.assertEqual(imported["source_url"], url)
+        self.assertEqual(imported["original_source_url"], url)
+        self.assertEqual(imported["canonical_apply_url"], url)
+        self.assertEqual(imported["source_name"], "Greenhouse")
+
+    def test_partial_failure_preserves_url_and_manual_fallback_fields(self):
+        import app
+        from scripts.job_importer import JobImportError
+
+        url = "https://job-boards.greenhouse.io/airtable/jobs/8597950002"
+        state = {
+            "prospect_url": url,
+            "prospect_company": "Manually Typed Co",
+            "prospect_role": "Manual Role",
+            "prospect_description": "Manual pasted text stays available for fallback.",
+        }
+
+        def fail(_url):
+            raise JobImportError("blocked")
+
+        result = app.apply_prospect_url_import_state(state, fail)
+
+        self.assertEqual(result["status"], "partial")
+        self.assertEqual(state["prospect_url"], url)
+        self.assertEqual(state["prospect_original_source_url"], url)
+        self.assertEqual(state["prospect_canonical_url"], url)
+        self.assertEqual(state["prospect_company"], "Manually Typed Co")
+        self.assertEqual(state["prospect_role"], "Manual Role")
+        self.assertEqual(
+            state["prospect_description"],
+            "Manual pasted text stays available for fallback.",
+        )
+        self.assertIn("source URL was saved", state["prospect_import_result"][1])
+
 
 if __name__ == "__main__":
     unittest.main()
