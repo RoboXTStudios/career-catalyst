@@ -9,6 +9,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable
 
+try:
+    from .filename_utils import build_upload_filename
+except ImportError:  # pragma: no cover - direct script imports
+    from filename_utils import build_upload_filename
+
 
 ACTIVE_ROUTES = {
     "applied": "active/applied_followup",
@@ -90,6 +95,60 @@ LEGACY_MARKDOWN_DIRS = (
 )
 
 
+def _candidate_name(application: Dict[str, Any]) -> str:
+    return str(
+        application.get("candidate_name")
+        or application.get("candidate")
+        or "Trisha Lynch"
+    )
+
+
+def _role_title(application: Dict[str, Any]) -> str:
+    return str(application.get("role") or application.get("job_title") or "Role")
+
+
+def _company(application: Dict[str, Any]) -> str:
+    return str(application.get("company") or "Company")
+
+
+def standardized_material_filename(
+    application: Dict[str, Any], material_type: str, extension: str
+) -> str:
+    """Return the active-package filename for a material.
+
+    Standard: [company]_[role]_[candidate]_[material_type].[file_type]
+    """
+    return build_upload_filename(
+        _candidate_name(application),
+        _role_title(application),
+        _company(application),
+        material_type,
+        extension,
+    )
+
+
+def _output_filename(application: Dict[str, Any], key: str, source: Path) -> str | None:
+    generic = OUTPUT_FILENAMES.get(key)
+    if not generic:
+        return None
+    material_type = Path(generic).stem
+    return standardized_material_filename(
+        application, material_type, source.suffix.lower().lstrip(".")
+    )
+
+
+def _material_filename(
+    application: Dict[str, Any], label: str, source: Path
+) -> str | None:
+    generic = MATERIAL_FILENAMES.get(str(label))
+    if not generic:
+        return None
+    material_type = Path(generic).stem
+    return standardized_material_filename(
+        application, material_type, source.suffix.lower().lstrip(".")
+    )
+
+
 def _key(value: Any) -> str:
     return re.sub(r"\s+", " ", str(value or "").strip().lower())
 
@@ -98,15 +157,27 @@ def material_route(status: Any) -> Dict[str, Any]:
     """Return a safe library route without guessing ambiguous statuses."""
     normalized = _key(status)
     if normalized in ACTIVE_ROUTES:
-        return {"route": ACTIVE_ROUTES[normalized], "archived": False, "needs_review": False}
+        return {
+            "route": ACTIVE_ROUTES[normalized],
+            "archived": False,
+            "needs_review": False,
+        }
     if normalized in ARCHIVE_ROUTES:
-        return {"route": ARCHIVE_ROUTES[normalized], "archived": True, "needs_review": False}
+        return {
+            "route": ARCHIVE_ROUTES[normalized],
+            "archived": True,
+            "needs_review": False,
+        }
     return {"route": None, "archived": False, "needs_review": True}
 
 
 def role_slug(application: Dict[str, Any]) -> str:
     """Return the stable tracker identity used as the package folder name."""
-    value = application.get("prospect_id") or application.get("id") or application.get("stable_slug")
+    value = (
+        application.get("prospect_id")
+        or application.get("id")
+        or application.get("stable_slug")
+    )
     return re.sub(r"[^a-z0-9]+", "_", str(value or "").lower()).strip("_")
 
 
@@ -149,15 +220,26 @@ def write_role_manifest(
     """Write one exact role manifest and return its payload."""
     folder.mkdir(parents=True, exist_ok=True)
     manifest = {
-        "prospect_id": str(application.get("id") or application.get("prospect_id") or ""),
+        "prospect_id": str(
+            application.get("id") or application.get("prospect_id") or ""
+        ),
         "slug": role_slug(application),
         "company": str(application.get("company") or ""),
-        "role_title": str(application.get("role") or application.get("job_title") or ""),
+        "role_title": str(
+            application.get("role") or application.get("job_title") or ""
+        ),
         "status": str(application.get("status") or ""),
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "applied_date": str(application.get("submitted_date") or application.get("applied_date") or ""),
+        "applied_date": str(
+            application.get("submitted_date") or application.get("applied_date") or ""
+        ),
         "status_date": str(application.get("status_date") or ""),
-        "source_url": str(application.get("canonical_apply_url") or application.get("official_url") or application.get("source_url") or ""),
+        "source_url": str(
+            application.get("canonical_apply_url")
+            or application.get("official_url")
+            or application.get("source_url")
+            or ""
+        ),
         "files": dict(files),
         "archived": bool(archived),
         "archive_reason": archive_reason,
@@ -178,7 +260,11 @@ def organize_package_outputs(
     root = Path(project_root).resolve()
     routing = material_route(application.get("status"))
     if routing["needs_review"]:
-        return {"outputs": dict(outputs), "manifest": None, "warnings": ["Ambiguous status; materials left in place."]}
+        return {
+            "outputs": dict(outputs),
+            "manifest": None,
+            "warnings": ["Ambiguous status; materials left in place."],
+        }
     slug = role_slug(application)
     package_folder = root / "exports" / str(routing["route"]) / slug
     markdown_folder = root / "exports" / "archive" / "old_generated_materials" / slug
@@ -202,7 +288,7 @@ def organize_package_outputs(
             updated[key] = str(target)
             legacy_moved.append(str(target))
             continue
-        filename = OUTPUT_FILENAMES.get(key)
+        filename = _output_filename(application, key, source)
         if not filename:
             continue
         target = _move_file(source, package_folder / filename)
@@ -214,7 +300,9 @@ def organize_package_outputs(
         application,
         files,
         archived=bool(routing["archived"]),
-        archive_reason=(f"Status: {application.get('status')}" if routing["archived"] else ""),
+        archive_reason=(
+            f"Status: {application.get('status')}" if routing["archived"] else ""
+        ),
         legacy_files_moved=legacy_moved,
     )
     return {"outputs": updated, "manifest": manifest, "warnings": []}
@@ -227,9 +315,15 @@ def organize_exact_material_paths(
     root = Path(project_root).resolve()
     routing = material_route(application.get("status"))
     if routing["needs_review"]:
-        return {"moved_count": 0, "manifest": None, "warnings": ["Ambiguous status; materials left in place."]}
+        return {
+            "moved_count": 0,
+            "manifest": None,
+            "warnings": ["Ambiguous status; materials left in place."],
+        }
     folder = root / "exports" / str(routing["route"]) / role_slug(application)
-    markdown_folder = root / "exports/archive/old_generated_materials" / role_slug(application)
+    markdown_folder = (
+        root / "exports/archive/old_generated_materials" / role_slug(application)
+    )
     materials: Dict[str, str] = {}
     legacy_moved = []
     moved_count = 0
@@ -247,13 +341,10 @@ def organize_exact_material_paths(
                 )
             legacy_moved.append(str(_move_file(source, markdown_folder / source.name)))
             source = txt_source
-        filename = MATERIAL_FILENAMES.get(str(label))
+        filename = _material_filename(application, str(label), source)
         if not filename:
             continue
-        canonical = Path(filename)
-        if canonical.suffix.lower() != source.suffix.lower():
-            canonical = canonical.with_suffix(source.suffix.lower())
-        target = _move_file(source, folder / canonical)
+        target = _move_file(source, folder / filename)
         materials[str(label)] = str(target)
         moved_count += 1
     manifest = write_role_manifest(
@@ -261,7 +352,9 @@ def organize_exact_material_paths(
         application,
         materials,
         archived=bool(routing["archived"]),
-        archive_reason=(f"Status: {application.get('status')}" if routing["archived"] else ""),
+        archive_reason=(
+            f"Status: {application.get('status')}" if routing["archived"] else ""
+        ),
         legacy_files_moved=legacy_moved,
     )
     manifest["materials"] = materials
@@ -277,7 +370,9 @@ def organize_exact_material_paths(
     return {"moved_count": moved_count, "manifest": manifest, "warnings": []}
 
 
-def find_exact_role_package(project_root: Path, application: Dict[str, Any]) -> Dict[str, Any]:
+def find_exact_role_package(
+    project_root: Path, application: Dict[str, Any]
+) -> Dict[str, Any]:
     """Find one package by stable role slug, preferring its manifest over legacy paths."""
     root = Path(project_root).resolve()
     slug = role_slug(application)
@@ -323,7 +418,9 @@ def move_role_package(
         if archive
         else ACTIVE_ROUTES.get(_key(application.get("status")), "active/in_progress")
     )
-    destination = Path(project_root).resolve() / "exports" / route / role_slug(application)
+    destination = (
+        Path(project_root).resolve() / "exports" / route / role_slug(application)
+    )
     target = _move_file(Path(folder), destination) if Path(folder).is_file() else None
     if target is None:
         destination.parent.mkdir(parents=True, exist_ok=True)
@@ -333,7 +430,9 @@ def move_role_package(
     manifest_path = target / "manifest.json"
     payload = json.loads(manifest_path.read_text(encoding="utf-8"))
     payload["archived"] = archive
-    payload["archive_reason"] = f"Status: {application.get('status')}" if archive else ""
+    payload["archive_reason"] = (
+        f"Status: {application.get('status')}" if archive else ""
+    )
     payload["files"] = {
         key: str((target / Path(value).name).resolve())
         for key, value in dict(payload.get("files") or {}).items()
@@ -349,7 +448,9 @@ def move_role_package(
     return {"moved": True, "folder": target, "manifest": payload, "route": status_route}
 
 
-def archive_legacy_markdown(project_root: Path, *, apply: bool = False) -> Dict[str, Any]:
+def archive_legacy_markdown(
+    project_root: Path, *, apply: bool = False
+) -> Dict[str, Any]:
     """Archive generated Markdown, creating TXT companions when needed."""
     root = Path(project_root).resolve()
     planned = []
@@ -360,7 +461,12 @@ def archive_legacy_markdown(project_root: Path, *, apply: bool = False) -> Dict[
         if not directory.is_dir():
             continue
         for source in sorted(directory.glob("*.md")):
-            destination = root / "exports/archive/old_generated_materials" / Path(relative).name / source.name
+            destination = (
+                root
+                / "exports/archive/old_generated_materials"
+                / Path(relative).name
+                / source.name
+            )
             txt_path = source.with_suffix(".txt")
             planned.append({"source": str(source), "destination": str(destination)})
             if not apply:

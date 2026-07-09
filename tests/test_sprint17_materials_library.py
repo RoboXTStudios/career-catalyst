@@ -20,7 +20,6 @@ from scripts.materials_library import (
 )
 from tests.test_sprint15_4 import _FakeStreamlit
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -78,9 +77,31 @@ class MaterialRoutingTests(unittest.TestCase):
                 },
             )
             manifest = result["manifest"]
-            folder = root / "exports/active/ready_to_apply/netflix_program_manager_design"
-            self.assertTrue((folder / "cover_letter.txt").is_file())
-            self.assertTrue((folder / "cover_letter.docx").is_file())
+            folder = (
+                root / "exports/active/ready_to_apply/netflix_program_manager_design"
+            )
+            self.assertTrue(
+                (
+                    folder
+                    / "netflix_program_manager_design_trisha_lynch_cover_letter.txt"
+                ).is_file()
+            )
+            self.assertTrue(
+                (
+                    folder
+                    / "netflix_program_manager_design_trisha_lynch_cover_letter.docx"
+                ).is_file()
+            )
+            self.assertFalse((folder / "cover_letter.txt").exists())
+            self.assertFalse((folder / "cover_letter.docx").exists())
+            self.assertIn(
+                "netflix_program_manager_design_trisha_lynch_cover_letter.docx",
+                manifest["files"]["cover_letter_docx"],
+            )
+            self.assertIn(
+                "netflix_program_manager_design_trisha_lynch_cover_letter.txt",
+                manifest["files"]["cover_letter_text"],
+            )
             self.assertTrue(
                 (
                     root
@@ -105,19 +126,32 @@ class MaterialRoutingTests(unittest.TestCase):
     def test_existing_destination_gets_safe_suffix(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            folder = root / "exports/active/ready_to_apply/netflix_program_manager_design"
+            folder = (
+                root / "exports/active/ready_to_apply/netflix_program_manager_design"
+            )
             folder.mkdir(parents=True)
-            (folder / "recruiter_message.txt").write_text("old", encoding="utf-8")
+            (
+                folder
+                / "netflix_program_manager_design_trisha_lynch_recruiter_message.txt"
+            ).write_text("old", encoding="utf-8")
             source = root / "new.txt"
             source.write_text("new", encoding="utf-8")
             organize_package_outputs(
                 root, _application(), {"recruiter_message": str(source)}
             )
             self.assertEqual(
-                (folder / "recruiter_message.txt").read_text(encoding="utf-8"), "old"
+                (
+                    folder
+                    / "netflix_program_manager_design_trisha_lynch_recruiter_message.txt"
+                ).read_text(encoding="utf-8"),
+                "old",
             )
             self.assertEqual(
-                (folder / "recruiter_message_2.txt").read_text(encoding="utf-8"), "new"
+                (
+                    folder
+                    / "netflix_program_manager_design_trisha_lynch_recruiter_message_2.txt"
+                ).read_text(encoding="utf-8"),
+                "new",
             )
 
 
@@ -133,7 +167,7 @@ class ManifestAndArchiveTests(unittest.TestCase):
             result = organize_exact_material_paths(root, application)
             expected = (
                 root
-                / "exports/archive/rejected/netflix_program_manager_design/recruiter_message.txt"
+                / "exports/archive/rejected/netflix_program_manager_design/netflix_program_manager_design_trisha_lynch_recruiter_message.txt"
             )
             self.assertTrue(expected.is_file())
             self.assertTrue(result["manifest"]["archived"])
@@ -158,7 +192,12 @@ class ManifestAndArchiveTests(unittest.TestCase):
             archived = move_role_package(root, application, archive=True)
             self.assertTrue(archived["moved"])
             self.assertTrue(archived["manifest"]["archived"])
-            self.assertTrue((archived["folder"] / "recruiter_message.txt").is_file())
+            self.assertTrue(
+                (
+                    archived["folder"]
+                    / "netflix_program_manager_design_trisha_lynch_recruiter_message.txt"
+                ).is_file()
+            )
 
             restored = move_role_package(root, application, archive=False)
             self.assertTrue(restored["moved"])
@@ -170,9 +209,7 @@ class ManifestAndArchiveTests(unittest.TestCase):
 
     def test_missing_exact_package_returns_clear_state(self):
         with tempfile.TemporaryDirectory() as temporary:
-            result = move_role_package(
-                Path(temporary), _application(), archive=True
-            )
+            result = move_role_package(Path(temporary), _application(), archive=True)
             self.assertFalse(result["moved"])
             self.assertEqual(result["reason"], "No exact package materials yet")
 
@@ -218,7 +255,9 @@ class FormatAndAppPolicyTests(unittest.TestCase):
                 generate_strategy_pack(job, root),
                 generate_interview_prep(job, root),
             )
-            self.assertTrue(all(Path(item["output_path"]).suffix == ".txt" for item in results))
+            self.assertTrue(
+                all(Path(item["output_path"]).suffix == ".txt" for item in results)
+            )
             self.assertFalse(list((root / "exports/messages").glob("*.md")))
             self.assertFalse(list((root / "exports/strategy_packs").glob("*.md")))
 

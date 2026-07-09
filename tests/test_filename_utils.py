@@ -1,5 +1,6 @@
 import re
 import unittest
+from pathlib import Path
 
 from scripts.filename_utils import (
     build_upload_filename,
@@ -106,6 +107,42 @@ class FilenameUtilsTests(unittest.TestCase):
         }
         for label, normalized in expected.items():
             self.assertEqual(normalize_material_type(label), normalized)
+
+
+class GitignoreTests(unittest.TestCase):
+    def test_word_temp_docx_files_are_ignored(self):
+        gitignore = (Path(__file__).resolve().parents[1] / ".gitignore").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("~$*.docx", gitignore.splitlines())
+
+
+class ActivePackageFilenameTests(unittest.TestCase):
+    def test_active_package_material_filename_helper_uses_standard_names(self):
+        from scripts.materials_library import standardized_material_filename
+
+        application = {
+            "company": "Netflix",
+            "role": "Specialist, Performance Marketing",
+            "candidate_name": "Trisha Lynch",
+        }
+        self.assertEqual(
+            standardized_material_filename(application, "ATS Resume", "docx"),
+            "netflix_specialist_performance_marketing_trisha_lynch_ats_resume.docx",
+        )
+        self.assertEqual(
+            standardized_material_filename(application, "Cover Letter", "docx"),
+            "netflix_specialist_performance_marketing_trisha_lynch_cover_letter.docx",
+        )
+
+    def test_disney_active_package_material_filename_helper(self):
+        from scripts.materials_library import standardized_material_filename
+
+        application = {"company": "Disney", "role": "Principal Product Manager"}
+        self.assertEqual(
+            standardized_material_filename(application, "Styled Resume", "docx"),
+            "disney_principal_product_manager_trisha_lynch_styled_resume.docx",
+        )
 
 
 if __name__ == "__main__":
