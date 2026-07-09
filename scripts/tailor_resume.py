@@ -7,19 +7,29 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 try:
     from .filename_utils import build_upload_filename
     from .load_data import load_all_yaml
+    from .evidence_engine import load_writing_voice_profile
     from .parse_job import parse_job_description
     from .package_context import validate_material_context
     from .role_context import is_google_youtube_role
-    from .role_editing import material_editing_plan
+    from .role_editing import (
+        material_editing_plan,
+        remaining_banned_voice_phrases,
+        rewrite_banned_voice_phrases,
+    )
     from .score_match import score_job_match
     from .text_cleanup import cleanup_repeated_words
 except ImportError:
     from filename_utils import build_upload_filename
     from load_data import load_all_yaml
+    from evidence_engine import load_writing_voice_profile
     from parse_job import parse_job_description
     from package_context import validate_material_context
     from role_context import is_google_youtube_role
-    from role_editing import material_editing_plan
+    from role_editing import (
+        material_editing_plan,
+        remaining_banned_voice_phrases,
+        rewrite_banned_voice_phrases,
+    )
     from score_match import score_job_match
     from text_cleanup import cleanup_repeated_words
 
@@ -558,6 +568,15 @@ def tailor_resume(
     markdown = cleanup_repeated_words(
         _render_markdown(career_data, parsed_job, match_report, resume_profile)
     )
+    markdown, rewrite_notes = rewrite_banned_voice_phrases(markdown)
+    banned_phrases = list(career_data["config"].get("voice", {}).get("avoid", []))
+    banned_phrases.extend(load_writing_voice_profile(root).get("banned_phrases", []))
+    banned_phrases.extend(material_editing_plan(parsed_job, root).get("banned_phrases", []))
+    remaining_banned = remaining_banned_voice_phrases(markdown, banned_phrases)
+    if remaining_banned:
+        raise ResumeTailoringError(
+            f"Generated tailored resume contains banned voice phrase: {remaining_banned[0]}"
+        )
     validate_material_context(markdown, parsed_job, "Tailored_Resume")
 
     export_dir = root / "exports" / "internal" / "resumes"
@@ -583,4 +602,13 @@ def tailor_resume(
         "tailoring_notes": match_report.get("tailoring_notes", []),
         "output_path": str(output_path),
         "txt_output_path": str(text_path),
+        "warnings": (
+            [
+                "Rewrote banned voice phrases before validation: "
+                + ", ".join(note["phrase"] for note in rewrite_notes)
+            ]
+            if rewrite_notes
+            else []
+        ),
+        "banned_phrase_rewrites": rewrite_notes,
     }

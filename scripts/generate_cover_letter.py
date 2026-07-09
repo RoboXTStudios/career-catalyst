@@ -20,7 +20,11 @@ try:
         google_claim_violations,
         is_google_youtube_role,
     )
-    from .role_editing import material_editing_plan
+    from .role_editing import (
+        material_editing_plan,
+        remaining_banned_voice_phrases,
+        rewrite_banned_voice_phrases,
+    )
     from .score_match import score_job_match
     from .text_cleanup import cleanup_repeated_words
 except ImportError:
@@ -31,7 +35,11 @@ except ImportError:
     from parse_job import parse_job_description
     from package_context import validate_material_context
     from role_context import google_claim_violations, is_google_youtube_role
-    from role_editing import material_editing_plan
+    from role_editing import (
+        material_editing_plan,
+        remaining_banned_voice_phrases,
+        rewrite_banned_voice_phrases,
+    )
     from score_match import score_job_match
     from text_cleanup import cleanup_repeated_words
 
@@ -95,10 +103,15 @@ def save_material(
 ) -> Dict[str, Any]:
     """Validate and save one Markdown application material, repairing length when configured."""
     content = cleanup_repeated_words(content)
+    rewrite_notes: list[dict[str, str]] = []
+    content, initial_rewrites = rewrite_banned_voice_phrases(content)
+    rewrite_notes.extend(initial_rewrites)
     word_count = _word_count(content)
     attempts = 0
     while not minimum_words <= word_count <= maximum_words and repair_content and attempts < repair_attempts:
         content = cleanup_repeated_words(repair_content(content, context))
+        content, attempt_rewrites = rewrite_banned_voice_phrases(content)
+        rewrite_notes.extend(attempt_rewrites)
         word_count = _word_count(content)
         attempts += 1
     if "—" in content:
@@ -106,7 +119,12 @@ def save_material(
     if "placeholder" in content.lower():
         raise ApplicationMaterialError("Generated application materials must not contain placeholder text.")
 
-    lowered_content = content.lower()
+    if rewrite_notes:
+        context.setdefault("material_warnings", []).append(
+            "Rewrote banned voice phrases before validation: "
+            + ", ".join(note["phrase"] for note in rewrite_notes)
+        )
+
     if is_google_youtube_role(context["parsed_job"]):
         violations = google_claim_violations(content)
         if violations:
@@ -116,11 +134,11 @@ def save_material(
     configured_banned_phrases = list(context.get("voice", {}).get("avoid", []))
     configured_banned_phrases.extend(context.get("writing_voice", {}).get("banned_phrases", []))
     configured_banned_phrases.extend(context.get("material_editing_plan", {}).get("banned_phrases", []))
-    for phrase in configured_banned_phrases:
-        if str(phrase).lower() in lowered_content:
-            raise ApplicationMaterialError(
-                f"Generated application materials contain banned voice phrase: {phrase}"
-            )
+    remaining_banned = remaining_banned_voice_phrases(content, configured_banned_phrases)
+    if remaining_banned:
+        raise ApplicationMaterialError(
+            f"Generated application materials contain banned voice phrase: {remaining_banned[0]}"
+        )
 
     if not minimum_words <= word_count <= maximum_words:
         raise ApplicationMaterialError(
@@ -166,6 +184,8 @@ def save_material(
         "txt_output_path": str(output_path),
         "word_count": word_count,
         "repair_attempts": attempts,
+        "warnings": list(context.get("material_warnings", [])),
+        "banned_phrase_rewrites": rewrite_notes,
     }
 
 

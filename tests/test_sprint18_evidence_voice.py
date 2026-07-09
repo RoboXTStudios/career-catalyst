@@ -218,3 +218,13 @@ def test_traditional_pmo_omits_creative_editorial_and_banned_phrase():
     assert plan["role_category"] == "traditional_pmo_governance"
     assert "substack" not in plan["omitted_evidence"] or "substack" not in content
     assert "practical governance, clear milestones, visible risks, and decision rhythms" not in content
+
+
+def test_rewrite_banned_voice_phrases_rewrites_clear_plan():
+    from scripts.role_editing import rewrite_banned_voice_phrases
+
+    rewritten, notes = rewrite_banned_voice_phrases("I would bring a clear plan for execution.")
+
+    assert "clear operating structure" in rewritten
+    assert "clear plan" not in rewritten.lower()
+    assert notes == [{"phrase": "clear plan", "replacement": "clear operating structure"}]
