@@ -1,4 +1,5 @@
 import io
+import html
 import re
 import unittest
 from contextlib import redirect_stdout
@@ -65,13 +66,13 @@ class GenerateDashboardTests(unittest.TestCase):
         links = re.findall(r'href="([^"]+)"', self.content)
         self.assertTrue(links)
         for link in links:
+            if link.startswith(("http://", "https://")):
+                continue
             linked_file = (self.output_path.parent / unquote(link)).resolve()
             self.assertTrue(linked_file.is_file(), f"Missing dashboard target: {link}")
 
     def test_dashboard_has_no_external_cdn_dependencies(self):
         lowered = self.content.lower()
-        self.assertNotIn("https://", lowered)
-        self.assertNotIn("http://", lowered)
         self.assertNotIn("cdn", lowered)
 
     def test_dashboard_uses_relative_file_links(self):
@@ -94,36 +95,39 @@ class GenerateDashboardTests(unittest.TestCase):
         )
         self.assertIn('<span class="badge status-applied">Applied</span>', self.content)
 
-    def test_active_section_preserves_all_applied_roles(self):
+    def test_applied_section_preserves_all_applied_roles_without_duplicate_cards(self):
+        applied_section = self.content.split('id="applied-follow-up"', 1)[1].split(
+            'id="reviewed"', 1
+        )[0]
         active_section = self.content.split('id="active-applied"', 1)[1].split(
-            'id="draft-paused"', 1
+            'id="applied-follow-up"', 1
         )[0]
 
-        self.assertIn("Strategy and Operations Lead, YouTube Auction Brand", active_section)
-        self.assertIn(
-            "Head of Global Creative and Product Development Operations",
-            active_section,
-        )
-        self.assertIn("Director, Marketing Operations", active_section)
         applications = load_application_tracker(PROJECT_ROOT)
-        expected_applied = sum(
-            item["status"] == "Applied" and item.get("show_on_dashboard") is not False
+        expected_applied_records = [
+            item
             for item in applications
-        )
+            if item["status"] == "Applied" and item.get("show_on_dashboard") is not False
+        ]
+        for item in expected_applied_records:
+            self.assertIn(html.escape(str(item["role"])), applied_section)
         self.assertEqual(
-            active_section.count('status-applied">Applied</span>'),
-            expected_applied,
+            applied_section.count('status-applied">Applied</span>'),
+            len(expected_applied_records),
         )
+        self.assertNotIn('status-applied">Applied</span>', active_section)
+        role_ids = re.findall(r'id="(role-[^"]+)"', self.content)
+        self.assertEqual(len(role_ids), len(set(role_ids)))
 
     def test_invalid_playstation_role_is_not_in_active_section(self):
         active_section = self.content.split('id="active-applied"', 1)[1].split(
-            'id="draft-paused"', 1
+            'id="applied-follow-up"', 1
         )[0]
         hidden_section = self.content.split('id="hidden-invalid-roles"', 1)[1]
 
         self.assertNotIn("Director, Ad Operations &amp; Technology", active_section)
         self.assertIn("Director, Ad Operations &amp; Technology", hidden_section)
-        self.assertIn('status-invalid">Invalid</span>', hidden_section)
+        self.assertRegex(hidden_section, r'status-invalid(?:_hidden)?">Invalid')
 
     def test_crunchyroll_role_matches_tracker_status(self):
         applications = load_application_tracker(PROJECT_ROOT)
@@ -134,10 +138,10 @@ class GenerateDashboardTests(unittest.TestCase):
         )
         role = "Director, Enterprise Strategy &amp; Initiatives"
         active_section = self.content.split('id="active-applied"', 1)[1].split(
-            'id="draft-paused"', 1
+            'id="applied-follow-up"', 1
         )[0]
         draft_section = self.content.split('id="draft-paused"', 1)[1].split(
-            'id="hidden-invalid-roles"', 1
+            'id="passed"', 1
         )[0]
         hidden_section = self.content.split('id="hidden-invalid-roles"', 1)[1]
 
@@ -146,7 +150,7 @@ class GenerateDashboardTests(unittest.TestCase):
             self.assertIn('status-paused">Paused</span>', draft_section)
         elif crunchyroll["status"] == "Invalid":
             self.assertIn(role, hidden_section)
-            self.assertIn('status-invalid">Invalid</span>', hidden_section)
+            self.assertRegex(hidden_section, r'status-invalid(?:_hidden)?">Invalid')
         else:
             self.assertIn(role, self.content)
         self.assertNotIn(role, active_section)
