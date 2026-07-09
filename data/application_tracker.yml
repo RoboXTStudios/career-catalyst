@@ -2085,12 +2085,12 @@ applications:
   company_aliases: []
   role: Specialist, Performance Marketing
   role_aliases: []
-  status: Reviewed
+  status: Pass
   priority: Medium
   source: Workday
   notes: ''
   next_action: Review fit and generate application package.
-  show_on_dashboard: true
+  show_on_dashboard: false
   official_url: https://netflix.wd108.myworkdayjobs.com/en-US/Netflix/job/Specialist--Performance-Marketing_JR40473?locations=84a618b29e90102fcd70873d84b807f4
   source_url: https://netflix.wd108.myworkdayjobs.com/en-US/Netflix/job/Specialist--Performance-Marketing_JR40473?locations=84a618b29e90102fcd70873d84b807f4
   location: Los Angeles, United States of America
@@ -2140,7 +2140,7 @@ applications:
   canonical_employer: Netflix, Inc.
   recommended_next_step: Proceed using the canonical employer application.
   greenhouse_backed_hint: false
-  status_updated_at: '2026-07-09T12:46:07'
+  status_updated_at: '2026-07-09T13:55:58'
   opportunity_score: 74
   apply_recommendation: Apply If Strategic
   opportunity_dimensions:
@@ -2199,3 +2199,263 @@ applications:
     - /Users/trisha.lynch/Documents/career-catalyst/exports/archive/old_generated_materials/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_ats_resume_2.md
     manifest_path: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_specialist_performance_marketing/manifest.json
     materials: *id004
+- id: netflix_inc_product_manager_ads_supply
+  company: Netflix, Inc.
+  company_aliases: []
+  role: Product Manager, Ads (Supply)
+  role_aliases: []
+  status: Pass
+  priority: Medium
+  source: Workday
+  notes: ''
+  next_action: Review fit and generate application package.
+  show_on_dashboard: false
+  official_url: https://netflix.wd108.myworkdayjobs.com/en-US/Netflix/job/Product-Manager--Ads--Supply-_JR41266?locations=84a618b29e90102fcd70873d84b807f4
+  source_url: https://netflix.wd108.myworkdayjobs.com/en-US/Netflix/job/Product-Manager--Ads--Supply-_JR41266?locations=84a618b29e90102fcd70873d84b807f4
+  location: US
+  salary_range: $440,000.00 - $725,000.00
+  work_arrangement: Flexible
+  field_warnings:
+  - Salary detected from job text. Review before applying.
+  - Role family was inferred. Review if this is a strategic or product-ops role.
+  job_file: jobs/netflix_inc_product_manager_ads_supply.md
+  company_category: entertainment_streaming
+  role_family: product_strategy_ops
+  company_voice_profile: dynamic_entertainment_streaming
+  company_voice_source: dynamic_inference
+  company_voice_label: Dynamic Entertainment Streaming
+  company_inference_confidence: Medium
+  posting_date: '2026-06-22'
+  posting_age_days: 17
+  freshness: Active
+  freshness_label: Active / Good priority
+  posting_status: Open
+  match_score: 67
+  match_tier: Stretch Match
+  match_summary: There is credible alignment, but the tradeoffs deserve review before package generation.
+  match_strengths:
+  - Functional alignment includes programmatic, marketing technology and measurement.
+  - The role has meaningful ownership, though its level should be verified.
+  - The entertainment context is adjacent to Trisha's target industries.
+  - The disclosed compensation is aligned with or near Trisha's target.
+  - The flexible arrangement supports practical fit.
+  match_gaps:
+  - Confirm the reporting line and decision authority before generating the package.
+  recommended_action: Review First
+  confidence: High
+  original_source_url: https://netflix.wd108.myworkdayjobs.com/en-US/Netflix/job/Product-Manager--Ads--Supply-_JR41266?locations=84a618b29e90102fcd70873d84b807f4
+  source_domain: netflix.wd108.myworkdayjobs.com
+  source_name: Workday
+  source_type: Employer ATS
+  source_trust_label: Verified Company Source
+  verification_status: Employer Source
+  canonical_apply_url: https://netflix.wd108.myworkdayjobs.com/en-US/Netflix/job/Product-Manager--Ads--Supply-_JR41266?locations=84a618b29e90102fcd70873d84b807f4
+  canonical_apply_domain: netflix.wd108.myworkdayjobs.com
+  verification_notes: No verification cautions detected.
+  source_confidence: High
+  requires_verification: false
+  source_warnings: []
+  freshness_risk: Medium
+  canonical_employer: Netflix, Inc.
+  recommended_next_step: Proceed using the canonical employer application.
+  greenhouse_backed_hint: false
+  status_updated_at: '2026-07-09T13:55:36'
+  opportunity_score: 67
+  apply_recommendation: Apply If Strategic
+  opportunity_dimensions:
+    Resume Fit: 67
+    Salary Fit: 92
+    Industry Alignment: 58
+    Role Level Fit: 55
+    Location Fit: 55
+    Mission / Personal Alignment: 72
+    Posting Freshness: 82
+    Interview Probability: 63
+  package_quality:
+    resume_tailoring_score: 67
+    cover_letter_score: 86
+    ats_keyword_match: 66
+    voice_match: 68
+    confidence_level: Medium
+    confidence_score: 72
+  material_paths: &id005
+    ATS Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_ats_resume.docx
+    Styled Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_styled_resume.docx
+    Tailored Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_resume.txt
+    Cover Letter: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_cover_letter.docx
+    Application Note: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_application_note.txt
+    Recruiter Message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_recruiter_message.txt
+    Hiring Manager Message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_hiring_manager_message.txt
+    Strategy Pack: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_strategy_pack.txt
+    Interview Prep: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_interview_prep.txt
+    Package Summary: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_package_summary.txt
+    Recruiter Follow-Up: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_recruiter_followup.txt
+    Hiring Manager Follow-Up: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_hiring_manager_followup.txt
+    Warm Contact Message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_warm_contact_message.txt
+    Referral Ask: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_referral_ask.txt
+    Follow-Up Strategy: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_followup_strategy.txt
+    Job Description: /Users/trisha.lynch/Documents/career-catalyst/jobs/netflix_inc_product_manager_ads_supply.md
+  package_manifest:
+    prospect_id: netflix_inc_product_manager_ads_supply
+    slug: netflix_inc_product_manager_ads_supply
+    company: Netflix, Inc.
+    role_title: Product Manager, Ads (Supply)
+    status: Reviewed
+    generated_at: '2026-07-09T20:13:50.856646+00:00'
+    applied_date: ''
+    status_date: ''
+    source_url: https://netflix.wd108.myworkdayjobs.com/en-US/Netflix/job/Product-Manager--Ads--Supply-_JR41266?locations=84a618b29e90102fcd70873d84b807f4
+    files:
+      resume_text: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_resume.txt
+      styled_docx: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_styled_resume.docx
+      ats_docx: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_ats_resume.docx
+      cover_letter: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_cover_letter.txt
+      cover_letter_docx: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_cover_letter.docx
+      recruiter_message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_recruiter_message.txt
+      hiring_manager_message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_hiring_manager_message.txt
+      application_note: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_application_note.txt
+      strategy_pack: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_strategy_pack.txt
+      interview_prep: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_interview_prep.txt
+      package_summary: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_package_summary.txt
+      recruiter_followup: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_recruiter_followup.txt
+      hiring_manager_followup: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_hiring_manager_followup.txt
+      warm_contact_message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_warm_contact_message.txt
+      referral_ask: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_referral_ask.txt
+      followup_strategy: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_followup_strategy.txt
+    archived: false
+    archive_reason: ''
+    legacy_files_moved:
+    - /Users/trisha.lynch/Documents/career-catalyst/exports/archive/old_generated_materials/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_ats_resume.md
+    manifest_path: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_product_manager_ads_supply/manifest.json
+    materials: *id005
+- id: netflix_inc_ai_product_manager_content_platform_operations_and_publishing
+  company: Netflix, Inc.
+  company_aliases: []
+  role: AI Product Manager, Content Platform Operations and Publishing
+  role_aliases: []
+  status: Applied
+  priority: Medium
+  source: Workday
+  notes: ''
+  next_action: Review fit and generate application package.
+  show_on_dashboard: true
+  official_url: https://netflix.wd108.myworkdayjobs.com/en-US/Netflix/job/AI-Product-Manager--Content-Platform-Operations-and-Publishing_JR41271?locations=84a618b29e90102fcd70873d84b807f4
+  source_url: https://netflix.wd108.myworkdayjobs.com/en-US/Netflix/job/AI-Product-Manager--Content-Platform-Operations-and-Publishing_JR41271?locations=84a618b29e90102fcd70873d84b807f4
+  location: USA - Remote, United States of America
+  salary_range: $400,000.00 - $640,000.00
+  work_arrangement: Flexible
+  field_warnings:
+  - Salary detected from job text. Review before applying.
+  - Role family was inferred. Review if this is a strategic or product-ops role.
+  job_file: jobs/netflix_inc_ai_product_manager_content_platform_operations_and_publishing.md
+  company_category: entertainment_streaming
+  role_family: product_strategy_ops
+  company_voice_profile: dynamic_entertainment_streaming
+  company_voice_source: dynamic_inference
+  company_voice_label: Dynamic Entertainment Streaming
+  company_inference_confidence: Medium
+  posting_date: '2026-07-01'
+  posting_age_days: 8
+  freshness: Active
+  freshness_label: Active / Good priority
+  posting_status: Open
+  match_score: 76
+  match_tier: Good Match
+  match_summary: Good overall alignment, with a few cautions to weigh before investing further.
+  match_strengths:
+  - Functional alignment includes marketing technology and measurement.
+  - The role has meaningful ownership, though its level should be verified.
+  - The entertainment context is adjacent to Trisha's target industries.
+  - The disclosed compensation is aligned with or near Trisha's target.
+  - The flexible arrangement supports practical fit.
+  match_gaps:
+  - Confirm the reporting line and decision authority before generating the package.
+  recommended_action: Generate Package
+  confidence: High
+  original_source_url: https://netflix.wd108.myworkdayjobs.com/en-US/Netflix/job/AI-Product-Manager--Content-Platform-Operations-and-Publishing_JR41271?locations=84a618b29e90102fcd70873d84b807f4
+  source_domain: netflix.wd108.myworkdayjobs.com
+  source_name: Workday
+  source_type: Employer ATS
+  source_trust_label: Verified Company Source
+  verification_status: Employer Source
+  canonical_apply_url: https://netflix.wd108.myworkdayjobs.com/en-US/Netflix/job/AI-Product-Manager--Content-Platform-Operations-and-Publishing_JR41271?locations=84a618b29e90102fcd70873d84b807f4
+  canonical_apply_domain: netflix.wd108.myworkdayjobs.com
+  verification_notes: No verification cautions detected.
+  source_confidence: High
+  requires_verification: false
+  source_warnings: []
+  freshness_risk: Low
+  canonical_employer: Netflix, Inc.
+  recommended_next_step: Proceed using the canonical employer application.
+  greenhouse_backed_hint: false
+  status_updated_at: '2026-07-09T14:10:27'
+  opportunity_score: 79
+  apply_recommendation: Apply If Strategic
+  opportunity_dimensions:
+    Resume Fit: 76
+    Salary Fit: 92
+    Industry Alignment: 72
+    Role Level Fit: 72
+    Location Fit: 100
+    Mission / Personal Alignment: 72
+    Posting Freshness: 82
+    Interview Probability: 74
+  package_quality:
+    resume_tailoring_score: 77
+    cover_letter_score: 86
+    ats_keyword_match: 82
+    voice_match: 68
+    confidence_level: Medium
+    confidence_score: 78
+  material_paths: &id006
+    ATS Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/netflix_ai_product_manager_content_platform_operations_trisha_lynch_ats_resume.docx
+    Styled Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/netflix_ai_product_manager_content_platform_operations_trisha_lynch_styled_resume.docx
+    Tailored Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/netflix_ai_product_manager_content_platform_operations_trisha_lynch_resume.txt
+    Cover Letter: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/netflix_ai_product_manager_content_platform_operations_trisha_lynch_cover_letter.docx
+    Application Note: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/netflix_ai_product_manager_content_platform_operations_trisha_lynch_application_note.txt
+    Recruiter Message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/netflix_ai_product_manager_content_platform_operations_trisha_lynch_recruiter_message.txt
+    Hiring Manager Message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/netflix_ai_product_manager_content_platform_operations_trisha_lynch_hiring_manager_message.txt
+    Strategy Pack: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/netflix_ai_product_manager_content_platform_operations_trisha_lynch_strategy_pack.txt
+    Interview Prep: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/netflix_ai_product_manager_content_platform_operations_trisha_lynch_interview_prep.txt
+    Package Summary: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/netflix_ai_product_manager_content_platform_operations_trisha_lynch_package_summary.txt
+    Recruiter Follow-Up: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/netflix_ai_product_manager_content_platform_operations_trisha_lynch_recruiter_followup.txt
+    Hiring Manager Follow-Up: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/netflix_ai_product_manager_content_platform_operations_trisha_lynch_hiring_manager_followup.txt
+    Warm Contact Message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/netflix_ai_product_manager_content_platform_operations_trisha_lynch_warm_contact_message.txt
+    Referral Ask: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/netflix_ai_product_manager_content_platform_operations_trisha_lynch_referral_ask.txt
+    Follow-Up Strategy: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/netflix_ai_product_manager_content_platform_operations_trisha_lynch_followup_strategy.txt
+    Job Description: /Users/trisha.lynch/Documents/career-catalyst/jobs/netflix_inc_ai_product_manager_content_platform_operations_and_publishing.md
+  package_manifest:
+    prospect_id: netflix_inc_ai_product_manager_content_platform_operations_and_publishing
+    slug: netflix_inc_ai_product_manager_content_platform_operations_and_publishing
+    company: Netflix, Inc.
+    role_title: AI Product Manager, Content Platform Operations and Publishing
+    status: Reviewed
+    generated_at: '2026-07-09T20:16:55.444428+00:00'
+    applied_date: ''
+    status_date: ''
+    source_url: https://netflix.wd108.myworkdayjobs.com/en-US/Netflix/job/AI-Product-Manager--Content-Platform-Operations-and-Publishing_JR41271?locations=84a618b29e90102fcd70873d84b807f4
+    files:
+      resume_text: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/netflix_ai_product_manager_content_platform_operations_trisha_lynch_resume.txt
+      styled_docx: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/netflix_ai_product_manager_content_platform_operations_trisha_lynch_styled_resume.docx
+      ats_docx: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/netflix_ai_product_manager_content_platform_operations_trisha_lynch_ats_resume.docx
+      cover_letter: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/netflix_ai_product_manager_content_platform_operations_trisha_lynch_cover_letter.txt
+      cover_letter_docx: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/netflix_ai_product_manager_content_platform_operations_trisha_lynch_cover_letter.docx
+      recruiter_message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/netflix_ai_product_manager_content_platform_operations_trisha_lynch_recruiter_message.txt
+      hiring_manager_message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/netflix_ai_product_manager_content_platform_operations_trisha_lynch_hiring_manager_message.txt
+      application_note: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/netflix_ai_product_manager_content_platform_operations_trisha_lynch_application_note.txt
+      strategy_pack: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/netflix_ai_product_manager_content_platform_operations_trisha_lynch_strategy_pack.txt
+      interview_prep: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/netflix_ai_product_manager_content_platform_operations_trisha_lynch_interview_prep.txt
+      package_summary: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/netflix_ai_product_manager_content_platform_operations_trisha_lynch_package_summary.txt
+      recruiter_followup: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/netflix_ai_product_manager_content_platform_operations_trisha_lynch_recruiter_followup.txt
+      hiring_manager_followup: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/netflix_ai_product_manager_content_platform_operations_trisha_lynch_hiring_manager_followup.txt
+      warm_contact_message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/netflix_ai_product_manager_content_platform_operations_trisha_lynch_warm_contact_message.txt
+      referral_ask: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/netflix_ai_product_manager_content_platform_operations_trisha_lynch_referral_ask.txt
+      followup_strategy: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/netflix_ai_product_manager_content_platform_operations_trisha_lynch_followup_strategy.txt
+    archived: false
+    archive_reason: ''
+    legacy_files_moved:
+    - /Users/trisha.lynch/Documents/career-catalyst/exports/archive/old_generated_materials/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/netflix_ai_product_manager_content_platform_operations_trisha_lynch_ats_resume.md
+    manifest_path: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/manifest.json
+    materials: *id006
+  source_verified: true
+  submitted_date: '2026-07-09'
