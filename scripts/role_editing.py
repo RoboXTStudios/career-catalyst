@@ -5,10 +5,39 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+import re
+
 import yaml
 
 
 DEFAULT_CATEGORY = "general_operations"
+
+
+BANNED_VOICE_PHRASE_REWRITES = {
+    "clear plan": "clear operating structure",
+    "best work together": "work more effectively together",
+    "enable great work": "support better execution",
+    "genuine enthusiasm": "practical interest",
+    "I built my career around": "my experience has centered on",
+}
+
+
+def rewrite_banned_voice_phrases(text: str) -> tuple[str, list[dict[str, str]]]:
+    """Rewrite replaceable banned voice phrases before hard-fail validation."""
+    rewritten = str(text or "")
+    rewrites: list[dict[str, str]] = []
+    for phrase, replacement in BANNED_VOICE_PHRASE_REWRITES.items():
+        pattern = re.compile(re.escape(phrase), re.IGNORECASE)
+        if pattern.search(rewritten):
+            rewritten = pattern.sub(replacement, rewritten)
+            rewrites.append({"phrase": phrase, "replacement": replacement})
+    return rewritten, rewrites
+
+
+def remaining_banned_voice_phrases(text: str, banned_phrases: list[str]) -> list[str]:
+    """Return banned phrases that remain after deterministic rewrite attempts."""
+    lowered = str(text or "").lower()
+    return [str(phrase) for phrase in banned_phrases if str(phrase).lower() in lowered]
 
 
 def _role_text(role: dict[str, Any]) -> str:

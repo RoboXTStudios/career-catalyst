@@ -130,3 +130,51 @@ class GenerateMaterialsTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class BannedVoiceRewriteTests(unittest.TestCase):
+    def test_azira_style_generation_rewrites_clear_plan_before_validation(self):
+        from scripts.generate_cover_letter import save_material
+
+        context = {
+            "root": PROJECT_ROOT,
+            "parsed_job": {
+                "job_title": "Director, Chief of Staff & Business Operations",
+                "company": "Azira",
+                "raw_text": "chief of staff business operations leadership team operating cadence",
+            },
+            "career_data": {"data": {"personal_brand": {"candidate": {"name": "Trisha Lynch"}}}},
+            "match_report": {"match_score": 90},
+            "voice": {"avoid": []},
+            "writing_voice": {"banned_phrases": []},
+            "material_editing_plan": {"banned_phrases": ["clear plan"]},
+        }
+        content = " ".join(["A clear plan helps Azira operating cadence."] * 8)
+
+        result = save_material(context, "Cover_Letter", content, 5, 200)
+        saved = Path(result["output_path"]).read_text(encoding="utf-8")
+
+        self.assertIn("clear operating structure", saved)
+        self.assertNotIn("clear plan", saved.lower())
+        self.assertIn("clear plan", result["warnings"][0])
+
+    def test_banned_phrase_validation_fails_when_unrewriteable_phrase_remains(self):
+        from scripts.generate_cover_letter import ApplicationMaterialError, save_material
+
+        context = {
+            "root": PROJECT_ROOT,
+            "parsed_job": {
+                "job_title": "Director, Operations",
+                "company": "Azira",
+                "raw_text": "operations leadership cadence",
+            },
+            "career_data": {"data": {"personal_brand": {"candidate": {"name": "Trisha Lynch"}}}},
+            "match_report": {"match_score": 90},
+            "voice": {"avoid": []},
+            "writing_voice": {"banned_phrases": []},
+            "material_editing_plan": {"banned_phrases": ["unrewriteable banned phrase"]},
+        }
+        content = " ".join(["This unrewriteable banned phrase remains in the material."] * 8)
+
+        with self.assertRaises(ApplicationMaterialError):
+            save_material(context, "Cover_Letter", content, 5, 200)
