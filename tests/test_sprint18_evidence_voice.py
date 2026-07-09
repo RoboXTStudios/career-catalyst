@@ -10,6 +10,7 @@ from scripts.evidence_engine import (
     select_evidence_cards,
 )
 from scripts.generate_cover_letter import _cover_letter_content
+from scripts.role_editing import material_editing_plan
 
 
 def ids(cards):
@@ -150,3 +151,70 @@ def test_ea_marketing_operations_cover_letter_uses_grounded_calm_voice():
     assert "risks" in lowered
     assert "decisions" in lowered
     assert "stakeholder" in lowered
+
+
+def test_azira_chief_of_staff_classifies_for_role_editing():
+    parsed = role(
+        "Director, Chief of Staff & Business Operations",
+        "chief of staff business operations leadership team business rhythm operating cadence decision support planning risks ownership",
+        company="Azira",
+    )
+    plan = material_editing_plan(parsed, PROJECT_ROOT)
+    assert plan["role_category"] == "chief_of_staff_business_operations"
+    assert "campaignos" in plan["supporting_evidence"]
+
+
+def test_azira_cover_letter_leads_with_operating_support_and_keeps_campaignos_supporting():
+    parsed = role(
+        "Director, Chief of Staff & Business Operations",
+        "chief of staff business operations leadership team operating cadence planning rhythms ownership risks follow-through",
+        company="Azira",
+        keywords=["chief of staff", "business operations", "planning rhythms", "ownership"],
+    )
+    context = dynamic_context(parsed, select_evidence_cards(parsed))
+    context["material_editing_plan"] = material_editing_plan(parsed, PROJECT_ROOT)
+    content = _cover_letter_content(context)
+    lowered = content.lower()
+    assert "senior team operating support" in lowered
+    assert "planning rhythms" in lowered
+    assert "ownership" in lowered
+    assert "follow-through" in lowered
+    assert lowered.count("campaignos") == 1
+    assert "supporting proof point" in lowered
+    assert content.index("senior team operating support") < content.index("CampaignOS")
+
+
+def test_netflix_ai_product_manager_classifies_and_allows_campaignos_lead():
+    parsed = role(
+        "AI Product Manager",
+        "Netflix AI product manager platform operations workflow automation internal tools systems design roadmap",
+        company="Netflix",
+        keywords=["AI product", "workflow automation", "internal tools", "roadmap"],
+    )
+    plan = material_editing_plan(parsed, PROJECT_ROOT)
+    selected_ids = ids(select_evidence_cards(parsed))
+    content = _cover_letter_content({**dynamic_context(parsed, select_evidence_cards(parsed)), "material_editing_plan": plan})
+    assert plan["role_category"] == "product_ai_operations"
+    assert "campaignos" in selected_ids
+    assert content.index("CampaignOS") < content.index("Disney")
+
+
+def test_ea_marketing_operations_classifies_as_entertainment_operations():
+    parsed = role(
+        "Senior Manager, Marketing Operations",
+        "EA entertainment campaign operations studio launch operations creative operations marketing operations stakeholder visibility",
+        company="Electronic Arts",
+    )
+    assert material_editing_plan(parsed, PROJECT_ROOT)["role_category"] == "marketing_operations_entertainment"
+
+
+def test_traditional_pmo_omits_creative_editorial_and_banned_phrase():
+    parsed = role(
+        "Senior PMO Lead",
+        "traditional PMO program management governance delivery dependencies milestones roadmap risk management operating model",
+    )
+    plan = material_editing_plan(parsed, PROJECT_ROOT)
+    content = _cover_letter_content({**dynamic_context(parsed, select_evidence_cards(parsed)), "material_editing_plan": plan}).lower()
+    assert plan["role_category"] == "traditional_pmo_governance"
+    assert "substack" not in plan["omitted_evidence"] or "substack" not in content
+    assert "practical governance, clear milestones, visible risks, and decision rhythms" not in content

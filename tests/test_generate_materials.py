@@ -3,8 +3,10 @@ import unittest
 from pathlib import Path
 
 from scripts.generate_application_note import generate_application_note
-from scripts.generate_cover_letter import generate_cover_letter
+from scripts.generate_cover_letter import generate_cover_letter, save_material
 from scripts.generate_messages import generate_message
+from scripts.load_data import load_all_yaml
+from scripts.role_editing import material_editing_plan
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -126,6 +128,40 @@ class GenerateMaterialsTests(unittest.TestCase):
             minimum, maximum = limits[name]
             self.assertGreaterEqual(_word_count(content), minimum)
             self.assertLessEqual(_word_count(content), maximum)
+
+    def test_azira_style_package_rewrites_clear_plan_before_validation(self):
+        parsed_job = {
+            "job_title": "Director, Chief of Staff & Business Operations",
+            "company": "Azira",
+            "raw_text": "chief of staff business operations leadership team operating cadence decision support",
+            "keywords": ["chief of staff", "business operations", "operating cadence"],
+        }
+        context = {
+            "root": PROJECT_ROOT,
+            "parsed_job": parsed_job,
+            "career_data": load_all_yaml(PROJECT_ROOT),
+            "voice": {},
+            "writing_voice": {"banned_phrases": ["clear plan"]},
+            "material_editing_plan": material_editing_plan(parsed_job, PROJECT_ROOT),
+            "match_report": {"match_score": 80},
+        }
+        content = (
+            "Azira needs senior team operating support, and I would bring a clear plan for "
+            "planning rhythms, ownership, stakeholder alignment, risks, and follow-through."
+        )
+
+        with self.assertWarnsRegex(UserWarning, "Rewrote banned voice phrases"):
+            result = save_material(
+                context,
+                "Cover_Letter",
+                content,
+                minimum_words=1,
+                maximum_words=100,
+            )
+
+        saved = Path(result["output_path"]).read_text(encoding="utf-8").lower()
+        self.assertNotIn("clear plan", saved)
+        self.assertIn("usable operating plan", saved)
 
 
 if __name__ == "__main__":

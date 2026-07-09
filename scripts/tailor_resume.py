@@ -1,6 +1,7 @@
 """Generate tailored Markdown resumes from structured Career Catalyst data."""
 
 import re
+import warnings
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
@@ -10,6 +11,8 @@ try:
     from .parse_job import parse_job_description
     from .package_context import validate_material_context
     from .role_context import is_google_youtube_role
+    from .evidence_engine import load_writing_voice_profile
+    from .role_editing import material_editing_plan, rewrite_banned_voice_phrases
     from .score_match import score_job_match
     from .text_cleanup import cleanup_repeated_words
 except ImportError:
@@ -18,6 +21,8 @@ except ImportError:
     from parse_job import parse_job_description
     from package_context import validate_material_context
     from role_context import is_google_youtube_role
+    from evidence_engine import load_writing_voice_profile
+    from role_editing import material_editing_plan, rewrite_banned_voice_phrases
     from score_match import score_job_match
     from text_cleanup import cleanup_repeated_words
 
@@ -377,17 +382,30 @@ def _selected_projects(
 ) -> List[Tuple[Dict[str, Any], List[str]]]:
     projects = career_data["data"]["projects"].get("projects", [])
     selected = []
+    plan = material_editing_plan(parsed_job)
+    category = plan.get("role_category")
+    section_rules = plan.get("resume_section_rules", {})
+    creative_rule = section_rules.get("creative_editorial_projects")
+    campaignos_rule = section_rules.get("campaignos")
 
     campaignos = next((project for project in projects if project.get("name") == "CampaignOS"), None)
     if campaignos:
-        selected.append((campaignos, _campaignos_bullets(career_data)))
+        bullets = _campaignos_bullets(career_data)
+        if campaignos_rule == "supporting":
+            bullets = bullets[:1]
+        selected.append((campaignos, bullets))
 
     for project in projects:
         name = project.get("name")
         if name == "CampaignOS" or not _project_is_relevant(str(name), parsed_job, resume_profile):
             continue
+        if creative_rule == "omit" and name in {"Substack Writer", "OMG23 Multiverse Newsletter"}:
+            continue
+        if category in {"chief_of_staff_business_operations", "traditional_pmo_governance"} and name in {"Substack Writer", "OMG23 Multiverse Newsletter"}:
+            continue
         bullets = [project.get("summary", "")]
-        bullets.extend(project.get("highlights", [])[:3])
+        limit = 1 if creative_rule == "minimize" else 3
+        bullets.extend(project.get("highlights", [])[:limit])
         selected.append((project, _dedupe([str(bullet) for bullet in bullets if bullet])))
 
     return selected
@@ -543,6 +561,20 @@ def tailor_resume(
     markdown = cleanup_repeated_words(
         _render_markdown(career_data, parsed_job, match_report, resume_profile)
     )
+    editing_plan = material_editing_plan(parsed_job, root)
+    banned_phrases = list(load_writing_voice_profile(root).get("banned_phrases", []))
+    banned_phrases.extend(editing_plan.get("banned_phrases", []))
+    markdown, rewritten_phrases = rewrite_banned_voice_phrases(markdown, banned_phrases)
+    if rewritten_phrases:
+        warnings.warn(
+            "Rewrote banned voice phrases before resume validation: " + ", ".join(rewritten_phrases),
+            UserWarning,
+            stacklevel=2,
+        )
+    lowered_markdown = markdown.lower()
+    for phrase in banned_phrases:
+        if str(phrase).lower() in lowered_markdown:
+            raise ResumeTailoringError(f"Generated resume contains banned voice phrase: {phrase}")
     validate_material_context(markdown, parsed_job, "Tailored_Resume")
 
     export_dir = root / "exports" / "internal" / "resumes"

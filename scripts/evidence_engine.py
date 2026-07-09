@@ -7,6 +7,11 @@ from typing import Any
 
 import yaml
 
+try:
+    from .role_editing import detect_role_editing_category
+except ImportError:
+    from role_editing import detect_role_editing_category
+
 
 CONFIDENCE_ORDER = {"low": 1, "medium": 2, "high": 3}
 BUILDER_IDS = {"campaignos", "career_catalyst", "roboxt_studios"}
@@ -72,6 +77,15 @@ def _signals(text: str, terms: tuple[str, ...]) -> int:
 
 def role_evidence_category(role: dict[str, Any]) -> str:
     """Infer the evidence-selection category from role metadata and description."""
+    editing_category = detect_role_editing_category(role)
+    if editing_category == "chief_of_staff_business_operations":
+        return "chief_of_staff_business_operations"
+    if editing_category == "product_ai_operations":
+        return "product_ai_operations"
+    if editing_category == "marketing_operations_entertainment":
+        return "entertainment_marketing_operations"
+    if editing_category == "traditional_pmo_governance":
+        return "traditional_pmo"
     text = _role_text(role)
     if _signals(text, ("human agency", "builder", "founder", "startup", "ai workflow", "automation", "entrepreneur")) >= 2:
         return "builder_friendly"
@@ -99,6 +113,8 @@ def select_evidence_cards(
     text = _role_text(role)
     minimum = CONFIDENCE_ORDER[minimum_confidence]
     category_tags = {
+        "chief_of_staff_business_operations": {"governance", "qa", "pmo", "operations_leadership", "executive_communication"},
+        "product_ai_operations": {"builder", "ai_workflows", "product_thinking", "operations_leadership", "governance"},
         "builder_friendly": {"builder", "ai_workflows", "product_thinking", "operations_leadership"},
         "traditional_pmo": {"governance", "qa", "pmo", "operations_leadership", "executive_communication"},
         "martech_crm": {"martech", "adtech", "campaign_execution", "measurement", "product_thinking"},
@@ -112,9 +128,11 @@ def select_evidence_cards(
         confidence = CONFIDENCE_ORDER[str(card["confidence_level"])]
         if confidence < minimum:
             continue
-        if category == "traditional_pmo" and card_id in {"roboxt_studios", "photography_creative_voice"}:
+        if category in {"traditional_pmo", "chief_of_staff_business_operations"} and card_id in {"roboxt_studios", "photography_creative_voice", "career_catalyst"}:
             continue
-        if category not in {"builder_friendly", "martech_crm"} and card_id in {"campaignos", "career_catalyst", "roboxt_studios"}:
+        if category not in {"builder_friendly", "martech_crm", "product_ai_operations", "chief_of_staff_business_operations"} and card_id in {"campaignos", "career_catalyst", "roboxt_studios"}:
+            continue
+        if category == "chief_of_staff_business_operations" and card_id == "campaignos" and "campaignos" not in text and _signals(text, ("ai", "automation", "product", "systems")) == 0:
             continue
         tags = set(card.get("tags", []))
         score = len(tags & category_tags) * 3 + confidence
@@ -125,6 +143,10 @@ def select_evidence_cards(
             score += 5
         if category == "traditional_pmo" and card_id == "governance_qa_delivery":
             score += 5
+        if category == "chief_of_staff_business_operations" and card_id in {"governance_qa_delivery", "omg23_disney_leadership"}:
+            score += 5
+        if category == "product_ai_operations" and card_id == "campaignos":
+            score += 6
         if score >= 5:
             selected.append((score, card))
     selected.sort(key=lambda item: (-item[0], item[1]["id"]))

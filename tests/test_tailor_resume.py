@@ -1,7 +1,8 @@
 import unittest
 from pathlib import Path
 
-from scripts.tailor_resume import tailor_resume
+from scripts.load_data import load_all_yaml
+from scripts.tailor_resume import _selected_projects, tailor_resume
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -71,6 +72,48 @@ class TailorResumeTests(unittest.TestCase):
         result = tailor_resume("executive_operations", SAMPLE_JOB, PROJECT_ROOT)
 
         self.assertTrue(Path(result["output_path"]).exists())
+
+
+def _project_names_and_bullet_counts(parsed_job, resume_profile="executive_operations"):
+    projects = _selected_projects(load_all_yaml(PROJECT_ROOT), parsed_job, resume_profile)
+    return {project["name"]: len(bullets) for project, bullets in projects}
+
+
+def test_azira_style_resume_omits_editorial_projects_and_keeps_campaignos_brief():
+    parsed_job = {
+        "job_title": "Director, Chief of Staff & Business Operations",
+        "company": "Azira",
+        "raw_text": "chief of staff business operations leadership team operating cadence planning rhythms ownership risk surfacing follow-through",
+        "keywords": ["chief of staff", "business operations", "operating cadence"],
+    }
+    projects = _project_names_and_bullet_counts(parsed_job)
+    assert "Substack Writer" not in projects
+    assert "OMG23 Multiverse Newsletter" not in projects
+    assert projects["CampaignOS"] == 1
+
+
+def test_product_ai_resume_allows_campaignos_more_prominently():
+    parsed_job = {
+        "job_title": "AI Product Manager",
+        "company": "Netflix",
+        "raw_text": "AI product manager platform operations workflow automation internal tools systems design roadmap",
+        "keywords": ["AI product", "workflow automation", "internal tools", "systems design"],
+    }
+    projects = _project_names_and_bullet_counts(parsed_job, "product_ai")
+    assert projects["CampaignOS"] >= 3
+
+
+def test_traditional_pmo_resume_omits_creative_editorial_projects():
+    parsed_job = {
+        "job_title": "Senior PMO Lead",
+        "company": "Example Co",
+        "raw_text": "PMO program management governance delivery dependencies milestones roadmap risk management operating model content editorial",
+        "keywords": ["PMO", "governance", "delivery", "content", "editorial"],
+    }
+    projects = _project_names_and_bullet_counts(parsed_job)
+    assert "Substack Writer" not in projects
+    assert "OMG23 Multiverse Newsletter" not in projects
+    assert projects["CampaignOS"] == 1
 
 
 if __name__ == "__main__":
