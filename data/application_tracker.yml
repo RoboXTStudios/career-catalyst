@@ -903,12 +903,12 @@ applications:
   company_aliases: []
   role: Associate Director, CRM & Martech
   role_aliases: []
-  status: Active
-  priority: High
+  status: Rejected
+  priority: Do Not Pursue
   source: Lever
   notes: https://www.lifeatspotify.com/jobs/associate-director-crm-martech#
   next_action: Verify role is still active before generating package.
-  show_on_dashboard: true
+  show_on_dashboard: false
   official_url: https://jobs.lever.co/spotify/b2e65eb5-e558-45d1-b5ee-347cbbf3dae3
   location: New York, NY
   salary_range: $160,147 to $228,781
@@ -978,8 +978,8 @@ applications:
   submitted_date: '2026-07-05'
   source_verified: true
   suggested_follow_up_date: '2026-07-10'
-  follow_up_status: Due soon
-  status_updated_at: '2026-07-08T10:23:52'
+  follow_up_status: Not applicable
+  status_updated_at: '2026-07-09T07:21:55'
 - id: aeg_worldwide_axs_sr_technical_project_manager
   company: AEG Worldwide/AXS
   company_aliases: []
@@ -1067,15 +1067,15 @@ applications:
   company_aliases: []
   role: Senior Director, Team Operations
   role_aliases: []
-  status: Active
-  priority: High
+  status: Rejected
+  priority: Do Not Pursue
   source: Workday
   notes: 'https://umusic.wd5.myworkdayjobs.com/en-US/UMGUS/userHome
 
 
     Workday Status: Under Consideration'
   next_action: 'Workday Status: Under Consideration'
-  show_on_dashboard: true
+  show_on_dashboard: false
   official_url: https://umusic.wd5.myworkdayjobs.com/UMGUS/job/New-York-New-York/Senior-Director--Team-Operations_UMG-26857?utm_source=chatgpt.com
   location: Santa Monica, CA
   salary_range: $122,040 - $180,000
@@ -1123,7 +1123,7 @@ applications:
   freshness_risk: Low
   canonical_employer: Universal Music Group (UMG Recordings Inc)
   recommended_next_step: Proceed using the canonical employer application.
-  status_updated_at: '2026-07-08T10:09:05'
+  status_updated_at: '2026-07-09T06:47:00'
   opportunity_score: 88
   apply_recommendation: Apply Immediately
   opportunity_dimensions:
@@ -1144,7 +1144,7 @@ applications:
     confidence_score: 84
   submitted_date: '2026-07-06'
   suggested_follow_up_date: '2026-07-11'
-  follow_up_status: Not due yet
+  follow_up_status: Not applicable
   source_verified: true
 - id: crunchyroll_strategic_operations_senior_manager
   company: Crunchyroll
@@ -1693,3 +1693,125 @@ applications:
       Interview Prep: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/interview_prep.txt
       Package Summary: /Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/package_summary.txt
   submitted_date: '2026-07-07'
+- id: electronic_arts_senior_manager_marketing_operations
+  company: Electronic Arts
+  company_aliases: []
+  role: Senior Manager, Marketing Operations
+  role_aliases: []
+  status: Applied
+  priority: Medium
+  source: GameJobs.co
+  notes: ''
+  next_action: Verify on employer site before generating package or applying.
+  show_on_dashboard: true
+  official_url: https://gamejobs.co/Senior-Manager-Marketing-Operations-at-Electronic-Arts
+  source_url: https://gamejobs.co/Senior-Manager-Marketing-Operations-at-Electronic-Arts
+  location: Not specified
+  salary_range: $133,500 - $186,400
+  work_arrangement: Not specified
+  field_warnings:
+  - Industry job board source requires employer-site verification
+  - Location was not detected. Review before saving.
+  - Work arrangement was not detected. Review before saving.
+  - Salary detected from job text. Review before applying.
+  - Verify on employer site before generating package or applying.
+  - Role family was inferred. Review if this is a strategic or product-ops role.
+  job_file: jobs/electronic_arts_senior_manager_marketing_operations.md
+  company_category: gaming_fandom
+  role_family: creative_marketing_ops
+  company_voice_profile: dynamic_gaming_fandom
+  company_voice_source: dynamic_inference
+  company_voice_label: Dynamic Gaming Fandom
+  company_inference_confidence: Medium
+  posting_date: '2026-07-07'
+  posting_age_days: 2
+  freshness: Fresh
+  freshness_label: Fresh / High priority
+  posting_status: Open
+  match_score: 89
+  match_tier: Strong Match
+  match_summary: Strong alignment across Trisha's core experience, target level, and practical priorities.
+  match_strengths:
+  - Functional alignment includes ad/media operations, programmatic, campaign operations.
+  - The seniority is aligned with Trisha's senior manager/lead target range.
+  - The entertainment context is adjacent to Trisha's target industries.
+  - The disclosed compensation is aligned with or near Trisha's target.
+  - The not specified arrangement supports practical fit.
+  match_gaps:
+  - Confirm the reporting line and decision authority before generating the package.
+  recommended_action: Generate Package
+  confidence: High
+  original_source_url: https://gamejobs.co/Senior-Manager-Marketing-Operations-at-Electronic-Arts
+  source_domain: gamejobs.co
+  source_name: GameJobs.co
+  source_type: Gaming Industry Job Board
+  source_trust_label: Industry Job Board
+  verification_status: Industry Board
+  verification_notes: GameJobs.co is an industry job board. Verify the role on the employer site before generating a package or applying.
+  source_confidence: High
+  requires_verification: true
+  source_warnings:
+  - Industry job board source requires employer-site verification
+  freshness_risk: Low
+  recommended_next_step: Verify on employer site before generating package or applying.
+  greenhouse_backed_hint: false
+  status_updated_at: '2026-07-09T07:23:56'
+  opportunity_score: 89
+  apply_recommendation: Apply Immediately
+  opportunity_dimensions:
+    Resume Fit: 89
+    Salary Fit: 92
+    Industry Alignment: 58
+    Role Level Fit: 100
+    Location Fit: 100
+    Mission / Personal Alignment: 92
+    Posting Freshness: 100
+    Interview Probability: 85
+  package_quality:
+    resume_tailoring_score: 90
+    cover_letter_score: 86
+    ats_keyword_match: 95
+    voice_match: 68
+    confidence_level: High
+    confidence_score: 85
+  material_paths: &id001
+    ATS Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/electronic_arts_senior_manager_marketing_operations/ats_resume.docx
+    Styled Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/electronic_arts_senior_manager_marketing_operations/styled_resume.docx
+    Tailored Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/electronic_arts_senior_manager_marketing_operations/resume.txt
+    Cover Letter: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/electronic_arts_senior_manager_marketing_operations/cover_letter.docx
+    Application Note: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/electronic_arts_senior_manager_marketing_operations/application_note.txt
+    Recruiter Message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/electronic_arts_senior_manager_marketing_operations/recruiter_message.txt
+    Hiring Manager Message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/electronic_arts_senior_manager_marketing_operations/hiring_manager_message.txt
+    Strategy Pack: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/electronic_arts_senior_manager_marketing_operations/strategy_pack.txt
+    Interview Prep: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/electronic_arts_senior_manager_marketing_operations/interview_prep.txt
+    Package Summary: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/electronic_arts_senior_manager_marketing_operations/package_summary.txt
+    Job Description: /Users/trisha.lynch/Documents/career-catalyst/jobs/electronic_arts_senior_manager_marketing_operations.md
+  package_manifest:
+    prospect_id: electronic_arts_senior_manager_marketing_operations
+    slug: electronic_arts_senior_manager_marketing_operations
+    company: Electronic Arts
+    role_title: Senior Manager, Marketing Operations
+    status: Reviewed
+    generated_at: '2026-07-09T14:11:15.264628+00:00'
+    applied_date: ''
+    status_date: ''
+    source_url: https://gamejobs.co/Senior-Manager-Marketing-Operations-at-Electronic-Arts
+    files:
+      resume_text: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/electronic_arts_senior_manager_marketing_operations/resume.txt
+      styled_docx: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/electronic_arts_senior_manager_marketing_operations/styled_resume.docx
+      ats_docx: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/electronic_arts_senior_manager_marketing_operations/ats_resume.docx
+      cover_letter: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/electronic_arts_senior_manager_marketing_operations/cover_letter.txt
+      cover_letter_docx: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/electronic_arts_senior_manager_marketing_operations/cover_letter.docx
+      recruiter_message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/electronic_arts_senior_manager_marketing_operations/recruiter_message.txt
+      hiring_manager_message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/electronic_arts_senior_manager_marketing_operations/hiring_manager_message.txt
+      application_note: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/electronic_arts_senior_manager_marketing_operations/application_note.txt
+      strategy_pack: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/electronic_arts_senior_manager_marketing_operations/strategy_pack.txt
+      interview_prep: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/electronic_arts_senior_manager_marketing_operations/interview_prep.txt
+      package_summary: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/electronic_arts_senior_manager_marketing_operations/package_summary.txt
+    archived: false
+    archive_reason: ''
+    legacy_files_moved:
+    - /Users/trisha.lynch/Documents/career-catalyst/exports/archive/old_generated_materials/electronic_arts_senior_manager_marketing_operations/Trisha_Lynch_executive_operations_ElectronicArts_Resume_3.md
+    manifest_path: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/electronic_arts_senior_manager_marketing_operations/manifest.json
+    materials: *id001
+  submitted_date: '2026-07-09'
