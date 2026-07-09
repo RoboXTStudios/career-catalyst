@@ -1385,6 +1385,13 @@ def _primary_material_href(files: Dict[str, Path], dashboard_directory: Path) ->
 
 
 def _render_primary_actions(package: Dict[str, Any], dashboard_directory: Path, anchor_id: str) -> str:
+    tracker = package.get("tracker", {})
+    posting_url = record_posting_url(tracker)
+    posting = (
+        f'<a class="action-button" href="{html.escape(posting_url, quote=True)}" target="_blank" rel="noopener">Open Posting</a>'
+        if posting_url
+        else '<button class="action-button action-disabled" type="button" disabled>Open Posting</button>'
+    )
     material_href = _primary_material_href(package.get("files", {}), dashboard_directory)
     material = (
         f'<a class="action-button" href="{html.escape(material_href, quote=True)}" target="_blank" rel="noopener">Open Materials</a>'
@@ -1394,7 +1401,7 @@ def _render_primary_actions(package: Dict[str, Any], dashboard_directory: Path, 
     return (
         '<nav class="card-actions" aria-label="Primary role actions">'
         f'<button class="action-button" type="button" data-focus-role="{html.escape(anchor_id, quote=True)}">View Role</button>'
-        '<button class="action-button action-disabled" type="button" disabled>Open Posting</button>'
+        f'{posting}'
         f'{material}'
         '</nav>'
     )
@@ -1654,7 +1661,7 @@ def _render_html(
     active_group = _render_group(
         "Active",
         "active-applied",
-        groups["active"] + groups["applied"],
+        groups["active"],
         dashboard_directory,
     )
     applied_group = _render_group(
@@ -1672,7 +1679,7 @@ def _render_html(
     paused_group = _render_group(
         "Paused",
         "draft-paused",
-        groups["reviewed"] + groups["paused"],
+        groups["paused"],
         dashboard_directory,
     )
     passed_group = _render_group(
