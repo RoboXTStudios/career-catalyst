@@ -6,3 +6,8 @@ exports/docx/*.docx
 exports/pdf/*.pdf
 
 ~$*.docx
+
+# Generated material clutter / temporary files
+exports/**/~$*.docx
+exports/**/.DS_Store
+exports/archive/cleanup_reports/*.json
