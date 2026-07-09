@@ -10,6 +10,7 @@ try:
     from .parse_job import parse_job_description
     from .package_context import validate_material_context
     from .role_context import is_google_youtube_role
+    from .role_editing import material_editing_plan
     from .score_match import score_job_match
     from .text_cleanup import cleanup_repeated_words
 except ImportError:
@@ -18,6 +19,7 @@ except ImportError:
     from parse_job import parse_job_description
     from package_context import validate_material_context
     from role_context import is_google_youtube_role
+    from role_editing import material_editing_plan
     from score_match import score_job_match
     from text_cleanup import cleanup_repeated_words
 
@@ -377,17 +379,30 @@ def _selected_projects(
 ) -> List[Tuple[Dict[str, Any], List[str]]]:
     projects = career_data["data"]["projects"].get("projects", [])
     selected = []
+    plan = material_editing_plan(parsed_job)
+    category = plan.get("role_category")
+    section_rules = plan.get("resume_section_rules", {})
+    creative_rule = section_rules.get("creative_editorial_projects")
+    campaignos_rule = section_rules.get("campaignos")
 
     campaignos = next((project for project in projects if project.get("name") == "CampaignOS"), None)
     if campaignos:
-        selected.append((campaignos, _campaignos_bullets(career_data)))
+        bullets = _campaignos_bullets(career_data)
+        if campaignos_rule == "supporting":
+            bullets = bullets[:1]
+        selected.append((campaignos, bullets))
 
     for project in projects:
         name = project.get("name")
         if name == "CampaignOS" or not _project_is_relevant(str(name), parsed_job, resume_profile):
             continue
+        if creative_rule == "omit" and name in {"Substack Writer", "OMG23 Multiverse Newsletter"}:
+            continue
+        if category in {"chief_of_staff_business_operations", "traditional_pmo_governance"} and name in {"Substack Writer", "OMG23 Multiverse Newsletter"}:
+            continue
         bullets = [project.get("summary", "")]
-        bullets.extend(project.get("highlights", [])[:3])
+        limit = 1 if creative_rule == "minimize" else 3
+        bullets.extend(project.get("highlights", [])[:limit])
         selected.append((project, _dedupe([str(bullet) for bullet in bullets if bullet])))
 
     return selected

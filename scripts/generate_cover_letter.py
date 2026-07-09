@@ -20,6 +20,7 @@ try:
         google_claim_violations,
         is_google_youtube_role,
     )
+    from .role_editing import material_editing_plan
     from .score_match import score_job_match
     from .text_cleanup import cleanup_repeated_words
 except ImportError:
@@ -30,6 +31,7 @@ except ImportError:
     from parse_job import parse_job_description
     from package_context import validate_material_context
     from role_context import google_claim_violations, is_google_youtube_role
+    from role_editing import material_editing_plan
     from score_match import score_job_match
     from text_cleanup import cleanup_repeated_words
 
@@ -63,6 +65,7 @@ def load_generation_context(
     evidence_cards = load_evidence_cards(root)
     writing_voice = load_writing_voice_profile(root)
     selected_evidence = select_evidence_cards(parsed_job, evidence_cards)
+    editing_plan = material_editing_plan(parsed_job, root)
     return {
         "root": root,
         "career_data": career_data,
@@ -70,6 +73,7 @@ def load_generation_context(
         "writing_voice": writing_voice,
         "evidence_cards": evidence_cards,
         "selected_evidence_cards": selected_evidence,
+        "material_editing_plan": editing_plan,
         "parsed_job": parsed_job,
         "match_report": score_job_match(job_path, root),
         **voice_context,
@@ -111,6 +115,7 @@ def save_material(
             )
     configured_banned_phrases = list(context.get("voice", {}).get("avoid", []))
     configured_banned_phrases.extend(context.get("writing_voice", {}).get("banned_phrases", []))
+    configured_banned_phrases.extend(context.get("material_editing_plan", {}).get("banned_phrases", []))
     for phrase in configured_banned_phrases:
         if str(phrase).lower() in lowered_content:
             raise ApplicationMaterialError(
@@ -464,10 +469,70 @@ def _technical_operations_cover_letter_content(context: Dict[str, Any]) -> str:
     closing = (
         f"I would welcome the chance to learn more about how {company} is shaping this work and where the "
         "team most needs stronger operating support. I can help strengthen delivery through practical "
-        "governance, clear milestones, visible risks, and decision rhythms that let stakeholders stay aligned "
+        "operating discipline, visible milestones, surfaced risks, and useful decision routines that let stakeholders stay aligned "
         f"without slowing teams down.{adjacency}"
     )
     return _signed_content(opening, experience, fit, closing)
+
+
+def _role_sensitive_cover_letter_content(context: Dict[str, Any]) -> str:
+    parsed_job = context["parsed_job"]
+    plan = context.get("material_editing_plan") or material_editing_plan(parsed_job, context.get("root"))
+    category = plan.get("role_category")
+    company = str(parsed_job.get("company") or "the organization")
+    role = str(parsed_job.get("job_title") or "senior operations role")
+    framing = plan.get("preferred_cover_letter_framing")
+    preferred = ", ".join(plan.get("preferred_terms", [])[:4])
+
+    if category == "chief_of_staff_business_operations":
+        opening = (
+            f"For the {role} role at {company}, I would lead with senior team operating support. "
+            f"{framing or 'I help senior teams turn broad priorities into clear plans, ownership, communication rhythms, and follow-through'} "
+            "The role reads like one where planning rhythms, ownership clarity, stakeholder alignment, risk surfacing, and consistent follow-through matter more than adding process for its own sake."
+        )
+        experience = (
+            "At OMG23 / OMD Entertainment, Omnicom Media Group, I progressed to Group Director while leading "
+            "cross-functional teams of 60+ across creative, marketing, media, analytics, technology, and operations. "
+            "Supporting Disney Studios Theatrical and Disney Streaming/DSS work required executive visibility, "
+            "senior stakeholder support, decision tracking, quality standards, and communication routines that helped "
+            "leaders understand what needed attention."
+        )
+        proof = (
+            "As a supporting proof point, CampaignOS reflects how I think about operating systems: intake, workflow "
+            "governance, QA checks, risk flags, and reporting readiness. I would keep that example brief here because "
+            "the central qualification is the operating discipline behind it, not founder positioning or product-building detail."
+        )
+        closing = (
+            f"I would welcome the chance to learn where {company}'s leadership team most needs clarity and traction. "
+            "I would bring governance without bureaucracy, calm cross-functional alignment, and a bias toward translating "
+            "priorities into execution that teams can actually sustain."
+        )
+        return _signed_content(opening, experience, proof, closing)
+
+    if category == "product_ai_operations":
+        opening = (
+            f"For the {role} role at {company}, I would connect the product need to usable operating systems: "
+            "clear workflows, thoughtful schemas, feedback loops, and automation that leaves room for human judgment."
+        )
+        experience = (
+            "CampaignOS is the most relevant proof point for that work. I designed and developed an AI-powered "
+            "operations platform around schema-driven workflows, validation frameworks, workflow governance, QA, "
+            "risk flags, and operational reporting. The work required product judgment: translating recurring "
+            "business needs into tools that make execution easier to understand and maintain."
+        )
+        proof = (
+            "My Disney and OMG23 background gives that product work its operating context. I led cross-functional "
+            "entertainment campaign teams through complex handoffs, stakeholder needs, measurement readiness, "
+            "quality standards, dependencies, and delivery routines where tools only mattered if teams could use them."
+        )
+        closing = (
+            f"I would welcome the chance to learn how {company} is shaping this product work and where the team "
+            f"needs stronger {preferred or 'AI workflows, product judgment, workflow governance, and usable tools'}. "
+            "I would bring both builder range and the enterprise operations experience to keep the solution grounded."
+        )
+        return _signed_content(opening, experience, proof, closing)
+
+    return ""
 
 
 def _campaignos_is_relevant(context: Dict[str, Any]) -> bool:
@@ -958,6 +1023,12 @@ def _cover_letter_content(context: Dict[str, Any]) -> str:
         "bandsintown": _bandsintown_cover_letter_content,
         "crunchyroll": _crunchyroll_cover_letter_content,
     }
+    if not context.get("material_editing_plan"):
+        context = dict(context)
+        context["material_editing_plan"] = material_editing_plan(context["parsed_job"], context.get("root"))
+    role_category = context["material_editing_plan"].get("role_category")
+    if role_category in {"chief_of_staff_business_operations", "product_ai_operations"}:
+        return _role_sensitive_cover_letter_content(context)
     if role_family == "music_content_strategy":
         return _bandsintown_cover_letter_content(context)
     if profile_key in builders:
