@@ -11,6 +11,7 @@ from docx.shared import Inches, Pt, RGBColor
 
 try:
     from .company_voice import company_voice_context
+    from .evidence_engine import load_evidence_cards, load_writing_voice_profile, select_evidence_cards
     from .filename_utils import build_upload_filename, company_display_name
     from .load_data import load_all_yaml
     from .parse_job import parse_job_description
@@ -23,6 +24,7 @@ try:
     from .text_cleanup import cleanup_repeated_words
 except ImportError:
     from company_voice import company_voice_context
+    from evidence_engine import load_evidence_cards, load_writing_voice_profile, select_evidence_cards
     from filename_utils import build_upload_filename, company_display_name
     from load_data import load_all_yaml
     from parse_job import parse_job_description
@@ -58,10 +60,16 @@ def load_generation_context(
     parsed_job = dict(parsed_job)
     parsed_job["company_legal_name"] = parsed_job.get("company")
     parsed_job["company"] = company_display_name(parsed_job.get("company"))
+    evidence_cards = load_evidence_cards(root)
+    writing_voice = load_writing_voice_profile(root)
+    selected_evidence = select_evidence_cards(parsed_job, evidence_cards)
     return {
         "root": root,
         "career_data": career_data,
         "voice": career_data["config"].get("voice", {}),
+        "writing_voice": writing_voice,
+        "evidence_cards": evidence_cards,
+        "selected_evidence_cards": selected_evidence,
         "parsed_job": parsed_job,
         "match_report": score_job_match(job_path, root),
         **voice_context,
@@ -101,7 +109,9 @@ def save_material(
             raise ApplicationMaterialError(
                 f"Google/YouTube material contains unsupported relationship claim: {violations[0]}"
             )
-    for phrase in context.get("voice", {}).get("avoid", []):
+    configured_banned_phrases = list(context.get("voice", {}).get("avoid", []))
+    configured_banned_phrases.extend(context.get("writing_voice", {}).get("banned_phrases", []))
+    for phrase in configured_banned_phrases:
         if str(phrase).lower() in lowered_content:
             raise ApplicationMaterialError(
                 f"Generated application materials contain banned voice phrase: {phrase}"
@@ -426,25 +436,23 @@ def _technical_operations_cover_letter_content(context: Dict[str, Any]) -> str:
         else "technical and operational systems"
     )
     opening = (
-        f"The {role} role at {company} caught my attention because it brings together the work I have "
-        "built my career around: giving complex initiatives a clear plan, aligning people with different "
-        "priorities, and helping teams deliver without losing sight of the work itself. I enjoy building "
-        "the operational foundation that lets creative and technical partners do their best work together."
+        f"The {role} role at {company} caught my attention because it sits close to work I know well: "
+        "helping complex marketing and operations teams move with more clarity, consistency, and trust."
     )
     experience = (
         "At OMG23 / OMD Entertainment, I progressed to Group Director and led cross-functional teams of "
         "more than 60 people across creative, marketing, media, analytics, technology, and "
-        "operations. Supporting Disney theatrical and streaming campaigns required turning business "
-        "requirements into executable plans, coordinating internal teams and external partners, managing "
-        "dependencies, and giving senior stakeholders clear visibility into milestones, risks, and decisions. "
-        "The pace was fast, but the processes still had to be practical enough for teams to trust and use."
+        "operations. Supporting Disney theatrical and streaming campaigns required translating business "
+        "priorities into executable plans, coordinating internal teams and external partners, managing "
+        "dependencies, and giving senior stakeholders a clear view of milestones, risks, and decisions."
     )
     fit = (
-        f"That same mindset led me to create CampaignOS, an AI-powered operations platform built around {platform_focus}. "
-        "It standardizes intake and validation, automates QA, identifies operational risk earlier, "
-        "and improves reporting and measurement readiness. Building it strengthened my product thinking and my "
-        "ability to translate between technical and non-technical partners, especially when delivery depends on "
-        "tools, data, approvals, vendors, and teams outside the core project group."
+        "A lot of that work came down to practical operating systems: handoffs, QA standards, "
+        "reporting rhythms, governance, and stakeholder visibility that helped teams move faster "
+        "without losing accuracy. CampaignOS is a current supporting example of the same mindset. "
+        f"I built it around {platform_focus}, including campaign readiness, workflow validation, QA checks, "
+        "and operational reporting. For this kind of role, the main throughline is still the Disney and "
+        "OMG23 operating experience; CampaignOS simply shows how I formalize recurring delivery problems."
     )
     adjacency = (
         " My entertainment background also gives me useful context for a live and fan-facing ecosystem where "
@@ -453,10 +461,10 @@ def _technical_operations_cover_letter_content(context: Dict[str, Any]) -> str:
         else ""
     )
     closing = (
-        f"I would be excited to bring that experience to {company}. I can help strengthen project delivery, "
-        "improve cross-functional collaboration, and create the consistency teams need to move faster without "
-        "sacrificing quality. I bring steady stakeholder leadership, a collaborative approach to problem solving, "
-        f"and genuine enthusiasm for building systems that enable great work.{adjacency}"
+        f"I would welcome the chance to learn more about how {company} is evolving its operating model "
+        "and where this role could create the most leverage. I would bring steady stakeholder leadership, "
+        "practical systems judgment, and comfort working through the details with creative, technical, "
+        f"and operational partners.{adjacency}"
     )
     return _signed_content(opening, experience, fit, closing)
 
@@ -548,7 +556,7 @@ def _default_cover_letter_content(context: Dict[str, Any]) -> str:
         workflow = _achievement(career_data, "workflow_governance")
         transformation = (
             f"I have also focused on improving the systems behind the work. {_as_first_person(workflow)} "
-            "That experience has shaped a practical approach to operational transformation, "
+            "That experience has shaped a practical approach to improving operations, "
             "with clear ownership, useful standards, and room for creative teams to do their best work."
         )
 
@@ -874,11 +882,9 @@ def _dynamic_cover_letter_content(context: Dict[str, Any]) -> str:
     angle = str(angles[-1] if angles else "connect the role's stated priorities with clear execution").rstrip(".")
 
     opening = (
-        f"The {role} role at {company} stood out because the description calls for the ability to "
-        f"{angle}. What interests me is the practical challenge underneath that language: helping "
-        "people with different priorities reach clear decisions, understand ownership, and move the "
-        "work forward without losing the purpose behind it. That is the kind of senior operating work "
-        "I have returned to throughout my career."
+        f"For the {role} role at {company}, I would start with the operating need behind the description: "
+        f"{angle}. My most relevant experience is helping people with different priorities reach clear "
+        "decisions, understand ownership, and keep useful momentum without losing the purpose behind the work."
     )
 
     editorial_relevant = _editorial_evidence_relevant(parsed_job)
@@ -907,6 +913,7 @@ def _dynamic_cover_letter_content(context: Dict[str, Any]) -> str:
             "challenge was broadly transferable: create clarity and consistency without slowing the team down."
         )
 
+    selected_ids = {str(card.get("id")) for card in context.get("selected_evidence_cards", [])}
     if role_family in {"editorial_content_strategy", "community_growth"} and editorial_relevant:
         proof = (
             "Those editorial projects strengthened more than my writing. They required content planning, "
@@ -914,19 +921,26 @@ def _dynamic_cover_letter_content(context: Dict[str, Any]) -> str:
             "formats. They also reinforced a principle I bring to operational work: systems should make good "
             "creative decisions easier without flattening the human voice that gives the work meaning."
         )
-    else:
+    elif "campaignos" in selected_ids:
         proof = (
             "CampaignOS is a current proof point for that approach. I designed and developed the AI-powered "
             "operations platform to standardize workflow governance, automate quality assurance, reduce risk, "
             "and improve reporting. Building it required product thinking, schema design, validation frameworks, "
-            "and practical judgment about where automation can help. It reflects how I turn recurring friction "
-            "into an operating system people can understand and use."
+            "and practical judgment about where automation can help. I describe it as a working builder project, "
+            "not as proof of a larger enterprise product than the evidence supports."
+        )
+    else:
+        proof = (
+            "The evidence I would bring is more operational than flashy: governance practices, quality standards, "
+            "clearer handoffs, and executive visibility for teams working under real delivery pressure. That work "
+            "has taught me to keep claims close to the facts, name tradeoffs early, and build only the amount of "
+            "process a team can trust and use."
         )
 
     closing = (
         f"I would welcome the chance to learn how {company} is defining success for this role and where the "
-        "team sees the greatest opportunity for leverage. I would bring calm senior judgment, a builder's "
-        "mindset, and an approach grounded in the role's actual priorities rather than assumptions about the company."
+        "team sees the greatest opportunity for leverage. I would bring steady senior judgment, a practical "
+        "builder mindset when it is relevant, and an approach grounded in the role's actual priorities rather than assumptions about the company."
     )
     return _signed_content(opening, experience, proof, closing)
 
