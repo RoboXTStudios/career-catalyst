@@ -2459,3 +2459,138 @@ applications:
     materials: *id006
   source_verified: true
   submitted_date: '2026-07-09'
+- id: azira_director_chief_of_staff_business_operations
+  company: Azira
+  company_aliases: []
+  role: Director, Chief of Staff & Business Operations
+  role_aliases: []
+  status: Applied
+  priority: Medium
+  source: ats.rippling.com
+  notes: ''
+  next_action: Paste the job description and re-score before generating package. Verify on employer site before generating package or applying.
+  show_on_dashboard: true
+  official_url: https://ats.rippling.com/azira-careers-page/jobs/60f55418-f6d5-461f-a269-35c1f129f907
+  source_url: https://ats.rippling.com/azira-careers-page/jobs/60f55418-f6d5-461f-a269-35c1f129f907
+  location: Remote
+  salary_range: $175,000–$200,000
+  work_arrangement: Remote
+  field_warnings:
+  - Unknown source domain
+  - Posting date missing or malformed
+  - Salary detected from job text. Review before applying.
+  - Verify on employer site before generating package or applying.
+  - Role family was inferred. Review if this is a strategic or product-ops role.
+  job_file: jobs/azira_director_chief_of_staff_and_business_operations.md
+  company_category: product_technology
+  role_family: business_operations
+  company_voice_profile: dynamic_product_technology
+  company_voice_source: dynamic_inference
+  company_voice_label: Dynamic Product Technology
+  company_inference_confidence: Medium
+  freshness: Fresh
+  freshness_label: Unknown freshness / Verify manually
+  posting_status: Verify manually
+  match_score: 86
+  match_tier: Strong Match
+  match_summary: Strong alignment across Trisha's core experience, target level, and practical priorities.
+  match_strengths:
+  - Functional alignment includes programmatic, marketing technology and measurement, strategic operations.
+  - The seniority is aligned with Trisha's director/head-of target level.
+  - The media context is adjacent to Trisha's target industries.
+  - The disclosed compensation is aligned with or near Trisha's target.
+  - The remote arrangement supports practical fit.
+  match_gaps:
+  - Posting age is unknown; verify that the role is still active.
+  recommended_action: Generate Package
+  confidence: High
+  original_source_url: https://ats.rippling.com/azira-careers-page/jobs/60f55418-f6d5-461f-a269-35c1f129f907
+  source_domain: ats.rippling.com
+  source_name: ats.rippling.com
+  source_type: Unknown Source
+  source_trust_label: Unknown Source
+  verification_status: Employer Source
+  verification_notes: 'https://ats.rippling.com/azira-careers-page/jobs/60f55418-f6d5-461f-a269-35c1f129f907
+
+
+    official employer source page'
+  source_confidence: Low
+  requires_verification: true
+  source_warnings:
+  - Unknown source domain
+  - Posting date missing or malformed
+  freshness_risk: Unknown
+  recommended_next_step: Verify the source and role manually before applying.
+  greenhouse_backed_hint: false
+  posting_date: '2026-07-09'
+  status_updated_at: '2026-07-09T15:30:32'
+  opportunity_score: 86
+  apply_recommendation: Apply Immediately
+  opportunity_dimensions:
+    Resume Fit: 86
+    Salary Fit: 100
+    Industry Alignment: 72
+    Role Level Fit: 100
+    Location Fit: 100
+    Mission / Personal Alignment: 82
+    Posting Freshness: 50
+    Interview Probability: 86
+  package_quality:
+    resume_tailoring_score: 87
+    cover_letter_score: 82
+    ats_keyword_match: 91
+    voice_match: 60
+    confidence_level: High
+    confidence_score: 80
+  material_paths: &id007
+    ATS Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_ats_resume.docx
+    Styled Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_styled_resume.docx
+    Tailored Resume: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_resume.txt
+    Cover Letter: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_cover_letter.docx
+    Application Note: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_application_note.txt
+    Recruiter Message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_recruiter_message.txt
+    Hiring Manager Message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_hiring_manager_message.txt
+    Strategy Pack: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_strategy_pack.txt
+    Interview Prep: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_interview_prep.txt
+    Package Summary: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_package_summary.txt
+    Recruiter Follow-Up: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_recruiter_followup.txt
+    Hiring Manager Follow-Up: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_hiring_manager_followup.txt
+    Warm Contact Message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_warm_contact_message.txt
+    Referral Ask: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_referral_ask.txt
+    Follow-Up Strategy: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_followup_strategy.txt
+    Job Description: /Users/trisha.lynch/Documents/career-catalyst/jobs/azira_director_chief_of_staff_and_business_operations.md
+  package_manifest:
+    prospect_id: azira_director_chief_of_staff_business_operations
+    slug: azira_director_chief_of_staff_business_operations
+    company: Azira
+    role_title: Director, Chief of Staff & Business Operations
+    status: Reviewed
+    generated_at: '2026-07-09T21:25:36.955873+00:00'
+    applied_date: ''
+    status_date: ''
+    source_url: https://ats.rippling.com/azira-careers-page/jobs/60f55418-f6d5-461f-a269-35c1f129f907
+    files:
+      resume_text: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_resume.txt
+      styled_docx: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_styled_resume.docx
+      ats_docx: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_ats_resume.docx
+      cover_letter: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_cover_letter.txt
+      cover_letter_docx: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_cover_letter.docx
+      recruiter_message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_recruiter_message.txt
+      hiring_manager_message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_hiring_manager_message.txt
+      application_note: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_application_note.txt
+      strategy_pack: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_strategy_pack.txt
+      interview_prep: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_interview_prep.txt
+      package_summary: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_package_summary.txt
+      recruiter_followup: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_recruiter_followup.txt
+      hiring_manager_followup: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_hiring_manager_followup.txt
+      warm_contact_message: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_warm_contact_message.txt
+      referral_ask: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_referral_ask.txt
+      followup_strategy: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_followup_strategy.txt
+    archived: false
+    archive_reason: ''
+    legacy_files_moved:
+    - /Users/trisha.lynch/Documents/career-catalyst/exports/archive/old_generated_materials/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_ats_resume.md
+    manifest_path: /Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/manifest.json
+    materials: *id007
+  source_verified: true
+  submitted_date: '2026-07-09'
