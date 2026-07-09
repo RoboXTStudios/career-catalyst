@@ -436,10 +436,10 @@ def _technical_operations_cover_letter_content(context: Dict[str, Any]) -> str:
         else "technical and operational systems"
     )
     opening = (
-        f"The {role} role at {company} caught my attention because it brings together the work I have "
-        "built my career around: giving complex initiatives a clear plan, aligning people with different "
-        "priorities, and helping teams deliver without losing sight of the work itself. I enjoy building "
-        "the operational foundation that lets creative and technical partners do their best work together."
+        f"The {role} role at {company} caught my attention because the work sits in the real operating "
+        "space between strategy and delivery. Roles like this need someone who can make handoffs clear, "
+        "keep reporting rhythms useful, and help creative, technical, and business partners understand "
+        "what is needed next without turning the process into extra noise."
     )
     experience = (
         "At OMG23 / OMD Entertainment, I progressed to Group Director and led cross-functional teams of "
@@ -450,11 +450,10 @@ def _technical_operations_cover_letter_content(context: Dict[str, Any]) -> str:
         "The pace was fast, but the processes still had to be practical enough for teams to trust and use."
     )
     fit = (
-        f"That same mindset led me to create CampaignOS, an AI-powered operations platform built around {platform_focus}. "
-        "It standardizes intake and validation, automates QA, identifies operational risk earlier, "
-        "and improves reporting and measurement readiness. Building it strengthened my product thinking and my "
-        "ability to translate between technical and non-technical partners, especially when delivery depends on "
-        "tools, data, approvals, vendors, and teams outside the core project group."
+        f"As a supporting proof point, I also built CampaignOS around {platform_focus}: intake, validation, "
+        "QA standards, risk flags, and reporting readiness. It reflects the same practical habit I bring "
+        "to operations work: make dependencies visible, reduce avoidable rework, and give teams a shared "
+        "view of the decisions that affect delivery."
     )
     adjacency = (
         " My entertainment background also gives me useful context for a live and fan-facing ecosystem where "
@@ -463,10 +462,10 @@ def _technical_operations_cover_letter_content(context: Dict[str, Any]) -> str:
         else ""
     )
     closing = (
-        f"I would be excited to bring that experience to {company}. I can help strengthen project delivery, "
-        "improve cross-functional collaboration, and create the consistency teams need to move faster without "
-        "sacrificing quality. I bring steady stakeholder leadership, a collaborative approach to problem solving, "
-        f"and genuine enthusiasm for building systems that enable great work.{adjacency}"
+        f"I would welcome the chance to learn more about how {company} is shaping this work and where the "
+        "team most needs stronger operating support. I can help strengthen delivery through practical "
+        "governance, clear milestones, visible risks, and decision rhythms that let stakeholders stay aligned "
+        f"without slowing teams down.{adjacency}"
     )
     return _signed_content(opening, experience, fit, closing)
 

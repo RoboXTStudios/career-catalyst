@@ -114,3 +114,39 @@ def test_no_unsupported_low_confidence_builder_claim_for_pmo_cover_letter():
     assert "roboxt" not in content
     assert "launched agency" not in content
     assert "campaignos" not in content
+
+
+def test_ea_marketing_operations_cover_letter_uses_grounded_calm_voice():
+    parsed = role(
+        "Senior Manager, Marketing Operations",
+        "EA entertainment gaming marketing operations campaign governance handoffs QA reporting dependencies milestones risks decisions stakeholder visibility automation systems",
+        company="Electronic Arts",
+        keywords=["marketing operations", "campaign governance", "QA", "reporting", "automation"],
+    )
+    content = _cover_letter_content(dynamic_context(parsed, select_evidence_cards(parsed)))
+    lowered = content.lower()
+
+    for phrase in (
+        "enable great work",
+        "best work together",
+        "genuine enthusiasm",
+        "i would be excited",
+        "built my career around",
+        "generic clear plan",
+        "clear plan",
+    ):
+        assert phrase not in lowered
+
+    assert content.index("OMG23 / OMD Entertainment") < content.index("CampaignOS")
+    assert content.index("Disney") < content.index("CampaignOS")
+    assert lowered.count("campaignos") == 1
+    assert "supporting proof point" in lowered
+    assert "i would welcome the chance" in lowered
+    assert "excited" not in lowered
+    assert "enthusiasm" not in lowered
+    assert any(term in lowered for term in ("handoffs", "qa standards", "reporting rhythms"))
+    assert "dependencies" in lowered
+    assert "milestones" in lowered
+    assert "risks" in lowered
+    assert "decisions" in lowered
+    assert "stakeholder" in lowered
