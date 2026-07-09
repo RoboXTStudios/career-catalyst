@@ -1,0 +1,25 @@
+default_level: 3
+banned_phrases:
+  - visionary
+  - transformative
+  - disruptive
+  - best-in-class
+  - passionate
+  - revolutionize
+  - unlock
+  - cutting-edge
+  - uniquely positioned
+  - proven track record
+  - dynamic leader
+  - fast-paced environment
+levels:
+  1:
+    label: Reflective, warm, conversational
+  2:
+    label: Professional, approachable
+  3:
+    label: Executive, authentic, quietly confident
+  4:
+    label: Senior Director / VP polish
+  5:
+    label: Startup founder / entrepreneurial pitch
