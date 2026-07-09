@@ -29,15 +29,34 @@ ROLE_SHORT_NAMES: Dict[str, str] = {
     "operations lead ai creator platform": "OpsLeadAICreatorPlatform",
 }
 
-EXPORT_TYPE_NAMES: Dict[str, str] = {
-    "styled": "Styled",
-    "ats": "ATS",
-    "cover letter": "CoverLetter",
-    "recruiter message": "RecruiterMessage",
-    "hiring manager message": "HiringManagerMessage",
-    "application note": "ApplicationNote",
-    "strategy pack": "StrategyPack",
+MATERIAL_TYPE_NAMES: Dict[str, str] = {
+    "ats resume": "ats_resume",
+    "ats": "ats_resume",
+    "styled resume": "styled_resume",
+    "styled": "styled_resume",
+    "cover letter": "cover_letter",
+    "cover letter docx": "cover_letter",
+    "cover letter text": "cover_letter",
+    "application note": "application_note",
+    "hiring manager message": "hiring_manager_message",
+    "hiring manager": "hiring_manager_message",
+    "recruiter message": "recruiter_message",
+    "recruiter": "recruiter_message",
+    "followup strategy": "followup_strategy",
+    "follow up strategy": "followup_strategy",
+    "recruiter followup": "recruiter_followup",
+    "recruiter follow up": "recruiter_followup",
+    "hiring manager followup": "hiring_manager_followup",
+    "hiring manager follow up": "hiring_manager_followup",
+    "referral ask": "referral_ask",
+    "warm contact message": "warm_contact_message",
+    "interview prep": "interview_prep",
+    "interview preparation": "interview_prep",
+    "package summary": "package_summary",
+    "strategy pack": "strategy_pack",
 }
+
+ALLOWED_MATERIAL_TYPES = set(MATERIAL_TYPE_NAMES.values())
 
 ROLE_STOP_WORDS = {"a", "an", "and", "for", "of", "the"}
 ROLE_ABBREVIATIONS = {
@@ -193,12 +212,47 @@ def short_role_name(role_title: str) -> str:
     return _pascal_case(shortened) or "Role"
 
 
+def company_filename_component(company: Any, *, max_words: int = 4) -> str:
+    """Return a concise lowercase snake_case company component."""
+    short = COMPANY_SHORT_NAMES.get(_key(str(company or "")))
+    source = short if short else company_display_name(company)
+    tokens = [token.lower() for token in _tokens(source) if token.lower() not in COMPANY_SUFFIXES]
+    return re.sub(r"_+", "_", "_".join(tokens[:max_words])).strip("_") or "company"
+
+
+def role_filename_component(role_title: Any, *, max_words: int = 6) -> str:
+    """Return a concise lowercase snake_case role component without profile labels."""
+    words = []
+    for token in _tokens(str(role_title or "")):
+        lowered = token.lower()
+        if lowered in ROLE_STOP_WORDS:
+            continue
+        words.append(lowered)
+        if len(words) == max_words:
+            break
+    return re.sub(r"_+", "_", "_".join(words)).strip("_") or "role"
+
+
+def filename_component(value: Any, *, max_words: int) -> str:
+    """Return a lowercase snake_case filename component."""
+    tokens = _tokens(str(value or ""))[:max_words]
+    return re.sub(r"_+", "_", "_".join(token.lower() for token in tokens)).strip("_")
+
+
+def normalize_material_type(export_type: str) -> str:
+    """Normalize material labels to the allowed lowercase snake_case values."""
+    key = _key(str(export_type or ""))
+    if key in MATERIAL_TYPE_NAMES:
+        return MATERIAL_TYPE_NAMES[key]
+    snake = filename_component(export_type, max_words=5)
+    if snake in ALLOWED_MATERIAL_TYPES:
+        return snake
+    return snake or "material"
+
+
 def short_export_type(export_type: str) -> str:
-    """Normalize an export label to a compact filename component."""
-    known_name = EXPORT_TYPE_NAMES.get(_key(export_type))
-    if known_name:
-        return known_name
-    return _pascal_case(_tokens(export_type)) or "Export"
+    """Normalize an export label to an allowed filename material type."""
+    return normalize_material_type(export_type)
 
 
 def build_upload_filename(
@@ -208,13 +262,16 @@ def build_upload_filename(
     export_type: str,
     extension: str,
 ) -> str:
-    """Build a safe filename from candidate, role, company, and export type."""
+    """Build a clean generated-material filename.
+
+    Standard: [company]_[role]_[candidate]_[material_type].[file_type]
+    """
     if not is_valid_role_title(role_title):
         raise ValueError("Please confirm the role title before generating filenames.")
     components = (
-        compact_candidate_name(candidate_name),
-        short_role_name(role_title),
-        short_company_name(company),
-        short_export_type(export_type),
+        company_filename_component(company),
+        role_filename_component(role_title),
+        filename_component(candidate_name, max_words=4),
+        normalize_material_type(export_type),
     )
-    return safe_filename("_".join(components), extension)
+    return safe_filename("_".join(part for part in components if part), extension, lowercase=True)

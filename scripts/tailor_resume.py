@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 try:
-    from .filename_utils import safe_filename, short_company_name
+    from .filename_utils import build_upload_filename
     from .load_data import load_all_yaml
     from .parse_job import parse_job_description
     from .package_context import validate_material_context
@@ -13,7 +13,7 @@ try:
     from .score_match import score_job_match
     from .text_cleanup import cleanup_repeated_words
 except ImportError:
-    from filename_utils import safe_filename, short_company_name
+    from filename_utils import build_upload_filename
     from load_data import load_all_yaml
     from parse_job import parse_job_description
     from package_context import validate_material_context
@@ -547,8 +547,11 @@ def tailor_resume(
 
     export_dir = root / "exports" / "internal" / "resumes"
     export_dir.mkdir(parents=True, exist_ok=True)
-    output_path = export_dir / safe_filename(
-        f"Trisha_Lynch_{resume_profile}_{short_company_name(parsed_job.get('company') or 'sample')}_Resume",
+    output_path = export_dir / build_upload_filename(
+        "Trisha Lynch",
+        str(parsed_job.get("job_title") or "Role"),
+        str(parsed_job.get("company") or "Company"),
+        resume_profile if resume_profile in {"ats_resume", "styled_resume"} else "ats_resume",
         "md",
     )
     output_path.write_text(markdown, encoding="utf-8")
