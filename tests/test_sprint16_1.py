@@ -69,10 +69,12 @@ class Sprint161UrlIntakeTests(unittest.TestCase):
         self.assertEqual(state["prospect_job_id"], "1395690500")
         self.assertIn("source URL was saved", state["prospect_import_result"][1])
 
-    def test_enter_and_button_callbacks_use_the_same_import_helper(self):
+    def test_enter_and_button_submit_use_the_same_import_helper(self):
         source = inspect.getsource(app._render_add_prospect)
-        self.assertIn("on_change=trigger_url_import", source)
-        self.assertIn('on_click=trigger_url_import', source)
+        self.assertIn('st.form("prospect_url_import_form"', source)
+        self.assertIn('st.form_submit_button("Try Import From URL")', source)
+        self.assertIn("if url_import_submitted:", source)
+        self.assertIn("trigger_url_import()", source)
         self.assertIn("apply_prospect_url_import_state", source)
 
     def test_shared_import_state_rejects_bad_title_and_protects_user_title(self):

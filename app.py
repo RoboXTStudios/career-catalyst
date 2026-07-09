@@ -2094,10 +2094,11 @@ def _render_add_prospect(st: Any) -> None:
     def mark_intelligence_stale() -> None:
         mark_prospect_intelligence_stale(st.session_state)
 
-    st.text_input(
-        "Job listing URL", key="prospect_url", on_change=trigger_url_import
-    )
-    st.button("Try Import From URL", on_click=trigger_url_import)
+    with st.form("prospect_url_import_form", clear_on_submit=False):
+        st.text_input("Job listing URL", key="prospect_url")
+        url_import_submitted = st.form_submit_button("Try Import From URL")
+    if url_import_submitted:
+        trigger_url_import()
     import_result = st.session_state.get("prospect_import_result")
     if import_result:
         level, message = import_result
