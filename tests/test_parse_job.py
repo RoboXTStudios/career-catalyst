@@ -184,6 +184,30 @@ class GreenhouseUrlImportRegressionTests(unittest.TestCase):
         )
         self.assertIn("source URL was saved", state["prospect_import_result"][1])
 
+    def test_url_import_does_not_mutate_widget_owned_input_key(self):
+        import app
+        from scripts.job_importer import JobImportError
+
+        url = "https://job-boards.greenhouse.io/airtable/jobs/8597950002"
+        state = {
+            "prospect_url_input": url,
+            "prospect_company": "Manual Co",
+            "prospect_role": "Manual Role",
+            "prospect_description": "Manual pasted text stays available for fallback.",
+        }
+
+        def fail(_url):
+            raise JobImportError("blocked")
+
+        result = app.apply_prospect_url_import_state(state, fail)
+
+        self.assertEqual(result["status"], "partial")
+        self.assertEqual(state["prospect_url_input"], url)
+        self.assertEqual(state["prospect_url_value"], url)
+        self.assertEqual(state["prospect_import_url"], url)
+        self.assertEqual(state["prospect_url_last_imported"], url)
+        self.assertNotIn("prospect_url", state)
+
 
 if __name__ == "__main__":
     unittest.main()

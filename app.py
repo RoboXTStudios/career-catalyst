@@ -1772,6 +1772,10 @@ def _render_package_summary(st: Any, package_result: Dict[str, Any]) -> None:
 def _initialize_intake_state(st: Any) -> None:
     defaults = {
         "prospect_url": "",
+        "prospect_url_input": "",
+        "prospect_url_value": "",
+        "prospect_import_url": "",
+        "prospect_url_last_imported": "",
         "prospect_context_url": "",
         "prospect_original_source_url": "",
         "prospect_canonical_url": "",
@@ -1878,7 +1882,13 @@ def apply_prospect_url_import_state(
 ) -> Dict[str, Any]:
     """Run the shared Enter/button URL import path while preserving safe fallback state."""
     import_callable = importer or import_job_from_url
-    url = str(session_state.get("prospect_url") or "").strip()
+    url = str(
+        session_state.get("prospect_url_input")
+        or session_state.get("prospect_url_value")
+        or session_state.get("prospect_import_url")
+        or session_state.get("prospect_url")
+        or ""
+    ).strip()
     previous_context_url = session_state.get("prospect_context_url")
     if previous_context_url is not None and str(previous_context_url) != url:
         for key in (
@@ -1893,7 +1903,9 @@ def apply_prospect_url_import_state(
             session_state[key] = ""
         mark_prospect_intelligence_stale(session_state)
     session_state["prospect_context_url"] = url
-    session_state["prospect_url"] = url
+    session_state["prospect_url_value"] = url
+    session_state["prospect_import_url"] = url
+    session_state["prospect_url_last_imported"] = url
     session_state["prospect_original_source_url"] = url
     fallback = infer_job_fields_from_url(url)
     verification = normalize_job_source({"official_url": url})
@@ -2094,8 +2106,11 @@ def _render_add_prospect(st: Any) -> None:
     def mark_intelligence_stale() -> None:
         mark_prospect_intelligence_stale(st.session_state)
 
+    if not st.session_state.get("prospect_url_input"):
+        st.session_state["prospect_url_input"] = st.session_state.get("prospect_url_value", "")
+
     with st.form("prospect_url_import_form", clear_on_submit=False):
-        st.text_input("Job listing URL", key="prospect_url")
+        st.text_input("Job listing URL", key="prospect_url_input")
         url_import_submitted = st.form_submit_button("Try Import From URL")
     if url_import_submitted:
         trigger_url_import()
@@ -2141,7 +2156,7 @@ def _render_add_prospect(st: Any) -> None:
     def reparse_current_fields() -> None:
         refreshed = reparse_prospect_fields(
             {
-                "official_url": st.session_state["prospect_url"],
+                "official_url": st.session_state["prospect_url_value"],
                 "company": st.session_state["prospect_company"],
                 "job_title": st.session_state["prospect_role"],
                 "location": st.session_state["prospect_location"],
@@ -2175,8 +2190,8 @@ def _render_add_prospect(st: Any) -> None:
     st.button("Re-parse details and re-score", on_click=reparse_current_fields)
 
     values = {
-        "official_url": st.session_state["prospect_url"],
-        "source_url": st.session_state["prospect_url"],
+        "official_url": st.session_state["prospect_url_value"],
+        "source_url": st.session_state["prospect_url_value"],
         "original_source_url": st.session_state["prospect_original_source_url"],
         "canonical_apply_url": st.session_state["prospect_canonical_url"],
         "job_id": st.session_state["prospect_job_id"],
