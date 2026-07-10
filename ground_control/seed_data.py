@@ -1,7 +1,7 @@
-"""Editable seed data for Ground Control Sprint 1.
+"""Safe first-run fallback data for Ground Control.
 
-Update this file when the starting balances or daily mission change. The app is
-local-first by design: no auth, no backend, no database, and no network calls.
+Manual Override saves runtime changes to local state. This seed remains the
+known-good fallback when no saved state exists or saved state cannot be loaded.
 """
 
 from __future__ import annotations

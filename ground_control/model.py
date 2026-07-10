@@ -89,7 +89,7 @@ def load_missions(seed: Mapping[str, Any] = SEED_DATA) -> list[str]:
     if not isinstance(missions, list) or not all(isinstance(item, str) for item in missions):
         raise ValueError("Seed data must include a missions list of strings")
     if len(missions) != 3:
-        raise ValueError("Ground Control Sprint 1 expects exactly three missions")
+        raise ValueError("Ground Control expects exactly three missions")
     return missions
 
 

@@ -1,4 +1,4 @@
-"""Ground Control Sprint 1 local-first Streamlit app.
+"""Ground Control local-first Streamlit app.
 
 Run with: streamlit run ground_control/app.py
 """
@@ -15,13 +15,20 @@ if __package__ in {None, ""}:
     sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from ground_control.model import (  # noqa: E402
+    FinanceSnapshot,
     build_finance_cards,
     build_major_tom_message,
     calculate_runway_months,
-    load_finance_snapshot,
-    load_missions,
 )
 from ground_control.seed_data import SEED_DATA  # noqa: E402
+from ground_control.state import (  # noqa: E402
+    DailyMission,
+    GroundControlState,
+    load_state,
+    save_state,
+)
+
+MISSION_COUNT = 3
 
 
 def _inject_styles() -> None:
@@ -206,6 +213,54 @@ def _inject_styles() -> None:
             line-height: 1.35;
         }
 
+        div[data-testid="stCheckbox"] {
+            background: rgba(244, 239, 232, 0.055);
+            border: 1px solid rgba(244, 239, 232, 0.08);
+            border-radius: 8px;
+            margin-bottom: 0.72rem;
+            min-height: 3.15rem;
+            padding: 0.45rem 0.72rem;
+        }
+
+        div[data-testid="stCheckbox"] label {
+            align-items: center;
+            min-height: 2.2rem;
+        }
+
+        div[data-testid="stCheckbox"] [data-testid="stMarkdownContainer"] p {
+            color: #f4efe8;
+            font-size: 1rem;
+            line-height: 1.35;
+        }
+
+        [data-testid="stForm"] {
+            background: rgba(18, 16, 14, 0.92);
+            border: 1px solid rgba(244, 239, 232, 0.11);
+            border-radius: 8px;
+            box-shadow: 0 22px 70px rgba(0, 0, 0, 0.28);
+            margin-top: 1rem;
+            padding: 1.25rem;
+        }
+
+        [data-testid="stNumberInput"] label,
+        [data-testid="stTextInput"] label,
+        [data-testid="stCheckbox"] label {
+            color: rgba(244, 239, 232, 0.78);
+        }
+
+        [data-testid="stNumberInput"] input,
+        [data-testid="stTextInput"] input {
+            background: rgba(244, 239, 232, 0.07);
+            border-color: rgba(244, 239, 232, 0.16);
+            color: #f4efe8;
+        }
+
+        div[data-testid="stAlert"] {
+            background: rgba(89, 214, 181, 0.1);
+            border-color: rgba(89, 214, 181, 0.28);
+            color: #d8fff3;
+        }
+
         .gc-major-tom {
             border-color: rgba(216, 166, 87, 0.26);
             position: relative;
@@ -261,9 +316,74 @@ def _render_header(name: str) -> None:
     )
 
 
-def _render_finance() -> None:
-    snapshot = load_finance_snapshot(SEED_DATA)
-    cards = build_finance_cards(snapshot)
+def _mission_text_key(index: int) -> str:
+    return f"gc_mission_{index}_text"
+
+
+def _mission_completed_key(index: int) -> str:
+    return f"gc_mission_{index}_completed"
+
+
+def _clean_mission_text(value: object, fallback: str) -> str:
+    text = str(value).strip()
+    return text or fallback
+
+
+def _ensure_session_state() -> None:
+    if st.session_state.get("gc_loaded"):
+        return
+
+    state = load_state()
+    st.session_state["gc_person_name"] = state.person_name
+    st.session_state["gc_cash"] = state.finance.cash
+    st.session_state["gc_monthly_burn"] = state.finance.monthly_burn
+    st.session_state["gc_retirement_401k"] = state.finance.retirement_401k
+    st.session_state["gc_edd_remaining"] = state.finance.edd_remaining
+
+    for index, mission in enumerate(state.missions):
+        st.session_state[_mission_text_key(index)] = mission.text
+        st.session_state[_mission_completed_key(index)] = mission.completed
+
+    st.session_state["gc_loaded"] = True
+
+
+def _state_from_session() -> GroundControlState:
+    missions = tuple(
+        DailyMission(
+            text=_clean_mission_text(
+                st.session_state.get(_mission_text_key(index), ""),
+                f"Mission {index + 1}",
+            ),
+            completed=bool(st.session_state.get(_mission_completed_key(index), False)),
+        )
+        for index in range(MISSION_COUNT)
+    )
+
+    return GroundControlState(
+        person_name=str(st.session_state.get("gc_person_name", "Trisha")),
+        finance=FinanceSnapshot(
+            cash=float(st.session_state.get("gc_cash", 0)),
+            monthly_burn=max(float(st.session_state.get("gc_monthly_burn", 1)), 1.0),
+            retirement_401k=float(st.session_state.get("gc_retirement_401k", 0)),
+            edd_remaining=float(st.session_state.get("gc_edd_remaining", 0)),
+        ),
+        missions=missions,
+    )
+
+
+def _persist_session_state() -> None:
+    save_state(_state_from_session())
+
+
+def _render_panel_header(label: str, heading: str) -> None:
+    st.markdown(
+        f'<p class="gc-panel-label">{html.escape(label)}</p><h2>{html.escape(heading)}</h2>',
+        unsafe_allow_html=True,
+    )
+
+
+def _render_finance(state: GroundControlState) -> None:
+    cards = build_finance_cards(state.finance)
 
     st.markdown('<p class="gc-grid-title">Financial telemetry</p>', unsafe_allow_html=True)
     columns = st.columns(4, gap="medium")
@@ -281,32 +401,49 @@ def _render_finance() -> None:
             )
 
 
-def _render_missions() -> None:
-    missions = load_missions(SEED_DATA)
-    mission_markup = "".join(
-        f"""
-        <div class="gc-mission">
-            <span class="gc-checkbox" aria-hidden="true"></span>
-            <span>{html.escape(mission)}</span>
-        </div>
-        """
-        for mission in missions
-    )
-
+def _render_missions(state: GroundControlState) -> None:
     st.markdown(
-        f"""
-        <section class="gc-panel">
-            <p class="gc-panel-label">Today</p>
-            <h2>Today's Mission</h2>
-            <div class="gc-missions">{mission_markup}</div>
-        </section>
-        """,
+        "<section class=\"gc-panel\"><p class=\"gc-panel-label\">Today</p><h2>Today's Mission</h2></section>",
         unsafe_allow_html=True,
     )
+    for index, mission in enumerate(state.missions):
+        st.checkbox(
+            mission.text,
+            key=_mission_completed_key(index),
+            on_change=_persist_session_state,
+        )
 
 
-def _render_major_tom() -> None:
-    snapshot = load_finance_snapshot(SEED_DATA)
+def _render_manual_override() -> None:
+    with st.form("gc_manual_override"):
+        _render_panel_header("Manual Override", "Update telemetry")
+
+        left, right = st.columns(2, gap="medium")
+        with left:
+            st.number_input("Cash", min_value=0.0, step=100.0, format="%.0f", key="gc_cash")
+            st.number_input(
+                "Monthly essentials burn",
+                min_value=1.0,
+                step=100.0,
+                format="%.0f",
+                key="gc_monthly_burn",
+            )
+        with right:
+            st.number_input("401(k)", min_value=0.0, step=1000.0, format="%.0f", key="gc_retirement_401k")
+            st.number_input("EDD balance", min_value=0.0, step=100.0, format="%.0f", key="gc_edd_remaining")
+
+        for index in range(MISSION_COUNT):
+            st.text_input(f"Mission {index + 1}", key=_mission_text_key(index))
+
+        submitted = st.form_submit_button("Save manual override")
+
+    if submitted:
+        _persist_session_state()
+        st.success("Manual override saved locally.")
+
+
+def _render_major_tom(state: GroundControlState) -> None:
+    snapshot = state.finance
     runway_months = calculate_runway_months(
         cash=snapshot.cash,
         edd_remaining=snapshot.edd_remaining,
@@ -329,14 +466,17 @@ def _render_major_tom() -> None:
 def main() -> None:
     st.set_page_config(page_title="Ground Control", layout="wide")
     _inject_styles()
-    _render_header(str(SEED_DATA["person"]["name"]))
-    _render_finance()
+    _ensure_session_state()
+    state = _state_from_session()
+    _render_header(state.person_name)
+    _render_finance(state)
 
     left, right = st.columns([1, 1], gap="medium")
     with left:
-        _render_missions()
+        _render_missions(state)
     with right:
-        _render_major_tom()
+        _render_major_tom(state)
+    _render_manual_override()
 
 
 if __name__ == "__main__":
