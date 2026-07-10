@@ -1,5 +1,6 @@
 import json
 import re
+from datetime import date
 
 import pytest
 
@@ -11,14 +12,19 @@ from ground_control.model import (
     limit_major_tom_message,
     load_finance_snapshot,
     load_missions,
+    runway_status,
 )
 from ground_control.seed_data import SEED_DATA
 from ground_control.state import (
     DailyMission,
     GroundControlState,
+    MissionDay,
     load_state,
+    reuse_unfinished_missions,
+    rollover_for_date,
     save_state,
     seed_state,
+    unfinished_from_previous_day,
 )
 
 
@@ -56,9 +62,16 @@ def test_mission_count_validation_rejects_scope_creep():
 
 
 def test_major_tom_message_receives_runway_context():
-    message = build_major_tom_message(SEED_DATA, runway_months=4.7)
+    message = build_major_tom_message(
+        SEED_DATA,
+        runway_months=4.7,
+        current_date=date(2026, 7, 10),
+        missions_completed=1,
+    )
 
     assert "4.7 months" in message
+    assert "Friday, July 10" in message
+    assert "1 of 3 missions complete" in message
 
 
 def test_major_tom_message_is_limited_to_two_short_sentences():
@@ -91,10 +104,17 @@ def test_saved_state_round_trips_manual_overrides(tmp_path):
             retirement_401k=155000,
             edd_remaining=6500,
         ),
+        mission_date="2026-07-10",
         missions=(
             DailyMission("Call Fidelity", True),
             DailyMission("Update homepage", False),
             DailyMission("Pay phone bill", True),
+        ),
+        mission_history=(
+            MissionDay(
+                "2026-07-09",
+                tuple(DailyMission(f"Old mission {index}") for index in range(1, 4)),
+            ),
         ),
     )
 
@@ -113,6 +133,7 @@ def test_saved_finance_recalculates_runway():
             retirement_401k=155000,
             edd_remaining=5000,
         ),
+        mission_date="2026-07-10",
         missions=tuple(DailyMission(f"Mission {index}") for index in range(1, 4)),
     )
 
@@ -125,6 +146,68 @@ def test_saved_finance_recalculates_runway():
 
     assert runway == pytest.approx(5.0)
     assert "5.0 months" in message
+
+
+def test_new_day_rollover_archives_prior_day_and_resets_completion():
+    prior = GroundControlState(
+        person_name="Trisha",
+        finance=load_finance_snapshot(SEED_DATA),
+        mission_date="2026-07-09",
+        missions=(
+            DailyMission("Finished", True),
+            DailyMission("Still open", False),
+            DailyMission("Also open", False),
+        ),
+    )
+
+    current = rollover_for_date(prior, date(2026, 7, 10))
+
+    assert current.mission_date == "2026-07-10"
+    assert [mission.text for mission in current.missions] == ["Mission 1", "Mission 2", "Mission 3"]
+    assert not any(mission.completed for mission in current.missions)
+    assert current.mission_history == (MissionDay("2026-07-09", prior.missions),)
+
+
+def test_unfinished_missions_are_reused_only_on_request():
+    prior_missions = (
+        DailyMission("Finished", True),
+        DailyMission("Still open", False),
+        DailyMission("Also open", False),
+    )
+    current = GroundControlState(
+        person_name="Trisha",
+        finance=load_finance_snapshot(SEED_DATA),
+        mission_date="2026-07-10",
+        missions=tuple(DailyMission(f"Mission {index}") for index in range(1, 4)),
+        mission_history=(MissionDay("2026-07-09", prior_missions),),
+    )
+
+    assert [mission.text for mission in unfinished_from_previous_day(current)] == [
+        "Still open",
+        "Also open",
+    ]
+
+    reused = reuse_unfinished_missions(current)
+
+    assert [mission.text for mission in reused.missions] == ["Still open", "Also open", "Mission 3"]
+    assert not any(mission.completed for mission in reused.missions)
+
+
+@pytest.mark.parametrize(
+    ("months", "expected"),
+    [(0.9, "critical burn"), (2.9, "adjust course"), (3.0, "nominal")],
+)
+def test_major_tom_briefing_tracks_runway_status(months, expected):
+    message = build_major_tom_message(
+        SEED_DATA,
+        runway_months=months,
+        current_date=date(2026, 7, 10),
+        missions_completed=3,
+    )
+
+    assert runway_status(months) == expected
+    assert expected in message
+    assert "All three missions complete" in message
 
 
 def test_invalid_saved_state_falls_back_to_seed(tmp_path):

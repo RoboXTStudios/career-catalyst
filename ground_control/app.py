@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import html
 import sys
+from datetime import date
 from pathlib import Path
 
 import streamlit as st
@@ -25,7 +26,10 @@ from ground_control.state import (  # noqa: E402
     DailyMission,
     GroundControlState,
     load_state,
+    reuse_unfinished_missions,
+    rollover_for_date,
     save_state,
+    unfinished_from_previous_day,
 )
 
 MISSION_COUNT = 3
@@ -279,9 +283,89 @@ def _inject_styles() -> None:
 
         [data-testid="stNumberInput"] input,
         [data-testid="stTextInput"] input {
-            background: rgba(244, 239, 232, 0.07);
-            border-color: rgba(255, 247, 237, 0.14);
-            color: #fff7ed;
+            background: #fffaf3;
+            border: 1px solid #9d856b;
+            color: #9a4f16;
+            font-weight: 650;
+            opacity: 1;
+        }
+
+        [data-testid="stNumberInput"] input::placeholder,
+        [data-testid="stTextInput"] input::placeholder {
+            color: #783b10;
+            opacity: 1;
+        }
+
+        [data-testid="stNumberInput"] input:hover,
+        [data-testid="stTextInput"] input:hover {
+            border-color: #d8a657;
+        }
+
+        [data-testid="stNumberInput"] input:focus,
+        [data-testid="stTextInput"] input:focus {
+            border-color: #f0c989;
+            box-shadow: 0 0 0 3px rgba(240, 201, 137, 0.28);
+            outline: none;
+        }
+
+        [data-testid="stNumberInput"] input:disabled,
+        [data-testid="stTextInput"] input:disabled {
+            background: #d8d0c6;
+            border-color: #a89b8b;
+            color: #65401f;
+            cursor: not-allowed;
+            opacity: 1;
+        }
+
+        [data-testid="stNumberInput"] button {
+            background: #f4eadc;
+            border-color: #9d856b;
+            color: #783b10;
+        }
+
+        [data-testid="stNumberInput"] button:hover {
+            background: #ead8c0;
+            border-color: #d8a657;
+            color: #5f2e0b;
+        }
+
+        [data-testid="stNumberInput"] button:focus-visible,
+        [data-testid="stFormSubmitButton"] button:focus-visible,
+        div[data-testid="stButton"] button:focus-visible {
+            outline: 3px solid #f0c989;
+            outline-offset: 2px;
+        }
+
+        [data-testid="stFormSubmitButton"] button,
+        div[data-testid="stButton"] button {
+            background: #d8a657;
+            border: 1px solid #f0c989;
+            color: #281609;
+            font-weight: 760;
+        }
+
+        [data-testid="stFormSubmitButton"] button:hover,
+        div[data-testid="stButton"] button:hover {
+            background: #f0c989;
+            border-color: #ffe0a8;
+            color: #1f1006;
+        }
+
+        [data-testid="stFormSubmitButton"] button:disabled,
+        div[data-testid="stButton"] button:disabled,
+        [data-testid="stNumberInput"] button:disabled {
+            background: #4c4540;
+            border-color: #6e645c;
+            color: #c8bdb2;
+            cursor: not-allowed;
+            opacity: 1;
+        }
+
+        [data-testid="stCaptionContainer"] p,
+        [data-testid="stWidgetLabel"] p,
+        [data-testid="InputInstructions"] {
+            color: #d9cfc1;
+            opacity: 1;
         }
 
         div[data-testid="stAlert"] {
@@ -362,21 +446,36 @@ def _clean_mission_text(value: object, fallback: str) -> str:
 
 
 def _ensure_session_state() -> None:
+    today = date.today()
     if st.session_state.get("gc_loaded"):
+        current = _state_from_session()
+        rolled = rollover_for_date(current, today)
+        if rolled != current:
+            _put_state_in_session(rolled)
+            save_state(rolled)
         return
 
-    state = load_state()
+    loaded_state = load_state(current_date=today)
+    state = rollover_for_date(loaded_state, today)
+    if state != loaded_state:
+        save_state(state)
+
+    _put_state_in_session(state)
+    st.session_state["gc_loaded"] = True
+
+
+def _put_state_in_session(state: GroundControlState) -> None:
     st.session_state["gc_person_name"] = state.person_name
     st.session_state["gc_cash"] = state.finance.cash
     st.session_state["gc_monthly_burn"] = state.finance.monthly_burn
     st.session_state["gc_retirement_401k"] = state.finance.retirement_401k
     st.session_state["gc_edd_remaining"] = state.finance.edd_remaining
+    st.session_state["gc_mission_date"] = state.mission_date
+    st.session_state["gc_mission_history"] = state.mission_history
 
     for index, mission in enumerate(state.missions):
         st.session_state[_mission_text_key(index)] = mission.text
         st.session_state[_mission_completed_key(index)] = mission.completed
-
-    st.session_state["gc_loaded"] = True
 
 
 def _state_from_session() -> GroundControlState:
@@ -399,7 +498,9 @@ def _state_from_session() -> GroundControlState:
             retirement_401k=float(st.session_state.get("gc_retirement_401k", 0)),
             edd_remaining=float(st.session_state.get("gc_edd_remaining", 0)),
         ),
+        mission_date=str(st.session_state.get("gc_mission_date", date.today().isoformat())),
         missions=missions,
+        mission_history=tuple(st.session_state.get("gc_mission_history", ())),
     )
 
 
@@ -446,6 +547,24 @@ def _render_missions(state: GroundControlState) -> None:
             on_change=_persist_session_state,
         )
 
+    unfinished = unfinished_from_previous_day(state)
+    st.caption(f"Flight plan for {date.fromisoformat(state.mission_date).strftime('%A, %B %d')}.")
+    st.button(
+        "Reuse unfinished",
+        disabled=not unfinished,
+        help="Reuse unfinished missions from the previous day without carrying them forward automatically.",
+        on_click=_reuse_previous_unfinished,
+        use_container_width=False,
+    )
+
+
+def _reuse_previous_unfinished() -> None:
+    reused = reuse_unfinished_missions(_state_from_session())
+    for index, mission in enumerate(reused.missions):
+        st.session_state[_mission_text_key(index)] = mission.text
+        st.session_state[_mission_completed_key(index)] = False
+    save_state(_state_from_session())
+
 
 def _render_manual_override() -> None:
     with st.form("gc_manual_override"):
@@ -482,7 +601,12 @@ def _render_major_tom(state: GroundControlState) -> None:
         edd_remaining=snapshot.edd_remaining,
         monthly_burn=snapshot.monthly_burn,
     )
-    message = build_major_tom_message(SEED_DATA, runway_months=runway_months)
+    message = build_major_tom_message(
+        SEED_DATA,
+        runway_months=runway_months,
+        current_date=date.fromisoformat(state.mission_date),
+        missions_completed=sum(mission.completed for mission in state.missions),
+    )
 
     st.markdown(
         f"""

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from datetime import date
 from typing import Any, Mapping
 
 from ground_control.seed_data import SEED_DATA
@@ -106,8 +107,32 @@ def limit_major_tom_message(message: str, *, max_sentences: int = 2) -> str:
     return " ".join(sentences[:max_sentences])
 
 
-def build_major_tom_message(seed: Mapping[str, Any] = SEED_DATA, *, runway_months: float) -> str:
-    template = seed.get("major_tom")
-    if not isinstance(template, str):
-        raise ValueError("Seed data must include a Major Tom message template")
-    return limit_major_tom_message(template.format(runway_months=runway_months))
+def runway_status(runway_months: float) -> str:
+    if runway_months < 1:
+        return "critical burn"
+    if runway_months < 3:
+        return "adjust course"
+    return "nominal"
+
+
+def build_major_tom_message(
+    seed: Mapping[str, Any] = SEED_DATA,
+    *,
+    runway_months: float,
+    current_date: date | None = None,
+    missions_completed: int = 0,
+) -> str:
+    del seed  # Retained for API compatibility with existing callers.
+    today = current_date or date.today()
+    completed = min(max(missions_completed, 0), 3)
+    first = (
+        f"{today.strftime('%A, %B')} {today.day}: runway is "
+        f"{runway_months:.1f} months and {runway_status(runway_months)}."
+    )
+    if completed == 3:
+        second = "All three missions complete; flight plan secured."
+    elif completed == 0:
+        second = "Three missions remain; choose the first move."
+    else:
+        second = f"{completed} of 3 missions complete; hold course."
+    return limit_major_tom_message(f"{first} {second}")
