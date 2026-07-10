@@ -25,7 +25,7 @@ SEED_DATA: Final[dict[str, Any]] = {
         "Protect mortgage runway",
     ],
     "major_tom": (
-        "Cash plus EDD covers about {runway_months:.1f} months at the current "
-        "essentials burn. No retirement move needs to happen today; keep the signal clean."
+        "Runway is {runway_months:.1f} months. "
+        "Stay steady; no retirement move is needed today."
     ),
 }

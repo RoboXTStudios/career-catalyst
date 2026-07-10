@@ -1,4 +1,5 @@
 import json
+import re
 
 import pytest
 
@@ -7,6 +8,7 @@ from ground_control.model import (
     build_finance_cards,
     build_major_tom_message,
     calculate_runway_months,
+    limit_major_tom_message,
     load_finance_snapshot,
     load_missions,
 )
@@ -57,6 +59,20 @@ def test_major_tom_message_receives_runway_context():
     message = build_major_tom_message(SEED_DATA, runway_months=4.7)
 
     assert "4.7 months" in message
+
+
+def test_major_tom_message_is_limited_to_two_short_sentences():
+    message = build_major_tom_message(SEED_DATA, runway_months=4.7)
+    sentences = re.findall(r".+?(?:[.!?](?=\s|$)|$)", message)
+
+    assert len(sentences) <= 2
+    assert all(len(sentence.split()) <= 10 for sentence in sentences)
+
+
+def test_major_tom_message_trims_longer_templates_to_two_sentences():
+    message = limit_major_tom_message("One. Two. Three.")
+
+    assert message == "One. Two."
 
 
 def test_missing_saved_state_uses_seed_fallback(tmp_path):

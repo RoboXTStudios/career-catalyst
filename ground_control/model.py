@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import Any, Mapping
 
@@ -93,8 +94,20 @@ def load_missions(seed: Mapping[str, Any] = SEED_DATA) -> list[str]:
     return missions
 
 
+def _brief_sentences(message: str) -> list[str]:
+    sentences = re.findall(r".+?(?:[.!?](?=\s|$)|$)", message.strip())
+    return [sentence.strip() for sentence in sentences if sentence.strip()]
+
+
+def limit_major_tom_message(message: str, *, max_sentences: int = 2) -> str:
+    sentences = _brief_sentences(message)
+    if not sentences:
+        return ""
+    return " ".join(sentences[:max_sentences])
+
+
 def build_major_tom_message(seed: Mapping[str, Any] = SEED_DATA, *, runway_months: float) -> str:
     template = seed.get("major_tom")
     if not isinstance(template, str):
         raise ValueError("Seed data must include a Major Tom message template")
-    return template.format(runway_months=runway_months)
+    return limit_major_tom_message(template.format(runway_months=runway_months))

@@ -41,9 +41,10 @@ def _inject_styles() -> None:
 
         .stApp {
             background:
-                linear-gradient(180deg, rgba(216, 166, 87, 0.08), rgba(8, 7, 6, 0) 34rem),
-                #080706;
-            color: #f4efe8;
+                radial-gradient(circle at 18% 0%, rgba(216, 166, 87, 0.1), rgba(216, 166, 87, 0) 22rem),
+                linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(8, 7, 6, 0) 28rem),
+                #090807;
+            color: #fff7ed;
         }
 
         [data-testid="stHeader"] {
@@ -51,22 +52,22 @@ def _inject_styles() -> None:
         }
 
         [data-testid="stToolbar"] {
-            color: #f4efe8;
+            color: #fff7ed;
         }
 
         .block-container {
             max-width: 1180px;
-            padding: 3rem 2rem 4rem;
+            padding: 3.4rem 2.25rem 4.5rem;
         }
 
         .gc-hero {
-            border-bottom: 1px solid rgba(244, 239, 232, 0.12);
-            margin-bottom: 1.5rem;
-            padding-bottom: 1.5rem;
+            border-bottom: 1px solid rgba(255, 247, 237, 0.08);
+            margin-bottom: 1.9rem;
+            padding-bottom: 1.75rem;
         }
 
         .gc-kicker {
-            color: #d8a657;
+            color: #f0c989;
             font-size: 0.78rem;
             font-weight: 700;
             letter-spacing: 0;
@@ -75,9 +76,9 @@ def _inject_styles() -> None:
         }
 
         .gc-title {
-            color: #f4efe8;
-            font-size: 4.75rem;
-            font-weight: 780;
+            color: #fff7ed;
+            font-size: 5.15rem;
+            font-weight: 800;
             letter-spacing: 0;
             line-height: 0.95;
             margin: 0;
@@ -88,7 +89,7 @@ def _inject_styles() -> None:
             display: flex;
             flex-wrap: wrap;
             gap: 0.75rem;
-            margin-top: 1.2rem;
+            margin-top: 1.35rem;
         }
 
         .gc-signal {
@@ -96,13 +97,25 @@ def _inject_styles() -> None:
             background: rgba(89, 214, 181, 0.1);
             border: 1px solid rgba(89, 214, 181, 0.34);
             border-radius: 999px;
-            color: #d8fff3;
+            color: #eafff8;
             display: inline-flex;
-            font-size: 0.95rem;
-            font-weight: 650;
-            gap: 0.5rem;
+            flex-direction: column;
+            gap: 0.18rem;
             line-height: 1;
-            padding: 0.65rem 0.85rem;
+            padding: 0.75rem 1rem;
+        }
+
+        .gc-flight-main {
+            color: #eafff8;
+            font-size: 0.94rem;
+            font-weight: 800;
+            letter-spacing: 0;
+        }
+
+        .gc-flight-subtitle {
+            color: #c7f4e8;
+            font-size: 0.78rem;
+            font-weight: 600;
         }
 
         .gc-signal-dot {
@@ -114,71 +127,87 @@ def _inject_styles() -> None:
             width: 0.58rem;
         }
 
-        .gc-flight-status {
-            color: rgba(244, 239, 232, 0.62);
-            font-size: 0.95rem;
-        }
-
         .gc-grid-title {
-            color: rgba(244, 239, 232, 0.68);
+            color: #d9cfc1;
             font-size: 0.8rem;
-            font-weight: 720;
+            font-weight: 760;
             letter-spacing: 0;
-            margin: 0.65rem 0 0.65rem;
+            margin: 1rem 0 0.85rem;
             text-transform: uppercase;
         }
 
         .gc-card,
         .gc-panel {
             background: rgba(18, 16, 14, 0.92);
-            border: 1px solid rgba(244, 239, 232, 0.11);
+            border: 1px solid rgba(255, 247, 237, 0.07);
             border-radius: 8px;
-            box-shadow: 0 22px 70px rgba(0, 0, 0, 0.28);
+            box-shadow: 0 18px 54px rgba(0, 0, 0, 0.2);
         }
 
         .gc-card {
-            min-height: 9.25rem;
-            padding: 1.05rem;
+            min-height: 9.6rem;
+            padding: 1.18rem;
+        }
+
+        .gc-card-primary {
+            background:
+                linear-gradient(155deg, rgba(89, 214, 181, 0.16), rgba(18, 16, 14, 0.96) 55%),
+                rgba(18, 16, 14, 0.96);
+            border-color: rgba(89, 214, 181, 0.18);
+            box-shadow: 0 24px 68px rgba(0, 0, 0, 0.26), 0 0 42px rgba(89, 214, 181, 0.08);
+            min-height: 11.4rem;
+            padding: 1.28rem;
         }
 
         .gc-card-label,
         .gc-panel-label {
-            color: rgba(244, 239, 232, 0.58);
+            color: #d9cfc1;
             font-size: 0.78rem;
-            font-weight: 720;
+            font-weight: 760;
             letter-spacing: 0;
             margin: 0;
             text-transform: uppercase;
         }
 
         .gc-card-value {
-            color: #f4efe8;
+            color: #fff7ed;
             font-size: 2.1rem;
-            font-weight: 760;
+            font-weight: 780;
             letter-spacing: 0;
             line-height: 1.05;
             margin: 1.35rem 0 0.45rem;
         }
 
+        .gc-card-primary .gc-card-value {
+            color: #effff9;
+            font-size: 3.65rem;
+            font-weight: 820;
+            margin-top: 1.45rem;
+        }
+
         .gc-card-caption,
         .gc-panel-body {
-            color: rgba(244, 239, 232, 0.66);
+            color: #d3c8ba;
             font-size: 0.95rem;
             line-height: 1.5;
             margin: 0;
         }
 
+        .gc-card-primary .gc-card-caption {
+            color: #c7f4e8;
+        }
+
         .gc-panel {
-            min-height: 16rem;
-            padding: 1.25rem;
+            min-height: 16.4rem;
+            padding: 1.4rem;
         }
 
         .gc-panel h2 {
-            color: #f4efe8;
-            font-size: 1.65rem;
-            font-weight: 760;
+            color: #fff7ed;
+            font-size: 1.72rem;
+            font-weight: 790;
             letter-spacing: 0;
-            margin: 0.35rem 0 1rem;
+            margin: 0.38rem 0 1.1rem;
         }
 
         .gc-missions {
@@ -191,7 +220,7 @@ def _inject_styles() -> None:
         .gc-mission {
             align-items: center;
             background: rgba(244, 239, 232, 0.055);
-            border: 1px solid rgba(244, 239, 232, 0.08);
+            border: 1px solid rgba(255, 247, 237, 0.06);
             border-radius: 8px;
             display: grid;
             grid-template-columns: 1.4rem 1fr;
@@ -208,16 +237,16 @@ def _inject_styles() -> None:
         }
 
         .gc-mission span:last-child {
-            color: #f4efe8;
+            color: #fff7ed;
             font-size: 1rem;
             line-height: 1.35;
         }
 
         div[data-testid="stCheckbox"] {
             background: rgba(244, 239, 232, 0.055);
-            border: 1px solid rgba(244, 239, 232, 0.08);
+            border: 1px solid rgba(255, 247, 237, 0.06);
             border-radius: 8px;
-            margin-bottom: 0.72rem;
+            margin-bottom: 0.82rem;
             min-height: 3.15rem;
             padding: 0.45rem 0.72rem;
         }
@@ -228,41 +257,41 @@ def _inject_styles() -> None:
         }
 
         div[data-testid="stCheckbox"] [data-testid="stMarkdownContainer"] p {
-            color: #f4efe8;
+            color: #fff7ed;
             font-size: 1rem;
             line-height: 1.35;
         }
 
         [data-testid="stForm"] {
             background: rgba(18, 16, 14, 0.92);
-            border: 1px solid rgba(244, 239, 232, 0.11);
+            border: 1px solid rgba(255, 247, 237, 0.07);
             border-radius: 8px;
-            box-shadow: 0 22px 70px rgba(0, 0, 0, 0.28);
-            margin-top: 1rem;
-            padding: 1.25rem;
+            box-shadow: 0 18px 54px rgba(0, 0, 0, 0.2);
+            margin-top: 1.35rem;
+            padding: 1.4rem;
         }
 
         [data-testid="stNumberInput"] label,
         [data-testid="stTextInput"] label,
         [data-testid="stCheckbox"] label {
-            color: rgba(244, 239, 232, 0.78);
+            color: #d9cfc1;
         }
 
         [data-testid="stNumberInput"] input,
         [data-testid="stTextInput"] input {
             background: rgba(244, 239, 232, 0.07);
-            border-color: rgba(244, 239, 232, 0.16);
-            color: #f4efe8;
+            border-color: rgba(255, 247, 237, 0.14);
+            color: #fff7ed;
         }
 
         div[data-testid="stAlert"] {
             background: rgba(89, 214, 181, 0.1);
             border-color: rgba(89, 214, 181, 0.28);
-            color: #d8fff3;
+            color: #eafff8;
         }
 
         .gc-major-tom {
-            border-color: rgba(216, 166, 87, 0.26);
+            border-color: rgba(240, 201, 137, 0.15);
             position: relative;
         }
 
@@ -284,11 +313,15 @@ def _inject_styles() -> None:
             }
 
             .gc-title {
-                font-size: 3rem;
+                font-size: 3.18rem;
             }
 
             .gc-card {
                 min-height: 8.25rem;
+            }
+
+            .gc-card-primary .gc-card-value {
+                font-size: 3rem;
             }
         }
         </style>
@@ -305,10 +338,9 @@ def _render_header(name: str) -> None:
             <h1 class="gc-title">Ground Control</h1>
             <div class="gc-status-row">
                 <div class="gc-signal">
-                    <span class="gc-signal-dot"></span>
-                    <span>Signal acquired.</span>
+                    <span class="gc-flight-main">🟢 NOMINAL</span>
+                    <span class="gc-flight-subtitle">Signal acquired.</span>
                 </div>
-                <span class="gc-flight-status">Flight status: Nominal</span>
             </div>
         </section>
         """,
@@ -386,12 +418,13 @@ def _render_finance(state: GroundControlState) -> None:
     cards = build_finance_cards(state.finance)
 
     st.markdown('<p class="gc-grid-title">Financial telemetry</p>', unsafe_allow_html=True)
-    columns = st.columns(4, gap="medium")
+    columns = st.columns([1, 1.45, 1, 1], gap="medium")
     for column, card in zip(columns, cards):
+        card_class = "gc-card gc-card-primary" if card.label == "Runway" else "gc-card"
         with column:
             st.markdown(
                 f"""
-                <article class="gc-card">
+                <article class="{card_class}">
                     <p class="gc-card-label">{html.escape(card.label)}</p>
                     <p class="gc-card-value">{html.escape(card.value)}</p>
                     <p class="gc-card-caption">{html.escape(card.caption)}</p>
@@ -403,7 +436,7 @@ def _render_finance(state: GroundControlState) -> None:
 
 def _render_missions(state: GroundControlState) -> None:
     st.markdown(
-        "<section class=\"gc-panel\"><p class=\"gc-panel-label\">Today</p><h2>Today's Mission</h2></section>",
+        '<section class="gc-panel"><p class="gc-panel-label">Today</p><h2>Mission</h2></section>',
         unsafe_allow_html=True,
     )
     for index, mission in enumerate(state.missions):
