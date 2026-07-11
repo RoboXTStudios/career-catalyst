@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Any, Mapping
 
+from ground_control.local_time import local_date
 from ground_control.seed_data import SEED_DATA
 
 
@@ -123,7 +124,7 @@ def build_major_tom_message(
     missions_completed: int = 0,
 ) -> str:
     del seed  # Retained for API compatibility with existing callers.
-    today = current_date or date.today()
+    today = current_date or local_date()
     completed = min(max(missions_completed, 0), 3)
     first = (
         f"{today.strftime('%A, %B')} {today.day}: runway is "

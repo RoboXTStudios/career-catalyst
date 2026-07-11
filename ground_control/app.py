@@ -21,6 +21,12 @@ from ground_control.model import (  # noqa: E402
     build_major_tom_message,
     calculate_runway_months,
 )
+from ground_control.local_time import (  # noqa: E402
+    format_local_datetime,
+    greeting_for_datetime,
+    local_date,
+    local_now,
+)
 from ground_control.seed_data import SEED_DATA  # noqa: E402
 from ground_control.state import (  # noqa: E402
     DailyMission,
@@ -77,6 +83,13 @@ def _inject_styles() -> None:
             letter-spacing: 0;
             margin-bottom: 0.45rem;
             text-transform: uppercase;
+        }
+
+        .gc-local-time {
+            color: #d9cfc1;
+            font-size: 0.92rem;
+            font-weight: 620;
+            margin: 0.65rem 0 0;
         }
 
         .gc-title {
@@ -414,12 +427,15 @@ def _inject_styles() -> None:
     )
 
 
-def _render_header(name: str) -> None:
+def _render_header(name: str, current_time) -> None:
+    greeting = greeting_for_datetime(current_time)
+    timestamp = format_local_datetime(current_time)
     st.markdown(
         f"""
         <section class="gc-hero">
-            <p class="gc-kicker">Good afternoon, {html.escape(name)}</p>
+            <p class="gc-kicker">{html.escape(greeting)}, {html.escape(name)}</p>
             <h1 class="gc-title">Ground Control</h1>
+            <p class="gc-local-time">{html.escape(timestamp)}</p>
             <div class="gc-status-row">
                 <div class="gc-signal">
                     <span class="gc-flight-main">🟢 NOMINAL</span>
@@ -445,8 +461,7 @@ def _clean_mission_text(value: object, fallback: str) -> str:
     return text or fallback
 
 
-def _ensure_session_state() -> None:
-    today = date.today()
+def _ensure_session_state(today: date) -> None:
     if st.session_state.get("gc_loaded"):
         current = _state_from_session()
         rolled = rollover_for_date(current, today)
@@ -498,7 +513,7 @@ def _state_from_session() -> GroundControlState:
             retirement_401k=float(st.session_state.get("gc_retirement_401k", 0)),
             edd_remaining=float(st.session_state.get("gc_edd_remaining", 0)),
         ),
-        mission_date=str(st.session_state.get("gc_mission_date", date.today().isoformat())),
+        mission_date=str(st.session_state.get("gc_mission_date", local_date().isoformat())),
         missions=missions,
         mission_history=tuple(st.session_state.get("gc_mission_history", ())),
     )
@@ -623,9 +638,11 @@ def _render_major_tom(state: GroundControlState) -> None:
 def main() -> None:
     st.set_page_config(page_title="Ground Control", layout="wide")
     _inject_styles()
-    _ensure_session_state()
+    current_time = local_now()
+    today = local_date(current_time)
+    _ensure_session_state(today)
     state = _state_from_session()
-    _render_header(state.person_name)
+    _render_header(state.person_name, current_time)
     _render_finance(state)
 
     left, right = st.columns([1, 1], gap="medium")

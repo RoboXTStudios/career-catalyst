@@ -1,9 +1,16 @@
 import json
 import re
-from datetime import date
+from datetime import date, datetime, timezone
 
 import pytest
 
+from ground_control.local_time import (
+    LOCAL_TIMEZONE,
+    as_local_time,
+    format_local_datetime,
+    greeting_for_datetime,
+    local_date,
+)
 from ground_control.model import (
     FinanceSnapshot,
     build_finance_cards,
@@ -26,6 +33,34 @@ from ground_control.state import (
     seed_state,
     unfinished_from_previous_day,
 )
+
+
+def test_los_angeles_timezone_controls_local_date_and_display():
+    utc_value = datetime(2026, 7, 11, 6, 30, tzinfo=timezone.utc)
+
+    local_value = as_local_time(utc_value)
+
+    assert local_value.hour == 23
+    assert local_value.tzname() == "PDT"
+    assert local_date(utc_value) == date(2026, 7, 10)
+    assert format_local_datetime(utc_value) == "Friday, July 10, 2026 · 11:30:00 PM PDT"
+
+
+@pytest.mark.parametrize(
+    ("hour", "minute", "expected"),
+    [
+        (0, 0, "Good morning"),
+        (11, 59, "Good morning"),
+        (12, 0, "Good afternoon"),
+        (17, 59, "Good afternoon"),
+        (18, 0, "Good evening"),
+        (23, 59, "Good evening"),
+    ],
+)
+def test_greeting_uses_local_time_boundaries(hour, minute, expected):
+    local_value = datetime(2026, 7, 11, hour, minute, tzinfo=LOCAL_TIMEZONE)
+
+    assert greeting_for_datetime(local_value) == expected
 
 
 def test_seed_finance_cards_cover_sprint_one_metrics():

@@ -8,6 +8,7 @@ from datetime import date
 from pathlib import Path
 from typing import Any, Mapping
 
+from ground_control.local_time import local_date
 from ground_control.model import FinanceSnapshot, load_finance_snapshot, load_missions
 from ground_control.seed_data import SEED_DATA
 
@@ -55,7 +56,7 @@ def seed_state(
     *,
     current_date: date | None = None,
 ) -> GroundControlState:
-    today = current_date or date.today()
+    today = current_date or local_date()
     return GroundControlState(
         person_name=_seed_person_name(seed),
         finance=load_finance_snapshot(seed),
@@ -127,7 +128,7 @@ def state_from_mapping(
     *,
     current_date: date | None = None,
 ) -> GroundControlState:
-    today = current_date or date.today()
+    today = current_date or local_date()
     person = raw.get("person")
     person_name = _seed_person_name(seed)
     if isinstance(person, Mapping) and person.get("name"):
