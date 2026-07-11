@@ -69,13 +69,13 @@ def _inject_styles() -> None:
 
         .block-container {
             max-width: 1180px;
-            padding: 3.4rem 2.25rem 4.5rem;
+            padding: 4rem 2.25rem 5rem;
         }
 
         .gc-hero {
-            border-bottom: 1px solid rgba(255, 247, 237, 0.08);
-            margin-bottom: 1.9rem;
-            padding-bottom: 1.75rem;
+            border-bottom: 1px solid rgba(255, 247, 237, 0.055);
+            margin-bottom: 1.1rem;
+            padding-bottom: 2rem;
         }
 
         .gc-kicker {
@@ -96,7 +96,7 @@ def _inject_styles() -> None:
 
         .gc-title {
             color: #fff7ed;
-            font-size: 5.15rem;
+            font-size: 5.45rem;
             font-weight: 800;
             letter-spacing: 0;
             line-height: 0.95;
@@ -151,16 +151,16 @@ def _inject_styles() -> None:
             font-size: 0.8rem;
             font-weight: 760;
             letter-spacing: 0;
-            margin: 1rem 0 0.85rem;
+            margin: 2.4rem 0 1rem;
             text-transform: uppercase;
         }
 
         .gc-card,
         .gc-panel {
             background: rgba(18, 16, 14, 0.92);
-            border: 1px solid rgba(255, 247, 237, 0.07);
+            border: 1px solid rgba(255, 247, 237, 0.045);
             border-radius: 8px;
-            box-shadow: 0 18px 54px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 14px 42px rgba(0, 0, 0, 0.16);
         }
 
         .gc-card {
@@ -172,10 +172,10 @@ def _inject_styles() -> None:
             background:
                 linear-gradient(155deg, rgba(89, 214, 181, 0.16), rgba(18, 16, 14, 0.96) 55%),
                 rgba(18, 16, 14, 0.96);
-            border-color: rgba(89, 214, 181, 0.18);
+            border-color: rgba(89, 214, 181, 0.14);
             box-shadow: 0 24px 68px rgba(0, 0, 0, 0.26), 0 0 42px rgba(89, 214, 181, 0.08);
-            min-height: 11.4rem;
-            padding: 1.28rem;
+            min-height: 12.5rem;
+            padding: 1.45rem;
         }
 
         .gc-card-label,
@@ -199,14 +199,14 @@ def _inject_styles() -> None:
 
         .gc-card-primary .gc-card-value {
             color: #effff9;
-            font-size: 3.65rem;
+            font-size: 4.25rem;
             font-weight: 820;
-            margin-top: 1.45rem;
+            margin-top: 1.6rem;
         }
 
         .gc-card-caption,
         .gc-panel-body {
-            color: #d3c8ba;
+            color: #ded4c8;
             font-size: 0.95rem;
             line-height: 1.5;
             margin: 0;
@@ -219,6 +219,24 @@ def _inject_styles() -> None:
         .gc-panel {
             min-height: 16.4rem;
             padding: 1.4rem;
+        }
+
+        .gc-brief {
+            margin-bottom: 0.4rem;
+            min-height: 0;
+            padding: 1.55rem 1.65rem 1.65rem;
+        }
+
+        .gc-brief h2 {
+            font-size: 1.9rem;
+            margin-bottom: 0.72rem;
+        }
+
+        .gc-section-title {
+            color: #fff7ed;
+            font-size: 1.72rem;
+            font-weight: 790;
+            margin: 0.38rem 0 1.1rem;
         }
 
         .gc-panel h2 {
@@ -263,7 +281,7 @@ def _inject_styles() -> None:
 
         div[data-testid="stCheckbox"] {
             background: rgba(244, 239, 232, 0.055);
-            border: 1px solid rgba(255, 247, 237, 0.06);
+            border: 1px solid rgba(255, 247, 237, 0.045);
             border-radius: 8px;
             margin-bottom: 0.82rem;
             min-height: 3.15rem;
@@ -283,17 +301,17 @@ def _inject_styles() -> None:
 
         [data-testid="stForm"] {
             background: rgba(18, 16, 14, 0.92);
-            border: 1px solid rgba(255, 247, 237, 0.07);
+            border: 1px solid rgba(255, 247, 237, 0.045);
             border-radius: 8px;
             box-shadow: 0 18px 54px rgba(0, 0, 0, 0.2);
-            margin-top: 1.35rem;
-            padding: 1.4rem;
+            margin-top: 2.8rem;
+            padding: 1.55rem;
         }
 
         [data-testid="stNumberInput"] label,
         [data-testid="stTextInput"] label,
         [data-testid="stCheckbox"] label {
-            color: #d9cfc1;
+            color: #e5dbce;
         }
 
         [data-testid="stNumberInput"] input,
@@ -379,8 +397,33 @@ def _inject_styles() -> None:
         [data-testid="stCaptionContainer"] p,
         [data-testid="stWidgetLabel"] p,
         [data-testid="InputInstructions"] {
-            color: #d9cfc1;
+            color: #ded4c8;
             opacity: 1;
+        }
+
+        [data-testid="stExpander"] {
+            background: rgba(18, 16, 14, 0.72);
+            border: 1px solid rgba(255, 247, 237, 0.055);
+            border-radius: 8px;
+        }
+
+        [data-testid="stExpander"] summary p {
+            color: #fff7ed;
+            font-weight: 720;
+        }
+
+        .gc-log-row {
+            align-items: start;
+            border-top: 1px solid rgba(255, 247, 237, 0.055);
+            color: #ded4c8;
+            display: grid;
+            gap: 0.65rem;
+            grid-template-columns: 1.1rem 1fr;
+            padding: 0.72rem 0;
+        }
+
+        .gc-log-row:first-child {
+            border-top: 0;
         }
 
         div[data-testid="stAlert"] {
