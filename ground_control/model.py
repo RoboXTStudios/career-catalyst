@@ -122,6 +122,7 @@ def build_major_tom_message(
     runway_months: float,
     current_date: date | None = None,
     missions_completed: int = 0,
+    next_mission: str | None = None,
 ) -> str:
     del seed  # Retained for API compatibility with existing callers.
     today = current_date or local_date()
@@ -132,6 +133,9 @@ def build_major_tom_message(
     )
     if completed == 3:
         second = "All three missions complete; flight plan secured."
+    elif next_mission:
+        short_mission = " ".join(next_mission.split()[:8])
+        second = f"{completed} of 3 complete; next: {short_mission}."
     elif completed == 0:
         second = "Three missions remain; choose the first move."
     else:

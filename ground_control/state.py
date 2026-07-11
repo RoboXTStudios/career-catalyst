@@ -4,16 +4,21 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, replace
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, Mapping
 
+from ground_control.model import (
+    FinanceSnapshot,
+    calculate_runway_months,
+    load_finance_snapshot,
+    load_missions,
+)
 from ground_control.local_time import local_date
-from ground_control.model import FinanceSnapshot, load_finance_snapshot, load_missions
 from ground_control.seed_data import SEED_DATA
 
 
-STATE_VERSION = 2
+STATE_VERSION = 3
 MISSION_COUNT = 3
 HISTORY_LIMIT = 30
 DEFAULT_STATE_FILE = Path(__file__).resolve().parent / "local_state.json"
@@ -38,6 +43,7 @@ class GroundControlState:
     mission_date: str
     missions: tuple[DailyMission, ...]
     mission_history: tuple[MissionDay, ...] = ()
+    mission_suggestions_applied: bool = True
 
 
 def _seed_person_name(seed: Mapping[str, Any]) -> str:
@@ -51,17 +57,74 @@ def _blank_missions() -> tuple[DailyMission, ...]:
     return tuple(DailyMission(f"Mission {index}") for index in range(1, MISSION_COUNT + 1))
 
 
+def _active_project_priority(seed: Mapping[str, Any]) -> str:
+    project = seed.get("active_project")
+    if not isinstance(project, Mapping) or not project.get("priority"):
+        raise ValueError("Seed data must include an active project priority")
+    return str(project["priority"]).strip()
+
+
+def daily_mission_suggestions(
+    finance: FinanceSnapshot,
+    previous_missions: tuple[DailyMission, ...] = (),
+    seed: Mapping[str, Any] = SEED_DATA,
+) -> tuple[DailyMission, ...]:
+    runway = calculate_runway_months(
+        cash=finance.cash,
+        edd_remaining=finance.edd_remaining,
+        monthly_burn=finance.monthly_burn,
+    )
+    if runway < 1:
+        finance_action = f"Protect essential bills with only {runway:.1f} months of runway"
+    elif runway < 3:
+        finance_action = f"Review essential expenses against {runway:.1f} months of runway"
+    else:
+        finance_action = f"Review upcoming essentials against {runway:.1f} months of runway"
+
+    admin_action = (
+        "Confirm the next EDD certification and payment date"
+        if finance.edd_remaining > 0
+        else "Confirm Fidelity rollover availability"
+    )
+    unfinished = next(
+        (
+            mission.text
+            for mission in previous_missions
+            if not mission.completed and not mission.text.startswith("Mission ")
+        ),
+        None,
+    )
+    if unfinished:
+        third_action = f"Continue if still relevant: {unfinished}"
+    elif runway < 3:
+        third_action = admin_action
+    else:
+        third_action = finance_action
+
+    highest_leverage_action = finance_action if runway < 3 else admin_action
+
+    suggestions = (
+        DailyMission(highest_leverage_action),
+        DailyMission(_active_project_priority(seed)),
+        DailyMission(third_action),
+    )
+    if len(suggestions) != MISSION_COUNT:
+        raise ValueError("Ground Control expects exactly three mission suggestions")
+    return suggestions
+
+
 def seed_state(
     seed: Mapping[str, Any] = SEED_DATA,
     *,
     current_date: date | None = None,
 ) -> GroundControlState:
     today = current_date or local_date()
+    finance = load_finance_snapshot(seed)
     return GroundControlState(
         person_name=_seed_person_name(seed),
-        finance=load_finance_snapshot(seed),
+        finance=finance,
         mission_date=today.isoformat(),
-        missions=tuple(DailyMission(text=mission) for mission in load_missions(seed)),
+        missions=daily_mission_suggestions(finance, seed=seed),
     )
 
 
@@ -134,12 +197,20 @@ def state_from_mapping(
     if isinstance(person, Mapping) and person.get("name"):
         person_name = str(person["name"])
 
+    missions = _missions_from_values(raw.get("missions"), load_missions(seed))
+    placeholders = tuple(mission.text for mission in _blank_missions())
+    saved_text = tuple(mission.text for mission in missions)
+    suggestions_applied = raw.get("mission_suggestions_applied")
+    if not isinstance(suggestions_applied, bool):
+        suggestions_applied = saved_text != placeholders
+
     return GroundControlState(
         person_name=person_name,
         finance=_finance_from_saved(raw, seed),
         mission_date=str(raw.get("mission_date") or today.isoformat()),
-        missions=_missions_from_values(raw.get("missions"), load_missions(seed)),
+        missions=missions,
         mission_history=_mission_history_from_saved(raw),
+        mission_suggestions_applied=suggestions_applied,
     )
 
 
@@ -160,6 +231,7 @@ def state_to_mapping(state: GroundControlState) -> dict[str, Any]:
             "edd_remaining": state.finance.edd_remaining,
         },
         "mission_date": state.mission_date,
+        "mission_suggestions_applied": state.mission_suggestions_applied,
         "missions": missions_to_mapping(state.missions),
         "mission_history": [
             {"date": day.date, "missions": missions_to_mapping(day.missions)}
@@ -177,8 +249,20 @@ def rollover_for_date(state: GroundControlState, current_date: date) -> GroundCo
     return replace(
         state,
         mission_date=today,
-        missions=_blank_missions(),
+        missions=daily_mission_suggestions(state.finance, state.missions),
         mission_history=history[-HISTORY_LIMIT:],
+        mission_suggestions_applied=True,
+    )
+
+
+def ensure_daily_suggestions(state: GroundControlState) -> GroundControlState:
+    if state.mission_suggestions_applied:
+        return state
+    previous = state.mission_history[-1].missions if state.mission_history else ()
+    return replace(
+        state,
+        missions=daily_mission_suggestions(state.finance, previous),
+        mission_suggestions_applied=True,
     )
 
 
@@ -189,6 +273,17 @@ def unfinished_from_previous_day(state: GroundControlState) -> tuple[DailyMissio
         DailyMission(mission.text)
         for mission in state.mission_history[-1].missions
         if not mission.completed
+    )
+
+
+def yesterday_mission_day(
+    state: GroundControlState,
+    current_date: date,
+) -> MissionDay | None:
+    target = (current_date - timedelta(days=1)).isoformat()
+    return next(
+        (day for day in reversed(state.mission_history) if day.date == target),
+        None,
     )
 
 

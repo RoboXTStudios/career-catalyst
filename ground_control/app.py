@@ -31,11 +31,13 @@ from ground_control.seed_data import SEED_DATA  # noqa: E402
 from ground_control.state import (  # noqa: E402
     DailyMission,
     GroundControlState,
+    ensure_daily_suggestions,
     load_state,
     reuse_unfinished_missions,
     rollover_for_date,
     save_state,
     unfinished_from_previous_day,
+    yesterday_mission_day,
 )
 
 MISSION_COUNT = 3
@@ -464,14 +466,14 @@ def _clean_mission_text(value: object, fallback: str) -> str:
 def _ensure_session_state(today: date) -> None:
     if st.session_state.get("gc_loaded"):
         current = _state_from_session()
-        rolled = rollover_for_date(current, today)
-        if rolled != current:
-            _put_state_in_session(rolled)
-            save_state(rolled)
+        prepared = ensure_daily_suggestions(rollover_for_date(current, today))
+        if prepared != current:
+            _put_state_in_session(prepared)
+            save_state(prepared)
         return
 
     loaded_state = load_state(current_date=today)
-    state = rollover_for_date(loaded_state, today)
+    state = ensure_daily_suggestions(rollover_for_date(loaded_state, today))
     if state != loaded_state:
         save_state(state)
 
@@ -487,6 +489,7 @@ def _put_state_in_session(state: GroundControlState) -> None:
     st.session_state["gc_edd_remaining"] = state.finance.edd_remaining
     st.session_state["gc_mission_date"] = state.mission_date
     st.session_state["gc_mission_history"] = state.mission_history
+    st.session_state["gc_mission_suggestions_applied"] = state.mission_suggestions_applied
 
     for index, mission in enumerate(state.missions):
         st.session_state[_mission_text_key(index)] = mission.text
@@ -504,6 +507,11 @@ def _state_from_session() -> GroundControlState:
         )
         for index in range(MISSION_COUNT)
     )
+    suggestions_applied = st.session_state.get("gc_mission_suggestions_applied")
+    if not isinstance(suggestions_applied, bool):
+        suggestions_applied = tuple(mission.text for mission in missions) != tuple(
+            f"Mission {index}" for index in range(1, MISSION_COUNT + 1)
+        )
 
     return GroundControlState(
         person_name=str(st.session_state.get("gc_person_name", "Trisha")),
@@ -516,6 +524,7 @@ def _state_from_session() -> GroundControlState:
         mission_date=str(st.session_state.get("gc_mission_date", local_date().isoformat())),
         missions=missions,
         mission_history=tuple(st.session_state.get("gc_mission_history", ())),
+        mission_suggestions_applied=suggestions_applied,
     )
 
 
@@ -533,7 +542,7 @@ def _render_panel_header(label: str, heading: str) -> None:
 def _render_finance(state: GroundControlState) -> None:
     cards = build_finance_cards(state.finance)
 
-    st.markdown('<p class="gc-grid-title">Financial telemetry</p>', unsafe_allow_html=True)
+    st.markdown('<p class="gc-grid-title">Runway &amp; reserves</p>', unsafe_allow_html=True)
     columns = st.columns([1, 1.45, 1, 1], gap="medium")
     for column, card in zip(columns, cards):
         card_class = "gc-card gc-card-primary" if card.label == "Runway" else "gc-card"
@@ -552,7 +561,7 @@ def _render_finance(state: GroundControlState) -> None:
 
 def _render_missions(state: GroundControlState) -> None:
     st.markdown(
-        '<section class="gc-panel"><p class="gc-panel-label">Today</p><h2>Mission</h2></section>',
+        '<p class="gc-panel-label">Today</p><h2 class="gc-section-title">Mission</h2>',
         unsafe_allow_html=True,
     )
     for index, mission in enumerate(state.missions):
@@ -571,6 +580,32 @@ def _render_missions(state: GroundControlState) -> None:
         on_click=_reuse_previous_unfinished,
         use_container_width=False,
     )
+
+
+def _render_yesterday(state: GroundControlState, today: date) -> None:
+    day = yesterday_mission_day(state, today)
+    st.markdown(
+        '<p class="gc-panel-label">Flight log</p><h2 class="gc-section-title">Yesterday</h2>',
+        unsafe_allow_html=True,
+    )
+
+    if day is None:
+        with st.expander("Yesterday · No flight log"):
+            st.caption("No mission record was saved for the prior day.")
+        return
+
+    completed = sum(mission.completed for mission in day.missions)
+    with st.expander(f"Yesterday · {completed} of {MISSION_COUNT} complete"):
+        rows = "".join(
+            f"""
+            <div class="gc-log-row">
+                <span>{'✓' if mission.completed else '○'}</span>
+                <span>{html.escape(mission.text)}</span>
+            </div>
+            """
+            for mission in day.missions
+        )
+        st.markdown(rows, unsafe_allow_html=True)
 
 
 def _reuse_previous_unfinished() -> None:
@@ -616,18 +651,23 @@ def _render_major_tom(state: GroundControlState) -> None:
         edd_remaining=snapshot.edd_remaining,
         monthly_burn=snapshot.monthly_burn,
     )
+    next_mission = next(
+        (mission.text for mission in state.missions if not mission.completed),
+        None,
+    )
     message = build_major_tom_message(
         SEED_DATA,
         runway_months=runway_months,
         current_date=date.fromisoformat(state.mission_date),
         missions_completed=sum(mission.completed for mission in state.missions),
+        next_mission=next_mission,
     )
 
     st.markdown(
         f"""
-        <section class="gc-panel gc-major-tom">
+        <section class="gc-panel gc-major-tom gc-brief">
             <p class="gc-panel-label">Major Tom</p>
-            <h2>You're oriented.</h2>
+            <h2>Morning brief</h2>
             <p class="gc-panel-body">{html.escape(message)}</p>
         </section>
         """,
@@ -643,13 +683,15 @@ def main() -> None:
     _ensure_session_state(today)
     state = _state_from_session()
     _render_header(state.person_name, current_time)
+    _render_major_tom(state)
     _render_finance(state)
 
-    left, right = st.columns([1, 1], gap="medium")
+    st.markdown('<p class="gc-grid-title">Daily flight plan</p>', unsafe_allow_html=True)
+    left, right = st.columns([1.35, 0.85], gap="large")
     with left:
         _render_missions(state)
     with right:
-        _render_major_tom(state)
+        _render_yesterday(state, today)
     _render_manual_override()
 
 

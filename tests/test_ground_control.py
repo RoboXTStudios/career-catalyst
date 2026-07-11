@@ -26,12 +26,15 @@ from ground_control.state import (
     DailyMission,
     GroundControlState,
     MissionDay,
+    daily_mission_suggestions,
+    ensure_daily_suggestions,
     load_state,
     reuse_unfinished_missions,
     rollover_for_date,
     save_state,
     seed_state,
     unfinished_from_previous_day,
+    yesterday_mission_day,
 )
 
 
@@ -102,11 +105,13 @@ def test_major_tom_message_receives_runway_context():
         runway_months=4.7,
         current_date=date(2026, 7, 10),
         missions_completed=1,
+        next_mission="Confirm the next EDD certification and payment date",
     )
 
     assert "4.7 months" in message
     assert "Friday, July 10" in message
-    assert "1 of 3 missions complete" in message
+    assert "1 of 3 complete" in message
+    assert "next: Confirm the next EDD certification and payment" in message
 
 
 def test_major_tom_message_is_limited_to_two_short_sentences():
@@ -198,9 +203,80 @@ def test_new_day_rollover_archives_prior_day_and_resets_completion():
     current = rollover_for_date(prior, date(2026, 7, 10))
 
     assert current.mission_date == "2026-07-10"
-    assert [mission.text for mission in current.missions] == ["Mission 1", "Mission 2", "Mission 3"]
+    assert len(current.missions) == 3
+    assert current.missions[0].text == "Confirm the next EDD certification and payment date"
+    assert current.missions[1].text == SEED_DATA["active_project"]["priority"]
+    assert current.missions[2].text == "Continue if still relevant: Still open"
     assert not any(mission.completed for mission in current.missions)
     assert current.mission_history == (MissionDay("2026-07-09", prior.missions),)
+
+
+def test_first_launch_prefills_three_local_rule_suggestions():
+    state = seed_state(SEED_DATA, current_date=date(2026, 7, 11))
+    suggestions = state.missions
+
+    assert state.mission_date == "2026-07-11"
+    assert len(suggestions) == 3
+    assert suggestions[0].text == "Confirm the next EDD certification and payment date"
+    assert suggestions[1].text == SEED_DATA["active_project"]["priority"]
+    assert "4.7 months of runway" in suggestions[2].text
+    assert not any(mission.completed for mission in suggestions)
+
+
+def test_placeholder_day_receives_suggestions_once_without_overwriting_edits():
+    placeholder_state = GroundControlState(
+        person_name="Trisha",
+        finance=load_finance_snapshot(SEED_DATA),
+        mission_date="2026-07-11",
+        missions=tuple(DailyMission(f"Mission {index}") for index in range(1, 4)),
+        mission_suggestions_applied=False,
+    )
+
+    suggested = ensure_daily_suggestions(placeholder_state)
+
+    assert len(suggested.missions) == 3
+    assert suggested.mission_suggestions_applied is True
+    assert ensure_daily_suggestions(suggested) == suggested
+
+
+def test_prior_day_unfinished_mission_is_an_optional_suggestion_candidate():
+    finance = load_finance_snapshot(SEED_DATA)
+    previous = (
+        DailyMission("Already complete", True),
+        DailyMission("Submit benefits paperwork", False),
+        DailyMission("Another open item", False),
+    )
+
+    suggestions = daily_mission_suggestions(finance, previous)
+
+    assert suggestions[2].text == "Continue if still relevant: Submit benefits paperwork"
+
+
+def test_yesterday_summary_uses_only_the_prior_local_calendar_day():
+    yesterday = MissionDay(
+        "2026-07-10",
+        (
+            DailyMission("One", True),
+            DailyMission("Two", False),
+            DailyMission("Three", True),
+        ),
+    )
+    older = MissionDay(
+        "2026-07-09",
+        tuple(DailyMission(f"Older {index}") for index in range(1, 4)),
+    )
+    state = GroundControlState(
+        person_name="Trisha",
+        finance=load_finance_snapshot(SEED_DATA),
+        mission_date="2026-07-11",
+        missions=seed_state(SEED_DATA, current_date=date(2026, 7, 11)).missions,
+        mission_history=(older, yesterday),
+    )
+
+    summary = yesterday_mission_day(state, date(2026, 7, 11))
+
+    assert summary == yesterday
+    assert sum(mission.completed for mission in summary.missions) == 2
 
 
 def test_unfinished_missions_are_reused_only_on_request():
