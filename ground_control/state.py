@@ -8,13 +8,9 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, Mapping
 
-from ground_control.model import (
-    FinanceSnapshot,
-    calculate_runway_months,
-    load_finance_snapshot,
-    load_missions,
-)
 from ground_control.local_time import local_date
+from ground_control.mission_engine import run_default_mission_engine
+from ground_control.model import FinanceSnapshot, load_finance_snapshot, load_missions
 from ground_control.seed_data import SEED_DATA
 
 
@@ -57,57 +53,13 @@ def _blank_missions() -> tuple[DailyMission, ...]:
     return tuple(DailyMission(f"Mission {index}") for index in range(1, MISSION_COUNT + 1))
 
 
-def _active_project_priority(seed: Mapping[str, Any]) -> str:
-    project = seed.get("active_project")
-    if not isinstance(project, Mapping) or not project.get("priority"):
-        raise ValueError("Seed data must include an active project priority")
-    return str(project["priority"]).strip()
-
-
 def daily_mission_suggestions(
     finance: FinanceSnapshot,
     previous_missions: tuple[DailyMission, ...] = (),
     seed: Mapping[str, Any] = SEED_DATA,
 ) -> tuple[DailyMission, ...]:
-    runway = calculate_runway_months(
-        cash=finance.cash,
-        edd_remaining=finance.edd_remaining,
-        monthly_burn=finance.monthly_burn,
-    )
-    if runway < 1:
-        finance_action = f"Protect essential bills with only {runway:.1f} months of runway"
-    elif runway < 3:
-        finance_action = f"Review essential expenses against {runway:.1f} months of runway"
-    else:
-        finance_action = f"Review upcoming essentials against {runway:.1f} months of runway"
-
-    admin_action = (
-        "Confirm the next EDD certification and payment date"
-        if finance.edd_remaining > 0
-        else "Confirm Fidelity rollover availability"
-    )
-    unfinished = next(
-        (
-            mission.text
-            for mission in previous_missions
-            if not mission.completed and not mission.text.startswith("Mission ")
-        ),
-        None,
-    )
-    if unfinished:
-        third_action = f"Continue if still relevant: {unfinished}"
-    elif runway < 3:
-        third_action = admin_action
-    else:
-        third_action = finance_action
-
-    highest_leverage_action = finance_action if runway < 3 else admin_action
-
-    suggestions = (
-        DailyMission(highest_leverage_action),
-        DailyMission(_active_project_priority(seed)),
-        DailyMission(third_action),
-    )
+    result = run_default_mission_engine(finance, previous_missions, seed)
+    suggestions = tuple(DailyMission(mission) for mission in result.missions)
     if len(suggestions) != MISSION_COUNT:
         raise ValueError("Ground Control expects exactly three mission suggestions")
     return suggestions

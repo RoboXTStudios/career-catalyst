@@ -193,23 +193,16 @@ def runway_status(runway_months: float) -> str:
 
 
 def build_major_tom_message(
-    seed: Mapping[str, Any] = SEED_DATA,
     *,
-    runway_months: float,
+    mission_summary: str,
     current_date: date | None = None,
     missions_completed: int = 0,
     next_mission: str | None = None,
-    career_state: str = "Waiting",
-    creative_state: str = "Holding Pattern",
 ) -> str:
-    del seed  # Retained for API compatibility with existing callers.
     today = current_date or local_date()
     completed = min(max(missions_completed, 0), 3)
-    financial_state = runway_status_label(runway_months)
-    first = (
-        f"{today.strftime('%A, %B')} {today.day}: finance {financial_state.lower()}; "
-        f"career {career_state.lower()}; creative {creative_state.lower()}."
-    )
+    engine_summary = mission_summary.strip().rstrip(".") or "Mission systems waiting"
+    first = f"{today.strftime('%A, %B')} {today.day}: {engine_summary}."
     if completed == 3:
         second = "All missions complete; today's momentum is secured."
     elif next_mission:

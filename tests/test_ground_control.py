@@ -111,28 +111,29 @@ def test_mission_count_validation_rejects_scope_creep():
         load_missions(seed)
 
 
-def test_major_tom_message_receives_runway_context():
+def test_major_tom_message_communicates_mission_engine_brief():
     message = build_major_tom_message(
-        SEED_DATA,
-        runway_months=4.7,
+        mission_summary=(
+            "Finance nominal; Ground Control in motion; "
+            "Career in flight; Health check-in waiting."
+        ),
         current_date=date(2026, 7, 10),
         missions_completed=1,
         next_mission="Confirm the next EDD certification and payment date",
-        career_state="In Flight",
-        creative_state="In Motion",
     )
 
     assert "Friday, July 10" in message
-    assert "finance nominal" in message
-    assert "career in flight" in message
-    assert "creative in motion" in message
+    assert "Finance nominal" in message
+    assert "Career in flight" in message
+    assert "Ground Control in motion" in message
+    assert "Health check-in waiting" in message
     assert "Next move: Confirm the next EDD certification and payment" in message
     assert "4.7" not in message
     assert "$" not in message
 
 
 def test_major_tom_message_is_limited_to_two_short_sentences():
-    message = build_major_tom_message(SEED_DATA, runway_months=4.7)
+    message = build_major_tom_message(mission_summary="Finance nominal")
     sentences = re.findall(r".+?(?:[.!?](?=\s|$)|$)", message)
 
     assert len(sentences) <= 2
@@ -200,13 +201,10 @@ def test_saved_finance_recalculates_financial_state():
         monthly_burn=state.finance.monthly_burn,
     )
     financial_state = build_financial_state(state.finance)
-    message = build_major_tom_message(SEED_DATA, runway_months=runway)
 
     assert runway == pytest.approx(5.0)
     assert financial_state.runway_label == "5.0 months"
     assert financial_state.status == "Nominal"
-    assert "finance nominal" in message
-    assert "5.0" not in message
 
 
 def test_new_day_rollover_archives_prior_day_and_resets_completion():
@@ -227,7 +225,7 @@ def test_new_day_rollover_archives_prior_day_and_resets_completion():
     assert len(current.missions) == 3
     assert current.missions[0].text == "Confirm the next EDD certification and payment date"
     assert current.missions[1].text == SEED_DATA["active_project"]["priority"]
-    assert current.missions[2].text == "Continue if still relevant: Still open"
+    assert current.missions[2].text == "Review the next career follow-up"
     assert not any(mission.completed for mission in current.missions)
     assert current.mission_history == (MissionDay("2026-07-09", prior.missions),)
 
@@ -240,7 +238,7 @@ def test_first_launch_prefills_three_local_rule_suggestions():
     assert len(suggestions) == 3
     assert suggestions[0].text == "Confirm the next EDD certification and payment date"
     assert suggestions[1].text == SEED_DATA["active_project"]["priority"]
-    assert "4.7 months of runway" in suggestions[2].text
+    assert suggestions[2].text == "Review the next career follow-up"
     assert not any(mission.completed for mission in suggestions)
 
 
@@ -270,7 +268,7 @@ def test_prior_day_unfinished_mission_is_an_optional_suggestion_candidate():
 
     suggestions = daily_mission_suggestions(finance, previous)
 
-    assert suggestions[2].text == "Continue if still relevant: Submit benefits paperwork"
+    assert suggestions[0].text == "Continue if still relevant: Submit benefits paperwork"
 
 
 def test_yesterday_summary_uses_only_the_prior_local_calendar_day():
@@ -329,17 +327,8 @@ def test_unfinished_missions_are_reused_only_on_request():
     ("months", "expected"),
     [(0.9, "critical burn"), (2.9, "adjust course"), (3.0, "nominal")],
 )
-def test_major_tom_briefing_tracks_runway_status(months, expected):
-    message = build_major_tom_message(
-        SEED_DATA,
-        runway_months=months,
-        current_date=date(2026, 7, 10),
-        missions_completed=3,
-    )
-
+def test_runway_status_tracks_financial_thresholds(months, expected):
     assert runway_status(months) == expected
-    assert expected in message
-    assert "All missions complete" in message
 
 
 @pytest.mark.parametrize(

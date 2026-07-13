@@ -35,6 +35,10 @@ from ground_control.local_time import (  # noqa: E402
     local_date,
     local_now,
 )
+from ground_control.mission_engine import (  # noqa: E402
+    MissionEngineResult,
+    run_default_mission_engine,
+)
 from ground_control.seed_data import SEED_DATA  # noqa: E402
 from ground_control.state import (  # noqa: E402
     DailyMission,
@@ -824,22 +828,17 @@ def _render_manual_override() -> None:
 
 def _render_major_tom(
     state: GroundControlState,
-    financial: FinancialState,
-    career: CareerState,
-    creative: CreativeState,
+    mission_result: MissionEngineResult,
 ) -> None:
     next_mission = next(
         (mission.text for mission in state.missions if not mission.completed),
         None,
     )
     message = build_major_tom_message(
-        SEED_DATA,
-        runway_months=financial.runway_months,
+        mission_summary=mission_result.summary,
         current_date=date.fromisoformat(state.mission_date),
         missions_completed=sum(mission.completed for mission in state.missions),
         next_mission=next_mission,
-        career_state=career.status,
-        creative_state=creative.status,
     )
 
     st.markdown(
@@ -864,8 +863,9 @@ def main() -> None:
     financial = build_financial_state(state.finance)
     career = load_career_state(LocalCareerCatalystProvider(SEED_DATA))
     creative = build_creative_state(SEED_DATA, missions=state.missions)
+    mission_result = run_default_mission_engine(state.finance, seed=SEED_DATA)
     _render_header(state.person_name, current_time, financial)
-    _render_major_tom(state, financial, career, creative)
+    _render_major_tom(state, mission_result)
     _render_state_cards(financial, career, creative)
 
     st.markdown('<p class="gc-grid-title">Daily flight plan</p>', unsafe_allow_html=True)
