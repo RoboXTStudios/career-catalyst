@@ -2335,6 +2335,71 @@ def _render_generate_package(st: Any) -> None:
         _show_output_paths(st, outputs, "generated_output")
 
 
+FOLLOW_UP_SKIP_CATEGORIES = (
+    "Closed or hidden",
+    "Follow-up already sent",
+    "No direct contact route",
+    "Not yet eligible",
+)
+
+
+def _followup_skip_category(reason: Any) -> str:
+    normalized = str(reason or "").lower()
+    if "already sent" in normalized or "already been sent" in normalized:
+        return "Follow-up already sent"
+    if any(
+        phrase in normalized
+        for phrase in (
+            "contact route",
+            "direct follow-up path",
+            "recruiter, hiring manager",
+        )
+    ):
+        return "No direct contact route"
+    if "waiting period" in normalized or "applied date" in normalized:
+        return "Not yet eligible"
+    return "Closed or hidden"
+
+
+def _render_followup_bulk_summary(st: Any, summary: Dict[str, Any]) -> None:
+    st.success(
+        f"Generated {summary['generated_count']} · Skipped {summary['skipped_count']} "
+        f"· Failed {summary['failed_count']}"
+    )
+    if summary["generated_roles"]:
+        st.markdown("**Generated roles**")
+        for role in summary["generated_roles"]:
+            st.caption(f"{role['company']} · {role['role']}")
+
+    skipped_roles = summary["skipped_roles"]
+    if skipped_roles:
+        grouped = {category: [] for category in FOLLOW_UP_SKIP_CATEGORIES}
+        for role in skipped_roles:
+            grouped[_followup_skip_category(role.get("reason"))].append(role)
+        with st.expander("View skipped roles", expanded=False):
+            for category in FOLLOW_UP_SKIP_CATEGORIES:
+                roles = grouped[category]
+                role_items = "".join(
+                    "<li><strong>"
+                    f"{html.escape(str(role['company']))} · {html.escape(str(role['role']))}"
+                    "</strong><br>"
+                    f"{html.escape(str(role['reason']))}</li>"
+                    for role in roles
+                )
+                if not role_items:
+                    role_items = "<li>No roles</li>"
+                st.markdown(
+                    "<details>"
+                    f"<summary>{html.escape(category)} · {len(roles)}</summary>"
+                    f"<ul>{role_items}</ul>"
+                    "</details>",
+                    unsafe_allow_html=True,
+                )
+
+    for tracker_id, error in summary["failed"].items():
+        st.warning(f"{tracker_id}: {error}")
+
+
 def _render_followups(st: Any) -> None:
     st.markdown(
         '<h2 class="cc-section-heading">Follow-Up</h2>',
@@ -2348,20 +2413,7 @@ def _render_followups(st: Any) -> None:
     ):
         with st.spinner("Generating eligible follow-up packages…"):
             summary = generate_missing_followups(PROJECT_ROOT)
-        st.success(
-            f"Generated {summary['generated_count']}; skipped "
-            f"{summary['skipped_count']}; failed {summary['failed_count']}."
-        )
-        if summary["generated_roles"]:
-            st.markdown("**Generated roles**")
-            for role in summary["generated_roles"]:
-                st.caption(f"{role['company']} · {role['role']}")
-        if summary["skipped_roles"]:
-            st.markdown("**Skipped roles**")
-            for role in summary["skipped_roles"]:
-                st.caption(f"{role['company']} · {role['role']}: {role['reason']}")
-        for tracker_id, error in summary["failed"].items():
-            st.warning(f"{tracker_id}: {error}")
+        _render_followup_bulk_summary(st, summary)
 
     followup_directory = PROJECT_ROOT / "exports" / "followups"
     if folder_column.button("Open follow-up folder", use_container_width=True):

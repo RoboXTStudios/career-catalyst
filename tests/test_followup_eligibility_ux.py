@@ -2,6 +2,7 @@ from datetime import date
 
 import pytest
 
+from app import _render_followup_bulk_summary
 from scripts.application_tracker import follow_up_action_state, follow_up_eligibility
 from scripts import generate_followups as followup_generator
 
@@ -172,3 +173,63 @@ def test_bulk_generation_prefilters_and_reports_every_skip(monkeypatch, tmp_path
     assert set(summary["skipped"]) == {"draft", "portal", "sent"}
     assert all(summary["skipped"].values())
     assert summary["failed_count"] == 0
+
+
+class SummaryRendererStub:
+    def __init__(self):
+        self.success_messages = []
+        self.expanders = []
+        self.markdown_blocks = []
+
+    def success(self, message):
+        self.success_messages.append(message)
+
+    def expander(self, label, expanded):
+        self.expanders.append((label, expanded))
+        return self
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_args):
+        return False
+
+    def markdown(self, content, **_kwargs):
+        self.markdown_blocks.append(content)
+
+    def caption(self, _content):
+        pass
+
+    def warning(self, _content):
+        pass
+
+
+def test_skipped_role_details_are_collapsed_by_default():
+    renderer = SummaryRendererStub()
+    summary = {
+        "generated_count": 0,
+        "skipped_count": 4,
+        "failed_count": 0,
+        "generated_roles": [],
+        "skipped_roles": [
+            {"company": "A", "role": "One", "reason": "This role is closed or hidden."},
+            {"company": "B", "role": "Two", "reason": "A follow-up has already been sent."},
+            {"company": "C", "role": "Three", "reason": "No direct contact route is saved."},
+            {"company": "D", "role": "Four", "reason": "The waiting period has 2 days remaining."},
+        ],
+        "failed": {},
+    }
+
+    _render_followup_bulk_summary(renderer, summary)
+
+    assert renderer.success_messages == ["Generated 0 · Skipped 4 · Failed 0"]
+    assert renderer.expanders == [("View skipped roles", False)]
+    rendered = "\n".join(renderer.markdown_blocks)
+    for category in (
+        "Closed or hidden · 1",
+        "Follow-up already sent · 1",
+        "No direct contact route · 1",
+        "Not yet eligible · 1",
+    ):
+        assert category in rendered
+    assert "<details open" not in rendered
