@@ -497,7 +497,14 @@ def followups_command(tracker_id: str) -> int:
 def followups_all_command(force: bool = False) -> int:
     result = generate_missing_followups(PROJECT_ROOT, force=force)
     print(f"Generated: {result['generated_count']}")
-    print(f"Skipped existing: {result['skipped_existing_count']}")
+    for role in result["generated_roles"]:
+        print(f"- generated: {role['company']} | {role['role']} ({role['id']})")
+    print(f"Skipped: {result['skipped_count']}")
+    for role in result["skipped_roles"]:
+        print(
+            f"- skipped: {role['company']} | {role['role']} "
+            f"({role['id']}): {role['reason']}"
+        )
     print(f"Failed: {result['failed_count']}")
     for tracker_id, error in result["failed"].items():
         print(f"- {tracker_id}: {error}", file=sys.stderr)
@@ -613,7 +620,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     followups_parser.add_argument("tracker_id")
     followups_all_parser = subparsers.add_parser(
-        "followups-all", help="Generate missing follow-ups for all visible Applied roles"
+        "followups-all", help="Generate only currently eligible follow-ups"
     )
     followups_all_parser.add_argument("--force", action="store_true")
     status_parser = subparsers.add_parser(

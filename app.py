@@ -17,7 +17,7 @@ from scripts.application_tracker import (
     HIDDEN_STATUSES,
     VALID_STATUSES,
     TrackerValidationError,
-    follow_up_eligibility,
+    follow_up_action_state,
     get_record_status,
     load_application_tracker,
     normalize_status,
@@ -1430,9 +1430,9 @@ def _render_role_card(
                 apply_dashboard_status_action(tracker_id, "reviewed", PROJECT_ROOT)
                 st.session_state["dashboard_notice"] = "Role remains Drafted."
                 st.rerun()
-            follow_up_allowed, _ = follow_up_eligibility(application)
-            if follow_up_allowed and more_columns[3].button(
-                "Generate Follow-Up Materials",
+            follow_up_action = follow_up_action_state(application)
+            if follow_up_action["eligible"] and more_columns[3].button(
+                "Generate Follow-Up",
                 key=f"dashboard_more_followup_{tracker_id}",
                 use_container_width=True,
             ):
@@ -1443,6 +1443,10 @@ def _render_role_card(
                 else:
                     st.session_state["dashboard_notice"] = "Follow-up materials generated."
                     st.rerun()
+            elif not follow_up_action["eligible"]:
+                more_columns[3].caption(
+                    f"{follow_up_action['label']}: {follow_up_action['reason']}"
+                )
 
         with st.expander("Advanced edit role", expanded=False):
             current_status = get_record_status(application)
@@ -2338,16 +2342,24 @@ def _render_followups(st: Any) -> None:
     )
     bulk_column, folder_column = st.columns((3, 1))
     if bulk_column.button(
-        "Generate missing follow-ups for all Applied roles",
+        "Generate eligible follow-ups",
         type="primary",
         use_container_width=True,
     ):
-        with st.spinner("Generating missing follow-up packages…"):
+        with st.spinner("Generating eligible follow-up packages…"):
             summary = generate_missing_followups(PROJECT_ROOT)
         st.success(
-            f"Generated {summary['generated_count']}; skipped existing "
-            f"{summary['skipped_existing_count']}; failed {summary['failed_count']}."
+            f"Generated {summary['generated_count']}; skipped "
+            f"{summary['skipped_count']}; failed {summary['failed_count']}."
         )
+        if summary["generated_roles"]:
+            st.markdown("**Generated roles**")
+            for role in summary["generated_roles"]:
+                st.caption(f"{role['company']} · {role['role']}")
+        if summary["skipped_roles"]:
+            st.markdown("**Skipped roles**")
+            for role in summary["skipped_roles"]:
+                st.caption(f"{role['company']} · {role['role']}: {role['reason']}")
         for tracker_id, error in summary["failed"].items():
             st.warning(f"{tracker_id}: {error}")
 
@@ -2358,9 +2370,13 @@ def _render_followups(st: Any) -> None:
         opened, message = open_local_path(followup_directory)
         (st.success if opened else st.warning)(message)
 
-    applications = networking_applications(_load_applications(st))
+    applications = [
+        application
+        for application in _load_applications(st)
+        if application.get("show_on_dashboard") is not False
+    ]
     if not applications:
-        st.info("No roles are ready for follow-up or pre-application networking.")
+        st.info("No roles are available for follow-up review.")
         return
 
     by_id = {str(item["id"]): item for item in applications}
@@ -2376,11 +2392,28 @@ def _render_followups(st: Any) -> None:
         f"**Current status:** {html.escape(str(application.get('status') or 'Not recorded'))}"
     )
     mode = (
-        "Post-application follow-up"
-        if get_record_status(application) in {"Applied", "Follow-up", "Interviewing"}
-        else "Pre-application networking"
+        "Application follow-up"
+        if get_record_status(application) in FOLLOWUP_ELIGIBLE_STATUSES
+        else "Status guidance"
     )
     mode_column.markdown(f"**Outreach mode:** {mode}")
+    follow_up_action = follow_up_action_state(application)
+    generate_clicked = False
+    if follow_up_action["eligible"]:
+        st.caption(str(follow_up_action["reason"]))
+        generate_clicked = st.button("Generate Follow-Up", type="primary")
+    elif (
+        follow_up_action["key"] == "check_application_status"
+        and follow_up_action["portal_url"]
+    ):
+        st.caption(str(follow_up_action["reason"]))
+        st.link_button(
+            "Check Application Status",
+            str(follow_up_action["portal_url"]),
+            type="primary",
+        )
+    else:
+        st.info(f"{follow_up_action['label']} · {follow_up_action['reason']}")
     try:
         _render_intelligence_preview(
             st, detected_application_voice(tracker_id, PROJECT_ROOT)
@@ -2388,17 +2421,12 @@ def _render_followups(st: Any) -> None:
     except Exception as error:
         st.caption(f"Role intelligence unavailable: {error}")
 
-    button_label = (
-        "Regenerate Follow-Ups"
-        if _followup_strategy_path(application).is_file()
-        else "Generate Follow-Ups"
-    )
-    if st.button(button_label, type="primary"):
+    if generate_clicked:
         try:
             with st.spinner("Preparing role-specific follow-up messages and strategy…"):
                 result = generate_followups(tracker_id, PROJECT_ROOT)
         except FollowupGenerationError as error:
-            st.error(str(error))
+            st.warning(str(error))
         else:
             st.success(
                 f"Generated follow-up materials for {result['role']} at {result['company']}."

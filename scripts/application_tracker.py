@@ -216,11 +216,10 @@ def _has_contact_path(record: Dict[str, Any]) -> bool:
 
 def _follow_up_already_sent_without_new_event(record: Dict[str, Any]) -> bool:
     state = normalize_tracker_value(record.get("follow_up_status"))
-    if state == "follow up sent" or record.get("follow_up_sent") is True:
-        return True
+    explicitly_sent = state == "follow up sent" or record.get("follow_up_sent") is True
     history = record.get("application_history")
     if not isinstance(history, list):
-        return False
+        return explicitly_sent
     last_follow_up = -1
     last_new_event = -1
     for index, event in enumerate(history):
@@ -229,42 +228,266 @@ def _follow_up_already_sent_without_new_event(record: Dict[str, Any]) -> bool:
         event_type = normalize_tracker_value(event.get("event") or event.get("type"))
         if event_type in {"follow up sent", "followup sent"}:
             last_follow_up = index
-        if event_type in {"interview scheduled", "status changed", "employer response"}:
+        if event_type in {
+            "employer response",
+            "interview completed",
+            "interview rescheduled",
+            "interview scheduled",
+        }:
             last_new_event = index
-    return last_follow_up >= last_new_event and last_follow_up >= 0
+        if event_type == "status changed" and normalize_tracker_value(event.get("to")) in {
+            "interviewing",
+            "offer",
+        }:
+            last_new_event = index
+    if last_new_event > last_follow_up:
+        return False
+    return explicitly_sent or (last_follow_up >= last_new_event and last_follow_up >= 0)
 
 
-def follow_up_eligibility(record: Dict[str, Any], today: Optional[date] = None) -> Tuple[bool, str]:
-    """Return whether a real, timely follow-up can be offered for a role."""
+def _portal_url(record: Dict[str, Any]) -> str:
+    return str(record.get("application_portal_url") or "").strip()
+
+
+def _follow_up_wait_days(record: Dict[str, Any]) -> int:
+    for field in (
+        "follow_up_wait_days",
+        "follow_up_waiting_days",
+        "configured_follow_up_days",
+    ):
+        value = record.get(field)
+        if value in (None, ""):
+            continue
+        try:
+            return max(0, int(value))
+        except (TypeError, ValueError):
+            continue
+    return 5
+
+
+def _under_consideration_response_required(record: Dict[str, Any]) -> bool:
+    if (
+        record.get("response_required") is True
+        or record.get("follow_up_required") is True
+    ):
+        return True
+    evidence = normalize_tracker_value(
+        " ".join(
+            str(record.get(field) or "")
+            for field in ("response_action", "employer_response", "next_action")
+        )
+    )
+    return any(
+        phrase in evidence
+        for phrase in (
+            "reply",
+            "respond",
+            "send availability",
+            "provide information",
+            "action required",
+        )
+    )
+
+
+def _interview_follow_up_trigger(record: Dict[str, Any]) -> bool:
+    if (
+        record.get("interview_follow_up_required") is True
+        or record.get("follow_up_required") is True
+    ):
+        return True
+    evidence = normalize_tracker_value(
+        " ".join(
+            str(record.get(field) or "")
+            for field in (
+                "follow_up_trigger",
+                "follow_up_type",
+                "interview_follow_up_type",
+                "interview_action",
+                "next_action",
+            )
+        )
+    )
+    if any(
+        phrase in evidence
+        for phrase in (
+            "thank you",
+            "schedule",
+            "scheduling",
+            "confirm interview",
+            "send availability",
+            "reply",
+            "respond",
+            "interview outreach",
+        )
+    ):
+        return True
+    history = record.get("application_history")
+    if not isinstance(history, list):
+        return False
+    last_follow_up = -1
+    last_trigger = -1
+    for index, event in enumerate(history):
+        if not isinstance(event, dict):
+            continue
+        event_type = normalize_tracker_value(event.get("event") or event.get("type"))
+        if event_type in {"follow up sent", "followup sent"}:
+            last_follow_up = index
+        if event_type in {
+            "employer response",
+            "interview completed",
+            "interview rescheduled",
+            "interview scheduled",
+        }:
+            last_trigger = index
+    return last_trigger > last_follow_up
+
+
+def _follow_up_action(
+    key: str,
+    label: str,
+    reason: str,
+    status: str,
+    portal_url: str = "",
+) -> Dict[str, Any]:
+    return {
+        "key": key,
+        "label": label,
+        "reason": reason,
+        "eligible": key == "generate_follow_up",
+        "status": status,
+        "portal_url": portal_url,
+    }
+
+
+def follow_up_action_state(
+    record: Dict[str, Any], today: Optional[date] = None
+) -> Dict[str, Any]:
+    """Return the one contextual follow-up action a role can show today."""
     status = get_record_status(record)
-    if record.get("show_on_dashboard") is False or legacy_status_value(record) in {"Invalid", "Invalid/Hidden"}:
-        return False, "Hidden / invalid role"
+    portal_url = _portal_url(record)
+    if record.get("show_on_dashboard") is False or legacy_status_value(record) in {
+        "Invalid",
+        "Invalid/Hidden",
+    }:
+        return _follow_up_action(
+            "no_action_today",
+            "No action today",
+            "This role is closed or hidden, so no follow-up is needed.",
+            status,
+        )
+    terminal_reasons = {
+        "Drafted": "This role is still drafted and has not been applied to.",
+        "Offer": "An offer does not need a generic application follow-up.",
+        "Rejected": "This application was rejected, so no follow-up is needed.",
+        "Withdrawn / Closed": "This application is closed, so no follow-up is needed.",
+    }
+    if status in terminal_reasons:
+        return _follow_up_action(
+            "no_action_today", "No action today", terminal_reasons[status], status
+        )
     if status not in {"Applied", "Under Consideration", "Interviewing"}:
-        return False, f"Status {status} is not eligible"
+        return _follow_up_action(
+            "no_action_today",
+            "No action today",
+            f"Status {status} does not support application follow-up.",
+            status,
+        )
     follow_up_state = normalize_tracker_value(record.get("follow_up_status"))
     if (
         follow_up_state in {"not applicable", "no follow up", "no follow up needed"}
         or record.get("follow_up_not_applicable") is True
-        or _follow_up_already_sent_without_new_event(record)
     ):
-        return False, "Follow-up is not applicable or already sent"
-    if not _has_contact_path(record) and status != "Interviewing":
-        return False, "No direct follow-up path is available. Continue monitoring the employer portal."
+        return _follow_up_action(
+            "no_action_today",
+            "No action today",
+            "Follow-up is marked not applicable for this role.",
+            status,
+        )
+    if _follow_up_already_sent_without_new_event(record):
+        return _follow_up_action(
+            "follow_up_already_sent",
+            "Follow-up already sent",
+            "A follow-up has already been sent, and no new stage-specific trigger is recorded.",
+            status,
+        )
+
+    response_required = (
+        status == "Under Consideration"
+        and _under_consideration_response_required(record)
+    )
+    has_contact_path = _has_contact_path(record) or response_required
+    if status == "Interviewing" and not _interview_follow_up_trigger(record):
+        return _follow_up_action(
+            "no_action_today",
+            "No action today",
+            "No interview thank-you, scheduling, or interview-related outreach is due today.",
+            status,
+        )
+    if not has_contact_path:
+        if portal_url:
+            return _follow_up_action(
+                "check_application_status",
+                "Check Application Status",
+                "No direct contact route is saved. Check the employer portal for status updates.",
+                status,
+                portal_url,
+            )
+        return _follow_up_action(
+            "no_direct_follow_up_path",
+            "No direct follow-up path",
+            "No recruiter, hiring manager, referral, or warm-contact route is saved.",
+            status,
+        )
     if status == "Applied":
-        applied_value = next((record.get(key) for key in ("submitted_date", "applied_date", "application_date") if record.get(key)), None)
+        applied_value = next(
+            (
+                record.get(key)
+                for key in ("submitted_date", "applied_date", "application_date")
+                if record.get(key)
+            ),
+            None,
+        )
         if not applied_value:
-            return False, "Applied date is required"
+            return _follow_up_action(
+                "not_yet_eligible",
+                "Not yet eligible",
+                "An applied date is needed before the waiting period can be calculated.",
+                status,
+            )
         try:
             applied = date.fromisoformat(str(applied_value)[:10])
         except ValueError:
-            return False, "Applied date is invalid"
-        if ((today or date.today()) - applied).days < 5:
-            return False, "Waiting period has not elapsed"
-    if status == "Under Consideration" and not (
-        _has_contact_path(record) or str(record.get("next_action") or "").strip()
-    ):
-        return False, "Waiting for employer response. No action today."
-    return True, "Follow-up window has opened and a contact path is available."
+            return _follow_up_action(
+                "not_yet_eligible",
+                "Not yet eligible",
+                "The applied date is invalid, so the waiting period cannot be calculated.",
+                status,
+            )
+        wait_days = _follow_up_wait_days(record)
+        elapsed = ((today or date.today()) - applied).days
+        if elapsed < wait_days:
+            remaining = wait_days - elapsed
+            return _follow_up_action(
+                "not_yet_eligible",
+                "Not yet eligible",
+                f"The follow-up waiting period has {remaining} day{'s' if remaining != 1 else ''} remaining.",
+                status,
+            )
+    if status == "Interviewing":
+        reason = "A stage-appropriate interview follow-up is due and a contact route is available."
+    elif response_required:
+        reason = "A specific employer response is required, so a follow-up can be prepared."
+    else:
+        reason = "The waiting period has elapsed and a direct contact route is available."
+    return _follow_up_action(
+        "generate_follow_up", "Generate Follow-Up", reason, status
+    )
+
+
+def follow_up_eligibility(record: Dict[str, Any], today: Optional[date] = None) -> Tuple[bool, str]:
+    """Compatibility wrapper around the shared contextual action helper."""
+    action = follow_up_action_state(record, today)
+    return bool(action["eligible"]), str(action["reason"])
 
 
 def make_tracker_id(company: Any, role: Any) -> str:

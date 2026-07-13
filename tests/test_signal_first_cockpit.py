@@ -65,8 +65,9 @@ def test_portal_only_role_never_gets_follow_up_action():
         "application_portal_url": "https://portal.example/applications",
     }
     signal = next_action_signal(role, date(2026, 7, 13))
-    assert signal["kind"] == "waiting"
-    assert "No direct follow-up path" in signal["reason"]
+    assert signal["kind"] == "check_application_status"
+    assert signal["label"] == "Check Application Status"
+    assert "employer portal" in signal["reason"]
 
 
 def test_todays_focus_selects_exactly_one_highest_leverage_role():

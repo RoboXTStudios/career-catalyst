@@ -12,9 +12,9 @@ import re
 from typing import Any, Dict, Iterable, Mapping, Optional
 
 try:
-    from .application_tracker import follow_up_eligibility, get_record_status
+    from .application_tracker import follow_up_action_state, get_record_status
 except ImportError:
-    from application_tracker import follow_up_eligibility, get_record_status
+    from application_tracker import follow_up_action_state, get_record_status
 
 
 IN_FLIGHT_STATUSES = frozenset(
@@ -47,28 +47,26 @@ def _missing_portal(record: Mapping[str, Any]) -> bool:
     ).strip()
 
 
-def _valid_stored_action(record: Mapping[str, Any], status: str) -> str:
-    action = str(record.get("next_action") or "").strip()
-    if not action:
-        return ""
-    if status != "Drafted" and any(
-        phrase in action.lower()
-        for phrase in ("generate application package", "mark applied", "review fit")
-    ):
-        return ""
-    return action
-
-
 def next_action_signal(
     record: Mapping[str, Any], today: Optional[date] = None
 ) -> Dict[str, Any]:
     """Return exactly one calm, contextual recommendation for a role."""
     values = dict(record)
     status = get_record_status(values)
-    eligible, follow_up_reason = follow_up_eligibility(values, today)
-    if not eligible and str(values.get("follow_up_ineligible_reason") or "").strip():
-        follow_up_reason = str(values["follow_up_ineligible_reason"])
+    follow_up_action = follow_up_action_state(values, today)
+    eligible = bool(follow_up_action["eligible"])
+    follow_up_reason = str(follow_up_action["reason"])
 
+    if eligible:
+        return {
+            "kind": "follow_up",
+            "label": str(follow_up_action["label"]),
+            "reason": follow_up_reason,
+            "action": str(values.get("next_action") or follow_up_action["label"]),
+            "action_key": "view_role",
+            "needs_action": True,
+            "rank": 0 if status == "Interviewing" else 1,
+        }
     if status == "Interviewing":
         return {
             "kind": "interview",
@@ -78,27 +76,6 @@ def next_action_signal(
             "action_key": "view_role",
             "needs_action": True,
             "rank": 0,
-        }
-    if eligible:
-        return {
-            "kind": "follow_up",
-            "label": "Follow-Up Due",
-            "reason": follow_up_reason,
-            "action": str(values.get("next_action") or "Prepare a role-specific follow-up."),
-            "action_key": "view_role",
-            "needs_action": True,
-            "rank": 1,
-        }
-    stored_action = _valid_stored_action(values, status)
-    if status == "Under Consideration" and stored_action:
-        return {
-            "kind": "under_consideration",
-            "label": "Under Consideration",
-            "reason": "A valid next step is available for this role.",
-            "action": stored_action,
-            "action_key": "view_role",
-            "needs_action": True,
-            "rank": 2,
         }
     if status == "Drafted":
         return {
@@ -140,15 +117,22 @@ def next_action_signal(
             "needs_action": False,
             "rank": 99,
         }
-    reason = follow_up_reason
-    if "No direct follow-up path" not in reason:
-        reason = "Waiting for employer response. No action is required today."
+    if follow_up_action["key"] == "check_application_status":
+        return {
+            "kind": "check_application_status",
+            "label": str(follow_up_action["label"]),
+            "reason": follow_up_reason,
+            "action": "Check the employer application portal.",
+            "action_key": "check_portal",
+            "needs_action": True,
+            "rank": 4,
+        }
     return {
         "kind": "waiting",
-        "label": "No Action Today",
-        "reason": reason,
-        "action": "Continue monitoring the employer portal.",
-        "action_key": "check_portal" if values.get("application_portal_url") else "",
+        "label": str(follow_up_action["label"]),
+        "reason": follow_up_reason,
+        "action": "No follow-up action is needed today.",
+        "action_key": "",
         "needs_action": False,
         "rank": 50,
     }
@@ -201,7 +185,9 @@ def operational_signal_summary(
     visible = [dict(item) for item in records if item.get("show_on_dashboard") is not False]
     statuses = [get_record_status(item) for item in visible]
     focus = select_todays_focus(visible, today)
-    follow_ups_due = sum(follow_up_eligibility(item, today)[0] for item in visible)
+    follow_ups_due = sum(
+        bool(follow_up_action_state(item, today)["eligible"]) for item in visible
+    )
     if "Offer" in statuses:
         career_state = "Offer"
     elif "Interviewing" in statuses:

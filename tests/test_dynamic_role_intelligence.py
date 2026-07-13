@@ -314,7 +314,7 @@ class DynamicRoleIntelligenceTests(unittest.TestCase):
             with self.assertRaises(FollowupGenerationError) as context:
                 generate_followups("acme_editorial_lead", root)
 
-        self.assertIn("Status Drafted is not eligible", str(context.exception))
+        self.assertIn("still drafted and has not been applied", str(context.exception))
 
     def test_paused_role_generates_only_when_explicitly_selected(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -351,9 +351,10 @@ class DynamicRoleIntelligenceTests(unittest.TestCase):
                 generate_followups("acme_paused_operations", root)
             bulk = generate_missing_followups(root)
 
-        self.assertIn("Status Withdrawn / Closed is not eligible", str(context.exception))
+        self.assertIn("application is closed", str(context.exception))
         self.assertEqual(bulk["generated_count"], 0)
         self.assertEqual(bulk["skipped_existing_count"], 0)
+        self.assertEqual(bulk["skipped_count"], 1)
 
     def test_current_application_statuses_remain_preserved(self):
         tracker_path = PROJECT_ROOT / "data" / "application_tracker.yml"

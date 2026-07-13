@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
 try:
-    from .application_tracker import follow_up_eligibility, get_record_status, load_application_tracker, update_prospect
+    from .application_tracker import follow_up_action_state, get_record_status, load_application_tracker, update_prospect
     from .dynamic_role_intelligence import get_effective_voice_profile
     from .filename_utils import build_upload_filename, company_display_name
     from .generate_cover_letter import load_generation_context
@@ -18,7 +18,7 @@ try:
     from .package_context import validate_material_context
     from .role_context import is_google_youtube_role
 except ImportError:
-    from application_tracker import follow_up_eligibility, get_record_status, load_application_tracker, update_prospect
+    from application_tracker import follow_up_action_state, get_record_status, load_application_tracker, update_prospect
     from dynamic_role_intelligence import get_effective_voice_profile
     from filename_utils import build_upload_filename, company_display_name
     from generate_cover_letter import load_generation_context
@@ -697,10 +697,11 @@ def generate_followups(
         if application is None:
             raise FollowupGenerationError(f"Tracker entry not found: {tracker_id}")
         status = get_record_status(application)
-        eligible, reason = follow_up_eligibility(application)
-        if not eligible:
+        follow_up_action = follow_up_action_state(application)
+        if not follow_up_action["eligible"]:
             raise FollowupGenerationError(
-                f"Tracker entry '{tracker_id}' cannot generate follow-ups: {reason}."
+                f"Tracker entry '{tracker_id}' cannot generate follow-ups: "
+                f"{follow_up_action['reason']}"
             )
         post_application = status in POST_APPLICATION_STATUSES
         job_path: Optional[Path] = None
@@ -846,7 +847,7 @@ def _expected_followup_paths(
         key: root
         / "exports"
         / "followups"
-        / build_upload_filename("Trisha Lynch", role, company, export_type, "md")
+        / build_upload_filename("Trisha Lynch", role, company, export_type, "txt")
         for key, export_type in specs
     }
 
@@ -855,21 +856,33 @@ def generate_missing_followups(
     project_root: Optional[PathInput] = None,
     force: bool = False,
 ) -> Dict[str, Any]:
-    """Generate missing follow-ups for all visible Applied tracker roles."""
+    """Generate only eligible follow-ups and report every skipped tracker role."""
     root = Path(project_root) if project_root is not None else Path.cwd()
     generated = []
-    skipped = []
+    generated_roles = []
+    skipped: Dict[str, str] = {}
+    skipped_roles = []
+    skipped_existing = []
     failed: Dict[str, str] = {}
     for application in load_application_tracker(root):
         tracker_id = str(application.get("id") or "")
-        if (
-            not follow_up_eligibility(application)[0]
-            or application.get("show_on_dashboard") is False
-        ):
+        role_summary = {
+            "id": tracker_id,
+            "company": str(application.get("company") or "Unknown company"),
+            "role": str(application.get("role") or "Unknown role"),
+        }
+        follow_up_action = follow_up_action_state(application)
+        if not follow_up_action["eligible"]:
+            reason = str(follow_up_action["reason"])
+            skipped[tracker_id] = reason
+            skipped_roles.append({**role_summary, "reason": reason})
             continue
         expected = _expected_followup_paths(application, root)
         if not force and all(path.is_file() for path in expected.values()):
-            skipped.append(tracker_id)
+            reason = "Follow-up materials already exist."
+            skipped[tracker_id] = reason
+            skipped_roles.append({**role_summary, "reason": reason})
+            skipped_existing.append(tracker_id)
             continue
         try:
             generate_followups(tracker_id, root)
@@ -877,11 +890,16 @@ def generate_missing_followups(
             failed[tracker_id] = str(error)
         else:
             generated.append(tracker_id)
+            generated_roles.append(role_summary)
     return {
         "generated": generated,
-        "skipped_existing": skipped,
+        "generated_roles": generated_roles,
+        "skipped": skipped,
+        "skipped_roles": skipped_roles,
+        "skipped_existing": skipped_existing,
         "failed": failed,
         "generated_count": len(generated),
-        "skipped_existing_count": len(skipped),
+        "skipped_count": len(skipped),
+        "skipped_existing_count": len(skipped_existing),
         "failed_count": len(failed),
     }

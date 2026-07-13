@@ -16,7 +16,7 @@ if __package__:
         HIDDEN_STATUSES,
         VALID_STATUSES,
         TrackerValidationError,
-        follow_up_eligibility,
+        follow_up_action_state,
         get_record_status,
         normalize_tracker_value,
         tracker_company_keys,
@@ -42,7 +42,7 @@ else:
         HIDDEN_STATUSES,
         VALID_STATUSES,
         TrackerValidationError,
-        follow_up_eligibility,
+        follow_up_action_state,
         get_record_status,
         normalize_tracker_value,
         tracker_company_keys,
@@ -247,10 +247,14 @@ def enrich_dashboard_record(
     ):
         enriched["posting_status"] = verification["posting_status"]
     enriched.update(calculate_follow_up_timing(record, today))
-    eligible, reason = follow_up_eligibility(enriched, today)
-    enriched["follow_up_eligible"] = eligible
-    enriched["follow_up_ineligible_reason"] = "" if eligible else reason
-    if not eligible:
+    follow_up_action = follow_up_action_state(enriched, today)
+    enriched["follow_up_eligible"] = follow_up_action["eligible"]
+    enriched["follow_up_action"] = follow_up_action["key"]
+    enriched["follow_up_action_label"] = follow_up_action["label"]
+    enriched["follow_up_ineligible_reason"] = (
+        "" if follow_up_action["eligible"] else follow_up_action["reason"]
+    )
+    if get_record_status(enriched) not in {"Applied", "Under Consideration", "Interviewing"}:
         enriched["follow_up_status"] = "Not applicable"
         enriched["suggested_follow_up_date"] = None
     return enriched
