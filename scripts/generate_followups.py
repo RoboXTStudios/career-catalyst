@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
 try:
-    from .application_tracker import load_application_tracker, update_prospect
+    from .application_tracker import follow_up_eligibility, load_application_tracker, update_prospect
     from .dynamic_role_intelligence import get_effective_voice_profile
     from .filename_utils import build_upload_filename, company_display_name
     from .generate_cover_letter import load_generation_context
@@ -18,7 +18,7 @@ try:
     from .package_context import validate_material_context
     from .role_context import is_google_youtube_role
 except ImportError:
-    from application_tracker import load_application_tracker, update_prospect
+    from application_tracker import follow_up_eligibility, load_application_tracker, update_prospect
     from dynamic_role_intelligence import get_effective_voice_profile
     from filename_utils import build_upload_filename, company_display_name
     from generate_cover_letter import load_generation_context
@@ -31,15 +31,11 @@ except ImportError:
 
 PathInput = Union[str, Path]
 FOLLOWUP_ELIGIBLE_STATUSES = (
-    "Active",
     "Applied",
-    "Follow-up",
+    "Under Consideration",
     "Interviewing",
-    "Reviewed",
-    "Drafted",
-    "Paused",
 )
-POST_APPLICATION_STATUSES = ("Applied", "Follow-up", "Interviewing")
+POST_APPLICATION_STATUSES = FOLLOWUP_ELIGIBLE_STATUSES
 MESSAGE_LIMITS = {
     "recruiter_followup": (70, 120),
     "hiring_manager_followup": (100, 160),
@@ -701,11 +697,10 @@ def generate_followups(
         if application is None:
             raise FollowupGenerationError(f"Tracker entry not found: {tracker_id}")
         status = _clean(application.get("status"))
-        if status not in FOLLOWUP_ELIGIBLE_STATUSES:
+        eligible, reason = follow_up_eligibility(application)
+        if not eligible:
             raise FollowupGenerationError(
-                f"Tracker entry '{tracker_id}' is {status or 'missing a status'}; follow-ups are "
-                "available by explicit request for Active, Applied, Follow-up, Interviewing, "
-                "Reviewed, Drafted, or Paused roles."
+                f"Tracker entry '{tracker_id}' cannot generate follow-ups: {reason}."
             )
         post_application = status in POST_APPLICATION_STATUSES
         job_path: Optional[Path] = None
@@ -868,7 +863,7 @@ def generate_missing_followups(
     for application in load_application_tracker(root):
         tracker_id = str(application.get("id") or "")
         if (
-            application.get("status") != "Applied"
+            not follow_up_eligibility(application)[0]
             or application.get("show_on_dashboard") is False
         ):
             continue

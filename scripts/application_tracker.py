@@ -21,17 +21,12 @@ REQUIRED_FIELDS = (
 )
 VALID_STATUSES = (
     "Drafted",
-    "Active",
-    "Reviewed",
     "Applied",
-    "Follow-up",
+    "Under Consideration",
     "Interviewing",
-    "Paused",
-    "Pass",
+    "Offer",
     "Rejected",
-    "Invalid",
-    "Invalid/Hidden",
-    "Archived",
+    "Withdrawn / Closed",
 )
 LEGACY_STATUS_FIELDS = (
     "application_status",
@@ -41,33 +36,39 @@ LEGACY_STATUS_FIELDS = (
     "stage",
 )
 STATUS_ALIASES = {
-    "active": "Active",
-    "in progress": "Active",
-    "open": "Active",
+    "active": "Drafted",
+    "in progress": "Drafted",
+    "open": "Drafted",
+    "reviewed": "Drafted",
+    "review first": "Drafted",
+    "manually reviewed": "Drafted",
+    "verified": "Drafted",
+    "paused": "Drafted",
     "submitted": "Applied",
     "application submitted": "Applied",
-    "follow up": "Follow-up",
-    "followup": "Follow-up",
+    "follow up": "Under Consideration",
+    "followup": "Under Consideration",
     "follow up needed": "Applied",
-    "follow up sent": "Follow-up",
-    "due now": "Follow-up",
-    "recruiter contacted": "Follow-up",
-    "hiring manager contacted": "Follow-up",
-    "on hold": "Paused",
-    "review first": "Reviewed",
-    "manually reviewed": "Reviewed",
-    "verified": "Reviewed",
-    "passed": "Pass",
-    "declined": "Pass",
-    "do not pursue": "Pass",
-    "hidden": "Invalid/Hidden",
-    "invalid hidden": "Invalid/Hidden",
-    "closed": "Invalid/Hidden",
-    "stale closed risk": "Invalid/Hidden",
+    "follow up sent": "Under Consideration",
+    "due now": "Under Consideration",
+    "recruiter contacted": "Under Consideration",
+    "hiring manager contacted": "Under Consideration",
+    "under review": "Under Consideration",
+    "on hold": "Under Consideration",
+    "passed": "Withdrawn / Closed",
+    "pass": "Withdrawn / Closed",
+    "declined": "Withdrawn / Closed",
+    "do not pursue": "Withdrawn / Closed",
+    "hidden": "Withdrawn / Closed",
+    "invalid": "Withdrawn / Closed",
+    "invalid hidden": "Withdrawn / Closed",
+    "archived": "Withdrawn / Closed",
+    "closed": "Withdrawn / Closed",
+    "stale closed risk": "Withdrawn / Closed",
 }
-ACTIVE_STATUSES = {"Applied", "Follow-up", "Interviewing"}
-DRAFT_STATUSES = {"Drafted", "Active", "Reviewed", "Paused"}
-HIDDEN_STATUSES = {"Pass", "Rejected", "Invalid", "Invalid/Hidden", "Archived"}
+ACTIVE_STATUSES = {"Applied", "Under Consideration", "Interviewing", "Offer"}
+DRAFT_STATUSES = {"Drafted"}
+HIDDEN_STATUSES = {"Rejected", "Withdrawn / Closed"}
 INTAKE_PROTECTED_STATUSES = {
     "Active",
     "Applied",
@@ -135,21 +136,22 @@ def get_record_status(record: Dict[str, Any]) -> str:
     return "Drafted"
 
 
+def legacy_status_value(record: Dict[str, Any]) -> str:
+    """Expose the stored pre-normalization value for audit/migration safety."""
+    return str(record.get("legacy_status") or record.get("status") or "").strip()
+
+
 def workflow_status_bucket(record: Dict[str, Any]) -> str:
     """Classify one record into an exclusive normalized dashboard workflow bucket."""
     status = get_record_status(record)
-    if status in {"Pass"}:
-        return "Pass"
-    if status in {"Invalid", "Invalid/Hidden", "Rejected", "Archived"}:
+    if status in HIDDEN_STATUSES:
         return "Hidden / Invalid"
     if (
         record.get("verification_status") == "Stale / Closed Risk"
         and record.get("show_on_dashboard") is False
     ):
         return "Hidden / Invalid"
-    if status == "Paused":
-        return "Paused"
-    if status in {"Applied", "Follow-up", "Interviewing"}:
+    if status in {"Applied", "Under Consideration", "Interviewing", "Offer"}:
         return "Applied / Follow-up"
     follow_up_status = normalize_tracker_value(record.get("follow_up_status"))
     if (
@@ -168,9 +170,32 @@ def workflow_status_bucket(record: Dict[str, Any]) -> str:
         }
     ):
         return "Applied / Follow-up"
-    if status == "Reviewed":
-        return "Reviewed"
     return "Active"
+
+
+def follow_up_eligibility(record: Dict[str, Any], today: Optional[date] = None) -> Tuple[bool, str]:
+    """Return whether a real, timely follow-up can be offered for a role."""
+    status = get_record_status(record)
+    if record.get("show_on_dashboard") is False or legacy_status_value(record) in {"Invalid", "Invalid/Hidden"}:
+        return False, "Hidden / invalid role"
+    if status not in {"Applied", "Under Consideration", "Interviewing"}:
+        return False, f"Status {status} is not eligible"
+    follow_up_state = normalize_tracker_value(record.get("follow_up_status"))
+    if follow_up_state in {"not applicable", "follow up sent"} or record.get("follow_up_sent") is True:
+        return False, "Follow-up is not applicable or already sent"
+    if record.get("portal_only") is True or record.get("no_contact") is True or record.get("follow_up_possible") is False:
+        return False, "No contact route is available"
+    if status == "Applied":
+        applied_value = next((record.get(key) for key in ("submitted_date", "applied_date", "application_date") if record.get(key)), None)
+        if not applied_value:
+            return False, "Applied date is required"
+        try:
+            applied = date.fromisoformat(str(applied_value)[:10])
+        except ValueError:
+            return False, "Applied date is invalid"
+        if ((today or date.today()) - applied).days < 5:
+            return False, "Waiting period has not elapsed"
+    return True, "Follow-up is eligible"
 
 
 def make_tracker_id(company: Any, role: Any) -> str:
@@ -291,7 +316,10 @@ def add_prospect(
     tracker_id = str(prospect.get("id") or make_tracker_id(company, role)).strip()
     incoming = _clean_updates(dict(prospect))
     if "status" in incoming:
-        incoming["status"] = normalize_status(incoming["status"])
+        raw_status = str(incoming["status"]).strip()
+        incoming["status"] = normalize_status(raw_status)
+        if incoming["status"] != raw_status:
+            incoming.setdefault("legacy_status", raw_status)
     incoming["id"] = tracker_id
     incoming["company"] = company
     incoming["role"] = role
@@ -353,7 +381,10 @@ def update_prospect(
     cleaned = _explicit_updates(updates)
     cleaned.pop("id", None)
     if "status" in cleaned:
-        cleaned["status"] = normalize_status(cleaned["status"])
+        raw_status = str(cleaned["status"]).strip()
+        cleaned["status"] = normalize_status(raw_status)
+        if cleaned["status"] != raw_status and not entry.get("legacy_status"):
+            cleaned["legacy_status"] = raw_status
     entry.update(cleaned)
     save_application_tracker(applications, project_root)
     return dict(entry)
@@ -366,7 +397,8 @@ def update_status(
     **updates: Any,
 ) -> Dict[str, Any]:
     """Set application status and stamp the first Applied date when needed."""
-    status = normalize_status(status)
+    raw_status = str(status).strip()
+    status = normalize_status(raw_status)
     if status not in VALID_STATUSES:
         raise TrackerUpdateError(
             f"Unsupported status '{status}'. Valid statuses: {', '.join(VALID_STATUSES)}."
@@ -381,6 +413,8 @@ def update_status(
         raise TrackerUpdateError(f"Tracker entry not found: {tracker_id}")
 
     previous_status = str(entry.get("status") or "Drafted")
+    if raw_status != status and not entry.get("legacy_status"):
+        entry["legacy_status"] = raw_status
     entry["status"] = status
     entry.update(_explicit_updates(updates))
     if status != previous_status:

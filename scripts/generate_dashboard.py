@@ -16,6 +16,7 @@ if __package__:
         HIDDEN_STATUSES,
         VALID_STATUSES,
         TrackerValidationError,
+        follow_up_eligibility,
         get_record_status,
         normalize_tracker_value,
         tracker_company_keys,
@@ -40,6 +41,7 @@ else:
         HIDDEN_STATUSES,
         VALID_STATUSES,
         TrackerValidationError,
+        follow_up_eligibility,
         get_record_status,
         normalize_tracker_value,
         tracker_company_keys,
@@ -189,11 +191,8 @@ def calculate_follow_up_timing(
     """Compute non-persistent follow-up guidance from existing tracker dates."""
     reference_date = today or date.today()
     applied = _applied_date(record)
-    explicit_status = str(record.get("follow_up_status") or "").strip()
     if _follow_up_was_sent(record):
         status = "Follow-up sent"
-    elif explicit_status:
-        status = explicit_status
     elif applied is None:
         status = "No applied date"
     else:
@@ -257,7 +256,10 @@ def enrich_dashboard_record(
     ):
         enriched["posting_status"] = verification["posting_status"]
     enriched.update(calculate_follow_up_timing(record, today))
-    if get_record_status(enriched) in HIDDEN_STATUSES:
+    eligible, reason = follow_up_eligibility(enriched, today)
+    enriched["follow_up_eligible"] = eligible
+    enriched["follow_up_ineligible_reason"] = "" if eligible else reason
+    if not eligible:
         enriched["follow_up_status"] = "Not applicable"
         enriched["suggested_follow_up_date"] = None
     return enriched
@@ -649,13 +651,22 @@ def recommended_next_steps(
 def record_posting_url(record: Dict[str, Any]) -> Optional[str]:
     """Return the first stored posting URL without inventing a destination."""
     for key in (
-        "canonical_apply_url",
+        "posting_url",
         "original_source_url",
-        "apply_url",
         "source_url",
         "job_url",
         "official_url",
+        "canonical_apply_url",
     ):
+        value = str(record.get(key) or "").strip()
+        if value.startswith(("https://", "http://")):
+            return value
+    return None
+
+
+def record_application_portal_url(record: Dict[str, Any]) -> Optional[str]:
+    """Return only an explicitly stored application/status portal URL."""
+    for key in ("application_portal_url", "status_portal_url", "portal_url"):
         value = str(record.get(key) or "").strip()
         if value.startswith(("https://", "http://")):
             return value
@@ -1156,12 +1167,15 @@ def _status_class(status: str) -> str:
         "drafted",
         "follow_up",
         "interviewing",
+        "offer",
+        "under_consideration",
         "invalid",
         "invalid_hidden",
         "pass",
         "paused",
         "rejected",
         "reviewed",
+        "withdrawn_closed",
     }
     normalized = _slug(status)
     return normalized if normalized in known_statuses else "default"
@@ -1392,6 +1406,12 @@ def _render_primary_actions(package: Dict[str, Any], dashboard_directory: Path, 
         if posting_url
         else '<button class="action-button action-disabled" type="button" disabled>Open Posting</button>'
     )
+    portal_url = record_application_portal_url(tracker)
+    portal = (
+        f'<a class="action-button" href="{html.escape(portal_url, quote=True)}" target="_blank" rel="noopener">Check Application Status</a>'
+        if portal_url
+        else ""
+    )
     material_href = _primary_material_href(package.get("files", {}), dashboard_directory)
     material = (
         f'<a class="action-button" href="{html.escape(material_href, quote=True)}" target="_blank" rel="noopener">Open Materials</a>'
@@ -1402,6 +1422,7 @@ def _render_primary_actions(package: Dict[str, Any], dashboard_directory: Path, 
         '<nav class="card-actions" aria-label="Primary role actions">'
         f'<button class="action-button" type="button" data-focus-role="{html.escape(anchor_id, quote=True)}">View Role</button>'
         f'{posting}'
+        f'{portal}'
         f'{material}'
         '</nav>'
     )
@@ -1412,11 +1433,9 @@ def _compact_status_line(package: Dict[str, Any]) -> str:
     score_label = "Not scored" if score is None else f"{score} {tracker.get('match_tier') or ''}".strip()
     values = (
         ("Status", get_record_status(tracker) if tracker else "Active"),
-        ("Follow-up", tracker.get("follow_up_status") or "No applied date"),
         ("Match", score_label),
-        ("Action", tracker.get("recommended_action") or tracker.get("next_action") or "Review"),
-        ("Verification", tracker.get("source_trust_label") or tracker.get("verification_status") or "Needs manual check"),
-        ("Freshness", tracker.get("posting_status") or tracker.get("freshness_label") or tracker.get("freshness")),
+        ("Priority", tracker.get("priority") or "Medium"),
+        ("Next", tracker.get("next_action") or tracker.get("recommended_action") or "Review role"),
     )
     items = []
     for label, value in values:

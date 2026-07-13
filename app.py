@@ -17,6 +17,7 @@ from scripts.application_tracker import (
     HIDDEN_STATUSES,
     VALID_STATUSES,
     TrackerValidationError,
+    follow_up_eligibility,
     get_record_status,
     load_application_tracker,
     normalize_status,
@@ -41,6 +42,7 @@ from scripts.generate_dashboard import (
     generate_dashboard,
     load_application_packages,
     prepare_dashboard_records,
+    record_application_portal_url,
     record_dashboard_reference as dashboard_role_reference,
     record_posting_url,
     recommended_next_steps,
@@ -101,16 +103,6 @@ CLEANUP_TRACKER_GROUPS = (
     "Stale / Cannot Verify",
 )
 PRIORITY_OPTIONS = ("High", "Medium", "Low", "Do Not Pursue")
-FOLLOW_UP_EDIT_OPTIONS = (
-    "Auto",
-    "Not due yet",
-    "Due soon",
-    "Due now",
-    "Overdue",
-    "Follow-up sent",
-    "Not applicable",
-    "Not verified",
-)
 FALLBACK_VERIFICATION_STATUSES = (
     "Not Verified",
     "Employer Source",
@@ -344,19 +336,11 @@ APP_CSS = """
 
 
 def summarize_applications(applications: list[Dict[str, Any]]) -> Dict[str, int]:
-    """Return exclusive normalized workflow counts without mutating tracker data."""
-    counts = {
-        "Total": len(applications),
-        "Active": 0,
-        "Applied / Follow-up": 0,
-        "Reviewed": 0,
-        "Paused": 0,
-        "Pass": 0,
-        "Hidden / Invalid": 0,
-    }
+    """Return concise, non-empty counts for the primary workflow statuses."""
+    counts = {status: 0 for status in VALID_STATUSES}
     for application in applications:
-        counts[workflow_status_bucket(application)] += 1
-    return counts
+        counts[get_record_status(application)] += 1
+    return {"Total": len(applications), **{key: value for key, value in counts.items() if value}}
 
 
 def group_applications_by_status(
@@ -621,6 +605,8 @@ def update_dashboard_role(
         "verification_status",
         "freshness",
         "verification_notes",
+        "posting_url",
+        "application_portal_url",
     ):
         if field in values:
             updates[field] = str(values.get(field) or "")
@@ -784,6 +770,8 @@ def apply_dashboard_status_action(
 def build_prospect_payload(values: Dict[str, Any]) -> Dict[str, Any]:
     """Normalize widget values without importing or executing Streamlit."""
     return {
+        "posting_url": str(values.get("posting_url") or values.get("official_url") or "").strip(),
+        "application_portal_url": str(values.get("application_portal_url") or "").strip(),
         "official_url": str(values.get("official_url") or "").strip(),
         "source_url": str(values.get("source_url") or values.get("official_url") or "").strip(),
         "original_source_url": str(values.get("original_source_url") or values.get("official_url") or "").strip(),
@@ -880,13 +868,10 @@ def _render_summary_metrics(st: Any, applications: list[Dict[str, Any]]) -> None
         f'<div class="cc-summary-grid">{cards}</div>',
         unsafe_allow_html=True,
     )
-    navigation = (
-        ("View Active", "Active"),
-        ("View Applied", "Applied / Follow-up"),
-        ("View Reviewed", "Reviewed"),
-        ("View Paused", "Paused"),
-        ("View Pass", "Pass"),
-        ("View Hidden", "Hidden / Invalid"),
+    navigation = tuple(
+        (f"View {status}", status)
+        for status, count in summarize_applications(applications).items()
+        if status != "Total" and count
     )
     for row_start in range(0, len(navigation), 3):
         columns = st.columns(3)
@@ -1200,14 +1185,14 @@ def _render_role_card(
             badge_column.markdown(_status_badges(application), unsafe_allow_html=True)
             compact_facts = [
                 f"Status: {get_record_status(application)}",
-                f"Follow-up: {application.get('follow_up_status') or 'No applied date'}",
-                f"Match: {(str(application.get('match_score')) + ' ' + str(application.get('match_tier') or '')).strip() if application.get('match_score') is not None else 'Not scored'}",
-                f"Action: {application.get('recommended_action') or application.get('next_action') or 'Review'}",
-                f"Verification: {application.get('source_trust_label') or application.get('verification_status') or 'Needs manual check'}",
+                f"Match: {application.get('match_score') if application.get('match_score') is not None else 'Not scored'}",
+                f"Priority: {application.get('priority') or 'Medium'}",
+                f"Next: {application.get('next_action') or application.get('recommended_action') or 'Review role'}",
             ]
             st.caption(" · ".join(compact_facts))
             files = package.get("files", {})
             posting_url = record_posting_url(application)
+            portal_url = record_application_portal_url(application)
             first_material = next(
                 (
                     Path(path)
@@ -1216,7 +1201,7 @@ def _render_role_card(
                 ),
                 None,
             )
-            actions = st.columns(3)
+            actions = st.columns(4)
             if actions[0].button(
                 "View Role",
                 key=f"compact_view_{tracker_id}",
@@ -1230,7 +1215,11 @@ def _render_role_card(
                 actions[1].link_button("Open Posting", posting_url, use_container_width=True)
             else:
                 actions[1].button("Open Posting", key=f"compact_posting_missing_{tracker_id}", disabled=True, use_container_width=True)
-            if first_material and actions[2].button(
+            if portal_url:
+                actions[2].link_button("Check application status", portal_url, use_container_width=True)
+            else:
+                actions[2].button("Check application status", key=f"compact_portal_missing_{tracker_id}", disabled=True, use_container_width=True)
+            if first_material and actions[3].button(
                 "Open Materials",
                 key=f"compact_materials_{tracker_id}",
                 use_container_width=True,
@@ -1240,7 +1229,7 @@ def _render_role_card(
                 st.session_state["dashboard_materials_role_id"] = tracker_id
                 st.rerun()
             elif not first_material:
-                actions[2].button("Open Materials", key=f"compact_materials_missing_{tracker_id}", disabled=True, use_container_width=True)
+                actions[3].button("Open Materials", key=f"compact_materials_missing_{tracker_id}", disabled=True, use_container_width=True)
         return
     with st.container(border=True):
         flash_key = f"dashboard_flash_{tracker_id}"
@@ -1251,8 +1240,6 @@ def _render_role_card(
             f"dashboard_priority_{tracker_id}": str(application.get("priority") or "Medium"),
             f"dashboard_notes_{tracker_id}": str(application.get("notes") or ""),
             f"dashboard_next_action_{tracker_id}": str(application.get("next_action") or "Review fit"),
-            f"dashboard_follow_up_{tracker_id}": str(application.get("follow_up_status") or "Auto"),
-            f"dashboard_follow_up_date_{tracker_id}": str(application.get("suggested_follow_up_date") or ""),
         }
         for widget_key, persisted_value in persisted_widget_values.items():
             shadow_key = f"{widget_key}_persisted"
@@ -1296,7 +1283,7 @@ def _render_role_card(
         source_panel_open = str(
             st.session_state.get("dashboard_source_verification_role_id") or ""
         ) in {tracker_id, dashboard_role_reference(application)}
-        with st.expander("Source Verification", expanded=source_panel_open):
+        with st.expander("Advanced edit: source verification", expanded=source_panel_open):
             _render_source_verification_panel(st, application, tracker_id)
 
         notes = str(application.get("notes") or "").strip()
@@ -1370,6 +1357,7 @@ def _render_role_card(
             "for manual corrections."
         )
         posting_url = record_posting_url(application)
+        portal_url = record_application_portal_url(application)
         first_material = next(
             (
                 Path(path)
@@ -1384,6 +1372,8 @@ def _render_role_card(
             has_posting_url=posting_url is not None,
             mode=mode,
         )
+        if portal_url:
+            st.link_button("Check application status", portal_url, use_container_width=True)
         if primary_actions:
             action_columns = st.columns(len(primary_actions))
             for column, (label, action_key) in zip(action_columns, primary_actions):
@@ -1451,7 +1441,8 @@ def _render_role_card(
                 apply_dashboard_status_action(tracker_id, "reviewed", PROJECT_ROOT)
                 st.session_state["dashboard_notice"] = "Role marked reviewed."
                 st.rerun()
-            if bucket == "Applied / Follow-up" and more_columns[3].button(
+            follow_up_allowed, _ = follow_up_eligibility(application)
+            if follow_up_allowed and more_columns[3].button(
                 "Generate Follow-Up Materials",
                 key=f"dashboard_more_followup_{tracker_id}",
                 use_container_width=True,
@@ -1472,12 +1463,6 @@ def _render_role_card(
                 PRIORITY_OPTIONS
                 if current_priority in PRIORITY_OPTIONS
                 else (current_priority,) + PRIORITY_OPTIONS
-            )
-            current_follow_up = str(application.get("follow_up_status") or "Auto")
-            follow_up_choices = (
-                FOLLOW_UP_EDIT_OPTIONS
-                if current_follow_up in FOLLOW_UP_EDIT_OPTIONS
-                else (current_follow_up,) + FOLLOW_UP_EDIT_OPTIONS
             )
             with st.form(key=f"dashboard_edit_{tracker_id}"):
                 edit_columns = st.columns(2)
@@ -1503,18 +1488,8 @@ def _render_role_card(
                     value=str(application.get("next_action") or "Review fit"),
                     key=f"dashboard_next_action_{tracker_id}",
                 )
-                follow_up_columns = st.columns(2)
-                edited_follow_up = follow_up_columns[0].selectbox(
-                    "Follow-up status",
-                    follow_up_choices,
-                    index=follow_up_choices.index(current_follow_up),
-                    key=f"dashboard_follow_up_{tracker_id}",
-                )
-                edited_follow_up_date = follow_up_columns[1].text_input(
-                    "Suggested follow-up date",
-                    value=str(application.get("suggested_follow_up_date") or ""),
-                    key=f"dashboard_follow_up_date_{tracker_id}",
-                )
+                edited_posting_url = st.text_input("Posting URL", value=str(application.get("posting_url") or record_posting_url(application) or ""))
+                edited_portal_url = st.text_input("Application/status portal URL", value=str(application.get("application_portal_url") or ""))
                 st.caption(
                     "Visibility follows status: Pass and Invalid/Hidden stay in cleanup; "
                     "active workflow statuses remain visible."
@@ -1531,8 +1506,8 @@ def _render_role_card(
                             "priority": edited_priority,
                             "notes": edited_notes,
                             "next_action": edited_next_action,
-                            "follow_up_status": edited_follow_up,
-                            "suggested_follow_up_date": edited_follow_up_date,
+                            "posting_url": edited_posting_url,
+                            "application_portal_url": edited_portal_url,
                         },
                         PROJECT_ROOT,
                     )
@@ -2110,7 +2085,7 @@ def _render_add_prospect(st: Any) -> None:
         st.session_state["prospect_url_input"] = st.session_state.get("prospect_url_value", "")
 
     with st.form("prospect_url_import_form", clear_on_submit=False):
-        st.text_input("Job listing URL", key="prospect_url_input")
+        st.text_input("Posting URL", key="prospect_url_input")
         url_import_submitted = st.form_submit_button("Try Import From URL")
     if url_import_submitted:
         trigger_url_import()
@@ -2136,6 +2111,7 @@ def _render_add_prospect(st: Any) -> None:
             ("High", "Medium", "Low", "Do Not Pursue"),
             key="prospect_priority",
         )
+        st.text_input("Application/status portal URL", key="prospect_application_portal_url")
         st.selectbox("Status", VALID_STATUSES, key="prospect_status")
         st.selectbox(
             "Work arrangement",
@@ -2190,6 +2166,8 @@ def _render_add_prospect(st: Any) -> None:
     st.button("Re-parse details and re-score", on_click=reparse_current_fields)
 
     values = {
+        "posting_url": st.session_state["prospect_url_value"],
+        "application_portal_url": st.session_state.get("prospect_application_portal_url", ""),
         "official_url": st.session_state["prospect_url_value"],
         "source_url": st.session_state["prospect_url_value"],
         "original_source_url": st.session_state["prospect_original_source_url"],
@@ -2673,7 +2651,7 @@ def _render_dashboard(st: Any) -> None:
         "Search company, title, category, role family, source, or location",
         key="dashboard_search",
     )
-    filter_columns = st.columns(4)
+    filter_columns = st.columns(3)
     match_tier = filter_columns[0].selectbox(
         "Match Tier", MATCH_TIER_FILTERS, key="dashboard_match_tier"
     )
@@ -2683,19 +2661,12 @@ def _render_dashboard(st: Any) -> None:
     application_status = filter_columns[2].selectbox(
         "Application Status", STATUS_FILTERS, key="dashboard_status"
     )
-    follow_up_status = filter_columns[3].selectbox(
-        "Follow-Up Status", FOLLOW_UP_FILTERS, key="dashboard_follow_up_status"
-    )
-    source_columns = st.columns(3)
-    source_type = source_columns[0].selectbox(
-        "Source Type", SOURCE_TYPE_FILTERS, key="dashboard_source_type"
-    )
-    verification_status = source_columns[1].selectbox(
-        "Verification Status", VERIFICATION_STATUS_FILTERS, key="dashboard_verification_status"
-    )
-    trust_label = source_columns[2].selectbox(
-        "Trust Label", TRUST_LABEL_FILTERS, key="dashboard_trust_label"
-    )
+    follow_up_status = "All"
+    with st.expander("Advanced filters", expanded=False):
+        source_columns = st.columns(3)
+        source_type = source_columns[0].selectbox("Source Type", SOURCE_TYPE_FILTERS, key="dashboard_source_type")
+        verification_status = source_columns[1].selectbox("Verification Status", VERIFICATION_STATUS_FILTERS, key="dashboard_verification_status")
+        trust_label = source_columns[2].selectbox("Trust Label", TRUST_LABEL_FILTERS, key="dashboard_trust_label")
     sort_by = st.selectbox("Sort by", SORT_OPTIONS, key="dashboard_sort")
 
     all_records = prepare_dashboard_records(applications, packages)
