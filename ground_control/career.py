@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date
+from pathlib import Path
 from typing import Any, Mapping, Protocol
 
 from ground_control.seed_data import SEED_DATA
@@ -41,6 +43,20 @@ class LocalCareerCatalystProvider:
         if not summary:
             summary = "The search is active; hold for the next meaningful signal."
         return CareerState(status=status, summary=summary)
+
+
+class CareerCatalystSignalAdapter:
+    """Read-only, privacy-limited adapter for future Ground Control wiring."""
+
+    def __init__(self, project_root: Path) -> None:
+        self._project_root = Path(project_root)
+
+    def load_signals(self, today: date | None = None) -> dict[str, Any]:
+        from scripts.application_tracker import load_application_tracker
+        from scripts.career_signals import operational_signal_summary
+
+        records = load_application_tracker(self._project_root)
+        return operational_signal_summary(records, today)
 
 
 def load_career_state(provider: CareerCatalystProvider) -> CareerState:

@@ -26,7 +26,7 @@ class ApplicationStatusPortalCleanupTests(unittest.TestCase):
         cases = {
             "Active": "Drafted",
             "Reviewed": "Drafted",
-            "Follow-up": "Under Consideration",
+            "Follow-up": "Applied",
             "Pass": "Withdrawn / Closed",
             "Invalid/Hidden": "Withdrawn / Closed",
         }
@@ -47,7 +47,7 @@ class ApplicationStatusPortalCleanupTests(unittest.TestCase):
                 "show_on_dashboard": True,
             }, root)
             saved = load_application_tracker(root)[0]
-            self.assertEqual(saved["status"], "Under Consideration")
+            self.assertEqual(saved["status"], "Applied")
             self.assertEqual(saved["legacy_status"], "Follow-up")
 
     def test_posting_and_application_portal_urls_are_independent(self):
@@ -60,7 +60,12 @@ class ApplicationStatusPortalCleanupTests(unittest.TestCase):
         self.assertNotEqual(record_posting_url(values), record_application_portal_url(values))
 
     def test_follow_up_eligibility_is_derived_and_safe(self):
-        eligible = {"status": "Applied", "submitted_date": "2026-07-01", "show_on_dashboard": True}
+        eligible = {
+            "status": "Applied",
+            "submitted_date": "2026-07-01",
+            "show_on_dashboard": True,
+            "recruiter_email": "recruiter@example.com",
+        }
         self.assertTrue(follow_up_eligibility(eligible, date(2026, 7, 13))[0])
         self.assertFalse(follow_up_eligibility(dict(eligible, submitted_date="2026-07-11"), date(2026, 7, 13))[0])
         for updates in (

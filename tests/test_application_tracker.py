@@ -9,6 +9,7 @@ from scripts.application_tracker import (
     load_application_tracker,
     validate_application_tracker,
     validate_tracker_entries,
+    get_record_status,
 )
 from scripts.cli import main
 
@@ -40,7 +41,7 @@ class ApplicationTrackerTests(unittest.TestCase):
         self.assertEqual(report["errors"], [])
         self.assertEqual(sum(report["status_counts"].values()), len(self.applications))
         self.assertGreaterEqual(report["status_counts"]["Applied"], 3)
-        self.assertGreaterEqual(report["status_counts"]["Invalid"], 1)
+        self.assertGreaterEqual(report["status_counts"]["Withdrawn / Closed"], 1)
 
     def test_validate_tracker_cli_command_works(self):
         output = io.StringIO()
@@ -51,12 +52,13 @@ class ApplicationTrackerTests(unittest.TestCase):
         self.assertIn("Application tracker validation succeeded.", output.getvalue())
         self.assertIn(f"Applications: {len(self.applications)}", output.getvalue())
         for status in VALID_STATUSES:
-            expected_count = sum(item["status"] == status for item in self.applications)
+            expected_count = sum(get_record_status(item) == status for item in self.applications)
             self.assertIn(f"- {status}: {expected_count}", output.getvalue())
 
     def test_duplicate_tracker_ids_are_caught(self):
         applications = deepcopy(self.applications)
-        duplicate = deepcopy(applications[0])
+        source = next(item for item in applications if get_record_status(item) == "Applied")
+        duplicate = deepcopy(source)
         applications.append(duplicate)
 
         report = validate_tracker_entries(applications)
@@ -67,7 +69,8 @@ class ApplicationTrackerTests(unittest.TestCase):
 
     def test_duplicate_active_company_and_role_produces_warning(self):
         applications = deepcopy(self.applications)
-        duplicate = deepcopy(applications[0])
+        source = next(item for item in applications if get_record_status(item) == "Applied")
+        duplicate = deepcopy(source)
         duplicate["id"] = "another_playstation_application"
         applications.append(duplicate)
 
@@ -80,21 +83,26 @@ class ApplicationTrackerTests(unittest.TestCase):
     def test_applied_and_visibility_states_are_preserved(self):
         by_id = {application["id"]: application for application in self.applications}
 
+        self.assertEqual(by_id["playstation_head_global_creative_ops"]["status"], "Paused")
         self.assertEqual(
-            by_id["playstation_head_global_creative_ops"]["status"],
-            "Applied",
+            get_record_status(by_id["playstation_head_global_creative_ops"]),
+            "Withdrawn / Closed",
         )
         self.assertEqual(
             by_id["google_strategy_ops_youtube_auction_brand"]["status"],
-            "Applied",
+            "Rejected",
         )
         self.assertEqual(
             by_id["paramount_director_marketing_operations"]["status"],
+            "Active",
+        )
+        self.assertEqual(
+            get_record_status(by_id["paramount_director_marketing_operations"]),
             "Applied",
         )
-        self.assertIn(
-            by_id["crunchyroll_enterprise_strategy_paused"]["status"],
-            VALID_STATUSES,
+        self.assertEqual(
+            get_record_status(by_id["crunchyroll_enterprise_strategy_paused"]),
+            "Withdrawn / Closed",
         )
         self.assertFalse(
             by_id["playstation_director_ad_ops_invalid"]["show_on_dashboard"]

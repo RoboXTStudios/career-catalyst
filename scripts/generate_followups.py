@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
 try:
-    from .application_tracker import follow_up_eligibility, load_application_tracker, update_prospect
+    from .application_tracker import follow_up_eligibility, get_record_status, load_application_tracker, update_prospect
     from .dynamic_role_intelligence import get_effective_voice_profile
     from .filename_utils import build_upload_filename, company_display_name
     from .generate_cover_letter import load_generation_context
@@ -18,7 +18,7 @@ try:
     from .package_context import validate_material_context
     from .role_context import is_google_youtube_role
 except ImportError:
-    from application_tracker import follow_up_eligibility, load_application_tracker, update_prospect
+    from application_tracker import follow_up_eligibility, get_record_status, load_application_tracker, update_prospect
     from dynamic_role_intelligence import get_effective_voice_profile
     from filename_utils import build_upload_filename, company_display_name
     from generate_cover_letter import load_generation_context
@@ -696,7 +696,7 @@ def generate_followups(
         )
         if application is None:
             raise FollowupGenerationError(f"Tracker entry not found: {tracker_id}")
-        status = _clean(application.get("status"))
+        status = get_record_status(application)
         eligible, reason = follow_up_eligibility(application)
         if not eligible:
             raise FollowupGenerationError(

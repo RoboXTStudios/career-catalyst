@@ -51,6 +51,7 @@ from scripts.generate_dashboard import (
     sort_dashboard_records,
     structured_recommended_next_steps,
 )
+from scripts.career_signals import next_action_signal, select_todays_focus, status_date
 from scripts.generate_followups import (
     FOLLOWUP_ELIGIBLE_STATUSES,
     FollowupGenerationError,
@@ -87,14 +88,7 @@ UI_DESCRIPTION = (
     "Add prospects, generate tailored application packages, track statuses, and manage "
     "job search materials from one local workspace."
 )
-TRACKER_GROUPS = (
-    "Applied / Follow-Up",
-    "Active",
-    "Reviewed",
-    "Paused",
-    "Passed",
-    "Hidden / Invalid",
-)
+TRACKER_GROUPS = VALID_STATUSES
 CLEANUP_TRACKER_GROUPS = (
     "Needs decision",
     "Paused",
@@ -273,11 +267,10 @@ APP_CSS = """
     font-size: 12px;
     font-weight: 700;
   }
-  .cc-status-drafted, .cc-status-reviewed { background: var(--cc-gold-soft); color: var(--cc-gold); }
-  .cc-status-active, .cc-status-paused { background: #eef1f3; color: #4c5963; }
-  .cc-status-applied, .cc-status-follow-up { background: var(--cc-blue-soft); color: var(--cc-blue); }
-  .cc-status-interviewing { background: var(--cc-accent-soft); color: var(--cc-accent); }
-  .cc-status-rejected, .cc-status-invalid, .cc-status-invalid-hidden, .cc-status-pass { background: var(--cc-red-soft); color: var(--cc-red); }
+  .cc-status-drafted { background: var(--cc-gold-soft); color: var(--cc-gold); }
+  .cc-status-applied, .cc-status-under-consideration { background: var(--cc-blue-soft); color: var(--cc-blue); }
+  .cc-status-interviewing, .cc-status-offer { background: var(--cc-accent-soft); color: var(--cc-accent); }
+  .cc-status-rejected, .cc-status-withdrawn-closed { background: var(--cc-red-soft); color: var(--cc-red); }
   .cc-priority { border: 1px solid #e1c891; background: #ffffff; color: var(--cc-gold); }
   .cc-metadata {
     display: flex;
@@ -339,7 +332,8 @@ def summarize_applications(applications: list[Dict[str, Any]]) -> Dict[str, int]
     """Return concise, non-empty counts for the primary workflow statuses."""
     counts = {status: 0 for status in VALID_STATUSES}
     for application in applications:
-        counts[get_record_status(application)] += 1
+        status = get_record_status(application)
+        counts[status if status in counts else "Withdrawn / Closed"] += 1
     return {"Total": len(applications), **{key: value for key, value in counts.items() if value}}
 
 
@@ -353,33 +347,18 @@ def group_applications_by_status(
     grouped = {label: [] for label in labels}
     for application in applications:
         status = get_record_status(application)
-        workflow_bucket = workflow_status_bucket(application)
-        invalid_hidden = status in {"Invalid", "Invalid/Hidden", "Rejected", "Archived"} or (
-            status not in VALID_STATUSES
-            and application.get("show_on_dashboard") is False
-        )
         stale_or_unverified = (
             application.get("verification_status")
             in {"Stale / Closed Risk", "Cannot Verify", "Not Verified"}
             or application.get("source_trust_label") == "Unknown Source"
             or str(application.get("posting_status") or "").lower() == "closed"
         )
-        if workflow_bucket == "Paused":
-            label = "Paused"
-        elif workflow_bucket == "Pass":
-            label = "Passed"
-        elif workflow_bucket == "Hidden / Invalid" or invalid_hidden:
-            label = "Hidden / Invalid"
-        elif mode == "Cleanup Mode" and stale_or_unverified:
+        if mode == "Cleanup Mode" and stale_or_unverified:
             label = "Stale / Cannot Verify"
         elif mode == "Cleanup Mode":
             label = "Needs decision"
-        elif workflow_bucket == "Applied / Follow-up":
-            label = "Applied / Follow-Up"
-        elif workflow_bucket == "Reviewed":
-            label = "Reviewed"
-        elif workflow_bucket == "Active":
-            label = "Active"
+        else:
+            label = status if status in grouped else "Withdrawn / Closed"
         grouped[label].append(application)
     if not preserve_order:
         for values in grouped.values():
@@ -569,19 +548,22 @@ def _sync_persisted_widget_value(
 
 
 def apply_summary_navigation(session_state: Any, bucket: str) -> None:
-    """Set predictable mode/filter state from a normalized summary bucket."""
-    navigation = {
-        "Total": ("All Mode", "All"),
-        "Active": ("All Mode", "Active"),
-        "Applied / Follow-up": ("Follow-Up Mode", "Applied / Follow-up"),
-        "Reviewed": ("Review Mode", "Reviewed"),
-        "Paused": ("All Mode", "Paused"),
-        "Pass": ("Cleanup Mode", "Pass"),
-        "Hidden / Invalid": ("Cleanup Mode", "Invalid/Hidden"),
-    }
-    mode, status_filter = navigation.get(bucket, navigation["Total"])
-    session_state["dashboard_mode"] = mode
-    session_state["dashboard_status"] = status_filter
+    """Keep summary navigation and the status selectbox on one source of truth."""
+    session_state["dashboard_status"] = bucket if bucket in VALID_STATUSES else "All"
+    clear_focused_dashboard_role(session_state)
+
+
+def clear_dashboard_filters(session_state: Any) -> None:
+    """Reset every dashboard filter while preserving application data."""
+    for key, value in (
+        ("dashboard_status", "All"),
+        ("dashboard_match_tier", "All"),
+        ("dashboard_search", ""),
+        ("dashboard_source_type", "All"),
+        ("dashboard_verification_status", "All"),
+        ("dashboard_trust_label", "All"),
+    ):
+        session_state[key] = value
     clear_focused_dashboard_role(session_state)
 
 
@@ -746,13 +728,13 @@ def apply_dashboard_status_action(
     """Apply one named card action through the canonical dashboard update path."""
     action_updates: Dict[str, Dict[str, Any]] = {
         "applied": {"status": "Applied", "show_on_dashboard": True},
-        "reviewed": {"status": "Reviewed", "show_on_dashboard": True},
-        "paused": {"status": "Paused", "show_on_dashboard": True},
-        "pass": {"status": "Pass", "show_on_dashboard": False},
-        "invalid_hidden": {"status": "Invalid/Hidden", "show_on_dashboard": False},
-        "active": {"status": "Active", "show_on_dashboard": True},
+        "reviewed": {"status": "Drafted", "show_on_dashboard": True},
+        "paused": {"status": "Withdrawn / Closed", "show_on_dashboard": False},
+        "pass": {"status": "Withdrawn / Closed", "show_on_dashboard": False},
+        "invalid_hidden": {"status": "Withdrawn / Closed", "show_on_dashboard": False},
+        "active": {"status": "Drafted", "show_on_dashboard": True},
         "follow_up_sent": {
-            "status": "Follow-up",
+            "status": "Applied",
             "follow_up_status": "Follow-up sent",
             "show_on_dashboard": True,
         },
@@ -856,34 +838,24 @@ def _status_badges(application: Dict[str, Any]) -> str:
 
 
 def _render_summary_metrics(st: Any, applications: list[Dict[str, Any]]) -> None:
-    cards = "".join(
-        '<div class="cc-summary-card">'
-        f'<span class="cc-summary-value">{value}</span>'
-        f'<span class="cc-summary-label">{html.escape(label)}</span>'
-        "</div>"
-        for label, value in summarize_applications(applications).items()
-    )
-    st.markdown(
-        '<h2 class="cc-section-heading">Application Summary</h2>'
-        f'<div class="cc-summary-grid">{cards}</div>',
-        unsafe_allow_html=True,
-    )
-    navigation = tuple(
-        (f"View {status}", status)
-        for status, count in summarize_applications(applications).items()
-        if status != "Total" and count
-    )
-    for row_start in range(0, len(navigation), 3):
-        columns = st.columns(3)
-        for column, (label, bucket) in zip(
-            columns, navigation[row_start : row_start + 3]
-        ):
+    st.markdown('<h2 class="cc-section-heading">Application Summary</h2>', unsafe_allow_html=True)
+    summary = summarize_applications(applications)
+    navigation = [("All", summary["Total"])] + [
+        (status, summary[status]) for status in VALID_STATUSES if summary.get(status)
+    ]
+    active_status = str(st.session_state.get("dashboard_status") or "All")
+    for row_start in range(0, len(navigation), 4):
+        columns = st.columns(4)
+        for column, (status, count) in zip(columns, navigation[row_start : row_start + 4]):
+            label = f"{status}\n{count}"
             if column.button(
                 label,
-                key=f"summary_{bucket.lower().replace(' ', '_').replace('/', '_')}",
+                key=f"summary_{status.lower().replace(' ', '_').replace('/', '_')}",
+                type="primary" if active_status == status else "secondary",
                 use_container_width=True,
             ):
-                apply_summary_navigation(st.session_state, bucket)
+                apply_summary_navigation(st.session_state, status)
+                st.rerun()
 
 
 def _package_map(project_root: Path = PROJECT_ROOT) -> Dict[str, Dict[str, Any]]:
@@ -1081,6 +1053,7 @@ def _render_source_verification_panel(
     st: Any, application: Dict[str, Any], tracker_id: str
 ) -> None:
     """Render source verification safely for complete and legacy tracker records."""
+    st.markdown("**Source Verification**")
     posting_url = record_posting_url(application)
     if not posting_url:
         st.caption("No posting URL stored.")
@@ -1174,7 +1147,7 @@ def _render_role_card(
     tracker_id = str(application.get("id") or "application")
     if compact:
         with st.container(border=True):
-            title_column, badge_column, action_column = st.columns((4, 2, 1))
+            title_column, badge_column = st.columns((4, 2))
             title_column.markdown(
                 '<p class="cc-card-company">'
                 f"{html.escape(company_display_name(application.get('company') or 'Company not listed'))}</p>"
@@ -1183,13 +1156,15 @@ def _render_role_card(
                 unsafe_allow_html=True,
             )
             badge_column.markdown(_status_badges(application), unsafe_allow_html=True)
+            signal = next_action_signal(application)
             compact_facts = [
                 f"Status: {get_record_status(application)}",
                 f"Match: {application.get('match_score') if application.get('match_score') is not None else 'Not scored'}",
                 f"Priority: {application.get('priority') or 'Medium'}",
-                f"Next: {application.get('next_action') or application.get('recommended_action') or 'Review role'}",
+                f"Date: {status_date(application) or 'Not recorded'}",
             ]
             st.caption(" · ".join(compact_facts))
+            st.markdown(f"**Next:** {html.escape(str(signal['action']))}")
             files = package.get("files", {})
             posting_url = record_posting_url(application)
             portal_url = record_application_portal_url(application)
@@ -1201,8 +1176,16 @@ def _render_role_card(
                 ),
                 None,
             )
-            actions = st.columns(4)
-            if actions[0].button(
+            action_specs = [("view", "View Role", None)]
+            if portal_url:
+                action_specs.append(("portal", "Check Application Status", portal_url))
+            if posting_url:
+                action_specs.append(("posting", "Open Posting", posting_url))
+            if first_material:
+                action_specs.append(("materials", "Open Materials", None))
+            actions = st.columns(len(action_specs))
+            action_columns = dict(zip((item[0] for item in action_specs), actions))
+            if action_columns["view"].button(
                 "View Role",
                 key=f"compact_view_{tracker_id}",
                 use_container_width=True,
@@ -1212,14 +1195,10 @@ def _render_role_card(
                 )
                 st.rerun()
             if posting_url:
-                actions[1].link_button("Open Posting", posting_url, use_container_width=True)
-            else:
-                actions[1].button("Open Posting", key=f"compact_posting_missing_{tracker_id}", disabled=True, use_container_width=True)
+                action_columns["posting"].link_button("Open Posting", posting_url, use_container_width=True)
             if portal_url:
-                actions[2].link_button("Check application status", portal_url, use_container_width=True)
-            else:
-                actions[2].button("Check application status", key=f"compact_portal_missing_{tracker_id}", disabled=True, use_container_width=True)
-            if first_material and actions[3].button(
+                action_columns["portal"].link_button("Check Application Status", portal_url, use_container_width=True)
+            if first_material and action_columns["materials"].button(
                 "Open Materials",
                 key=f"compact_materials_{tracker_id}",
                 use_container_width=True,
@@ -1228,8 +1207,6 @@ def _render_role_card(
                 focus_dashboard_role(st.session_state, dashboard_role_reference(application))
                 st.session_state["dashboard_materials_role_id"] = tracker_id
                 st.rerun()
-            elif not first_material:
-                actions[3].button("Open Materials", key=f"compact_materials_missing_{tracker_id}", disabled=True, use_container_width=True)
         return
     with st.container(border=True):
         flash_key = f"dashboard_flash_{tracker_id}"
@@ -1248,6 +1225,7 @@ def _render_role_card(
             elif st.session_state[shadow_key] != persisted_value:
                 st.session_state[widget_key] = persisted_value
                 st.session_state[shadow_key] = persisted_value
+        st.markdown("#### Role Signal")
         title_column, badge_column = st.columns((4, 2))
         title_column.markdown(
             '<p class="cc-card-company">'
@@ -1266,13 +1244,10 @@ def _render_role_card(
             ),
             unsafe_allow_html=True,
         )
-        next_action = str(application.get("next_action") or "").strip()
-        if next_action:
-            st.markdown(
-                '<div class="cc-tracker-row"><span class="cc-tracker-label">Next action</span>'
-                f"<span>{html.escape(next_action)}</span></div>",
-                unsafe_allow_html=True,
-            )
+        signal = next_action_signal(application)
+        st.markdown("#### Next Action")
+        st.markdown(f"**{html.escape(str(signal['label']))}** — {html.escape(str(signal['reason']))}")
+        st.write(signal["action"])
         if mode == "Cleanup Mode":
             st.info(recommended_next_steps([application], mode)[0])
         match_details = application.get("match_strengths") or application.get("match_gaps")
@@ -1283,20 +1258,12 @@ def _render_role_card(
         source_panel_open = str(
             st.session_state.get("dashboard_source_verification_role_id") or ""
         ) in {tracker_id, dashboard_role_reference(application)}
-        with st.expander("Advanced edit: source verification", expanded=source_panel_open):
-            _render_source_verification_panel(st, application, tracker_id)
-
-        notes = str(application.get("notes") or "").strip()
-        if notes:
-            with st.expander("Notes", expanded=False):
-                st.write(notes)
 
         files = package.get("files", {})
         material_count = sum(Path(path).exists() for path in files.values())
         materials_focused = str(st.session_state.get("dashboard_materials_role_id") or "") == tracker_id
-        with st.expander(
-            f"Application & outreach materials ({material_count})", expanded=materials_focused
-        ):
+        st.markdown("#### Materials")
+        with st.expander(f"Application materials ({material_count})", expanded=materials_focused):
             exact_package = find_exact_role_package(PROJECT_ROOT, application)
             archived_materials = bool(
                 package.get("materials_archived") or exact_package.get("archived")
@@ -1352,10 +1319,14 @@ def _render_role_card(
             if application.get("_archived_materials_available"):
                 st.caption("Archived materials exist.")
 
-        st.caption(
-            "Use quick actions for common workflow changes. Use Advanced edit only "
-            "for manual corrections."
-        )
+        history = application.get("application_history")
+        st.markdown("#### Application History")
+        if isinstance(history, list) and history:
+            for event in history:
+                if isinstance(event, dict):
+                    st.caption(f"{event.get('date', '')} · {event.get('event', 'Update')} · {event.get('to', '')}")
+        else:
+            st.caption(f"{status_date(application) or 'Date not recorded'} · {get_record_status(application)}")
         posting_url = record_posting_url(application)
         portal_url = record_application_portal_url(application)
         first_material = next(
@@ -1372,8 +1343,13 @@ def _render_role_card(
             has_posting_url=posting_url is not None,
             mode=mode,
         )
+        st.markdown("#### Application Links")
+        link_columns = st.columns(2)
         if portal_url:
-            st.link_button("Check application status", portal_url, use_container_width=True)
+            link_columns[0].link_button("Check Application Status", portal_url, use_container_width=True)
+        if posting_url:
+            link_columns[1].link_button("Open Posting", posting_url, use_container_width=True)
+            st.caption(f"Source URL: {posting_url}")
         if primary_actions:
             action_columns = st.columns(len(primary_actions))
             for column, (label, action_key) in zip(action_columns, primary_actions):
@@ -1413,16 +1389,29 @@ def _render_role_card(
                     )
                     st.rerun()
 
+        with st.expander("Advanced Details", expanded=source_panel_open):
+            raw_source_url = str(application.get("raw_source_url") or application.get("original_source_url") or "").strip()
+            if raw_source_url:
+                st.caption(f"Source URL: {raw_source_url}")
+            _render_source_verification_panel(st, application, tracker_id)
+            notes = str(application.get("notes") or "").strip()
+            if notes:
+                st.markdown("**Internal notes**")
+                st.write(notes)
+            legacy = str(application.get("legacy_status") or "").strip()
+            if legacy:
+                st.caption(f"Legacy status: {legacy}")
+
         with st.expander("More actions", expanded=False):
             more_columns = st.columns(4)
             bucket = workflow_status_bucket(application)
-            if bucket not in {"Paused", "Pass", "Hidden / Invalid"} and more_columns[0].button(
-                "Pause",
+            if get_record_status(application) not in {"Rejected", "Withdrawn / Closed"} and more_columns[0].button(
+                "Withdraw / Close",
                 key=f"dashboard_more_pause_{tracker_id}",
                 use_container_width=True,
             ):
                 apply_dashboard_status_action(tracker_id, "paused", PROJECT_ROOT)
-                st.session_state["dashboard_notice"] = "Role paused."
+                st.session_state["dashboard_notice"] = "Role moved to Withdrawn / Closed."
                 st.rerun()
             if more_columns[1].button(
                 "Verify manually",
@@ -1433,13 +1422,13 @@ def _render_role_card(
                     st.session_state, dashboard_role_reference(application)
                 )
                 st.rerun()
-            if bucket == "Active" and more_columns[2].button(
-                "Mark Reviewed",
+            if get_record_status(application) == "Drafted" and more_columns[2].button(
+                "Keep Drafted",
                 key=f"dashboard_more_reviewed_{tracker_id}",
                 use_container_width=True,
             ):
                 apply_dashboard_status_action(tracker_id, "reviewed", PROJECT_ROOT)
-                st.session_state["dashboard_notice"] = "Role marked reviewed."
+                st.session_state["dashboard_notice"] = "Role remains Drafted."
                 st.rerun()
             follow_up_allowed, _ = follow_up_eligibility(application)
             if follow_up_allowed and more_columns[3].button(
@@ -1527,42 +1516,20 @@ def _render_application_tracker(
     mode: str = "All Mode",
 ) -> None:
     st.markdown(
-        '<h2 class="cc-section-heading">Application Tracker</h2>',
+        '<h2 class="cc-section-heading">Applications in Flight</h2>',
         unsafe_allow_html=True,
     )
-    grouped = group_applications_by_status(
-        applications, preserve_order=True, mode=mode
-    )
-    for label, group in grouped.items():
-        count_label = "role" if len(group) == 1 else "roles"
-        heading = (
-            '<div class="cc-group-heading">'
-            f'<span class="cc-group-title">{html.escape(label)}</span>'
-            f'<span class="cc-group-count">{len(group)} {count_label}</span>'
-            "</div>"
+    if not applications:
+        st.caption("No other roles match the current filters.")
+        return
+    for application in applications:
+        _render_role_card(
+            st,
+            application,
+            packages.get(str(application.get("id")), {}),
+            mode,
+            compact=True,
         )
-        if label == "Hidden / Invalid" and mode != "Cleanup Mode":
-            with st.expander(f"{label} ({len(group)})", expanded=False):
-                for application in group:
-                    _render_role_card(
-                        st,
-                        application,
-                        packages.get(str(application.get("id")), {}),
-                        mode,
-                        compact=True,
-                    )
-            continue
-        st.markdown(heading, unsafe_allow_html=True)
-        if not group:
-            st.caption("No roles in this group.")
-        for application in group:
-            _render_role_card(
-                st,
-                application,
-                packages.get(str(application.get("id")), {}),
-                mode,
-                compact=True,
-            )
 
 
 def _render_recommended_next_steps(
@@ -1572,66 +1539,45 @@ def _render_recommended_next_steps(
     packages: Dict[str, Dict[str, Any]],
     focus_records: list[Dict[str, Any]] | None = None,
 ) -> str:
-    steps = structured_recommended_next_steps(applications, mode)
     all_focus_records = focus_records if focus_records is not None else applications
     compact_mode = bool(st.session_state.get("dashboard_compact_mode", True))
-    next_steps_collapsed = bool(
-        st.session_state.get("dashboard_next_steps_collapsed", False)
-    )
+    focus = select_todays_focus(applications)
     with st.container(border=True):
-        if next_steps_collapsed:
-            heading, control = st.columns((5, 1))
-            heading.markdown(f"**Recommended Next Steps ({len(steps)})**")
-            if control.button(
-                "Expand",
-                key="dashboard_expand_next_steps",
-                use_container_width=True,
-            ):
-                expand_recommended_next_steps(st.session_state)
-                st.rerun()
+        st.markdown("### Today’s Focus")
+        if not focus:
+            st.markdown("**No Action Today**")
+            st.caption("There are no open applications requiring attention today.")
         else:
-            st.markdown(f"**Recommended Next Steps ({len(steps)})**")
-            if not steps:
-                st.caption(recommended_next_steps([], mode)[0])
-        for step in (() if next_steps_collapsed else steps):
-            tracker_id = step["tracker_id"]
-            record = find_dashboard_role(applications, tracker_id) or {}
-            role_reference = dashboard_role_reference(record) or tracker_id
-            st.markdown(
-                f"**{step['company']} — {step['title']}**  "
-                f"\n{step['recommendation']}"
-            )
-            navigation_actions = st.columns(3)
-            if navigation_actions[0].button(
-                "View role",
-                key=f"next_view_{role_reference}",
-                use_container_width=True,
-            ):
-                focus_dashboard_role(st.session_state, role_reference)
-                st.rerun()
-            if step.get("posting_url"):
-                navigation_actions[1].link_button(
-                    "Open posting", step["posting_url"], use_container_width=True
-                )
-            material_paths = step.get("material_paths") or {}
+            record = find_dashboard_role(applications, focus["id"]) or {}
+            role_reference = dashboard_role_reference(record) or focus["id"]
+            st.markdown(f"**{focus['company']} — {focus['role']}** · {focus['status']}")
+            st.markdown(f"**{focus['label']}** — {focus['reason']}")
+            st.markdown(html.escape(str(focus["action"])))
+            action_specs = [("view", "View Role", None)]
+            portal_url = record_application_portal_url(record)
+            posting_url = record_posting_url(record)
+            if portal_url:
+                action_specs.append(("portal", "Check Application Status", portal_url))
+            if posting_url:
+                action_specs.append(("posting", "Open Posting", posting_url))
+            material_paths = dict(record.get("_material_paths") or {})
             first_material = next(
-                (
-                    Path(path)
-                    for path in material_paths.values()
-                    if Path(path).exists() and Path(path).suffix.lower() != ".md"
-                ),
+                (Path(path) for path in material_paths.values() if Path(path).exists()),
                 None,
             )
-            if first_material and navigation_actions[2].button(
-                "Open materials",
-                key=f"next_materials_{tracker_id}",
-                use_container_width=True,
-                help=str(first_material),
-            ):
-                focus_dashboard_role(st.session_state, role_reference)
-                st.session_state["dashboard_materials_role_id"] = tracker_id
-                st.rerun()
+            if first_material:
+                action_specs.append(("materials", "Open Materials", None))
+            action_columns = st.columns(len(action_specs))
+            for column, (key, label, url) in zip(action_columns, action_specs):
+                if url:
+                    column.link_button(label, url, use_container_width=True)
+                elif column.button(label, key=f"next_{key}_{role_reference}", use_container_width=True):
+                    focus_dashboard_role(st.session_state, role_reference)
+                    if key == "materials":
+                        st.session_state["dashboard_materials_role_id"] = str(record.get("id") or "")
+                    st.rerun()
 
+    compact_mode = bool(st.session_state.get("dashboard_compact_mode", False if st.session_state.get("dashboard_focused_role_id") else True))
     focused_id = str(st.session_state.get("dashboard_focused_role_id") or "")
     focused = find_dashboard_role(all_focus_records, focused_id)
     if focused and not compact_mode:
@@ -2635,50 +2581,61 @@ def _render_dashboard(st: Any) -> None:
     if "dashboard_notice" in st.session_state:
         st.success(st.session_state.pop("dashboard_notice"))
 
+    st.session_state.setdefault("dashboard_status", "All")
+    if st.session_state["dashboard_status"] not in ("All",) + VALID_STATUSES:
+        st.session_state["dashboard_status"] = "All"
     _render_summary_metrics(st, applications)
 
     st.markdown(
-        '<h2 class="cc-section-heading">Dashboard Work Mode</h2>',
+        '<h2 class="cc-section-heading">Find Applications</h2>',
         unsafe_allow_html=True,
     )
-    mode = st.selectbox(
-        "Mode",
-        DASHBOARD_MODES,
-        format_func=lambda value: value.replace(" Mode", ""),
-        key="dashboard_mode",
-    )
     search = st.text_input(
-        "Search company, title, category, role family, source, or location",
+        "Search company or role",
         key="dashboard_search",
     )
     filter_columns = st.columns(3)
-    match_tier = filter_columns[0].selectbox(
+    application_status = filter_columns[0].selectbox(
+        "Application Status", ("All",) + VALID_STATUSES, key="dashboard_status"
+    )
+    match_tier = filter_columns[1].selectbox(
         "Match Tier", MATCH_TIER_FILTERS, key="dashboard_match_tier"
     )
-    recommended_action = filter_columns[1].selectbox(
-        "Recommended Action", ACTION_FILTERS, key="dashboard_action"
-    )
-    application_status = filter_columns[2].selectbox(
-        "Application Status", STATUS_FILTERS, key="dashboard_status"
-    )
-    follow_up_status = "All"
-    with st.expander("Advanced filters", expanded=False):
+    sort_by = filter_columns[2].selectbox("Sort by", SORT_OPTIONS, key="dashboard_sort")
+    with st.expander("Advanced Search", expanded=False):
         source_columns = st.columns(3)
         source_type = source_columns[0].selectbox("Source Type", SOURCE_TYPE_FILTERS, key="dashboard_source_type")
         verification_status = source_columns[1].selectbox("Verification Status", VERIFICATION_STATUS_FILTERS, key="dashboard_verification_status")
         trust_label = source_columns[2].selectbox("Trust Label", TRUST_LABEL_FILTERS, key="dashboard_trust_label")
-    sort_by = st.selectbox("Sort by", SORT_OPTIONS, key="dashboard_sort")
+    active_filters = []
+    if application_status != "All":
+        active_filters.append(f"Status: {application_status}")
+    if match_tier != "All":
+        active_filters.append(f"Match: {match_tier}")
+    if search:
+        active_filters.append(f'Search: “{search}”')
+    indicator, reset = st.columns((5, 1))
+    indicator.caption("Active filters: " + (" · ".join(active_filters) if active_filters else "None"))
+    reset.button(
+        "Clear filters",
+        key="dashboard_clear_filters",
+        use_container_width=True,
+        on_click=clear_dashboard_filters,
+        args=(st.session_state,),
+    )
 
     all_records = prepare_dashboard_records(applications, packages)
     records = list(all_records)
-    if not (mode == "All Mode" and application_status in HIDDEN_STATUSES):
-        records = select_dashboard_mode(records, mode)
+    if application_status == "All":
+        records = [
+            record for record in records
+            if get_record_status(record) not in {"Rejected", "Withdrawn / Closed"}
+            and record.get("show_on_dashboard") is not False
+        ]
     records = filter_dashboard_records(
         records,
         match_tier=match_tier,
-        recommended_action=recommended_action,
         application_status=application_status,
-        follow_up_status=follow_up_status,
         search=search,
         source_type=source_type,
         verification_status=verification_status,
@@ -2686,40 +2643,20 @@ def _render_dashboard(st: Any) -> None:
     )
     records = sort_dashboard_records(records, sort_by)
     st.session_state.setdefault("dashboard_compact_mode", True)
-    st.session_state.setdefault("dashboard_next_steps_collapsed", False)
     has_focused_role = bool(
         str(st.session_state.get("dashboard_focused_role_id") or "").strip()
     )
-    workspace_controls = st.columns(3)
-    if workspace_controls[0].button(
-        "Collapse All", key="dashboard_collapse_all", use_container_width=True
-    ):
-        collapse_dashboard_working_view(st.session_state)
-        st.rerun()
-    if workspace_controls[1].button(
-        "Expand Focused",
-        key="dashboard_expand_focused",
-        use_container_width=True,
-        disabled=not has_focused_role,
-    ):
-        expand_focused_dashboard_role(st.session_state)
-        st.rerun()
-    if workspace_controls[2].button(
-        "Clear Focus",
-        key="dashboard_clear_focus_control",
-        use_container_width=True,
-        disabled=not has_focused_role,
-    ):
+    if has_focused_role and st.button("Clear Focus", key="dashboard_clear_focus_control"):
         clear_focused_dashboard_role(st.session_state)
         st.rerun()
     focused_id = _render_recommended_next_steps(
-        st, records, mode, packages, focus_records=all_records
+        st, records, "All Mode", packages, focus_records=all_records
     )
-    st.caption(f"{len(records)} roles match the current mode and filters.")
+    st.caption(f"{len(records)} roles match the current filters.")
     tracker_records = [
         record for record in records if str(record.get("id") or "") != focused_id
     ]
-    _render_application_tracker(st, tracker_records, packages, mode)
+    _render_application_tracker(st, tracker_records, packages, "All Mode")
 
 
 def _render_recent_outputs(st: Any) -> None:

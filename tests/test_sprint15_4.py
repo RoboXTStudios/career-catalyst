@@ -158,23 +158,23 @@ class NavigationActionTests(unittest.TestCase):
             )
             st = _FakeStreamlit()
             app._render_recommended_next_steps(st, [record], "All Mode", {})
-            self.assertIn(("Open posting", record["canonical_apply_url"]), st.links)
-            self.assertIn("Open materials", {label for label, _ in st.buttons})
+            self.assertIn(("Open Posting", record["canonical_apply_url"]), st.links)
+            self.assertIn("Open Materials", {label for label, _ in st.buttons})
 
         no_links = _FakeStreamlit()
         app._render_recommended_next_steps(no_links, [_record()], "All Mode", {})
         self.assertFalse(no_links.links)
-        self.assertNotIn("Open materials", {label for label, _ in no_links.buttons})
+        self.assertNotIn("Open Materials", {label for label, _ in no_links.buttons})
 
     def test_source_url_is_a_valid_posting_fallback(self):
         record = _record(source_url="https://example.com/jobs/123")
         st = _FakeStreamlit()
         app._render_recommended_next_steps(st, [record], "All Mode", {})
-        self.assertIn(("Open posting", record["source_url"]), st.links)
+        self.assertIn(("Open Posting", record["source_url"]), st.links)
 
     def test_all_mode_next_steps_remain_navigation_only(self):
         source = inspect.getsource(app._render_recommended_next_steps)
-        self.assertIn("View role", source)
+        self.assertIn("View Role", source)
         self.assertNotIn("Generate package", source)
         self.assertNotIn("Pause", source)
 
@@ -219,8 +219,9 @@ class AdvancedStatusStabilityTests(unittest.TestCase):
                 "second", {"status": "Follow-Up", "notes": "Sent"}, root
             )
             records = {record["id"]: record for record in load_application_tracker(root)}
-            self.assertEqual(updated["status"], "Follow-up")
-            self.assertEqual(records["second"]["status"], "Follow-up")
+            self.assertEqual(updated["status"], "Applied")
+            self.assertEqual(updated["legacy_status"], "Active")
+            self.assertEqual(records["second"]["status"], "Applied")
             self.assertEqual(records["first"]["status"], "Active")
             self.assertEqual(
                 app.resolve_selected_tracker_id(list(records), "second"), "second"

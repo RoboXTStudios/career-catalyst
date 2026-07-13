@@ -7,7 +7,7 @@ from pathlib import Path
 from urllib.parse import unquote
 
 from scripts.cli import main
-from scripts.application_tracker import load_application_tracker
+from scripts.application_tracker import get_record_status, load_application_tracker
 from scripts.generate_dashboard import (
     _asset_label,
     _merge_tracker,
@@ -38,20 +38,20 @@ class GenerateDashboardTests(unittest.TestCase):
 
     def test_dashboard_contains_required_headings(self):
         self.assertIn("Career Catalyst Dashboard", self.content)
-        self.assertIn("Application Packages", self.content)
+        self.assertIn("Applications in Flight", self.content)
 
-    def test_dashboard_contains_priority_queues_and_next_steps(self):
+    def test_dashboard_contains_signal_first_focus_and_filters(self):
         for heading in (
-            "Recommended Next Steps",
-            "Strong Matches",
-            "Good Matches",
-            "Stretch Matches",
-            "Follow-Up Due",
-            "Review First",
-            "Pass / Hidden / Invalid",
-            "Cleanup Needed",
+            "Today’s Focus",
+            "Application Summary",
+            "Applications in Flight",
+            "Application Status",
+            "Match Tier",
+            "Clear filters",
         ):
             self.assertIn(heading, self.content)
+        self.assertNotIn("Recommended Next Steps", self.content)
+        self.assertNotIn("Priority Queues", self.content)
 
     def test_dashboard_cards_include_follow_up_timing_fields(self):
         for label in (
@@ -96,38 +96,28 @@ class GenerateDashboardTests(unittest.TestCase):
         self.assertIn('<span class="badge status-applied">Applied</span>', self.content)
 
     def test_applied_section_preserves_all_applied_roles_without_duplicate_cards(self):
-        applied_section = self.content.split('id="applied-follow-up"', 1)[1].split(
-            'id="reviewed"', 1
-        )[0]
-        active_section = self.content.split('id="active-applied"', 1)[1].split(
-            'id="applied-follow-up"', 1
-        )[0]
-
         applications = load_application_tracker(PROJECT_ROOT)
         expected_applied_records = [
             item
             for item in applications
-            if item["status"] == "Applied" and item.get("show_on_dashboard") is not False
+            if get_record_status(item) == "Applied"
         ]
         for item in expected_applied_records:
-            self.assertIn(html.escape(str(item["role"])), applied_section)
+            self.assertIn(html.escape(str(item["role"])), self.content)
         self.assertEqual(
-            applied_section.count('status-applied">Applied</span>'),
+            self.content.count('data-status="Applied"'),
             len(expected_applied_records),
         )
-        self.assertNotIn('status-applied">Applied</span>', active_section)
         role_ids = re.findall(r'id="(role-[^"]+)"', self.content)
         self.assertEqual(len(role_ids), len(set(role_ids)))
 
     def test_invalid_playstation_role_is_not_in_active_section(self):
-        active_section = self.content.split('id="active-applied"', 1)[1].split(
-            'id="applied-follow-up"', 1
-        )[0]
-        hidden_section = self.content.split('id="hidden-invalid-roles"', 1)[1]
-
-        self.assertNotIn("Director, Ad Operations &amp; Technology", active_section)
-        self.assertIn("Director, Ad Operations &amp; Technology", hidden_section)
-        self.assertRegex(hidden_section, r'status-invalid(?:_hidden)?">Invalid')
+        self.assertIn("Director, Ad Operations &amp; Technology", self.content)
+        self.assertRegex(
+            self.content,
+            r'data-status="Withdrawn / Closed"[^>]*>.*?Director, Ad Operations &amp; Technology',
+        )
+        self.assertIn("closedOnAll", self.content)
 
     def test_crunchyroll_role_matches_tracker_status(self):
         applications = load_application_tracker(PROJECT_ROOT)
@@ -137,31 +127,15 @@ class GenerateDashboardTests(unittest.TestCase):
             if item["id"] == "crunchyroll_enterprise_strategy_paused"
         )
         role = "Director, Enterprise Strategy &amp; Initiatives"
-        active_section = self.content.split('id="active-applied"', 1)[1].split(
-            'id="applied-follow-up"', 1
-        )[0]
-        draft_section = self.content.split('id="draft-paused"', 1)[1].split(
-            'id="passed"', 1
-        )[0]
-        hidden_section = self.content.split('id="hidden-invalid-roles"', 1)[1]
-
-        if crunchyroll["status"] == "Paused":
-            self.assertIn(role, draft_section)
-            self.assertIn('status-paused">Paused</span>', draft_section)
-        elif crunchyroll["status"] == "Invalid":
-            self.assertIn(role, hidden_section)
-            self.assertRegex(hidden_section, r'status-invalid(?:_hidden)?">Invalid')
-        else:
-            self.assertIn(role, self.content)
-        self.assertNotIn(role, active_section)
+        self.assertIn(role, self.content)
+        self.assertEqual(get_record_status(crunchyroll), "Withdrawn / Closed")
 
     def test_dashboard_summary_distinguishes_tracker_states(self):
         for label in (
-            "Total job files",
-            "Active applications",
-            "Applied applications",
-            "Draft or paused roles",
-            "Hidden/invalid roles",
+            "Applied",
+            "Under Consideration",
+            "Rejected",
+            "Withdrawn / Closed",
         ):
             self.assertIn(label, self.content)
 

@@ -257,7 +257,7 @@ class DashboardNavigationPolishTests(unittest.TestCase):
         self.assertEqual(state["dashboard_mode"], "Follow-Up Mode")
         self.assertEqual(state["dashboard_search"], "Netflix")
 
-    def test_collapsed_next_steps_render_header_and_expand_only(self):
+    def test_todays_focus_remains_single_and_actionable_in_compact_mode(self):
         st = _FakeStreamlit(
             state={
                 "dashboard_compact_mode": True,
@@ -265,10 +265,13 @@ class DashboardNavigationPolishTests(unittest.TestCase):
             }
         )
         app._render_recommended_next_steps(st, [_record()], "All Mode", {})
-        self.assertEqual({label for label, _ in st.buttons}, {"Expand"})
+        self.assertEqual({label for label, _ in st.buttons}, {"View Role"})
+        self.assertTrue(
+            any("Today’s Focus" in value for kind, value in st.messages if kind == "markdown")
+        )
         rendered = "\n".join(value for kind, value in st.messages if kind == "markdown")
-        self.assertIn("Recommended Next Steps (1)", rendered)
-        self.assertNotIn("Director, Operations", rendered)
+        self.assertNotIn("Recommended Next Steps", rendered)
+        self.assertIn("Director, Operations", rendered)
 
     def test_view_role_renders_focused_workspace_directly_below_next_steps(self):
         record = _record()

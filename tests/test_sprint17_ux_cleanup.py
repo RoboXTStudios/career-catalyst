@@ -201,7 +201,7 @@ class CompactDashboardTests(unittest.TestCase):
         self.assertIn("View Role", rendered)
         self.assertIn("Open Posting", rendered)
         self.assertIn('href="https://example.com/job"', rendered)
-        self.assertIn("Open Materials", rendered)
+        self.assertNotIn("Open Materials", rendered)
         self.assertIn('<details class="role-details">', rendered)
         self.assertNotIn('<details class="role-details" open', rendered)
         self.assertIn('class="match-details"', rendered)
@@ -227,19 +227,19 @@ class CompactDashboardTests(unittest.TestCase):
         groups = {"active": [], "applied": [package], "reviewed": [], "paused": [], "pass": [], "hidden": []}
         counts = {"Total": 1, "Active": 0, "Applied / Follow-up": 1, "Reviewed": 0, "Paused": 0, "Pass": 0, "Hidden / Invalid": 0}
         content = _render_html(groups, counts, [], Path("/tmp/dashboard"))
-        self.assertIn('class="recommended-steps compact-next-steps"', content)
-        self.assertIn('class="next-step-row"', content)
-        self.assertIn('data-collapse-all', content)
+        self.assertIn("Today’s Focus", content)
+        self.assertIn('data-status-filter="Applied"', content)
+        self.assertIn('data-clear-filters', content)
         self.assertIn('data-focus-role="role-acme-director-ops"', content)
         self.assertEqual(content.count('id="role-acme-director-ops"'), 1)
         self.assertEqual(content.count('data-role-anchor="role-acme-director-ops"'), 1)
-        self.assertIn("Source Type", content)
-        self.assertIn("Verification Status", content)
+        self.assertIn("Application Status", content)
+        self.assertIn("Match Tier", content)
         self.assertIn("Sort by", __import__("inspect").getsource(app._render_dashboard))
 
     def test_dashboard_exposes_requested_workspace_controls(self):
         source = __import__("inspect").getsource(app._render_dashboard)
-        for label in ("Collapse All", "Expand Focused", "Clear Focus"):
+        for label in ("Application Status", "Advanced Search", "Clear filters"):
             self.assertIn(label, source)
 
     def test_source_verification_panel_exposes_all_manual_fields(self):

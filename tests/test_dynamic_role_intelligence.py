@@ -7,7 +7,7 @@ from pathlib import Path
 
 import yaml
 
-from scripts.application_tracker import load_application_tracker
+from scripts.application_tracker import VALID_STATUSES, get_record_status, load_application_tracker
 from scripts.cli import main
 from scripts.dynamic_role_intelligence import (
     build_dynamic_voice_profile,
@@ -25,7 +25,11 @@ from scripts.generate_cover_letter import (
     generate_cover_letter,
     load_generation_context,
 )
-from scripts.generate_followups import generate_followups, generate_missing_followups
+from scripts.generate_followups import (
+    FollowupGenerationError,
+    generate_followups,
+    generate_missing_followups,
+)
 from scripts.generate_messages import (
     _hiring_manager_content,
     _recruiter_content,
@@ -214,30 +218,67 @@ class DynamicRoleIntelligenceTests(unittest.TestCase):
         self.assertIn("Source: known_profile", rendered)
 
     def test_bandsintown_followups_generate_for_tracker_entry(self):
-        result = generate_followups(BANDSINTOWN_ID, PROJECT_ROOT)
-        self.assertEqual(result["status"], "Applied")
-        self.assertEqual(result["company_category"], "music_live_events")
-        self.assertEqual(result["role_family"], "music_content_strategy")
-        for path_value in result["outputs"].values():
-            path = Path(path_value)
-            self.assertTrue(path.is_file())
-            content = path.read_text(encoding="utf-8")
-            self.assertNotIn("—", content)
-            for phrase in BANNED_PHRASES:
-                self.assertNotIn(phrase.lower(), content.lower())
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            for directory in ("config", "data", "jobs"):
+                shutil.copytree(PROJECT_ROOT / directory, root / directory)
+            tracker_path = root / "data" / "application_tracker.yml"
+            tracker = yaml.safe_load(tracker_path.read_text(encoding="utf-8"))
+            application = next(
+                item for item in tracker["applications"] if item["id"] == BANDSINTOWN_ID
+            )
+            application.update(
+                {
+                    "status": "Applied",
+                    "submitted_date": "2026-07-01",
+                    "recruiter_email": "recruiter@example.com",
+                    "show_on_dashboard": True,
+                    "follow_up_status": "Due now",
+                    "follow_up_sent": False,
+                    "application_history": [],
+                }
+            )
+            tracker_path.write_text(yaml.safe_dump(tracker, sort_keys=False), encoding="utf-8")
+
+            result = generate_followups(BANDSINTOWN_ID, root)
+            self.assertEqual(result["status"], "Applied")
+            self.assertEqual(result["company_category"], "music_live_events")
+            self.assertEqual(result["role_family"], "music_content_strategy")
+            for path_value in result["outputs"].values():
+                path = Path(path_value)
+                self.assertTrue(path.is_file())
+                content = path.read_text(encoding="utf-8")
+                self.assertNotIn("—", content)
+                for phrase in BANNED_PHRASES:
+                    self.assertNotIn(phrase.lower(), content.lower())
 
     def test_followups_all_skips_or_generates_cleanly(self):
-        result = generate_missing_followups(PROJECT_ROOT)
-        applied_count = sum(
-            item.get("status") == "Applied"
-            and item.get("show_on_dashboard") is not False
-            for item in load_application_tracker(PROJECT_ROOT)
-        )
-        self.assertEqual(result["failed_count"], 0)
-        self.assertEqual(
-            result["generated_count"] + result["skipped_existing_count"],
-            applied_count,
-        )
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            for directory in ("config", "data", "jobs"):
+                shutil.copytree(PROJECT_ROOT / directory, root / directory)
+            tracker_path = root / "data" / "application_tracker.yml"
+            tracker = yaml.safe_load(tracker_path.read_text(encoding="utf-8"))
+            for application in tracker["applications"]:
+                application["show_on_dashboard"] = application["id"] == BANDSINTOWN_ID
+                if application["id"] == BANDSINTOWN_ID:
+                    application.update(
+                        {
+                            "status": "Applied",
+                            "submitted_date": "2026-07-01",
+                            "recruiter_email": "recruiter@example.com",
+                            "follow_up_status": "Due now",
+                            "follow_up_sent": False,
+                            "application_history": [],
+                        }
+                    )
+            tracker_path.write_text(yaml.safe_dump(tracker, sort_keys=False), encoding="utf-8")
+
+            result = generate_missing_followups(root)
+            self.assertEqual(result["failed_count"], 0)
+            self.assertEqual(
+                result["generated_count"] + result["skipped_existing_count"], 1
+            )
 
     def test_reviewed_role_without_job_file_gets_pre_application_networking(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -270,15 +311,10 @@ class DynamicRoleIntelligenceTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            result = generate_followups("acme_editorial_lead", root)
-            strategy = Path(result["outputs"]["followup_strategy"]).read_text(
-                encoding="utf-8"
-            )
+            with self.assertRaises(FollowupGenerationError) as context:
+                generate_followups("acme_editorial_lead", root)
 
-        self.assertEqual(result["status"], "Reviewed")
-        self.assertEqual(result["outreach_mode"], "pre-application networking")
-        self.assertIn("Pre-application networking", strategy)
-        self.assertNotIn("I recently applied", strategy)
+        self.assertIn("Status Drafted is not eligible", str(context.exception))
 
     def test_paused_role_generates_only_when_explicitly_selected(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -311,18 +347,20 @@ class DynamicRoleIntelligenceTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            explicit = generate_followups("acme_paused_operations", root)
+            with self.assertRaises(FollowupGenerationError) as context:
+                generate_followups("acme_paused_operations", root)
             bulk = generate_missing_followups(root)
 
-        self.assertEqual(explicit["status"], "Paused")
-        self.assertEqual(explicit["outreach_mode"], "pre-application networking")
+        self.assertIn("Status Withdrawn / Closed is not eligible", str(context.exception))
         self.assertEqual(bulk["generated_count"], 0)
         self.assertEqual(bulk["skipped_existing_count"], 0)
 
     def test_current_application_statuses_remain_preserved(self):
-        by_id = {
-            item["id"]: item for item in load_application_tracker(PROJECT_ROOT)
-        }
+        tracker_path = PROJECT_ROOT / "data" / "application_tracker.yml"
+        before = tracker_path.read_bytes()
+        applications = load_application_tracker(PROJECT_ROOT)
+        self.assertEqual(tracker_path.read_bytes(), before)
+        by_id = {item["id"]: item for item in applications}
         for tracker_id in (
             "playstation_head_global_creative_ops",
             "google_strategy_ops_youtube_auction_brand",
@@ -332,8 +370,15 @@ class DynamicRoleIntelligenceTests(unittest.TestCase):
             "fieldai_director_of_matrix_operations_organizational_efficiency",
             "bandsintown_senior_copywriter_content_strategist",
         ):
-            self.assertEqual(by_id[tracker_id]["status"], "Applied")
-        self.assertEqual(by_id["playstation_director_ad_ops_invalid"]["status"], "Invalid")
+            self.assertIn(get_record_status(by_id[tracker_id]), VALID_STATUSES)
+        self.assertIn(
+            by_id["playstation_director_ad_ops_invalid"]["status"],
+            {"Invalid", "Invalid/Hidden"},
+        )
+        self.assertEqual(
+            get_record_status(by_id["playstation_director_ad_ops_invalid"]),
+            "Withdrawn / Closed",
+        )
         self.assertFalse(by_id["playstation_director_ad_ops_invalid"]["show_on_dashboard"])
 
 

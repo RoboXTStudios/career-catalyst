@@ -33,6 +33,7 @@ if __package__:
         normalize_job_source,
     )
     from .filename_utils import company_display_name, short_company_name, short_role_name
+    from .career_signals import next_action_signal, select_todays_focus, status_date
     from .parse_job import JobParseError, parse_job_description
 else:
     from application_tracker import (
@@ -58,6 +59,7 @@ else:
         normalize_job_source,
     )
     from filename_utils import company_display_name, short_company_name, short_role_name
+    from career_signals import next_action_signal, select_todays_focus, status_date
     from parse_job import JobParseError, parse_job_description
 
 
@@ -103,18 +105,7 @@ MATCH_TIER_FILTERS = (
 ACTION_FILTERS = ("All", "Generate Package", "Review First", "Pass")
 STATUS_FILTERS = (
     "All",
-    "Active",
-    "Applied / Follow-up",
-    "Reviewed",
-    "Paused",
-    "Pass",
-    "Invalid/Hidden",
-) + tuple(
-    status
-    for status in VALID_STATUSES
-    if status
-    not in {"Active", "Reviewed", "Paused", "Pass", "Invalid/Hidden"}
-)
+) + VALID_STATUSES
 FOLLOW_UP_FILTERS = (
     "All", "Not due yet", "Due soon", "Due now", "Overdue", "Follow-up sent", "No applied date"
 )
@@ -650,6 +641,11 @@ def recommended_next_steps(
 
 def record_posting_url(record: Dict[str, Any]) -> Optional[str]:
     """Return the first stored posting URL without inventing a destination."""
+    portal_values = {
+        str(record.get(key) or "").strip()
+        for key in ("application_portal_url", "status_portal_url", "portal_url")
+        if str(record.get(key) or "").strip()
+    }
     for key in (
         "posting_url",
         "original_source_url",
@@ -659,7 +655,7 @@ def record_posting_url(record: Dict[str, Any]) -> Optional[str]:
         "canonical_apply_url",
     ):
         value = str(record.get(key) or "").strip()
-        if value.startswith(("https://", "http://")):
+        if value.startswith(("https://", "http://")) and value not in portal_values:
             return value
     return None
 
@@ -671,6 +667,60 @@ def record_application_portal_url(record: Dict[str, Any]) -> Optional[str]:
         if value.startswith(("https://", "http://")):
             return value
     return None
+
+
+def classify_application_urls(record: Dict[str, Any]) -> Dict[str, Optional[str]]:
+    """Separate posting and portal URLs, flagging ambiguous candidates.
+
+    Explicit fields always win.  Only well-known candidate-home URL patterns
+    are inferred as portals; ordinary Workday, Greenhouse, Lever, and employer
+    job detail URLs remain postings.
+    """
+    posting_url = record_posting_url(record)
+    portal_url = record_application_portal_url(record)
+    candidates = []
+    for field in ("notes", "next_action", "raw_source_url", "original_source_url"):
+        candidates.extend(
+            re.findall(r"https?://[^\s<>'\"]+", str(record.get(field) or ""))
+        )
+    strong_patterns = (
+        r"myworkdayjobs\.com/.*/userHome(?:[/?#]|$)",
+        r"sapsf\.com/portalcareer(?:[/?#]|$)",
+        r"my\.smartrecruiters\.com(?:[/?#]|$)",
+        r"my\.greenhouse\.io(?:[/?#]|$)",
+    )
+    ambiguous_url = None
+    for candidate in candidates:
+        if portal_url is None and any(
+            re.search(pattern, candidate, flags=re.IGNORECASE)
+            for pattern in strong_patterns
+        ):
+            portal_url = candidate
+            continue
+        if candidate != posting_url and candidate != portal_url and ambiguous_url is None:
+            ambiguous_url = candidate
+    if portal_url and posting_url == portal_url:
+        posting_url = next(
+            (
+                str(record.get(key) or "").strip()
+                for key in (
+                    "posting_url",
+                    "original_source_url",
+                    "source_url",
+                    "job_url",
+                    "official_url",
+                    "canonical_apply_url",
+                )
+                if str(record.get(key) or "").strip().startswith(("https://", "http://"))
+                and str(record.get(key) or "").strip() != portal_url
+            ),
+            None,
+        )
+    return {
+        "posting_url": posting_url,
+        "application_portal_url": portal_url,
+        "ambiguous_url": ambiguous_url,
+    }
 
 
 def record_dashboard_reference(record: Dict[str, Any]) -> str:
@@ -1163,18 +1213,11 @@ def _relative_href(path: Path, dashboard_directory: Path) -> str:
 def _status_class(status: str) -> str:
     known_statuses = {
         "applied",
-        "archived",
         "drafted",
-        "follow_up",
         "interviewing",
         "offer",
         "under_consideration",
-        "invalid",
-        "invalid_hidden",
-        "pass",
-        "paused",
         "rejected",
-        "reviewed",
         "withdrawn_closed",
     }
     normalized = _slug(status)
@@ -1334,13 +1377,15 @@ def _render_notes(tracker: Dict[str, Any]) -> str:
     for label, key in (("Notes", "notes"), ("Next action", "next_action")):
         value = tracker.get(key)
         if value:
+            display_value = " ".join(str(value).split())
             rows.append(
                 '<div class="tracker-row">'
                 f'<span class="tracker-label">{label}</span>'
-                f'<p>{html.escape(str(value))}</p>'
+                f'<p>{html.escape(display_value)}</p>'
                 "</div>"
             )
     verification_notes = tracker.get("verification_notes") or "Verify manually"
+    verification_notes = " ".join(str(verification_notes).split())
     rows.append(
         '<div class="tracker-row">'
         '<span class="tracker-label">Verification notes</span>'
@@ -1404,7 +1449,7 @@ def _render_primary_actions(package: Dict[str, Any], dashboard_directory: Path, 
     posting = (
         f'<a class="action-button" href="{html.escape(posting_url, quote=True)}" target="_blank" rel="noopener">Open Posting</a>'
         if posting_url
-        else '<button class="action-button action-disabled" type="button" disabled>Open Posting</button>'
+        else ""
     )
     portal_url = record_application_portal_url(tracker)
     portal = (
@@ -1416,7 +1461,7 @@ def _render_primary_actions(package: Dict[str, Any], dashboard_directory: Path, 
     material = (
         f'<a class="action-button" href="{html.escape(material_href, quote=True)}" target="_blank" rel="noopener">Open Materials</a>'
         if material_href != "#"
-        else '<button class="action-button action-disabled" type="button" disabled>Open Materials</button>'
+        else ""
     )
     return (
         '<nav class="card-actions" aria-label="Primary role actions">'
@@ -1435,7 +1480,7 @@ def _compact_status_line(package: Dict[str, Any]) -> str:
         ("Status", get_record_status(tracker) if tracker else "Active"),
         ("Match", score_label),
         ("Priority", tracker.get("priority") or "Medium"),
-        ("Next", tracker.get("next_action") or tracker.get("recommended_action") or "Review role"),
+        ("Date", status_date(tracker) or "Not recorded"),
     )
     items = []
     for label, value in values:
@@ -1447,8 +1492,17 @@ def _compact_status_line(package: Dict[str, Any]) -> str:
 def _render_package(package: Dict[str, Any], dashboard_directory: Path) -> str:
     tracker = package.get("tracker", {})
     anchor_id = _role_anchor_id(tracker, package)
+    status = get_record_status(tracker) if tracker else "Drafted"
+    signal = next_action_signal(tracker)
+    search_text = normalize_tracker_value(
+        f"{package.get('company', '')} {package.get('role', '')} {tracker.get('location', '')}"
+    )
     return (
-        f'<article class="application-card compact-role-card" id="{html.escape(anchor_id, quote=True)}" data-role-anchor="{html.escape(anchor_id, quote=True)}">'
+        f'<article class="application-card compact-role-card" id="{html.escape(anchor_id, quote=True)}" data-role-anchor="{html.escape(anchor_id, quote=True)}" '
+        f'data-status="{html.escape(status, quote=True)}" data-match="{html.escape(str(tracker.get("match_tier") or "Not scored yet"), quote=True)}" '
+        f'data-score="{html.escape(str(tracker.get("match_score") if tracker.get("match_score") is not None else -1), quote=True)}" '
+        f'data-date="{html.escape(status_date(tracker), quote=True)}" data-company="{html.escape(normalize_tracker_value(package.get("company")), quote=True)}" '
+        f'data-search="{html.escape(search_text, quote=True)}">'
         '<div class="application-heading compact-heading">'
         '<div class="application-title">'
         f'<p class="company">{html.escape(company_display_name(package["company"]))}</p>'
@@ -1458,13 +1512,24 @@ def _render_package(package: Dict[str, Any], dashboard_directory: Path) -> str:
         f'<div class="badges">{_render_badges(tracker)}</div>'
         "</div>"
         f"{_compact_status_line(package)}"
+        f'<p class="next-step-action"><strong>{html.escape(str(signal["label"]))}:</strong> {html.escape(str(signal["action"]))}</p>'
         '<details class="role-details">'
-        '<summary>Details</summary>'
+        '<summary>View Role Workspace</summary>'
+        '<h4>Role Signal</h4>'
         f"{_render_match_score(tracker, include_details=True)}"
+        f'<h4>Next Action</h4><p>{html.escape(str(signal["reason"]))}</p>'
+        '<h4>Application Links</h4>'
+        f'{_render_primary_actions(package, dashboard_directory, anchor_id)}'
+        f'<p class="source-url">Source URL: {html.escape(record_posting_url(tracker) or "Not recorded")}</p>'
+        '<div class="materials"><h4>Materials</h4>'
+        f'{_render_links(package["files"], dashboard_directory)}</div>'
+        '<h4>Application History</h4>'
+        f'<p>{html.escape(status_date(tracker) or "Date not recorded")} · {html.escape(status)}</p>'
+        '<details><summary>Advanced Details</summary>'
         f"{_render_metadata(package)}"
         f"{_render_notes(tracker)}"
-        '<div class="materials"><h4>Application materials</h4>'
-        f'{_render_links(package["files"], dashboard_directory)}</div>'
+        f'<p><strong>Legacy status:</strong> {html.escape(str(tracker.get("legacy_status") or "Not applicable"))}</p>'
+        '</details>'
         '</details>'
         "</article>"
     )
@@ -1670,47 +1735,57 @@ def _render_html(
     unassigned: List[Tuple[str, Path]],
     dashboard_directory: Path,
 ) -> str:
+    all_packages = [package for values in groups.values() for package in values]
+    all_records = [_package_record(package) for package in all_packages]
+    primary_counts = {status: 0 for status in VALID_STATUSES}
+    for record in all_records:
+        status = get_record_status(record)
+        primary_counts[status if status in primary_counts else "Withdrawn / Closed"] += 1
     summary_cards = "".join(
-        '<div class="summary-card">'
+        f'<button class="summary-card" type="button" data-status-filter="{html.escape(label, quote=True)}" aria-pressed="false">'
         f'<span class="summary-value">{count}</span>'
         f'<span class="summary-label">{html.escape(label)}</span>'
-        "</div>"
-        for label, count in {"Total job files": counts.get("Total", 0), "Active applications": counts.get("Active", 0), "Applied applications": counts.get("Applied / Follow-up", 0), "Reviewed": counts.get("Reviewed", 0), "Draft or paused roles": counts.get("Paused", 0), "Pass": counts.get("Pass", 0), "Hidden/invalid roles": counts.get("Hidden / Invalid", 0)}.items()
+        "</button>"
+        for label, count in [("All", len(all_packages))]
+        + [(status, primary_counts[status]) for status in VALID_STATUSES if primary_counts[status]]
     )
-    active_group = _render_group(
-        "Active",
-        "active-applied",
-        groups["active"],
-        dashboard_directory,
+    status_options = "".join(
+        f'<option value="{html.escape(status, quote=True)}">{html.escape(status)}</option>'
+        for status in ("All",) + VALID_STATUSES
     )
-    applied_group = _render_group(
-        "Applied / Follow-Up",
-        "applied-follow-up",
-        groups["applied"],
-        dashboard_directory,
+    match_options = "".join(
+        f'<option value="{html.escape(value, quote=True)}">{html.escape(value)}</option>'
+        for value in MATCH_TIER_FILTERS
     )
-    reviewed_group = _render_group(
-        "Reviewed",
-        "reviewed",
-        groups["reviewed"],
-        dashboard_directory,
+    focus = select_todays_focus(all_records)
+    package_by_id = {
+        str(package.get("tracker", {}).get("id") or ""): package for package in all_packages
+    }
+    if focus:
+        focus_package = package_by_id.get(focus["id"], {"tracker": {}, "files": {}})
+        focus_anchor = _role_anchor_id(focus_package.get("tracker", {}), focus_package)
+        focus_html = (
+            '<section class="today-focus" aria-labelledby="today-focus-heading">'
+            '<h2 id="today-focus-heading">Today’s Focus</h2>'
+            f'<p class="focus-role"><strong>{html.escape(focus["company"])} — {html.escape(focus["role"])}</strong> · {html.escape(focus["status"])}</p>'
+            f'<p><strong>{html.escape(focus["label"])}</strong> — {html.escape(focus["reason"])}</p>'
+            f'<p>{html.escape(focus["action"])}</p>'
+            f'{_render_primary_actions(focus_package, dashboard_directory, focus_anchor)}'
+            '</section>'
+        )
+    else:
+        focus_html = (
+            '<section class="today-focus"><h2>Today’s Focus</h2>'
+            '<p><strong>No Action Today</strong></p>'
+            '<p>There are no open applications requiring attention today.</p></section>'
+        )
+    application_cards = "".join(
+        _render_package(package, dashboard_directory) for package in all_packages
     )
-    paused_group = _render_group(
-        "Paused",
-        "draft-paused",
-        groups["paused"],
-        dashboard_directory,
-    )
-    passed_group = _render_group(
-        "Passed",
-        "passed",
-        groups["pass"],
-        dashboard_directory,
-    )
-    hidden_group = _render_hidden_group(groups["hidden"], dashboard_directory)
-    priority_sections = _render_priority_sections(groups, dashboard_directory)
     visible_count = sum(
-        len(groups[key]) for key in ("active", "applied", "reviewed", "paused")
+        get_record_status(record) not in {"Rejected", "Withdrawn / Closed"}
+        and record.get("show_on_dashboard") is not False
+        for record in all_records
     )
 
     return f"""<!doctype html>
@@ -1795,12 +1870,18 @@ def _render_html(
       background: var(--surface);
     }}
     .summary-card {{ min-height: 96px; padding: 16px; }}
+    .summary-card {{ color: inherit; text-align: left; cursor: pointer; }}
+    .summary-card[aria-pressed="true"] {{ border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 2px var(--accent); }}
     .summary-value {{ display: block; font-size: 26px; font-weight: 700; line-height: 1; }}
     .summary-label {{ display: block; margin-top: 8px; color: var(--muted); font-size: 13px; }}
     .command-controls {{ display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }}
+    .filter-bar {{ display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 10px; margin-top: 18px; }}
+    .filter-bar input, .filter-bar select {{ min-height: 40px; border: 1px solid var(--border); border-radius: 5px; padding: 8px 10px; background: var(--surface); color: var(--ink); }}
+    .filter-indicator {{ margin: 8px 0 0; color: var(--muted); font-size: 13px; }}
+    .today-focus {{ margin-top: 20px; border: 1px solid #b8d7d0; border-radius: 6px; padding: 18px; background: var(--accent-soft); }}
+    .today-focus p {{ margin: 8px 0 0; }}
     .control-button, .action-button {{ border: 1px solid #c9d1d6; border-radius: 5px; padding: 6px 10px; background: #fff; color: #34414a; font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer; }}
     .control-button:hover, .control-button:focus-visible, .action-button:hover, .action-button:focus-visible {{ border-color: var(--accent); color: var(--accent); }}
-    .action-disabled {{ opacity: .55; pointer-events: none; }}
     .recommended-steps, .priority-section {{ margin-top: 18px; }}
     details > summary {{ cursor: pointer; }}
     details > summary h2 {{ display: inline; }}
@@ -1857,15 +1938,10 @@ def _render_html(
       font-size: 12px;
       font-weight: 700;
     }}
-    .status-drafted, .status-reviewed {{ background: var(--gold-soft); color: var(--gold); }}
-    .status-active {{ background: #eef1f3; color: #4c5963; }}
-    .status-applied, .status-follow_up {{ background: var(--blue-soft); color: var(--blue); }}
-    .status-interviewing {{ background: var(--accent-soft); color: var(--accent); }}
-    .status-rejected {{ background: var(--red-soft); color: var(--red); }}
-    .status-paused {{ background: #eef1f3; color: #4c5963; }}
-    .status-invalid {{ background: var(--red-soft); color: var(--red); }}
-    .status-invalid_hidden, .status-pass {{ background: var(--red-soft); color: var(--red); }}
-    .status-archived {{ background: #eef1f3; color: #4c5963; }}
+    .status-drafted {{ background: var(--gold-soft); color: var(--gold); }}
+    .status-applied, .status-under_consideration {{ background: var(--blue-soft); color: var(--blue); }}
+    .status-interviewing, .status-offer {{ background: var(--accent-soft); color: var(--accent); }}
+    .status-rejected, .status-withdrawn_closed {{ background: var(--red-soft); color: var(--red); }}
     .priority {{ border: 1px solid #e1c891; background: #ffffff; color: var(--gold); }}
     .card-actions {{ display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }}
     .compact-facts {{ display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px; color: var(--muted); font-size: 13px; }}
@@ -1935,6 +2011,7 @@ def _render_html(
       .summary-grid {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
       .priority-grid {{ grid-template-columns: 1fr; }}
       .next-step-row {{ grid-template-columns: 1fr; }}
+      .filter-bar {{ grid-template-columns: 1fr 1fr; }}
       .card-actions {{ justify-content: flex-start; }}
     }}
     @media (max-width: 620px) {{
@@ -1943,6 +2020,7 @@ def _render_html(
       h1 {{ font-size: 21px; }}
       .summary-grid {{ grid-template-columns: 1fr; }}
       .summary-card {{ min-height: 82px; }}
+      .filter-bar {{ grid-template-columns: 1fr; }}
       .application-card {{ padding: 16px; }}
       .application-heading {{ display: block; }}
       .badges {{ justify-content: flex-start; margin-top: 10px; }}
@@ -1963,26 +2041,29 @@ def _render_html(
   </header>
   <main class="page">
     <section aria-labelledby="summary-heading">
-      <h2 id="summary-heading">Workspace Summary</h2>
+      <h2 id="summary-heading">Application Summary</h2>
       <div class="summary-grid">{summary_cards}</div>
-      <div class="command-controls" aria-label="Dashboard controls">
-        <button class="control-button" type="button" data-collapse-all>Collapse All</button>
-        <button class="control-button" type="button" data-expand-focused>Expand Focused</button>
-        <button class="control-button" type="button" data-clear-focus>Clear Focus</button>
+      <div class="filter-bar" aria-label="Application filters">
+        <input id="dashboard-search" type="search" placeholder="Search company or role" aria-label="Search company or role">
+        <select id="status-filter" aria-label="Application Status">{status_options}</select>
+        <select id="match-filter" aria-label="Match Tier">{match_options}</select>
+        <select id="sort-filter" aria-label="Sort applications">
+          <option value="score">Match Score: High to Low</option>
+          <option value="date">Status Date: Newest First</option>
+          <option value="company">Company A-Z</option>
+        </select>
+        <button class="control-button" type="button" data-clear-filters>Clear filters</button>
       </div>
+      <p class="filter-indicator" aria-live="polite">Active filters: None</p>
     </section>
-    {priority_sections}
+    {focus_html}
     <section class="packages" aria-labelledby="packages-heading">
       <div class="section-heading">
-        <h2 id="packages-heading">Application Packages</h2>
-        <span class="section-count">{visible_count} visible roles</span>
+        <h2 id="packages-heading">Applications in Flight</h2>
+        <span class="section-count" data-role-count>{visible_count} roles</span>
       </div>
-      {active_group}
-      {applied_group}
-      {reviewed_group}
-      {paused_group}
-      {passed_group}
-      {hidden_group}
+      <div class="application-list">{application_cards}</div>
+      <p class="empty-state" data-filter-empty hidden>No roles match the current filters.</p>
     </section>
     {_render_unassigned(unassigned, dashboard_directory)}
   </main>
@@ -2001,16 +2082,52 @@ def _render_html(
       if (id) {{ event.preventDefault(); focusRole(id, false); history.replaceState(null, '', '#' + id); }}
     }});
   }});
-  document.querySelector('[data-collapse-all]')?.addEventListener('click', () => {{
-    document.querySelectorAll('details').forEach((node) => node.open = false);
+  const statusFilter = document.querySelector('#status-filter');
+  const matchFilter = document.querySelector('#match-filter');
+  const sortFilter = document.querySelector('#sort-filter');
+  const searchInput = document.querySelector('#dashboard-search');
+  const sortCards = () => {{
+    const list = document.querySelector('.application-list');
+    const cards = [...list.querySelectorAll('.application-card')];
+    cards.sort((a, b) => sortFilter.value === 'company'
+      ? a.dataset.company.localeCompare(b.dataset.company)
+      : sortFilter.value === 'date'
+        ? b.dataset.date.localeCompare(a.dataset.date)
+        : Number(b.dataset.score) - Number(a.dataset.score));
+    cards.forEach((card) => list.appendChild(card));
+  }};
+  const applyFilters = (moveFocus = false) => {{
+    const status = statusFilter.value;
+    const match = matchFilter.value;
+    const query = searchInput.value.trim().toLowerCase();
+    let visible = 0;
+    document.querySelectorAll('.application-card').forEach((card) => {{
+      const closedOnAll = status === 'All' && ['Rejected', 'Withdrawn / Closed'].includes(card.dataset.status);
+      const matches = !closedOnAll && (status === 'All' || card.dataset.status === status)
+        && (match === 'All' || card.dataset.match === match)
+        && (!query || card.dataset.search.includes(query));
+      card.hidden = !matches;
+      if (matches) visible += 1;
+    }});
+    document.querySelector('[data-role-count]').textContent = `${{visible}} ${{visible === 1 ? 'role' : 'roles'}}`;
+    document.querySelector('[data-filter-empty]').hidden = visible !== 0;
+    document.querySelectorAll('[data-status-filter]').forEach((card) => card.setAttribute('aria-pressed', String(card.dataset.statusFilter === status)));
+    const active = [status !== 'All' ? `Status: ${{status}}` : '', match !== 'All' ? `Match: ${{match}}` : '', query ? `Search: “${{searchInput.value}}”` : ''].filter(Boolean);
+    document.querySelector('.filter-indicator').textContent = `Active filters: ${{active.join(' · ') || 'None'}}`;
+    sortCards();
+    if (moveFocus) document.querySelector('#packages-heading').scrollIntoView({{ behavior: 'smooth', block: 'start' }});
+  }};
+  document.querySelectorAll('[data-status-filter]').forEach((card) => card.addEventListener('click', () => {{
+    statusFilter.value = card.dataset.statusFilter;
+    applyFilters(true);
+  }}));
+  [statusFilter, matchFilter].forEach((control) => control.addEventListener('change', () => applyFilters(true)));
+  sortFilter.addEventListener('change', () => applyFilters(false));
+  searchInput.addEventListener('input', applyFilters);
+  document.querySelector('[data-clear-filters]').addEventListener('click', () => {{
+    statusFilter.value = 'All'; matchFilter.value = 'All'; sortFilter.value = 'score'; searchInput.value = ''; applyFilters();
   }});
-  document.querySelector('[data-expand-focused]')?.addEventListener('click', () => {{
-    const focused = document.querySelector('.application-card.role-focused') || (location.hash ? document.querySelector(location.hash) : null);
-    if (focused) focusRole(focused.id, true);
-  }});
-  document.querySelector('[data-clear-focus]')?.addEventListener('click', () => {{
-    document.querySelectorAll('.application-card.role-focused').forEach((node) => node.classList.remove('role-focused'));
-  }});
+  applyFilters();
 </script>
 </body>
 </html>

@@ -43,11 +43,11 @@ STATUS_ALIASES = {
     "review first": "Drafted",
     "manually reviewed": "Drafted",
     "verified": "Drafted",
-    "paused": "Drafted",
+    "paused": "Withdrawn / Closed",
     "submitted": "Applied",
     "application submitted": "Applied",
-    "follow up": "Under Consideration",
-    "followup": "Under Consideration",
+    "follow up": "Applied",
+    "followup": "Applied",
     "follow up needed": "Applied",
     "follow up sent": "Under Consideration",
     "due now": "Under Consideration",
@@ -127,9 +127,38 @@ def normalize_status(value: Any) -> str:
 
 
 def get_record_status(record: Dict[str, Any]) -> str:
-    """Read canonical tracker status, falling back only when `status` is absent."""
+    """Read the primary status without mutating or discarding legacy data.
+
+    Older ``Active`` and ``Reviewed`` records are promoted to ``Applied`` only
+    when application evidence exists.  The raw value remains on the record and
+    is available through :func:`legacy_status_value`.
+    """
     if record.get("status") not in (None, ""):
-        return normalize_status(record["status"])
+        raw_status = str(record["status"]).strip()
+        normalized = normalize_status(raw_status)
+        if normalize_tracker_value(raw_status) in {
+            "active",
+            "reviewed",
+            "review first",
+            "manually reviewed",
+        } and any(
+            record.get(field)
+            for field in ("submitted_date", "applied_date", "application_date")
+        ):
+            evidence = normalize_tracker_value(
+                " ".join(
+                    str(record.get(field) or "")
+                    for field in ("portal_status", "employer_status", "next_action", "notes")
+                )
+            )
+            if "interview" in evidence:
+                return "Interviewing"
+            if "offer" in evidence:
+                return "Offer"
+            if "under consideration" in evidence or "under review" in evidence:
+                return "Under Consideration"
+            return "Applied"
+        return normalized
     for field in LEGACY_STATUS_FIELDS:
         if record.get(field) not in (None, ""):
             return normalize_status(record[field])
@@ -142,7 +171,11 @@ def legacy_status_value(record: Dict[str, Any]) -> str:
 
 
 def workflow_status_bucket(record: Dict[str, Any]) -> str:
-    """Classify one record into an exclusive normalized dashboard workflow bucket."""
+    """Classify a record for legacy internal grouping.
+
+    The returned labels are kept for compatibility with older renderers. New
+    user-facing controls use :func:`get_record_status` directly.
+    """
     status = get_record_status(record)
     if status in HIDDEN_STATUSES:
         return "Hidden / Invalid"
@@ -151,26 +184,54 @@ def workflow_status_bucket(record: Dict[str, Any]) -> str:
         and record.get("show_on_dashboard") is False
     ):
         return "Hidden / Invalid"
-    if status in {"Applied", "Under Consideration", "Interviewing", "Offer"}:
-        return "Applied / Follow-up"
-    follow_up_status = normalize_tracker_value(record.get("follow_up_status"))
-    if (
-        record.get("submitted_date")
-        or record.get("applied_date")
-        or record.get("application_date")
-        or follow_up_status
-        in {
-            "due soon",
-            "due now",
-            "overdue",
-            "follow up sent",
-            "follow up needed",
-            "recruiter contacted",
-            "hiring manager contacted",
-        }
-    ):
+    if status in ACTIVE_STATUSES:
         return "Applied / Follow-up"
     return "Active"
+
+
+def _has_contact_path(record: Dict[str, Any]) -> bool:
+    """Return whether a direct or explicitly available follow-up path exists."""
+    if (
+        record.get("portal_only") is True
+        or record.get("no_contact") is True
+        or record.get("follow_up_possible") is False
+    ):
+        return False
+    contact_fields = (
+        "recruiter_contact",
+        "recruiter_email",
+        "recruiter_url",
+        "hiring_manager_contact",
+        "hiring_manager_email",
+        "hiring_manager_url",
+        "warm_contact",
+        "warm_contact_email",
+        "referral_contact",
+        "contact_path",
+    )
+    if any(str(record.get(field) or "").strip() for field in contact_fields):
+        return True
+    return False
+
+
+def _follow_up_already_sent_without_new_event(record: Dict[str, Any]) -> bool:
+    state = normalize_tracker_value(record.get("follow_up_status"))
+    if state == "follow up sent" or record.get("follow_up_sent") is True:
+        return True
+    history = record.get("application_history")
+    if not isinstance(history, list):
+        return False
+    last_follow_up = -1
+    last_new_event = -1
+    for index, event in enumerate(history):
+        if not isinstance(event, dict):
+            continue
+        event_type = normalize_tracker_value(event.get("event") or event.get("type"))
+        if event_type in {"follow up sent", "followup sent"}:
+            last_follow_up = index
+        if event_type in {"interview scheduled", "status changed", "employer response"}:
+            last_new_event = index
+    return last_follow_up >= last_new_event and last_follow_up >= 0
 
 
 def follow_up_eligibility(record: Dict[str, Any], today: Optional[date] = None) -> Tuple[bool, str]:
@@ -181,10 +242,14 @@ def follow_up_eligibility(record: Dict[str, Any], today: Optional[date] = None) 
     if status not in {"Applied", "Under Consideration", "Interviewing"}:
         return False, f"Status {status} is not eligible"
     follow_up_state = normalize_tracker_value(record.get("follow_up_status"))
-    if follow_up_state in {"not applicable", "follow up sent"} or record.get("follow_up_sent") is True:
+    if (
+        follow_up_state in {"not applicable", "no follow up", "no follow up needed"}
+        or record.get("follow_up_not_applicable") is True
+        or _follow_up_already_sent_without_new_event(record)
+    ):
         return False, "Follow-up is not applicable or already sent"
-    if record.get("portal_only") is True or record.get("no_contact") is True or record.get("follow_up_possible") is False:
-        return False, "No contact route is available"
+    if not _has_contact_path(record) and status != "Interviewing":
+        return False, "No direct follow-up path is available. Continue monitoring the employer portal."
     if status == "Applied":
         applied_value = next((record.get(key) for key in ("submitted_date", "applied_date", "application_date") if record.get(key)), None)
         if not applied_value:
@@ -195,7 +260,11 @@ def follow_up_eligibility(record: Dict[str, Any], today: Optional[date] = None) 
             return False, "Applied date is invalid"
         if ((today or date.today()) - applied).days < 5:
             return False, "Waiting period has not elapsed"
-    return True, "Follow-up is eligible"
+    if status == "Under Consideration" and not (
+        _has_contact_path(record) or str(record.get("next_action") or "").strip()
+    ):
+        return False, "Waiting for employer response. No action today."
+    return True, "Follow-up window has opened and a contact path is available."
 
 
 def make_tracker_id(company: Any, role: Any) -> str:
@@ -413,12 +482,26 @@ def update_status(
         raise TrackerUpdateError(f"Tracker entry not found: {tracker_id}")
 
     previous_status = str(entry.get("status") or "Drafted")
+    previous_primary_status = get_record_status(entry)
+    if previous_status != previous_primary_status and not entry.get("legacy_status"):
+        entry["legacy_status"] = previous_status
     if raw_status != status and not entry.get("legacy_status"):
         entry["legacy_status"] = raw_status
     entry["status"] = status
     entry.update(_explicit_updates(updates))
     if status != previous_status:
         entry["status_updated_at"] = datetime.now().isoformat(timespec="seconds")
+    if status != previous_primary_status:
+        history = entry.setdefault("application_history", [])
+        if isinstance(history, list):
+            history.append(
+                {
+                    "event": "status changed",
+                    "from": previous_primary_status,
+                    "to": status,
+                    "date": date.today().isoformat(),
+                }
+            )
     if status == "Applied" and not entry.get("submitted_date"):
         entry["submitted_date"] = date.today().isoformat()
     save_application_tracker(applications, project_root)

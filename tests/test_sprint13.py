@@ -158,7 +158,7 @@ class MatchScorePersistenceAndDashboardTests(unittest.TestCase):
         content = Path(dashboard["output_path"]).read_text(encoding="utf-8")
         card_start = content.index("Acme Streaming")
         score_position = content.index("Match Score", card_start)
-        materials_position = content.index("Application materials", card_start)
+        materials_position = content.index("<h4>Materials</h4>", card_start)
         self.assertLess(score_position, materials_position)
         self.assertIn(application["match_tier"], content)
         self.assertIn(application["recommended_action"], content)
