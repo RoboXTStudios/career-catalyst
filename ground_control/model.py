@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from datetime import date
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 from ground_control.local_time import local_date
 from ground_control.seed_data import SEED_DATA
@@ -24,6 +24,21 @@ class FinanceCard:
     label: str
     value: str
     caption: str
+
+
+@dataclass(frozen=True)
+class FinancialState:
+    status: str
+    runway_months: float
+    runway_label: str
+    summary: str
+
+
+@dataclass(frozen=True)
+class CreativeState:
+    status: str
+    project_name: str
+    summary: str
 
 
 def format_dollars(amount: float) -> str:
@@ -57,22 +72,16 @@ def load_finance_snapshot(seed: Mapping[str, Any] = SEED_DATA) -> FinanceSnapsho
 
 
 def build_finance_cards(snapshot: FinanceSnapshot) -> list[FinanceCard]:
-    runway_months = calculate_runway_months(
-        cash=snapshot.cash,
-        edd_remaining=snapshot.edd_remaining,
-        monthly_burn=snapshot.monthly_burn,
-    )
-
     return [
         FinanceCard(
             label="Cash",
             value=format_dollars(snapshot.cash),
-            caption="Current checking/savings seed value",
+            caption="Current checking and savings",
         ),
         FinanceCard(
-            label="Runway",
-            value=f"{runway_months:.1f} mo",
-            caption=f"Cash plus EDD at {format_dollars(snapshot.monthly_burn)}/mo",
+            label="Essentials burn",
+            value=format_dollars(snapshot.monthly_burn),
+            caption="Monthly essential expenses",
         ),
         FinanceCard(
             label="401(k)",
@@ -85,6 +94,73 @@ def build_finance_cards(snapshot: FinanceSnapshot) -> list[FinanceCard]:
             caption="Remaining unemployment claim balance",
         ),
     ]
+
+
+def runway_status_label(runway_months: float) -> str:
+    return {
+        "nominal": "Nominal",
+        "adjust course": "Adjust Course",
+        "critical burn": "Critical Burn",
+    }[runway_status(runway_months)]
+
+
+def build_financial_state(snapshot: FinanceSnapshot) -> FinancialState:
+    runway_months = calculate_runway_months(
+        cash=snapshot.cash,
+        edd_remaining=snapshot.edd_remaining,
+        monthly_burn=snapshot.monthly_burn,
+    )
+    status = runway_status_label(runway_months)
+    summaries = {
+        "Nominal": "Runway is stable. Keep essential spending on course.",
+        "Adjust Course": "Runway needs attention. Review the next essential moves.",
+        "Critical Burn": "Runway is compressed. Protect immediate essentials first.",
+    }
+    return FinancialState(
+        status=status,
+        runway_months=runway_months,
+        runway_label=f"{runway_months:.1f} months",
+        summary=summaries[status],
+    )
+
+
+def build_creative_state(
+    seed: Mapping[str, Any] = SEED_DATA,
+    *,
+    missions: Sequence[object] = (),
+) -> CreativeState:
+    project = seed.get("active_project")
+    if not isinstance(project, Mapping) or not project.get("name") or not project.get("priority"):
+        raise ValueError("Seed data must include an active project name and priority")
+
+    project_name = str(project["name"]).strip()
+    priority = str(project["priority"]).strip()
+    matching_mission = next(
+        (
+            mission
+            for mission in missions
+            if getattr(mission, "text", "") == priority
+            or project_name.casefold() in str(getattr(mission, "text", "")).casefold()
+        ),
+        None,
+    )
+    if matching_mission is None:
+        return CreativeState(
+            status="Holding Pattern",
+            project_name=project_name,
+            summary="The active project is ready for its next deliberate move.",
+        )
+    if bool(getattr(matching_mission, "completed", False)):
+        return CreativeState(
+            status="Momentum Secured",
+            project_name=project_name,
+            summary="Today's project priority is complete.",
+        )
+    return CreativeState(
+        status="In Motion",
+        project_name=project_name,
+        summary="Today's project priority is on the flight plan.",
+    )
 
 
 def load_missions(seed: Mapping[str, Any] = SEED_DATA) -> list[str]:
@@ -123,21 +199,24 @@ def build_major_tom_message(
     current_date: date | None = None,
     missions_completed: int = 0,
     next_mission: str | None = None,
+    career_state: str = "Waiting",
+    creative_state: str = "Holding Pattern",
 ) -> str:
     del seed  # Retained for API compatibility with existing callers.
     today = current_date or local_date()
     completed = min(max(missions_completed, 0), 3)
+    financial_state = runway_status_label(runway_months)
     first = (
-        f"{today.strftime('%A, %B')} {today.day}: runway is "
-        f"{runway_months:.1f} months and {runway_status(runway_months)}."
+        f"{today.strftime('%A, %B')} {today.day}: finance {financial_state.lower()}; "
+        f"career {career_state.lower()}; creative {creative_state.lower()}."
     )
     if completed == 3:
-        second = "All three missions complete; flight plan secured."
+        second = "All missions complete; today's momentum is secured."
     elif next_mission:
         short_mission = " ".join(next_mission.split()[:8])
-        second = f"{completed} of 3 complete; next: {short_mission}."
+        second = f"Next move: {short_mission}."
     elif completed == 0:
-        second = "Three missions remain; choose the first move."
+        second = "Choose the first mission and hold course."
     else:
-        second = f"{completed} of 3 missions complete; hold course."
+        second = f"{completed} missions complete; hold course."
     return limit_major_tom_message(f"{first} {second}")

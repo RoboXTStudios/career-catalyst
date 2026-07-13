@@ -4,6 +4,11 @@ from datetime import date, datetime, timezone
 
 import pytest
 
+from ground_control.career import (
+    CareerState,
+    LocalCareerCatalystProvider,
+    load_career_state,
+)
 from ground_control.local_time import (
     LOCAL_TIMEZONE,
     as_local_time,
@@ -13,13 +18,16 @@ from ground_control.local_time import (
 )
 from ground_control.model import (
     FinanceSnapshot,
+    build_creative_state,
     build_finance_cards,
+    build_financial_state,
     build_major_tom_message,
     calculate_runway_months,
     limit_major_tom_message,
     load_finance_snapshot,
     load_missions,
     runway_status,
+    runway_status_label,
 )
 from ground_control.seed_data import SEED_DATA
 from ground_control.state import (
@@ -66,12 +74,16 @@ def test_greeting_uses_local_time_boundaries(hour, minute, expected):
     assert greeting_for_datetime(local_value) == expected
 
 
-def test_seed_finance_cards_cover_sprint_one_metrics():
+def test_financial_telemetry_keeps_raw_amounts_out_of_state_summary():
     snapshot = load_finance_snapshot(SEED_DATA)
 
     cards = build_finance_cards(snapshot)
+    state = build_financial_state(snapshot)
 
-    assert [card.label for card in cards] == ["Cash", "Runway", "401(k)", "EDD"]
+    assert [card.label for card in cards] == ["Cash", "Essentials burn", "401(k)", "EDD"]
+    assert state.status == "Nominal"
+    assert state.runway_label == "4.7 months"
+    assert "$" not in state.summary
 
 
 def test_seed_runway_uses_cash_plus_edd_against_monthly_burn():
@@ -106,12 +118,17 @@ def test_major_tom_message_receives_runway_context():
         current_date=date(2026, 7, 10),
         missions_completed=1,
         next_mission="Confirm the next EDD certification and payment date",
+        career_state="In Flight",
+        creative_state="In Motion",
     )
 
-    assert "4.7 months" in message
     assert "Friday, July 10" in message
-    assert "1 of 3 complete" in message
-    assert "next: Confirm the next EDD certification and payment" in message
+    assert "finance nominal" in message
+    assert "career in flight" in message
+    assert "creative in motion" in message
+    assert "Next move: Confirm the next EDD certification and payment" in message
+    assert "4.7" not in message
+    assert "$" not in message
 
 
 def test_major_tom_message_is_limited_to_two_short_sentences():
@@ -119,7 +136,7 @@ def test_major_tom_message_is_limited_to_two_short_sentences():
     sentences = re.findall(r".+?(?:[.!?](?=\s|$)|$)", message)
 
     assert len(sentences) <= 2
-    assert all(len(sentence.split()) <= 10 for sentence in sentences)
+    assert all(len(sentence.split()) <= 16 for sentence in sentences)
 
 
 def test_major_tom_message_trims_longer_templates_to_two_sentences():
@@ -164,7 +181,7 @@ def test_saved_state_round_trips_manual_overrides(tmp_path):
     assert loaded == saved
 
 
-def test_saved_finance_recalculates_runway():
+def test_saved_finance_recalculates_financial_state():
     state = GroundControlState(
         person_name="Trisha",
         finance=FinanceSnapshot(
@@ -182,10 +199,14 @@ def test_saved_finance_recalculates_runway():
         edd_remaining=state.finance.edd_remaining,
         monthly_burn=state.finance.monthly_burn,
     )
+    financial_state = build_financial_state(state.finance)
     message = build_major_tom_message(SEED_DATA, runway_months=runway)
 
     assert runway == pytest.approx(5.0)
-    assert "5.0 months" in message
+    assert financial_state.runway_label == "5.0 months"
+    assert financial_state.status == "Nominal"
+    assert "finance nominal" in message
+    assert "5.0" not in message
 
 
 def test_new_day_rollover_archives_prior_day_and_resets_completion():
@@ -318,7 +339,71 @@ def test_major_tom_briefing_tracks_runway_status(months, expected):
 
     assert runway_status(months) == expected
     assert expected in message
-    assert "All three missions complete" in message
+    assert "All missions complete" in message
+
+
+@pytest.mark.parametrize(
+    ("cash", "expected"),
+    [(4499, "Critical Burn"), (8999, "Adjust Course"), (13500, "Nominal")],
+)
+def test_financial_state_uses_operational_status_thresholds(cash, expected):
+    snapshot = FinanceSnapshot(
+        cash=cash,
+        monthly_burn=4500,
+        retirement_401k=160000,
+        edd_remaining=0,
+    )
+
+    state = build_financial_state(snapshot)
+
+    assert state.status == expected
+    assert runway_status_label(state.runway_months) == expected
+
+
+def test_career_state_loads_through_internal_provider_interface():
+    class StubCareerCatalystProvider:
+        def load_career_state(self):
+            return CareerState(
+                status="Active Conversations",
+                summary="Two meaningful conversations are moving.",
+                launch_target="career-catalyst://home",
+            )
+
+    state = load_career_state(StubCareerCatalystProvider())
+    fallback = load_career_state(LocalCareerCatalystProvider(SEED_DATA))
+
+    assert state.status == "Active Conversations"
+    assert state.launch_target == "career-catalyst://home"
+    assert fallback.status == "In Flight"
+    assert fallback.launch_target is None
+    assert "rejection" not in fallback.summary.lower()
+    assert "application" not in fallback.summary.lower()
+
+
+def test_career_state_normalizes_non_operational_status_language():
+    class RawCareerCatalystProvider:
+        def load_career_state(self):
+            return CareerState(status="Rejected", summary="The latest role has closed.")
+
+    state = load_career_state(RawCareerCatalystProvider())
+
+    assert state.status == "Waiting"
+
+
+def test_creative_state_tracks_active_project_momentum():
+    priority = SEED_DATA["active_project"]["priority"]
+    pending = build_creative_state(
+        SEED_DATA,
+        missions=(DailyMission(priority), DailyMission("Other"), DailyMission("Another")),
+    )
+    completed = build_creative_state(
+        SEED_DATA,
+        missions=(DailyMission(priority, True), DailyMission("Other"), DailyMission("Another")),
+    )
+
+    assert pending.status == "In Motion"
+    assert pending.project_name == "Ground Control"
+    assert completed.status == "Momentum Secured"
 
 
 def test_invalid_saved_state_falls_back_to_seed(tmp_path):

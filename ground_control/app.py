@@ -16,10 +16,18 @@ if __package__ in {None, ""}:
     sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from ground_control.model import (  # noqa: E402
+    CreativeState,
+    FinancialState,
     FinanceSnapshot,
+    build_creative_state,
     build_finance_cards,
+    build_financial_state,
     build_major_tom_message,
-    calculate_runway_months,
+)
+from ground_control.career import (  # noqa: E402
+    CareerState,
+    LocalCareerCatalystProvider,
+    load_career_state,
 )
 from ground_control.local_time import (  # noqa: E402
     format_local_datetime,
@@ -118,16 +126,28 @@ def _inject_styles() -> None:
             border-radius: 999px;
             color: #eafff8;
             display: inline-flex;
-            flex-direction: column;
             gap: 0.18rem;
             line-height: 1;
             padding: 0.75rem 1rem;
         }
 
+        .gc-signal-adjust-course {
+            background: rgba(240, 201, 137, 0.1);
+            border-color: rgba(240, 201, 137, 0.34);
+        }
+
+        .gc-signal-critical-burn {
+            background: rgba(204, 96, 66, 0.12);
+            border-color: rgba(224, 120, 88, 0.42);
+        }
+
         .gc-flight-main {
+            align-items: center;
             color: #eafff8;
+            display: inline-flex;
             font-size: 0.94rem;
             font-weight: 800;
+            gap: 0.48rem;
             letter-spacing: 0;
         }
 
@@ -146,6 +166,16 @@ def _inject_styles() -> None:
             width: 0.58rem;
         }
 
+        .gc-signal-adjust-course .gc-signal-dot {
+            background: #f0c989;
+            box-shadow: 0 0 18px rgba(240, 201, 137, 0.52);
+        }
+
+        .gc-signal-critical-burn .gc-signal-dot {
+            background: #e07858;
+            box-shadow: 0 0 18px rgba(224, 120, 88, 0.52);
+        }
+
         .gc-grid-title {
             color: #d9cfc1;
             font-size: 0.8rem;
@@ -156,6 +186,7 @@ def _inject_styles() -> None:
         }
 
         .gc-card,
+        .gc-state-card,
         .gc-panel {
             background: rgba(18, 16, 14, 0.92);
             border: 1px solid rgba(255, 247, 237, 0.045);
@@ -164,18 +195,57 @@ def _inject_styles() -> None:
         }
 
         .gc-card {
-            min-height: 9.6rem;
+            min-height: 8.5rem;
             padding: 1.18rem;
         }
 
-        .gc-card-primary {
+        .gc-state-card {
+            display: flex;
+            flex-direction: column;
+            min-height: 16.8rem;
+            padding: 1.5rem;
+        }
+
+        .gc-state-card-financial {
             background:
                 linear-gradient(155deg, rgba(89, 214, 181, 0.16), rgba(18, 16, 14, 0.96) 55%),
                 rgba(18, 16, 14, 0.96);
             border-color: rgba(89, 214, 181, 0.14);
             box-shadow: 0 24px 68px rgba(0, 0, 0, 0.26), 0 0 42px rgba(89, 214, 181, 0.08);
-            min-height: 12.5rem;
-            padding: 1.45rem;
+        }
+
+        .gc-state-status {
+            color: #f0c989;
+            font-size: 0.82rem;
+            font-weight: 780;
+            margin: 1.55rem 0 0.5rem;
+            text-transform: uppercase;
+        }
+
+        .gc-state-card-financial .gc-state-status {
+            color: #c7f4e8;
+        }
+
+        .gc-state-value {
+            color: #fff7ed;
+            font-size: 2.05rem;
+            font-weight: 790;
+            line-height: 1.08;
+            margin: 0 0 0.85rem;
+        }
+
+        .gc-state-card-financial .gc-state-value {
+            color: #effff9;
+            font-size: 4.35rem;
+            font-weight: 830;
+            line-height: 0.98;
+        }
+
+        .gc-state-summary {
+            color: #ded4c8;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin: auto 0 0;
         }
 
         .gc-card-label,
@@ -197,23 +267,12 @@ def _inject_styles() -> None:
             margin: 1.35rem 0 0.45rem;
         }
 
-        .gc-card-primary .gc-card-value {
-            color: #effff9;
-            font-size: 4.25rem;
-            font-weight: 820;
-            margin-top: 1.6rem;
-        }
-
         .gc-card-caption,
         .gc-panel-body {
             color: #ded4c8;
             font-size: 0.95rem;
             line-height: 1.5;
             margin: 0;
-        }
-
-        .gc-card-primary .gc-card-caption {
-            color: #c7f4e8;
         }
 
         .gc-panel {
@@ -407,6 +466,16 @@ def _inject_styles() -> None:
             border-radius: 8px;
         }
 
+        .gc-telemetry-intro {
+            color: #ded4c8;
+            font-size: 0.95rem;
+            margin: 0.4rem 0 1.3rem;
+        }
+
+        [data-testid="stExpander"] [data-testid="stForm"] {
+            margin-top: 1.5rem;
+        }
+
         [data-testid="stExpander"] summary p {
             color: #fff7ed;
             font-weight: 720;
@@ -462,7 +531,11 @@ def _inject_styles() -> None:
                 min-height: 8.25rem;
             }
 
-            .gc-card-primary .gc-card-value {
+            .gc-state-card {
+                min-height: 13.5rem;
+            }
+
+            .gc-state-card-financial .gc-state-value {
                 font-size: 3rem;
             }
         }
@@ -472,9 +545,10 @@ def _inject_styles() -> None:
     )
 
 
-def _render_header(name: str, current_time) -> None:
+def _render_header(name: str, current_time, financial_state: FinancialState) -> None:
     greeting = greeting_for_datetime(current_time)
     timestamp = format_local_datetime(current_time)
+    status_class = financial_state.status.lower().replace(" ", "-")
     st.markdown(
         f"""
         <section class="gc-hero">
@@ -482,8 +556,11 @@ def _render_header(name: str, current_time) -> None:
             <h1 class="gc-title">Ground Control</h1>
             <p class="gc-local-time">{html.escape(timestamp)}</p>
             <div class="gc-status-row">
-                <div class="gc-signal">
-                    <span class="gc-flight-main">🟢 NOMINAL</span>
+                <div class="gc-signal gc-signal-{html.escape(status_class)}">
+                    <span class="gc-flight-main">
+                        <span class="gc-signal-dot"></span>
+                        {html.escape(financial_state.status.upper())}
+                    </span>
                     <span class="gc-flight-subtitle">Signal acquired.</span>
                 </div>
             </div>
@@ -582,24 +659,82 @@ def _render_panel_header(label: str, heading: str) -> None:
     )
 
 
-def _render_finance(state: GroundControlState) -> None:
+def _render_state_card(
+    *,
+    label: str,
+    status: str,
+    value: str,
+    summary: str,
+    financial: bool = False,
+) -> None:
+    classes = "gc-state-card gc-state-card-financial" if financial else "gc-state-card"
+    st.markdown(
+        f"""
+        <article class="{classes}">
+            <p class="gc-card-label">{html.escape(label)}</p>
+            <p class="gc-state-status">{html.escape(status)}</p>
+            <p class="gc-state-value">{html.escape(value)}</p>
+            <p class="gc-state-summary">{html.escape(summary)}</p>
+        </article>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def _render_state_cards(
+    financial: FinancialState,
+    career: CareerState,
+    creative: CreativeState,
+) -> None:
+    st.markdown('<p class="gc-grid-title">State of the mission</p>', unsafe_allow_html=True)
+    columns = st.columns([1.2, 1, 1], gap="medium")
+    with columns[0]:
+        _render_state_card(
+            label="Financial State",
+            status=financial.status,
+            value=financial.runway_label,
+            summary=financial.summary,
+            financial=True,
+        )
+    with columns[1]:
+        _render_state_card(
+            label="Career State",
+            status="Active Search",
+            value=career.status,
+            summary=career.summary,
+        )
+    with columns[2]:
+        _render_state_card(
+            label="Creative State",
+            status=creative.status,
+            value=creative.project_name,
+            summary=creative.summary,
+        )
+
+
+def _render_financial_telemetry(state: GroundControlState) -> None:
     cards = build_finance_cards(state.finance)
 
-    st.markdown('<p class="gc-grid-title">Runway &amp; reserves</p>', unsafe_allow_html=True)
-    columns = st.columns([1, 1.45, 1, 1], gap="medium")
-    for column, card in zip(columns, cards):
-        card_class = "gc-card gc-card-primary" if card.label == "Runway" else "gc-card"
-        with column:
-            st.markdown(
-                f"""
-                <article class="{card_class}">
-                    <p class="gc-card-label">{html.escape(card.label)}</p>
-                    <p class="gc-card-value">{html.escape(card.value)}</p>
-                    <p class="gc-card-caption">{html.escape(card.caption)}</p>
-                </article>
-                """,
-                unsafe_allow_html=True,
-            )
+    st.markdown('<p class="gc-grid-title">Systems access</p>', unsafe_allow_html=True)
+    with st.expander("Financial Telemetry"):
+        st.markdown(
+            '<p class="gc-telemetry-intro">Inspect reserves and update local telemetry when needed.</p>',
+            unsafe_allow_html=True,
+        )
+        columns = st.columns(4, gap="medium")
+        for column, card in zip(columns, cards):
+            with column:
+                st.markdown(
+                    f"""
+                    <article class="gc-card">
+                        <p class="gc-card-label">{html.escape(card.label)}</p>
+                        <p class="gc-card-value">{html.escape(card.value)}</p>
+                        <p class="gc-card-caption">{html.escape(card.caption)}</p>
+                    </article>
+                    """,
+                    unsafe_allow_html=True,
+                )
+        _render_manual_override()
 
 
 def _render_missions(state: GroundControlState) -> None:
@@ -687,23 +822,24 @@ def _render_manual_override() -> None:
         st.success("Manual override saved locally.")
 
 
-def _render_major_tom(state: GroundControlState) -> None:
-    snapshot = state.finance
-    runway_months = calculate_runway_months(
-        cash=snapshot.cash,
-        edd_remaining=snapshot.edd_remaining,
-        monthly_burn=snapshot.monthly_burn,
-    )
+def _render_major_tom(
+    state: GroundControlState,
+    financial: FinancialState,
+    career: CareerState,
+    creative: CreativeState,
+) -> None:
     next_mission = next(
         (mission.text for mission in state.missions if not mission.completed),
         None,
     )
     message = build_major_tom_message(
         SEED_DATA,
-        runway_months=runway_months,
+        runway_months=financial.runway_months,
         current_date=date.fromisoformat(state.mission_date),
         missions_completed=sum(mission.completed for mission in state.missions),
         next_mission=next_mission,
+        career_state=career.status,
+        creative_state=creative.status,
     )
 
     st.markdown(
@@ -725,9 +861,12 @@ def main() -> None:
     today = local_date(current_time)
     _ensure_session_state(today)
     state = _state_from_session()
-    _render_header(state.person_name, current_time)
-    _render_major_tom(state)
-    _render_finance(state)
+    financial = build_financial_state(state.finance)
+    career = load_career_state(LocalCareerCatalystProvider(SEED_DATA))
+    creative = build_creative_state(SEED_DATA, missions=state.missions)
+    _render_header(state.person_name, current_time, financial)
+    _render_major_tom(state, financial, career, creative)
+    _render_state_cards(financial, career, creative)
 
     st.markdown('<p class="gc-grid-title">Daily flight plan</p>', unsafe_allow_html=True)
     left, right = st.columns([1.35, 0.85], gap="large")
@@ -735,7 +874,7 @@ def main() -> None:
         _render_missions(state)
     with right:
         _render_yesterday(state, today)
-    _render_manual_override()
+    _render_financial_telemetry(state)
 
 
 if __name__ == "__main__":

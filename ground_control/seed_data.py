@@ -28,6 +28,10 @@ SEED_DATA: Final[dict[str, Any]] = {
         "name": "Ground Control",
         "priority": "Review Ground Control and define the next release priority",
     },
+    "career": {
+        "status": "In Flight",
+        "summary": "The search is active; keep meaningful conversations moving.",
+    },
     "major_tom": (
         "Runway is {runway_months:.1f} months. "
         "Stay steady; no retirement move is needed today."
