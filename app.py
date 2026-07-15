@@ -811,6 +811,80 @@ def open_local_path(path: Path, project_root: Path = PROJECT_ROOT) -> tuple[bool
     return True, str(resolved)
 
 
+def _project_path(path: Any, project_root: Path) -> Path:
+    """Resolve stored absolute or project-relative material paths consistently."""
+    candidate = Path(str(path))
+    return (candidate if candidate.is_absolute() else project_root / candidate).resolve()
+
+
+def resolve_role_materials_target(
+    application: Dict[str, Any],
+    package: Dict[str, Any] | None = None,
+    project_root: Path = PROJECT_ROOT,
+) -> tuple[Path | None, str]:
+    """Return the best existing package folder or legacy material for one role."""
+    root = project_root.resolve()
+    package = package or {}
+    exact_package = find_exact_role_package(root, application)
+    exact_files = {
+        str(label): _project_path(path, root)
+        for label, path in dict(exact_package.get("files") or {}).items()
+        if _project_path(path, root).is_file()
+    }
+    exact_folder = exact_package.get("folder")
+    if exact_folder and exact_files:
+        folder = _project_path(exact_folder, root)
+        if folder.is_dir():
+            state = "archived " if exact_package.get("archived") else ""
+            return folder, f"Opening the {state}application package folder."
+
+    material_maps = (
+        exact_files,
+        dict(package.get("files") or {}),
+        dict(application.get("_material_paths") or {}),
+        dict(application.get("material_paths") or {}),
+    )
+    candidates: Dict[str, Path] = {}
+    for paths in material_maps:
+        for label, value in paths.items():
+            normalized_label = re.sub(r"[^a-z0-9]+", " ", str(label).lower()).strip()
+            if normalized_label in {"job description", "job file"}:
+                continue
+            path = _project_path(value, root)
+            if path.is_file():
+                candidates.setdefault(str(label), path)
+
+    package_folder = package.get("package_folder")
+    if package_folder and candidates:
+        folder = _project_path(package_folder, root)
+        if folder.is_dir():
+            return folder, "Opening the application package folder."
+
+    for label in PACKAGE_MATERIAL_LABELS:
+        if label == "Job Description" or label not in candidates:
+            continue
+        return candidates[label], f"Opening {PACKAGE_MATERIAL_LABELS[label].lower()}."
+    if candidates:
+        return next(iter(candidates.values())), "Opening the available application material."
+    return None, "No generated application materials exist for this role yet. Generate a package first."
+
+
+def open_role_materials(
+    st: Any,
+    application: Dict[str, Any],
+    package: Dict[str, Any] | None = None,
+    project_root: Path = PROJECT_ROOT,
+) -> bool:
+    """Open one role's materials and always report success or actionable guidance."""
+    target, guidance = resolve_role_materials_target(application, package, project_root)
+    if target is None:
+        st.warning(guidance)
+        return False
+    opened, message = open_local_path(target, project_root)
+    (st.success if opened else st.warning)(guidance if opened else message)
+    return opened
+
+
 def _status_badges(application: Dict[str, Any]) -> str:
     status = get_record_status(application)
     priority = str(application.get("priority") or "").strip()
@@ -1168,20 +1242,15 @@ def _render_role_card(
             files = package.get("files", {})
             posting_url = record_posting_url(application)
             portal_url = record_application_portal_url(application)
-            first_material = next(
-                (
-                    Path(path)
-                    for path in files.values()
-                    if Path(path).exists() and Path(path).suffix.lower() != ".md"
-                ),
-                None,
+            materials_target, _ = resolve_role_materials_target(
+                application, package, PROJECT_ROOT
             )
             action_specs = [("view", "View Role", None)]
             if portal_url:
                 action_specs.append(("portal", "Check Application Status", portal_url))
             if posting_url:
                 action_specs.append(("posting", "Open Posting", posting_url))
-            if first_material:
+            if materials_target:
                 action_specs.append(("materials", "Open Materials", None))
             actions = st.columns(len(action_specs))
             action_columns = dict(zip((item[0] for item in action_specs), actions))
@@ -1198,15 +1267,13 @@ def _render_role_card(
                 action_columns["posting"].link_button("Open Posting", posting_url, use_container_width=True)
             if portal_url:
                 action_columns["portal"].link_button("Check Application Status", portal_url, use_container_width=True)
-            if first_material and action_columns["materials"].button(
+            if materials_target and action_columns["materials"].button(
                 "Open Materials",
                 key=f"compact_materials_{tracker_id}",
                 use_container_width=True,
-                help=str(first_material),
+                help=str(materials_target),
             ):
-                focus_dashboard_role(st.session_state, dashboard_role_reference(application))
-                st.session_state["dashboard_materials_role_id"] = tracker_id
-                st.rerun()
+                open_role_materials(st, application, package, PROJECT_ROOT)
         return
     with st.container(border=True):
         flash_key = f"dashboard_flash_{tracker_id}"
@@ -1329,17 +1396,12 @@ def _render_role_card(
             st.caption(f"{status_date(application) or 'Date not recorded'} · {get_record_status(application)}")
         posting_url = record_posting_url(application)
         portal_url = record_application_portal_url(application)
-        first_material = next(
-            (
-                Path(path)
-                for path in files.values()
-                if Path(path).exists() and Path(path).suffix.lower() != ".md"
-            ),
-            None,
+        materials_target, _ = resolve_role_materials_target(
+            application, package, PROJECT_ROOT
         )
         primary_actions = contextual_primary_actions(
             application,
-            has_materials=first_material is not None,
+            has_materials=materials_target is not None,
             has_posting_url=posting_url is not None,
             mode=mode,
         )
@@ -1360,13 +1422,11 @@ def _render_role_card(
                     label,
                     key=f"dashboard_quick_{tracker_id}_{action_key}",
                     use_container_width=True,
-                    help=str(first_material) if action_key == "open_materials" else None,
+                    help=str(materials_target) if action_key == "open_materials" else None,
                 ):
                     continue
-                if action_key == "open_materials" and first_material:
-                    focus_dashboard_role(st.session_state, dashboard_role_reference(application))
-                    st.session_state["dashboard_materials_role_id"] = tracker_id
-                    st.rerun()
+                if action_key == "open_materials" and materials_target:
+                    open_role_materials(st, application, package, PROJECT_ROOT)
                 elif action_key == "generate_package":
                     try:
                         with st.spinner("Generating application package…"):
@@ -1564,21 +1624,21 @@ def _render_recommended_next_steps(
                 action_specs.append(("portal", "Check Application Status", portal_url))
             if posting_url:
                 action_specs.append(("posting", "Open Posting", posting_url))
-            material_paths = dict(record.get("_material_paths") or {})
-            first_material = next(
-                (Path(path) for path in material_paths.values() if Path(path).exists()),
-                None,
+            focus_package = packages.get(str(record.get("id") or ""), {})
+            materials_target, _ = resolve_role_materials_target(
+                record, focus_package, PROJECT_ROOT
             )
-            if first_material:
+            if materials_target:
                 action_specs.append(("materials", "Open Materials", None))
             action_columns = st.columns(len(action_specs))
             for column, (key, label, url) in zip(action_columns, action_specs):
                 if url:
                     column.link_button(label, url, use_container_width=True)
                 elif column.button(label, key=f"next_{key}_{role_reference}", use_container_width=True):
-                    focus_dashboard_role(st.session_state, role_reference)
                     if key == "materials":
-                        st.session_state["dashboard_materials_role_id"] = str(record.get("id") or "")
+                        open_role_materials(st, record, focus_package, PROJECT_ROOT)
+                        continue
+                    focus_dashboard_role(st.session_state, role_reference)
                     st.rerun()
 
     compact_mode = bool(st.session_state.get("dashboard_compact_mode", False if st.session_state.get("dashboard_focused_role_id") else True))

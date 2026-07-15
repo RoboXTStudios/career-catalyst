@@ -148,26 +148,21 @@ class Sprint16PackageMaterialTests(unittest.TestCase):
             self.assertEqual(package["files"]["Cover Letter DOCX"], docx)
             self.assertEqual(package["files"]["Cover Letter"], md)
 
-    def test_open_materials_focuses_role_and_reveals_hub_instead_of_opening_first_file(self):
+    def test_open_materials_from_todays_focus_opens_existing_material(self):
         with tempfile.TemporaryDirectory() as temporary:
             material = Path(temporary) / "recruiter_message.txt"
             material.write_text("message", encoding="utf-8")
             record = _record(_material_paths={"Recruiter Message": str(material)})
             st = _FakeStreamlit(clicks={"next_materials_stable-role"})
             with patch.object(app, "_render_role_card") as render_role, patch.object(
-                app, "open_local_path"
+                app, "open_local_path", return_value=(True, str(material))
             ) as open_path:
                 app._render_recommended_next_steps(
                     st, [record], "All Mode", {}, focus_records=[record]
                 )
-            self.assertEqual(
-                st.session_state["dashboard_focused_role_id"], "stable-role"
-            )
-            self.assertEqual(
-                st.session_state["dashboard_materials_role_id"], "stable-role"
-            )
-            render_role.assert_called_once()
-            open_path.assert_not_called()
+            self.assertNotIn("dashboard_focused_role_id", st.session_state)
+            render_role.assert_not_called()
+            open_path.assert_called_once_with(material.resolve(), app.PROJECT_ROOT)
 
     def test_package_generation_persists_only_verified_material_paths(self):
         with tempfile.TemporaryDirectory() as temporary:
