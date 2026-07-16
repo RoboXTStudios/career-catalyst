@@ -309,8 +309,8 @@ def _strategic_pov_note(context: Dict[str, Any]) -> str:
             "and a feedback loop that product teams can use. GTM operations should connect those "
             "elements. It should help sellers understand what is changing, why it matters for large "
             "advertisers, and how to activate it without creating unnecessary process.\n\n"
-            "My perspective comes from long-term hands-on experience with Google advertising "
-            "products, including YouTube, dating back to the early 2000s. I have seen platform "
+            "My perspective comes from translating Google and YouTube advertising capabilities into "
+            "campaign activation and measurement workflows. I have seen platform "
             "capabilities evolve while the practical operating questions remain consistent: Is the "
             "campaign ready to launch? Is measurement configured? Do teams understand the objective, "
             "dependencies, and value proposition? Can market feedback reach the right product and "
@@ -362,8 +362,8 @@ def _interview_talking_points(context: Dict[str, Any]) -> List[Tuple[str, str]]:
     if is_google_youtube_role(context["parsed_job"]):
         return [
             (
-                "Long-term Google and YouTube platform fluency",
-                "I bring hands-on experience with Google advertising products, including YouTube, dating back to the early 2000s and grounded in real campaign activation needs.",
+                "Google and YouTube activation fluency",
+                "I translate Google and YouTube advertising capabilities into practical campaign activation and measurement decisions for large advertisers.",
             ),
             (
                 "Translating product priorities into execution",

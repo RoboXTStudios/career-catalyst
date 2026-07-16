@@ -62,7 +62,7 @@ class EntertainmentCalibrationTests(unittest.TestCase):
         self.assertTrue(
             cover_letter.startswith(
                 "Hello,\n\nThe Head of Global Creative and Product Development Operations "
-                "role at Sony Interactive Entertainment / PlayStation stood out because"
+                "role at Sony Interactive Entertainment / PlayStation caught my attention because"
             )
         )
         self.assertNotIn("role role", cover_letter.lower())

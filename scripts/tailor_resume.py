@@ -8,6 +8,7 @@ try:
     from .filename_utils import build_upload_filename
     from .load_data import load_all_yaml
     from .evidence_engine import load_writing_voice_profile
+    from .human_positioning import professional_summary, validate_human_positioning
     from .parse_job import parse_job_description
     from .package_context import validate_material_context
     from .role_context import is_google_youtube_role
@@ -22,6 +23,7 @@ except ImportError:
     from filename_utils import build_upload_filename
     from load_data import load_all_yaml
     from evidence_engine import load_writing_voice_profile
+    from human_positioning import professional_summary, validate_human_positioning
     from parse_job import parse_job_description
     from package_context import validate_material_context
     from role_context import is_google_youtube_role
@@ -255,16 +257,17 @@ def _profile_summary(
     resume_profile: str,
     parsed_job: Dict[str, Any],
 ) -> str:
-    personal_brand = career_data["data"]["personal_brand"]
-    career_profile = personal_brand["career_profile"]
     profile_key = "google_youtube_operations" if is_google_youtube_role(parsed_job) else resume_profile
-    profile_summary = career_profile.get("profile_summaries", {}).get(profile_key)
-    if profile_summary:
-        return str(profile_summary)
-
-    summary = str(career_profile["summary"])
-    positioning_points = career_profile.get("positioning_points", [])
-    return " ".join([summary] + [str(point) for point in positioning_points[:2]])
+    configured = (
+        career_data["data"]
+        .get("personal_brand", {})
+        .get("career_profile", {})
+        .get("profile_summaries", {})
+        .get(profile_key)
+    )
+    summary = str(configured or professional_summary(resume_profile, parsed_job, competencies))
+    validate_human_positioning(summary, "professional summary")
+    return summary
 
 
 def _achievement_bullets(career_data: Dict[str, Any]) -> List[str]:

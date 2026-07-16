@@ -232,7 +232,7 @@ def _role_angle(
             experience=_achievement_statement(
                 career_data,
                 "google_youtube_platform_familiarity",
-                "I bring long-term hands-on experience with Google advertising products, including YouTube.",
+                "I have translated Google and YouTube advertising capabilities into campaign activation and measurement workflows.",
             ),
             core_value=(
                 "I connect product priorities, GTM operations, advertiser realities, and "

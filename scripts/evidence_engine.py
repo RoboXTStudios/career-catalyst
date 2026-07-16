@@ -8,8 +8,10 @@ from typing import Any
 import yaml
 
 try:
+    from .human_positioning import evidence_capability_score
     from .role_editing import detect_role_editing_category
 except ImportError:
+    from human_positioning import evidence_capability_score
     from role_editing import detect_role_editing_category
 
 
@@ -113,14 +115,14 @@ def select_evidence_cards(
     text = _role_text(role)
     minimum = CONFIDENCE_ORDER[minimum_confidence]
     category_tags = {
-        "chief_of_staff_business_operations": {"governance", "qa", "pmo", "operations_leadership", "executive_communication"},
-        "product_ai_operations": {"builder", "ai_workflows", "product_thinking", "operations_leadership", "governance"},
-        "builder_friendly": {"builder", "ai_workflows", "product_thinking", "operations_leadership"},
-        "traditional_pmo": {"governance", "qa", "pmo", "operations_leadership", "executive_communication"},
+        "chief_of_staff_business_operations": {"governance", "qa", "pmo", "cross_functional_leadership", "ambiguity_reduction"},
+        "product_ai_operations": {"builder", "ai_workflows", "product_thinking", "systems_built", "governance", "ambiguity_reduction"},
+        "builder_friendly": {"builder", "ai_workflows", "product_thinking", "systems_built", "ambiguity_reduction"},
+        "traditional_pmo": {"governance", "qa", "pmo", "cross_functional_leadership", "ambiguity_reduction"},
         "martech_crm": {"martech", "adtech", "campaign_execution", "measurement", "product_thinking"},
-        "creative_operations": {"creative_operations", "creative_work", "storytelling", "editorial", "operations_leadership"},
-        "entertainment_marketing_operations": {"entertainment_marketing_operations", "campaign_execution", "operations_leadership", "governance"},
-        "general_operations": {"operations_leadership", "governance", "executive_communication"},
+        "creative_operations": {"creative_operations", "creative_work", "storytelling", "editorial", "interesting_project", "cross_functional_leadership"},
+        "entertainment_marketing_operations": {"entertainment_marketing_operations", "campaign_execution", "cross_functional_leadership", "measurable_impact", "governance"},
+        "general_operations": {"cross_functional_leadership", "governance", "systems_built", "ambiguity_reduction"},
     }[category]
     selected: list[tuple[int, dict[str, Any]]] = []
     for card in cards:
@@ -135,8 +137,11 @@ def select_evidence_cards(
         if category == "chief_of_staff_business_operations" and card_id == "campaignos" and "campaignos" not in text and _signals(text, ("ai", "automation", "product", "systems")) == 0:
             continue
         tags = set(card.get("tags", []))
-        score = len(tags & category_tags) * 3 + confidence
-        score += _signals(text, tuple(str(tag).replace("_", " ") for tag in tags))
+        category_overlap = len(tags & category_tags)
+        role_signal_score = _signals(text, tuple(str(tag).replace("_", " ") for tag in tags))
+        score = category_overlap * 3 + confidence + role_signal_score
+        if category_overlap or role_signal_score:
+            score += min(6, evidence_capability_score(card) // 3)
         if category == "builder_friendly" and card_id in BUILDER_IDS:
             score += 5
         if category == "entertainment_marketing_operations" and card_id == "omg23_disney_leadership":

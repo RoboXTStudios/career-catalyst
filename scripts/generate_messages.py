@@ -55,11 +55,11 @@ DYNAMIC_MESSAGE_PROOF = {
     "gtm_product_activation": "My background includes platform activation, measurement readiness, large advertiser execution, and CampaignOS product thinking.",
     "product_strategy_ops": "I have aligned business, analytics, and technology partners and built CampaignOS as a current product and systems proof point.",
     "transformation_advisory": "My experience spans senior stakeholder alignment, operating-model design, and CampaignOS as strategy translated into a working system.",
-    "ai_operations_systems": "I have led teams of 60+ and built CampaignOS around automation, governance, validation, dashboards, and better decisions.",
+    "ai_operations_systems": "I built CampaignOS around automation, governance, validation, dashboards, and better operational decisions.",
     "streaming_strategy": "I have led theatrical and streaming entertainment work and built systems that turn cross-functional priorities into execution.",
-    "business_operations": "I have led teams of 60+ and built workflow governance, execution standards, dashboards, and operational reporting.",
+    "business_operations": "I have built workflow governance, execution standards, dashboards, and operational reporting across complex teams.",
     "creative_marketing_ops": "I have led large-scale entertainment marketing work and built creative workflows, quality standards, and CampaignOS.",
-    "generic_senior_operator": "I have led teams of 60+ and built workflow governance, execution standards, and CampaignOS systems at scale.",
+    "generic_senior_operator": "I have built workflow governance, execution standards, and CampaignOS systems around recurring operating problems.",
 }
 
 
@@ -77,7 +77,7 @@ def _profile_recruiter_content(context: Dict[str, Any]) -> str:
     profile_key = context.get("profile_key", "default")
     company = parsed_job.get("company") or "the organization"
     role = parsed_job.get("job_title")
-    role_reference = f"the {role} role" if role else "this opportunity"
+    role_reference = f"The {role} role" if role else "This opportunity"
     profile_copy = {
         "disney": (
             "product and technology strategy, executive operating rhythms, and enterprise entertainment",
@@ -93,7 +93,7 @@ def _profile_recruiter_content(context: Dict[str, Any]) -> str:
         ),
         "fieldai": (
             "matrix operations, organizational efficiency, capacity visibility, and AI workflow systems",
-            "I have led teams of 60+ and built CampaignOS around automation, governance, dashboards, and better operational decisions.",
+            "I built CampaignOS around automation, governance, dashboards, and better operational decisions.",
         ),
         "bandsintown": (
             "music, audience connection, editorial voice, and content systems",
@@ -112,10 +112,10 @@ def _profile_recruiter_content(context: Dict[str, Any]) -> str:
         copy = _dynamic_message_copy(context)
     focus, proof = copy
     message = (
-        f"I'm reaching out about {role_reference} at {company}. It stood out because it connects "
-        f"{focus}. {proof} That combination of clear context and disciplined execution is where I "
-        "do my best work. If you're the right person to speak with, I would be glad to share more. "
-        "If not, would you mind pointing me in the right direction?"
+        f"{role_reference} at {company} caught my attention because it connects {focus}. "
+        f"I've spent much of my career solving similar operational challenges. {proof} I'm curious "
+        "how the team is thinking about the problem and what would make the biggest difference first. "
+        "If that perspective is relevant to the search, I'd be glad to share more context."
     )
     return "\n\n".join(["Hello,", message, "Best,\n\nTrisha Lynch"])
 
@@ -134,7 +134,7 @@ def _profile_hiring_manager_content(context: Dict[str, Any]) -> str:
         ),
         "paramount": (
             "making marketing operations a practical connective layer between strategy, creative capacity, and delivery",
-            "I have led teams of 60+ across creative, marketing, media, analytics, technology, and operations for high-volume entertainment campaigns.",
+            "I built workflows and quality practices across creative, marketing, media, analytics, technology, and operations for high-volume entertainment campaigns.",
             "CampaignOS reflects how I use AI enablement, dashboards, and workflow systems to improve visibility without adding process for its own sake.",
         ),
         "uta": (
@@ -144,7 +144,7 @@ def _profile_hiring_manager_content(context: Dict[str, Any]) -> str:
         ),
         "fieldai": (
             "creating capacity visibility, decision paths, and shared operating cadences across a fast-moving matrix",
-            "I have led cross-functional teams of 60+ and designed governance, dashboards, quality systems, and execution standards across several functions.",
+            "I designed governance, dashboards, quality systems, and execution standards across several functions in a fast-moving matrix.",
             "CampaignOS is direct evidence of my AI-forward systems work, including automation, validation frameworks, and operational reporting.",
         ),
         "bandsintown": (
@@ -166,18 +166,18 @@ def _profile_hiring_manager_content(context: Dict[str, Any]) -> str:
         focus, proof = _dynamic_message_copy(context)
         copy = (
             f"turning {focus} into an operating approach teams can understand and use",
-            "I have led cross-functional teams of 60+ and learned to move between senior stakeholder context and delivery detail.",
+            "I have learned to move between senior stakeholder context and delivery detail while making ownership and decisions easier to see.",
             proof,
         )
     challenge, experience, proof = copy
     opening = (
-        f"{role_reference} at {company} stood out because it centers on {challenge}. "
-        "That is the kind of problem where clear judgment and practical execution need to work together."
+        f"{role_reference} at {company} caught my attention because it centers on {challenge}. "
+        "It is the kind of problem where observation, clear judgment, and practical execution need to work together."
     )
     close = (
-        "I would welcome the chance to learn how the team is defining success and share how my "
-        "experience could contribute. That conversation would also help me understand where the "
-        "team sees the greatest friction and which outcomes matter first."
+        "I'm curious how the team is defining success, where people currently lose time or context, "
+        "and which outcome matters first. If comparing notes would be useful, I'd be glad to share "
+        "what I have learned from solving similar problems."
     )
     return "\n\n".join(
         ["Hello,", opening, experience, proof, close, "Best,\n\nTrisha Lynch"]
@@ -189,7 +189,7 @@ def _recruiter_content(context: Dict[str, Any]) -> str:
     parsed_job = context["parsed_job"]
     company = parsed_job.get("company") or "the organization"
     role = parsed_job.get("job_title")
-    role_reference = f"the {role} role" if role else "this opportunity"
+    role_reference = f"The {role} role" if role else "This opportunity"
     position = _position(career_data, "OMG23")
     position_company = str(position.get("company") or "OMG23 / OMD Entertainment").split(",")[0]
     entertainment_scope = _entertainment_scope(career_data)
@@ -197,17 +197,15 @@ def _recruiter_content(context: Dict[str, Any]) -> str:
 
     if is_google_youtube_role(parsed_job):
         message = (
-            f"I'm reaching out about {role_reference} at {company}. It stands out because it "
-            "connects YouTube product activation, GTM operations, and large advertiser execution. "
-            "I bring long-term hands-on experience with Google advertising products, including "
-            "YouTube, dating back to the early 2000s. I have translated Google and YouTube platform "
+            f"{role_reference} at {company} caught my attention because it connects "
+            "YouTube product activation, GTM operations, and large advertiser execution. I have translated Google and YouTube platform "
             "capabilities into campaign execution, measurement readiness, and operational workflows "
             "across large entertainment advertisers. CampaignOS is a current proof point for how I "
-            "turn recurring operational needs into scalable systems."
+            "turn recurring operational needs into usable systems. I'm curious which activation or "
+            "feedback-loop challenge matters most to the team right now."
         )
         question = (
-            "If you're the right person to speak with, I would be glad to share more. If not, would "
-            "you mind pointing me in the right direction?"
+            "If that perspective is relevant to the search, I'd be glad to share more context."
         )
         return "\n\n".join(["Hello,", message, question, "Best,\n\nTrisha Lynch"])
 
@@ -216,16 +214,16 @@ def _recruiter_content(context: Dict[str, Any]) -> str:
         return profile_content
 
     message = (
-        f"I'm reaching out about {role_reference} at {company}. It stands out because it "
-        f"connects {_job_focus(parsed_job)} around entertainment IP. At {position_company}, "
-        f"{_as_first_person(entertainment_scope)} I led cross-functional teams of 60+ and built "
-        "workflows, quality practices, and operating standards for entertainment campaigns."
+        f"{role_reference} at {company} caught my attention because it connects "
+        f"{_job_focus(parsed_job)} around entertainment IP. At {position_company}, "
+        f"{_as_first_person(entertainment_scope)} I built workflows, quality practices, and operating "
+        "standards that helped cross-functional campaign teams coordinate complex work."
     )
     if _campaignos_is_relevant(context) and campaignos:
         message += " I also built CampaignOS to turn operational challenges into scalable systems."
     question = (
-        "If you're the right person to speak with, I would be glad to share more. If not, would "
-        "you mind pointing me in the right direction?"
+        "I'm curious which part of that operating challenge matters most to the team. If my "
+        "perspective is relevant to the search, I'd be glad to share more context."
     )
     return "\n\n".join(["Hello,", message, question, "Best,\n\nTrisha Lynch"])
 
@@ -244,16 +242,15 @@ def _hiring_manager_content(context: Dict[str, Any]) -> str:
 
     if is_google_youtube_role(parsed_job):
         opening = (
-            f"{role_reference} at {company} stood out because it brings YouTube product activation, "
+            f"{role_reference} at {company} caught my attention because it brings YouTube product activation, "
             "GTM operations, seller enablement, and large advertiser execution together. Translating "
             "platform priorities into clear activation strategies, feedback loops, and measurable "
             "execution is work I find meaningful."
         )
         experience = (
-            "I bring long-term hands-on experience with Google advertising products, including "
-            "YouTube, dating back to the early 2000s. Across large entertainment advertisers, I have "
-            "connected brand objectives, campaign operations, measurement readiness, and platform "
-            "activation while aligning marketing, media, analytics, technology, and senior stakeholders. "
+            "Across large entertainment advertisers, I have translated Google and YouTube platform "
+            "capabilities into campaign operations, measurement readiness, and brand activation while "
+            "aligning marketing, media, analytics, technology, and senior stakeholders. "
             "Disney Studios Theatrical and Disney Streaming/DSS work provides evidence of the scale "
             "and operational rigor behind that experience."
         )
@@ -262,8 +259,9 @@ def _hiring_manager_content(context: Dict[str, Any]) -> str:
             "workflow governance, quality assurance, validation, and operational visibility."
         )
         close = (
-            "I would welcome the chance to learn how the team is approaching YouTube Brand Auction, "
-            "AI-powered campaign types, and seller activation, and to share how I could contribute."
+            "I'm curious where the team sees the hardest adoption or feedback-loop problem around "
+            "YouTube Brand Auction, AI-powered campaign types, and seller activation. If useful, "
+            "I'd be glad to compare notes on what makes those operating systems work in practice."
         )
         return "\n\n".join(
             ["Hello,", opening, experience, project, close, "Best,\n\nTrisha Lynch"]
@@ -274,13 +272,13 @@ def _hiring_manager_content(context: Dict[str, Any]) -> str:
         return profile_content
 
     opening = (
-        f"{role_reference} at {company} stood out because it brings {_job_focus(parsed_job)} "
+        f"{role_reference} at {company} caught my attention because it brings {_job_focus(parsed_job)} "
         "together. The challenge of turning entertainment IP and franchise priorities into clear "
         "workflows, milestones, standards, and operating rhythms is work I find meaningful."
     )
     experience = (
-        f"At {position_company}, I progressed to Group Director. "
-        f"{_as_first_person(entertainment_scope)} I know how much operational clarity matters when creative, "
+        f"At {position_company}, {_as_first_person(entertainment_scope)} I built workflows and quality "
+        "practices around that work, and learned how much operational clarity matters when creative, "
         "marketing, media, analytics, technology, and external partners need to move together."
     )
     project = ""
@@ -291,9 +289,8 @@ def _hiring_manager_content(context: Dict[str, Any]) -> str:
             "consistency and visibility."
         )
     close = (
-        "That mix of creative operations, product thinking, and scalable execution is where I do my "
-        "best work. I would welcome the chance to learn more about the team's priorities and share "
-        "how I could contribute."
+        "I'm curious where the team loses the most time or context and what matters first. If useful, "
+        "I'd be glad to compare notes on what has worked in similar environments."
     )
     parts = ["Hello,", opening, experience]
     if project:

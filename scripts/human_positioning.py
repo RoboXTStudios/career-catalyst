@@ -1,0 +1,142 @@
+"""Shared human-positioning rules for generated career materials."""
+
+from __future__ import annotations
+
+import re
+from typing import Any, Sequence
+
+
+TENURE_FORWARD_PATTERNS = (
+    r"\b\d{1,2}\+?\s+years?\s+of\s+experience\b",
+    r"\bover\s+(?:two|three|four)\s+decades\b",
+    r"\bdecades?\s+of\s+experience\b",
+    r"\blong[- ]term\s+hands[- ]on\s+experience\b",
+    r"\bdating\s+back\s+to\s+the\s+(?:19|20)\d0s\b",
+)
+
+POSITIONING_CLICHES = (
+    "seasoned professional",
+    "veteran",
+    "extensive experience",
+    "results-driven",
+    "results driven",
+    "proven track record",
+    "proven record",
+    "dynamic leader",
+    "accomplished executive",
+    "highly accomplished",
+)
+
+
+PROFILE_SUMMARIES = {
+    "executive_operations": (
+        "Operations leader known for finding the real constraint in complex work and turning it into "
+        "clear decisions, usable systems, and dependable delivery. Connects business operations, "
+        "workflow governance, cross-functional collaboration, and AI workflow design to reduce "
+        "ambiguity and help teams move with confidence."
+    ),
+    "entertainment_marketing": (
+        "Entertainment marketing operator who brings creative, media, analytics, technology, and "
+        "operations partners into a shared way of working. Builds practical workflows, quality "
+        "standards, and reporting systems that make high-volume campaign work easier to coordinate "
+        "without losing sight of the audience or the creative idea."
+    ),
+    "music_industry": (
+        "Music and entertainment operator with an editorial eye and a systems mindset. Known for "
+        "turning audience, content, and partnership goals into clear workflows, thoughtful stories, "
+        "and repeatable ways of working that protect both quality and human voice."
+    ),
+    "product_ai": (
+        "Product-minded operations builder who turns recurring friction into useful AI-enabled "
+        "workflows, validation rules, and decision tools. Works from the problem outward, combining "
+        "structured discovery, hands-on systems design, governance, and human judgment to make "
+        "complex work easier to run."
+    ),
+    "google_youtube_operations": (
+        "Strategy and operations leader known for translating Google and YouTube platform capabilities "
+        "into advertiser activation, measurement readiness, and workable cross-functional routines. "
+        "Connects brand goals, product feedback, campaign operations, and AI-enabled systems to make "
+        "adoption clearer and execution more measurable."
+    ),
+}
+
+
+class HumanPositioningError(ValueError):
+    """Raised when generated narrative copy violates human-positioning rules."""
+
+
+def positioning_violations(text: str) -> list[str]:
+    """Return tenure-forward or clichéd claims found in narrative copy."""
+    value = str(text or "")
+    lowered = value.lower()
+    violations = [
+        pattern
+        for pattern in TENURE_FORWARD_PATTERNS
+        if re.search(pattern, value, flags=re.IGNORECASE)
+    ]
+    violations.extend(phrase for phrase in POSITIONING_CLICHES if phrase in lowered)
+    return violations
+
+
+def validate_human_positioning(text: str, artifact: str) -> None:
+    """Reject narrative copy that leads with tenure or unsupported prestige language."""
+    violations = positioning_violations(text)
+    if violations:
+        raise HumanPositioningError(
+            f"Generated {artifact} contains tenure-forward or clichéd positioning: {violations[0]}"
+        )
+
+
+def professional_summary(
+    resume_profile: str,
+    parsed_job: dict[str, Any],
+    competencies: Sequence[str] = (),
+) -> str:
+    """Build an identity/approach/outcome summary while ATS terms remain in competencies."""
+    profile_key = (
+        "google_youtube_operations"
+        if "youtube" in " ".join(
+            str(parsed_job.get(key) or "") for key in ("job_title", "company", "raw_text")
+        ).lower()
+        and "google" in " ".join(
+            str(parsed_job.get(key) or "") for key in ("job_title", "company", "raw_text")
+        ).lower()
+        else resume_profile
+    )
+    summary = PROFILE_SUMMARIES.get(profile_key, PROFILE_SUMMARIES["executive_operations"])
+    validate_human_positioning(summary, "professional summary")
+    return summary
+
+
+def evidence_capability_score(card: dict[str, Any]) -> int:
+    """Reward demonstrated capability and penalize tenure/prestige-only positioning."""
+    proof_text = " ".join(
+        [
+            str(card.get("short_description") or ""),
+            " ".join(str(point) for point in card.get("proof_points", [])),
+            " ".join(str(tag).replace("_", " ") for tag in card.get("tags", [])),
+        ]
+    ).lower()
+    signal_groups = (
+        (5, ("measurable impact", "60+", "400+", "%", "$")),
+        (5, ("systems built", "built", "designed", "developed", "created")),
+        (4, ("cross-functional", "cross functional")),
+        (4, ("ai workflow", "ai-enabled", "ai-powered", "automation")),
+        (3, ("governance", "quality assurance", "qa", "validation")),
+        (3, ("ambiguity reduction", "clarity", "decision", "risk visibility")),
+        (2, ("interesting project", "builder", "platform", "publication")),
+    )
+    score = sum(weight for weight, signals in signal_groups if any(signal in proof_text for signal in signals))
+    score -= 5 * sum(
+        phrase in proof_text
+        for phrase in (
+            "years of experience",
+            "decades of experience",
+            "seasoned",
+            "veteran",
+            "proven leader",
+            "executive leader",
+            "senior leader",
+        )
+    )
+    return score

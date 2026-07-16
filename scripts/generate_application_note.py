@@ -102,9 +102,8 @@ def _application_note_content(context: Dict[str, Any]) -> str:
     if is_google_youtube_role(parsed_job):
         return (
             "This Google opportunity caught my attention because it connects YouTube product "
-            "activation, GTM operations, and large advertiser execution. I bring long-term hands-on "
-            "experience with Google advertising products, including YouTube, dating back to the "
-            "early 2000s. I have translated platform capabilities into campaign execution, "
+            "activation, GTM operations, and large advertiser execution. I have translated Google "
+            "and YouTube platform capabilities into campaign execution, "
             "measurement readiness, and operational workflows across large entertainment advertisers. "
             "That foundation aligns with Brand Auction activation, seller enablement, senior stakeholder "
             "alignment, and product feedback loops. CampaignOS adds a current proof point for my "

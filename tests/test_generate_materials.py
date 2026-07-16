@@ -90,7 +90,7 @@ class GenerateMaterialsTests(unittest.TestCase):
     def test_cover_letter_uses_calibrated_voice(self):
         content = self.contents["cover_letter"]
 
-        self.assertIn("What caught my attention", content)
+        self.assertIn("caught my attention because", content)
         self.assertIn("creative and marketing teams", content)
 
     def test_messages_and_note_contain_company(self):

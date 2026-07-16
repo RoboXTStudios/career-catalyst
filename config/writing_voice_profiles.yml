@@ -10,7 +10,18 @@ banned_phrases:
   - cutting-edge
   - uniquely positioned
   - proven track record
+  - proven record
   - dynamic leader
+  - seasoned professional
+  - veteran
+  - extensive experience
+  - results-driven
+  - accomplished executive
+  - highly accomplished
+  - years of experience
+  - over two decades
+  - long-term hands-on experience
+  - dating back to the early 2000s
   - fast-paced environment
   - enable great work
   - best work together
@@ -25,7 +36,7 @@ levels:
   2:
     label: Professional, approachable
   3:
-    label: Executive, authentic, quietly confident
+    label: Calm, thoughtful, practical, slightly conversational
   4:
     label: Senior Director / VP polish
   5:

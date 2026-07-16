@@ -44,7 +44,7 @@ class LoadDataTests(unittest.TestCase):
         loaded = load_all_yaml(PROJECT_ROOT)
 
         self.assertIn("config/voice.yml", REQUIRED_CONFIG_FILES)
-        self.assertEqual(loaded["config"]["voice"]["voice_name"], "Warm Executive Operator")
+        self.assertEqual(loaded["config"]["voice"]["voice_name"], "Calm Practical Operator")
 
     def test_missing_file_error_is_handled_cleanly(self):
         with tempfile.TemporaryDirectory() as temp_dir:
