@@ -1234,6 +1234,35 @@ def _render_source_verification_panel(
         st.rerun()
 
 
+def _role_lens_for_card(
+    application: Dict[str, Any], package: Dict[str, Any]
+) -> Dict[str, Any]:
+    """Resolve persisted role-lens metadata without recomputing role intelligence."""
+    saved_lens = application.get("role_lens")
+    if isinstance(saved_lens, dict) and saved_lens:
+        return saved_lens
+
+    package_lens = package.get("role_lens")
+    if not saved_lens and isinstance(package_lens, dict) and package_lens:
+        return package_lens
+
+    primary = str(saved_lens or package_lens or "").strip()
+    if not primary:
+        return {}
+    confidence = application.get("role_lens_confidence")
+    confidence_label = "Medium"
+    if isinstance(confidence, (int, float)) and not isinstance(confidence, bool):
+        confidence_label = (
+            "High" if confidence >= 0.8 else "Medium" if confidence >= 0.6 else "Low"
+        )
+    return {
+        "primary": primary,
+        "secondary": application.get("secondary_role_lens"),
+        "confidence": confidence,
+        "confidence_label": confidence_label,
+    }
+
+
 def _render_role_card(
     st: Any,
     application: Dict[str, Any],
@@ -1334,9 +1363,11 @@ def _render_role_card(
             ),
             unsafe_allow_html=True,
         )
-        role_lens = intelligence.get("role_lens") or {}
+        role_lens = _role_lens_for_card(application, package)
         if role_lens:
-            secondary = role_lens.get("secondary_label")
+            secondary = role_lens.get("secondary_label") or _humanize_taxonomy(
+                role_lens.get("secondary")
+            )
             st.caption(
                 f"Role lens: {role_lens.get('primary_label') or _humanize_taxonomy(role_lens.get('primary'))}"
                 + (f" · Secondary: {secondary}" if secondary else "")
