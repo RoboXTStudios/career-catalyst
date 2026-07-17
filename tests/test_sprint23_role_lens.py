@@ -33,7 +33,7 @@ from scripts.tailor_resume import _render_markdown
 
 
 ROOT = Path(__file__).resolve().parents[1]
-UTA_JOB = "jobs/united_talent_agency_director_people_operations.md"
+UTA_JOB = "tests/fixtures/jobs/uta_director_people_operations.md"
 BUSINESS_JOB = "jobs/sample_job_description.md"
 MARKETING_JOB = "jobs/paramount_director_marketing_operations.md"
 DISABLED_EVIDENCE = ("Career Catalyst", "CampaignOS", "Substack")

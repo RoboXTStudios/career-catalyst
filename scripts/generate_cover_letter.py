@@ -11,6 +11,7 @@ from docx.shared import Inches, Pt, RGBColor
 
 try:
     from .company_voice import company_voice_context
+    from .cover_letter_quality import cover_letter_quality_pass
     from .evidence_engine import load_evidence_cards, load_writing_voice_profile, select_evidence_cards
     from .employer_identity import (
         OMG23_DISPLAY_NAME,
@@ -28,6 +29,7 @@ try:
     from .package_context import validate_material_context
     from .role_lens import enforce_role_lens_quality
     from .role_context import (
+        GOOGLE_IMPLICATION_PHRASES,
         google_claim_violations,
         is_google_youtube_role,
     )
@@ -40,6 +42,7 @@ try:
     from .text_cleanup import cleanup_repeated_words
 except ImportError:
     from company_voice import company_voice_context
+    from cover_letter_quality import cover_letter_quality_pass
     from evidence_engine import load_evidence_cards, load_writing_voice_profile, select_evidence_cards
     from employer_identity import (
         OMG23_DISPLAY_NAME,
@@ -56,7 +59,11 @@ except ImportError:
     from parse_job import parse_job_description
     from package_context import validate_material_context
     from role_lens import enforce_role_lens_quality
-    from role_context import google_claim_violations, is_google_youtube_role
+    from role_context import (
+        GOOGLE_IMPLICATION_PHRASES,
+        google_claim_violations,
+        is_google_youtube_role,
+    )
     from role_editing import (
         material_editing_plan,
         remaining_banned_voice_phrases,
@@ -154,6 +161,34 @@ def save_material(
         rewrite_notes.extend(attempt_rewrites)
         word_count = _word_count(content)
         attempts += 1
+    cover_letter_quality = None
+    if suffix.lower().replace(" ", "_") == "cover_letter":
+        prohibited_rewrites = list(GOOGLE_IMPLICATION_PHRASES)
+        for requirement in context.get("requirement_map", []):
+            if isinstance(requirement, dict):
+                prohibited_rewrites.extend(
+                    str(value)
+                    for value in requirement.get("prohibited_overclaim_language", [])
+                    if value
+                )
+        content, cover_letter_quality = cover_letter_quality_pass(
+            content,
+            is_google_youtube=is_google_youtube_role(context["parsed_job"]),
+            forbidden_phrases=prohibited_rewrites,
+        )
+        content = cleanup_repeated_words(content)
+        word_count = _word_count(content)
+        content, role_lens_quality = enforce_role_lens_quality(
+            content,
+            context.get("role_lens", {}),
+            material_type=suffix,
+        )
+        if not role_lens_quality["valid"]:
+            reason = role_lens_quality["violations"][0]
+            raise ApplicationMaterialError(
+                "Generated application material does not match the role lens after quality cleanup: "
+                f"{reason['code']} ({reason['detail']})."
+            )
     if "—" in content:
         raise ApplicationMaterialError("Generated application materials must not contain em dashes.")
     if "placeholder" in content.lower():
@@ -235,6 +270,7 @@ def save_material(
         "role_lens": context.get("role_lens", {}),
         "requirement_map": context.get("requirement_map", []),
         "role_lens_quality": role_lens_quality,
+        "cover_letter_quality": cover_letter_quality,
     }
 
 
