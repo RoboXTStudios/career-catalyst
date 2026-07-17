@@ -9,8 +9,10 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, Optional, Tuple
 
 try:
+    from .evidence_engine import professional_evidence_recommendations
     from .load_data import load_yaml_file
 except ImportError:
+    from evidence_engine import professional_evidence_recommendations
     from load_data import load_yaml_file
 
 
@@ -143,7 +145,7 @@ CATEGORY_GUIDANCE = {
         ],
         "proof_points": [
             "Multiverse editorial leadership",
-            "Substack writing and personal voice",
+            "Multiverse contributor systems and employee storytelling",
             "entertainment marketing and campaign operations",
         ],
         "avoid": [
@@ -160,7 +162,7 @@ CATEGORY_GUIDANCE = {
         "proof_points": [
             "entertainment marketing and campaign operations",
             "cross-functional leadership and workflow transformation",
-            "CampaignOS systems thinking and operational visibility",
+            "workflow governance and operational visibility",
         ],
         "avoid": [
             "assuming a live-events focus without touring, venue, ticketing, fan-community, or event-production evidence",
@@ -176,7 +178,7 @@ CATEGORY_GUIDANCE = {
         "proof_points": [
             "Disney Studios Theatrical and Disney Streaming/DSS campaign operations",
             "cross-functional leadership across creative, media, analytics, and technology",
-            "CampaignOS workflow governance and visibility",
+            "workflow governance and quality visibility",
         ],
         "avoid": ["invented familiarity with current titles, teams, or company priorities"],
     },
@@ -189,7 +191,7 @@ CATEGORY_GUIDANCE = {
         "proof_points": [
             "senior stakeholder and external partner management",
             "cross-functional operating model and workflow design",
-            "CampaignOS as transformation translated into a working system",
+            "transformation translated into practical operating systems",
         ],
         "avoid": ["unsupported client relationships or consulting claims"],
     },
@@ -213,7 +215,7 @@ CATEGORY_GUIDANCE = {
             "show where AI workflow systems improve decisions without replacing human judgment",
         ],
         "proof_points": [
-            "CampaignOS AI-powered workflow governance and quality assurance",
+            "professional workflow governance and quality assurance",
             "schema-driven validation, dashboards, and operational reporting",
             "leadership across complex cross-functional teams",
         ],
@@ -226,7 +228,7 @@ CATEGORY_GUIDANCE = {
             "show an ability to translate user and business needs into clear operating systems",
         ],
         "proof_points": [
-            "CampaignOS product and systems design",
+            "platform activation and operational systems design",
             "platform activation and measurement readiness",
             "cross-functional alignment across business, analytics, and technology",
         ],
@@ -241,7 +243,7 @@ CATEGORY_GUIDANCE = {
         "proof_points": [
             "large-scale entertainment marketing operations",
             "workflow governance and cross-functional execution standards",
-            "CampaignOS dashboards, validation, and AI enablement",
+            "operational dashboards, validation, and quality assurance",
         ],
         "avoid": ["over-indexing on narrow ad operations terminology"],
     },
@@ -267,7 +269,7 @@ CATEGORY_GUIDANCE = {
         "proof_points": [
             "leadership of cross-functional teams of 60+",
             "workflow governance and execution standards",
-            "CampaignOS systems thinking and operational visibility",
+            "workflow governance and operational visibility",
         ],
         "avoid": ["unsupported claims about the company's culture, customers, or internal priorities"],
     },
@@ -277,22 +279,22 @@ ROLE_GUIDANCE = {
     "music_content_strategy": {
         "tone": ["editorial", "music-aware", "human"],
         "angle": "connect music culture and audience understanding with voice, content strategy, and repeatable editorial systems",
-        "proof_points": ["Multiverse", "Substack", "entertainment marketing experience"],
+        "proof_points": ["Multiverse", "editorial operations", "entertainment marketing experience"],
     },
     "editorial_content_strategy": {
         "tone": ["editorial", "clear", "audience-aware"],
         "angle": "connect writing and editorial judgment with content planning, voice systems, and cross-functional delivery",
-        "proof_points": ["Multiverse", "Substack", "content and campaign systems"],
+        "proof_points": ["Multiverse", "editorial operations", "content and campaign systems"],
     },
     "transformation_advisory": {
         "tone": ["advisory", "structured", "stakeholder-aware"],
         "angle": "translate a clear transformation hypothesis into an operating model, stakeholder recommendation, and executable plan",
-        "proof_points": ["stakeholder alignment", "workflow governance", "CampaignOS"],
+        "proof_points": ["stakeholder alignment", "workflow governance", "operating-model transformation"],
     },
     "product_strategy_ops": {
         "tone": ["product-aware", "strategic", "data-fluent"],
         "angle": "align product, technology, data, and business priorities through decisions, roadmaps, OKRs, and operating rhythms",
-        "proof_points": ["CampaignOS product thinking", "executive operating clarity", "technology partnerships"],
+        "proof_points": ["platform activation", "executive operating clarity", "technology partnerships"],
     },
     "gtm_product_activation": {
         "tone": ["precise", "commercial", "product-aware"],
@@ -302,7 +304,7 @@ ROLE_GUIDANCE = {
     "ai_operations_systems": {
         "tone": ["systems-minded", "AI-forward", "practical"],
         "angle": "improve matrix operations through capacity visibility, operating cadences, dashboards, automation, and thoughtful governance",
-        "proof_points": ["CampaignOS", "AI workflow design", "validation and reporting systems"],
+        "proof_points": ["workflow governance", "quality assurance", "validation and reporting systems"],
     },
     "business_operations": {
         "tone": ["clear", "practical", "senior"],
@@ -312,7 +314,7 @@ ROLE_GUIDANCE = {
     "creative_marketing_ops": {
         "tone": ["creative-operations-aware", "clear", "practical"],
         "angle": "connect creative and marketing priorities with workflow, capacity, quality, and dependable delivery",
-        "proof_points": ["entertainment marketing operations", "creative workflows", "CampaignOS"],
+        "proof_points": ["entertainment marketing operations", "creative workflows", "quality assurance"],
     },
     "streaming_strategy": {
         "tone": ["streaming-aware", "audience-aware", "strategic"],
@@ -322,12 +324,12 @@ ROLE_GUIDANCE = {
     "community_growth": {
         "tone": ["community-minded", "human", "growth-aware"],
         "angle": "connect audience insight and community trust with clear programs, content, measurement, and sustainable growth",
-        "proof_points": ["Multiverse community storytelling", "Substack voice", "audience campaign experience"],
+        "proof_points": ["Multiverse community storytelling", "editorial operations", "audience campaign experience"],
     },
     "generic_senior_operator": {
         "tone": ["warm", "senior", "specific"],
         "angle": "connect the role's stated priorities with strategic clarity, stakeholder alignment, and reliable execution",
-        "proof_points": ["cross-functional leadership", "workflow governance", "CampaignOS"],
+        "proof_points": ["cross-functional leadership", "workflow governance", "operational reporting"],
     },
 }
 
@@ -606,12 +608,28 @@ def detect_role_family(job_title: str = "", job_description: str = "") -> str:
     return "generic_senior_operator"
 
 
-def _proof_guidance(company_category: str, role_family: str) -> Tuple[list[str], list[str]]:
-    category = CATEGORY_GUIDANCE[company_category]
-    role = ROLE_GUIDANCE[role_family]
-    emphasize = _dedupe((*category["proof_points"], *role["proof_points"]))
-    avoid = _dedupe(category["avoid"])
-    return emphasize, avoid
+def _proof_avoidance(company_category: str) -> list[str]:
+    """Return caution guidance; positive proof recommendations come from evidence cards."""
+    return _dedupe(CATEGORY_GUIDANCE[company_category]["avoid"])
+
+
+def _shared_evidence(
+    company_name: str,
+    job_title: str,
+    job_description: str,
+    company_category: str,
+    role_family: str,
+) -> Dict[str, Any]:
+    return professional_evidence_recommendations(
+        {
+            "company": company_name,
+            "job_title": job_title,
+            "raw_text": job_description,
+            "company_category": company_category,
+            "role_family": role_family,
+            "keywords": [],
+        }
+    )
 
 
 def build_dynamic_voice_profile(
@@ -626,7 +644,10 @@ def build_dynamic_voice_profile(
     role_family = detect_role_family(job_title, job_description)
     category_guidance = CATEGORY_GUIDANCE[category]
     role_guidance = ROLE_GUIDANCE[role_family]
-    emphasize, proof_avoid = _proof_guidance(category, role_family)
+    proof_avoid = _proof_avoidance(category)
+    evidence = _shared_evidence(
+        company_name, job_title, job_description, category, role_family
+    )
     is_music_operations = category == "music_entertainment_operations" and role_family in {
         "business_operations", "product_strategy_ops", "transformation_advisory", "generic_senior_operator"
     }
@@ -639,7 +660,9 @@ def build_dynamic_voice_profile(
         "role_family": role_family,
         "tone": _dedupe((*category_guidance["tone"], *role_guidance["tone"])),
         "cover_letter_angle": _dedupe((*category_guidance["cover_letter_angle"], role_guidance["angle"])),
-        "proof_points_to_emphasize": emphasize,
+        "proof_points_to_emphasize": evidence["proof_points"],
+        "selected_evidence_ids": evidence["ids"],
+        "selected_evidence_labels": evidence["labels"],
         "proof_points_to_avoid": proof_avoid,
         "avoid": _dedupe(category_guidance["avoid"]),
         "confidence": context["confidence"],
@@ -684,7 +707,10 @@ def get_effective_voice_profile(
     profile_name, profile, match_type = match
     category = dynamic["company_category"]
     role_family = dynamic["role_family"]
-    emphasize, proof_avoid = _proof_guidance(category, role_family)
+    proof_avoid = _proof_avoidance(category)
+    evidence = _shared_evidence(
+        company_name, job_title, job_description, category, role_family
+    )
     confidence = 0.99 if match_type == "exact" else 0.9
     article = "an" if match_type == "exact" else "a"
     return {
@@ -697,7 +723,9 @@ def get_effective_voice_profile(
         "cover_letter_angle": _dedupe(
             (*profile.get("cover_letter_angle", []), *dynamic["cover_letter_angle"])
         ),
-        "proof_points_to_emphasize": emphasize,
+        "proof_points_to_emphasize": evidence["proof_points"],
+        "selected_evidence_ids": evidence["ids"],
+        "selected_evidence_labels": evidence["labels"],
         "proof_points_to_avoid": proof_avoid,
         "avoid": _dedupe((*profile.get("avoid", []), *dynamic["avoid"])),
         "confidence": confidence,

@@ -61,7 +61,7 @@ REVIEW_FIRST_SOURCE_TYPES = {
     "Gated Source",
     "Unknown Source",
 }
-VERIFY_FIRST_MESSAGE = "Verify on employer site before generating package or applying."
+VERIFY_FIRST_MESSAGE = "Original posting should be confirmed before submitting."
 
 
 class ProspectIntakeError(Exception):
@@ -165,7 +165,7 @@ def _source_needs_verify_first(verification: Dict[str, Any]) -> bool:
 def _merge_next_action(current: Any, verification: Dict[str, Any]) -> str:
     current_text = str(current or "").strip()
     if verification.get("freshness_risk") == "High" or verification.get("verification_status") == "Stale / Closed Risk":
-        return "Verify role is still active before generating package."
+        return "Open the original posting to confirm it is still active."
     if _source_needs_verify_first(verification):
         if not current_text or current_text == "Review fit and generate application package.":
             return VERIFY_FIRST_MESSAGE
@@ -185,11 +185,11 @@ def _source_adjusted_match_report(report: Dict[str, Any], verification: Dict[str
     ):
         adjusted["recommended_action"] = "Review First"
         gaps = list(adjusted.get("match_gaps") or [])
-        gaps.append("Source requires employer-site verification before investing in a full package.")
+        gaps.append("The original employer application path is unavailable.")
         adjusted["match_gaps"] = list(dict.fromkeys(gaps))
     elif _source_needs_verify_first(verification):
         gaps = list(adjusted.get("match_gaps") or [])
-        gaps.append("Verify the listing on the employer site before applying.")
+        gaps.append("The original posting should be confirmed before submitting.")
         adjusted["match_gaps"] = list(dict.fromkeys(gaps))
     return adjusted
 
@@ -201,17 +201,15 @@ def _field_warnings(
 ) -> list[str]:
     warnings = list(verification.get("source_warnings") or [])
     if not str(normalized.get("location") or "").strip() or str(normalized.get("location")).strip() == "Not specified":
-        warnings.append("Location was not detected. Review before saving.")
+        warnings.append("Location unavailable.")
     if not str(normalized.get("work_arrangement") or "").strip() or str(normalized.get("work_arrangement")).strip() == "Not specified":
-        warnings.append("Work arrangement was not detected. Review before saving.")
+        warnings.append("Work arrangement unavailable.")
     if str(normalized.get("salary_range") or "").strip() in {"", "Not disclosed"}:
-        warnings.append("Salary was not disclosed. Continue with review if the role is otherwise strong.")
-    elif normalized.get("salary_range"):
-        warnings.append("Salary detected from job text. Review before applying.")
+        warnings.append("Salary information unavailable.")
     if _source_needs_verify_first(verification):
         warnings.append(VERIFY_FIRST_MESSAGE)
     if intelligence and intelligence.get("source") == "dynamic_inference":
-        warnings.append("Role family was inferred. Review if this is a strategic or product-ops role.")
+        warnings.append("Role classification inferred from the supplied description.")
     return list(dict.fromkeys(str(warning).strip() for warning in warnings if str(warning).strip()))
 
 

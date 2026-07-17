@@ -86,6 +86,7 @@ from scripts.package_generator import (
 )
 from scripts.parse_job import extract_metadata, parse_job_description, salary_parsing_warning
 from scripts.prospect_intake import ProspectIntakeError, create_prospect
+from scripts.prospect_validation import compute_prospect_validation_state
 from scripts.score_match import incomplete_match_report, score_job_data, score_job_match
 
 
@@ -477,9 +478,12 @@ def reset_package_preview_for_selection(
 def mark_prospect_intelligence_stale(session_state: Any) -> None:
     """Mark intake analysis stale after role-defining fields change."""
     session_state["prospect_intelligence_stale"] = True
+    session_state.pop("prospect_match_report", None)
+    session_state.pop("prospect_validation_state", None)
+    session_state.pop("prospect_role_intelligence", None)
     session_state["prospect_import_result"] = (
-        "error",
-        "Role details changed. Re-parse and re-score before generating a package.",
+        "warning",
+        "Role details changed. Re-parse to refresh the current analysis.",
     )
 
 
@@ -1784,6 +1788,7 @@ def _initialize_intake_state(st: Any) -> None:
         "prospect_notes": "",
         "prospect_next_action": "Review fit and generate application package.",
         "prospect_intelligence_stale": False,
+        "prospect_description_source": "",
     }
     for key, value in defaults.items():
         st.session_state.setdefault(key, value)
@@ -1814,6 +1819,9 @@ def detect_prospect_intelligence(values: Dict[str, Any]) -> Dict[str, Any]:
     intelligence["job_description"] = str(values.get("job_description") or "")
     intelligence["location"] = str(values.get("location") or "")
     intelligence["work_arrangement"] = str(values.get("work_arrangement") or "")
+    intelligence["validation_state"] = compute_prospect_validation_state(
+        values, intelligence
+    )
     return intelligence
 
 
@@ -1838,12 +1846,57 @@ def reparse_prospect_fields(values: Dict[str, Any]) -> Dict[str, Any]:
     for key in ("company", "location", "job_id", "source"):
         if not refreshed.get(key) and fallback.get(key):
             refreshed[key] = fallback[key]
-    refreshed["match_report"] = (
-        score_job_data(refreshed, PROJECT_ROOT)
-        if prospect_has_usable_job_content(refreshed)
-        else incomplete_match_report(refreshed)
+    intelligence = detect_prospect_intelligence(refreshed)
+    refreshed["match_report"] = intelligence["match_report"]
+    refreshed["source_verification"] = intelligence["source_verification"]
+    refreshed["validation_state"] = intelligence["validation_state"]
+    refreshed["role_intelligence"] = intelligence
+    return refreshed
+
+
+def apply_manual_reparse_state(session_state: Any) -> Dict[str, Any]:
+    """Reconcile intake state after a user-supplied description is parsed successfully."""
+    refreshed = reparse_prospect_fields(
+        {
+            "official_url": session_state.get("prospect_url_value")
+            or session_state.get("prospect_url_input")
+            or session_state.get("prospect_url"),
+            "original_source_url": session_state.get("prospect_original_source_url"),
+            "company": session_state.get("prospect_company"),
+            "job_title": session_state.get("prospect_role"),
+            "location": session_state.get("prospect_location"),
+            "salary_range": session_state.get("prospect_salary"),
+            "posting_date": session_state.get("prospect_posting_date"),
+            "work_arrangement": session_state.get("prospect_work_arrangement"),
+            "job_description": session_state.get("prospect_description"),
+            "description_source": "manual",
+        }
     )
-    refreshed["source_verification"] = normalize_job_source(refreshed)
+    for state_key, value_key in (
+        ("prospect_company", "company"),
+        ("prospect_role", "job_title"),
+        ("prospect_location", "location"),
+        ("prospect_salary", "salary_range"),
+        ("prospect_posting_date", "posting_date"),
+        ("prospect_work_arrangement", "work_arrangement"),
+    ):
+        if refreshed.get(value_key):
+            session_state[state_key] = refreshed[value_key]
+    report = refreshed["match_report"]
+    complete = report.get("match_score") is not None
+    session_state["prospect_intelligence_stale"] = not complete
+    session_state["prospect_description_source"] = "manual"
+    session_state["prospect_match_report"] = report
+    session_state["prospect_validation_state"] = refreshed["validation_state"]
+    session_state["prospect_role_intelligence"] = refreshed["role_intelligence"]
+    if complete:
+        session_state.pop("prospect_import_result", None)
+        session_state["prospect_next_action"] = "Review fit and generate application package."
+    else:
+        session_state["prospect_import_result"] = (
+            "warning",
+            IMPORT_EXTRACTION_FALLBACK_MESSAGE,
+        )
     return refreshed
 
 
@@ -1879,8 +1932,8 @@ def import_failure_preview(url: str, error_message: str) -> Dict[str, Any]:
         "Startup / Tech Job Board",
     }:
         message = (
-            f"Imported from {source_name}, an industry job board. Verify the role on "
-            "the employer site before applying or generating a full package."
+            f"{source_name} is a recognized industry job board. Paste the job "
+            "description manually if the listing details are incomplete."
         )
     return {"message": message, "verification": verification}
 
@@ -1957,6 +2010,23 @@ def apply_prospect_url_import_state(
         )
         session_state["prospect_intelligence_stale"] = True
         session_state.pop("prospect_match_report", None)
+        failure_values = {
+            "official_url": url,
+            "original_source_url": url,
+            "company": session_state.get("prospect_company"),
+            "job_title": session_state.get("prospect_role"),
+            "location": session_state.get("prospect_location"),
+            "salary_range": session_state.get("prospect_salary"),
+            "posting_date": session_state.get("prospect_posting_date"),
+            "job_description": session_state.get("prospect_description"),
+        }
+        session_state["prospect_validation_state"] = compute_prospect_validation_state(
+            failure_values,
+            {
+                "match_report": incomplete_match_report(failure_values),
+                "source_verification": verification,
+            },
+        )
         return {"status": "partial", "message": message, "verification": verification}
 
     imported_title = imported.get("job_title")
@@ -1978,6 +2048,8 @@ def apply_prospect_url_import_state(
             session_state[state_key] = imported[imported_key]
     if imported.get("source_name") or imported.get("source"):
         session_state["prospect_source"] = imported.get("source_name") or imported.get("source")
+    if is_usable_job_description(imported.get("job_description")):
+        session_state["prospect_description_source"] = "imported"
     incomplete = not prospect_has_usable_job_content(
         {
             "company": session_state.get("prospect_company"),
@@ -2004,11 +2076,37 @@ def apply_prospect_url_import_state(
             "job_description": session_state.get("prospect_description"),
             "official_url": url,
         }
-        session_state["prospect_match_report"] = score_job_data(
-            scoring_values, PROJECT_ROOT
+        scoring_values.update(
+            {
+                "original_source_url": url,
+                "location": session_state.get("prospect_location"),
+                "salary_range": session_state.get("prospect_salary"),
+                "posting_date": session_state.get("prospect_posting_date"),
+                "description_source": session_state.get("prospect_description_source"),
+            }
         )
+        intelligence = detect_prospect_intelligence(scoring_values)
+        session_state["prospect_match_report"] = intelligence["match_report"]
+        session_state["prospect_validation_state"] = intelligence["validation_state"]
+        session_state["prospect_role_intelligence"] = intelligence
     else:
         session_state.pop("prospect_match_report", None)
+        incomplete_values = {
+            "official_url": url,
+            "original_source_url": url,
+            "company": session_state.get("prospect_company"),
+            "job_title": session_state.get("prospect_role"),
+            "salary_range": session_state.get("prospect_salary"),
+            "posting_date": session_state.get("prospect_posting_date"),
+            "job_description": session_state.get("prospect_description"),
+        }
+        session_state["prospect_validation_state"] = compute_prospect_validation_state(
+            incomplete_values,
+            {
+                "match_report": incomplete_match_report(incomplete_values),
+                "source_verification": normalize_job_source(incomplete_values),
+            },
+        )
     return {
         "status": "partial" if title_rejected or incomplete else "success",
         "message": message,
@@ -2017,67 +2115,34 @@ def apply_prospect_url_import_state(
 
 
 def prospect_warning_messages(intelligence: Dict[str, Any]) -> list[str]:
-    """Build visible, non-blocking source/freshness/compensation intake warnings."""
-    messages = []
-    verification = intelligence.get("source_verification") or {}
-    freshness = intelligence.get("freshness") or {}
-    source_type = str(verification.get("source_type") or "")
-    description = str(intelligence.get("job_description") or "")
-    if not str(intelligence.get("location") or "").strip():
-        messages.append("Location was not detected. Review before saving.")
-    if (
-        verification.get("freshness_risk") == "High"
-        or verification.get("verification_status") == "Stale / Closed Risk"
-        or freshness.get("is_stale")
-    ):
-        messages.append(
-            "Posting appears stale or older than 30 days. Verify the role is still active "
-            "before generating a package."
-        )
-    if intelligence.get("salary_parsing_warning"):
-        messages.append("Compensation not detected. Budget or spend figures were ignored.")
-    if source_type in {
-        "Industry Job Board",
-        "Gaming Industry Job Board",
-        "Music Industry Job Board",
-        "Entertainment Job Board",
-        "Startup / Tech Job Board",
-    }:
-        messages.append(
-            f"Imported from {verification.get('source_name') or 'this source'}, an industry job board. "
-            "Verify the role on the employer site before applying or generating a full package."
-        )
-    elif source_type in {
-        "Generic Aggregator",
-        "Remote Job Aggregator",
-        "Compensation-Focused Aggregator",
-        "Gated Source",
-        "Unknown Source",
-    }:
-        messages.append("Verify on employer site before generating package or applying.")
-    if verification.get("source_name") == "Greenhouse" and len(description) < MINIMUM_DESCRIPTION_LENGTH:
-        messages.append(
-            "Greenhouse source verified, but the page did not provide a complete job description. "
-            "Paste the job description manually before saving or generating a package."
-        )
-    if verification.get("source_type") == "Direct Employer" and len(description) < MINIMUM_DESCRIPTION_LENGTH:
-        messages.append(IMPORT_EXTRACTION_FALLBACK_MESSAGE)
-    if verification.get("source_type") == "Employer ATS" and (
-        verification.get("freshness_risk") in {"Unknown", "High"}
-    ):
-        messages.append(
-            "Source recognized as employer ATS. Verify posting freshness if the role is older "
-            "or its date is missing."
-        )
-    messages.extend(str(value) for value in verification.get("source_warnings") or [])
-    if intelligence.get("source") == "dynamic_inference":
-        messages.append("Role family was inferred. Review if this is a strategic or product-ops role.")
-    return list(dict.fromkeys(message for message in messages if message))
+    """Return current posting observations for compatibility with older callers."""
+    validation = intelligence.get("validation_state") or {}
+    return [
+        str(item.get("label"))
+        for item in validation.get("posting_verification", [])
+        if item.get("label")
+    ]
 
 
 def _humanize_taxonomy(value: Any) -> str:
     label = str(value or "").replace("_", " ").title()
     return label.replace("Ai ", "AI ").replace("Gtm ", "GTM ")
+
+
+def _render_prospect_validation(st: Any, validation: Dict[str, Any]) -> None:
+    """Render one calm, reconciled validation summary from current prospect data."""
+    st.markdown(f"### Prospect health: {validation.get('health', 'Incomplete')}")
+    st.markdown("**Content Analysis**")
+    for item in validation.get("content_analysis", []):
+        marker = "✓" if item.get("status") == "complete" else "○"
+        st.markdown(f"{marker} {item.get('label')}")
+    st.markdown("**Posting Verification**")
+    for observation in validation.get("posting_verification", []):
+        marker = "⚠" if observation.get("level") == "caution" else "•"
+        st.caption(f"{marker} {observation.get('label')}")
+    original_url = str(validation.get("original_posting_url") or "").strip()
+    if original_url:
+        st.link_button("Open Original Posting", original_url, use_container_width=False)
 
 
 def _render_intelligence_preview(st: Any, intelligence: Dict[str, Any]) -> None:
@@ -2100,12 +2165,10 @@ def _render_intelligence_preview(st: Any, intelligence: Dict[str, Any]) -> None:
             st.markdown(
                 f"Job source: **{verification['source_name']}**  |  "
                 f"Source type: **{verification['source_type']}**  |  "
-                f"Trust: **{verification.get('source_trust_label', 'Unknown Source')}**  |  "
-                f"Verification: **{verification['verification_status']}**  |  "
-                f"Source confidence: **{verification.get('source_confidence', 'Low')}**"
+                f"Recognition: **{verification.get('source_recognition', 'Unrecognized source')}**  |  "
+                f"Metadata: **{verification.get('metadata_status', 'Metadata unavailable')}**"
             )
-        for warning in prospect_warning_messages(intelligence):
-            st.warning(warning)
+        _render_prospect_validation(st, intelligence.get("validation_state") or {})
         angles = intelligence.get("cover_letter_angle", [])
         if angles:
             st.markdown(f"**Suggested cover letter angle:** {angles[0]}")
@@ -2133,6 +2196,10 @@ def _render_add_prospect(st: Any) -> None:
         apply_prospect_url_import_state(st.session_state)
 
     def mark_intelligence_stale() -> None:
+        mark_prospect_intelligence_stale(st.session_state)
+
+    def mark_description_stale() -> None:
+        st.session_state["prospect_description_source"] = "manual"
         mark_prospect_intelligence_stale(st.session_state)
 
     if not st.session_state.get("prospect_url_input"):
@@ -2180,42 +2247,11 @@ def _render_add_prospect(st: Any) -> None:
         key="prospect_description",
         height=360,
         help="Manual paste is always supported and is required when a career page blocks import.",
-        on_change=mark_intelligence_stale,
+        on_change=mark_description_stale,
     )
 
     def reparse_current_fields() -> None:
-        refreshed = reparse_prospect_fields(
-            {
-                "official_url": st.session_state["prospect_url_value"],
-                "company": st.session_state["prospect_company"],
-                "job_title": st.session_state["prospect_role"],
-                "location": st.session_state["prospect_location"],
-                "salary_range": st.session_state["prospect_salary"],
-                "posting_date": st.session_state["prospect_posting_date"],
-                "work_arrangement": st.session_state["prospect_work_arrangement"],
-                "job_description": st.session_state["prospect_description"],
-            }
-        )
-        for state_key, value_key in (
-            ("prospect_company", "company"),
-            ("prospect_role", "job_title"),
-            ("prospect_location", "location"),
-            ("prospect_salary", "salary_range"),
-            ("prospect_posting_date", "posting_date"),
-            ("prospect_work_arrangement", "work_arrangement"),
-        ):
-            if refreshed.get(value_key):
-                st.session_state[state_key] = refreshed[value_key]
-        report = refreshed["match_report"]
-        st.session_state["prospect_import_result"] = (
-            "success" if report.get("match_score") is not None else "error",
-            "Re-parsed current fields and refreshed the match score."
-            if report.get("match_score") is not None
-            else IMPORT_EXTRACTION_FALLBACK_MESSAGE,
-        )
-        st.session_state["prospect_intelligence_stale"] = bool(
-            report.get("match_score") is None
-        )
+        apply_manual_reparse_state(st.session_state)
 
     st.button("Re-parse details and re-score", on_click=reparse_current_fields)
 
@@ -2237,14 +2273,33 @@ def _render_add_prospect(st: Any) -> None:
         "status": st.session_state["prospect_status"],
         "work_arrangement": st.session_state["prospect_work_arrangement"],
         "job_description": st.session_state["prospect_description"],
+        "description_source": st.session_state.get("prospect_description_source", ""),
         "notes": st.session_state["prospect_notes"],
         "next_action": st.session_state["prospect_next_action"],
     }
     match_report = None
-    if prospect_has_usable_job_content(values):
-        intelligence = detect_prospect_intelligence(values)
+    intelligence = None
+    if prospect_has_usable_job_content(values) and not st.session_state.get(
+        "prospect_intelligence_stale"
+    ):
+        intelligence = dict(
+            st.session_state.get("prospect_role_intelligence")
+            or detect_prospect_intelligence(values)
+        )
+        intelligence["validation_state"] = compute_prospect_validation_state(
+            values, intelligence
+        )
+        st.session_state["prospect_validation_state"] = intelligence["validation_state"]
+        st.session_state["prospect_role_intelligence"] = intelligence
         match_report = intelligence.get("match_report")
         _render_intelligence_preview(st, intelligence)
+    elif any(values.get(key) for key in ("official_url", "company", "job_title", "job_description")):
+        validation = st.session_state.get("prospect_validation_state") or compute_prospect_validation_state(
+            values,
+            {"match_report": incomplete_match_report(values)},
+        )
+        with st.container(border=True):
+            _render_prospect_validation(st, validation)
     title_is_valid = is_valid_role_title(values["job_title"])
     if values["job_title"] and not title_is_valid:
         st.warning("Please confirm the role title before saving.")
@@ -2265,7 +2320,11 @@ def _render_add_prospect(st: Any) -> None:
     )
     generate_clicked = generate_column.button(
         "Save Prospect + Generate Package", use_container_width=True, type="primary",
-        disabled=not complete_for_save or bool(match_report and match_report.get("match_score") is None),
+        disabled=not complete_for_save
+        or not bool(
+            intelligence
+            and intelligence.get("validation_state", {}).get("package_ready")
+        ),
     )
     if not (save_clicked or generate_clicked):
         return

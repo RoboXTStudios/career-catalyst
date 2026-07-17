@@ -69,6 +69,18 @@ evidence_cards:
     when_to_avoid: Avoid implying formal Google employment or unsupported platform partnership.
     confidence_level: high
     source: data/achievements.yml:google_youtube_platform_familiarity
+  - id: multiverse_editorial
+    label: OMG23 Multiverse editorial leadership
+    short_description: Internal editorial leadership combining audience judgment, contributor coordination, and dependable publishing operations.
+    proof_points:
+      - Created and served as Managing Editor of Multiverse, an internal editorial publication reaching 400+ employees.
+      - Built a contributor process around creativity, innovation, culture, music, and employee storytelling.
+    tags: [editorial, storytelling, creative_operations, interesting_project, systems_built, measurable_impact]
+    strongest_role_fits: [content strategy, editorial operations, community role, creative operations]
+    when_to_use: Use when a role values editorial judgment, content systems, audience understanding, or community communication.
+    when_to_avoid: Avoid when editorial evidence would distract from a role centered on governance, PMO, or technical delivery.
+    confidence_level: high
+    source: data/achievements.yml:multiverse_editorial
   - id: photography_creative_voice
     label: Photography and creative voice
     short_description: Creative practice and visual/editorial judgment that can support audience, content, or creative operations narratives.

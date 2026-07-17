@@ -46,7 +46,7 @@ class LegacyEmployerFallbackTests(unittest.TestCase):
         )
         self.assertEqual(source_verification_caution(result), "")
 
-    def test_unverifiable_sources_keep_harsh_banner(self):
+    def test_unverifiable_sources_use_specific_observations(self):
         aggregator = {
             "source_type": "Remote Job Aggregator",
             "source_trust_label": "Aggregator - Verify First",
@@ -57,8 +57,8 @@ class LegacyEmployerFallbackTests(unittest.TestCase):
             "source_trust_label": "Cannot Verify",
             "verification_status": "Cannot Verify",
         }
-        self.assertIn("Verify on the employer site", source_verification_caution(aggregator))
-        self.assertIn("Source not verified", source_verification_caution(unknown))
+        self.assertIn("Original posting should be confirmed", source_verification_caution(aggregator))
+        self.assertIn("Source metadata unavailable", source_verification_caution(unknown))
 
 
 class DigitalHireTests(unittest.TestCase):
@@ -245,8 +245,8 @@ class DashboardAndImportWarningTests(unittest.TestCase):
             "match_tier": "Strong Match",
             "recommended_action": "Review First",
         }
-        self.assertIn("verify it is active", source_verification_caution(tracker))
-        self.assertIn("verify", recommended_next_steps([tracker], "Apply Mode")[0].lower())
+        self.assertIn("may be stale or closed", source_verification_caution(tracker))
+        self.assertIn("may be stale or closed", recommended_next_steps([tracker], "Apply Mode")[0].lower())
 
     def test_import_preview_warnings_cover_stale_ats_and_budget(self):
         intelligence = app.detect_prospect_intelligence(
@@ -259,8 +259,8 @@ class DashboardAndImportWarningTests(unittest.TestCase):
         )
         messages = app.prospect_warning_messages(intelligence)
         self.assertTrue(any("stale" in message.lower() for message in messages))
-        self.assertTrue(any("budget or spend" in message.lower() for message in messages))
-        self.assertTrue(any("employer ATS" in message for message in messages))
+        self.assertTrue(any("salary information unavailable" in message.lower() for message in messages))
+        self.assertTrue(any("DigitalHire recognized" in message for message in messages))
 
 
 if __name__ == "__main__":

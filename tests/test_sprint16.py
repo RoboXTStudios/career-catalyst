@@ -44,7 +44,7 @@ class Sprint16SourceAndScoringTests(unittest.TestCase):
         self.assertTrue(normalized["greenhouse_backed_hint"])
         self.assertFalse(normalized["requires_verification"])
         self.assertEqual(normalized["freshness_risk"], "Unknown")
-        self.assertIn("Official employer source detected", normalized["recommended_next_step"])
+        self.assertIn("Posting date unavailable", normalized["recommended_next_step"])
 
     def test_aeg_partial_import_message_preserves_official_source(self):
         preview = app.import_failure_preview(AEG_URL, "page blocked")

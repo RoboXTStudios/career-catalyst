@@ -160,7 +160,7 @@ class IntakeStateTests(unittest.TestCase):
         state = {"prospect_intelligence_stale": False}
         app.mark_prospect_intelligence_stale(state)
         self.assertTrue(state["prospect_intelligence_stale"])
-        self.assertIn("Re-parse and re-score", state["prospect_import_result"][1])
+        self.assertIn("Re-parse to refresh", state["prospect_import_result"][1])
 
     def test_gtm_in_description_alone_is_not_product_activation_family(self):
         family = detect_role_family(

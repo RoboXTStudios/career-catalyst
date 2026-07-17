@@ -44,7 +44,7 @@ class Sprint142SourceClassificationTests(unittest.TestCase):
         self.assertEqual(normalized["source_name"], "GameJobs.co")
         self.assertNotEqual(normalized["source_type"], "Direct Employer")
         self.assertEqual(normalized["verification_status"], "Industry Board")
-        self.assertIn("Verify on employer site", normalized["recommended_next_step"])
+        self.assertIn("Open the original posting", normalized["recommended_next_step"])
 
     def test_greenhouse_preserves_employer_ats_identity(self):
         normalized = normalize_job_source(
@@ -182,7 +182,7 @@ class Sprint142ActionAndPreviewTests(unittest.TestCase):
         application = load_application_tracker(self.root)[0]
         self.assertEqual(result["application"]["source_name"], "GameJobs.co")
         self.assertEqual(application["verification_status"], "Industry Board")
-        self.assertIn("Verify on employer site", application["next_action"])
+        self.assertIn("Original posting should be confirmed", application["next_action"])
         self.assertEqual(application["role_family"], "business_operations")
 
     def test_aggregator_strong_match_leans_review_first_without_canonical_url(self):
@@ -205,7 +205,7 @@ class Sprint142ActionAndPreviewTests(unittest.TestCase):
         application = result["application"]
         self.assertEqual(application["source_type"], "Generic Aggregator")
         self.assertEqual(application["recommended_action"], "Review First")
-        self.assertIn("Verify on employer site", application["next_action"])
+        self.assertIn("Original posting should be confirmed", application["next_action"])
 
     def test_add_prospect_preview_warnings_for_gamejobs_and_greenhouse_partial(self):
         gamejobs_intelligence = app.detect_prospect_intelligence(
@@ -218,7 +218,7 @@ class Sprint142ActionAndPreviewTests(unittest.TestCase):
         )
         messages = app.prospect_warning_messages(gamejobs_intelligence)
         self.assertTrue(any("GameJobs.co" in message for message in messages))
-        self.assertTrue(any("Verify the role on the employer site" in message for message in messages))
+        self.assertTrue(any("Original posting should be confirmed" in message for message in messages))
 
         preview = app.import_failure_preview(
             GREENHOUSE_URL,
@@ -254,8 +254,8 @@ class Sprint142DashboardTests(unittest.TestCase):
         self.assertEqual(record["source_name"], "GameJobs.co")
         self.assertEqual(record["source_type"], "Gaming Industry Job Board")
         self.assertEqual(record["verification_status"], "Industry Board")
-        self.assertIn("Verify on employer site", source_verification_caution(record))
-        self.assertIn("Verify on employer site", recommended_next_steps([record], "Apply Mode")[0])
+        self.assertIn("Original posting should be confirmed", source_verification_caution(record))
+        self.assertIn("Open original posting", recommended_next_steps([record], "Apply Mode")[0])
 
         html = _render_metadata({"tracker": record})
         for value in ("GameJobs.co", "Gaming Industry Job Board", "Industry Board", "High"):

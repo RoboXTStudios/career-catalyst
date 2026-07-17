@@ -469,7 +469,7 @@ def source_verification_caution(record: Dict[str, Any]) -> str:
     ):
         return ""
     if status == "Aggregator Only":
-        return "Verify on the employer site before generating a package or applying."
+        return "Original posting should be confirmed before submitting."
     if status == "Industry Board" or source_type in {
         "Industry Job Board",
         "Gaming Industry Job Board",
@@ -477,13 +477,13 @@ def source_verification_caution(record: Dict[str, Any]) -> str:
         "Entertainment Job Board",
         "Startup / Tech Job Board",
     }:
-        return "Verify on employer site before generating package or applying."
+        return "Original posting should be confirmed before submitting."
     if status == "Gated / Limited Visibility":
-        return "Limited visibility: verify the employer listing manually before investing time."
+        return "Posting details are limited on this source."
     if status == "Stale / Closed Risk":
-        return "Posting may be stale or closed: verify it is active before generating a package."
+        return "Posting may be stale or closed."
     if status in {"Cannot Verify", "Not Verified"} or source_type == "Unknown Source":
-        return "Source not verified: confirm the role and apply path manually."
+        return "Source metadata unavailable."
     return ""
 
 
@@ -520,10 +520,10 @@ def recommended_next_steps(
         for item in ordered[:3]:
             caution = source_verification_caution(item)
             if item.get("verification_status") == "Aggregator Only":
-                steps.append(f"Verify on employer site before package generation: {_record_label(item)}.")
+                steps.append(f"Open original posting for {_record_label(item)}.")
                 continue
             if item.get("verification_status") == "Industry Board":
-                steps.append(f"Verify on employer site before generating package or applying: {_record_label(item)}.")
+                steps.append(f"Open original posting for {_record_label(item)}.")
                 continue
             if caution:
                 steps.append(f"{caution} {_record_label(item)}.")

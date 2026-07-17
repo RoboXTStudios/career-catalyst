@@ -113,7 +113,7 @@ class SourceNormalizationTests(unittest.TestCase):
         )
         self.assertEqual(result["verification_status"], "Aggregator Only")
         self.assertEqual(result["source_trust_label"], "Aggregator - Verify First")
-        self.assertIn("Verify on employer site", result["recommended_next_step"])
+        self.assertIn("Open the original posting", result["recommended_next_step"])
 
     def test_missing_source_url_returns_safe_fallbacks(self):
         result = normalize_job_source({}, TODAY)
@@ -122,7 +122,7 @@ class SourceNormalizationTests(unittest.TestCase):
         self.assertEqual(result["verification_status"], "Not Verified")
         self.assertEqual(result["freshness_risk"], "Unknown")
         self.assertIn("source URL is missing", result["verification_notes"])
-        self.assertIn("posting date missing; verify manually", result["verification_notes"])
+        self.assertIn("posting date unavailable", result["verification_notes"])
 
     def test_freshness_risk_boundaries(self):
         cases = ((0, "Low"), (14, "Low"), (15, "Medium"), (30, "Medium"), (31, "High"))
@@ -206,7 +206,7 @@ class SourceDashboardTests(unittest.TestCase):
 
     def test_verify_first_guidance_for_aggregator(self):
         step = recommended_next_steps([self._record("aggregator")], "Apply Mode")[0]
-        self.assertIn("Verify on employer site before package generation", step)
+        self.assertIn("Open original posting", step)
 
     def test_apply_guidance_prioritizes_verified_source(self):
         aggregator = self._record("aggregator", match_score=95)

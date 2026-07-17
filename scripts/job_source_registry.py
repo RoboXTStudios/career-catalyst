@@ -79,6 +79,16 @@ def _source(
 
 SOURCE_REGISTRY = (
     _source(
+        "google_careers",
+        "Google Careers",
+        ("careers.google.com", "jobs.google.com"),
+        "Direct Employer",
+        1,
+        "Direct Employer",
+        False,
+        notes="Official Google Careers source.",
+    ),
+    _source(
         "paramount",
         "Paramount Careers",
         ("careers.paramount.com", "paramount.com"),
@@ -113,12 +123,13 @@ SOURCE_REGISTRY = (
     _source("lever", "Lever", ("lever.co",), "Employer ATS", 1, "Verified Company Source", False),
     _source("ashby", "Ashby", ("ashbyhq.com",), "Employer ATS", 1, "Verified Company Source", False),
     _source("smartrecruiters", "SmartRecruiters", ("smartrecruiters.com",), "Employer ATS", 1, "Verified Company Source", False),
+    _source("successfactors", "SAP SuccessFactors", ("successfactors.com", "successfactors.eu"), "Employer ATS", 1, "Verified Company Source", False),
     _source("icims", "iCIMS", ("icims.com",), "Employer ATS", 1, "Verified Company Source", False),
-    _source("oracle_taleo", "Oracle Cloud / Taleo", ("oraclecloud.com", "taleo.net"), "Employer ATS", 1, "Verified Company Source", False),
+    _source("oracle_taleo", "Oracle Recruiting / Taleo", ("oraclecloud.com", "taleo.net"), "Employer ATS", 1, "Verified Company Source", False),
     _source(
         "digitalhire", "DigitalHire", ("digitalhire.com",), "Employer ATS", 2,
         "Verified Company Source", True,
-        notes="DigitalHire employer ATS / hosted career platform. Verify freshness and employer identity before package generation if posting age is old or missing.",
+        notes="DigitalHire is a recognized employer ATS; posting-age metadata may be incomplete.",
     ),
     _source("careerhound", "CareerHound.io", ("careerhound.io",), "Direct Company Discovery", 2, "Verified Company Source", False),
     _source("getwork", "Getwork", ("getwork.com",), "Direct Company Discovery", 2, "Verified Company Source", False),
@@ -137,8 +148,7 @@ SOURCE_REGISTRY = (
         "Industry Job Board",
         True,
         notes=(
-            "GameJobs.co is an industry job board. Verify the role on the employer "
-            "site before generating a package or applying."
+            "GameJobs.co is an industry job board; employer metadata may be incomplete."
         ),
     ),
     _source("hollylist", "Hollylist", ("hollylist.com",), "Entertainment Job Board", 3, "Industry Job Board", True, True, "Some listing details may require an account."),
@@ -156,8 +166,9 @@ SOURCE_REGISTRY = (
         4,
         "Aggregator - Verify First",
         True,
-        notes="Indeed listings can be imported when the public page exposes substantive job data; verify the employer source before applying.",
+        notes="Indeed listings may not expose a canonical employer application path.",
     ),
+    _source("linkedin", "LinkedIn", ("linkedin.com",), "Gated Source", 4, "Gated Source", True, True, "Public listing metadata may be limited."),
     _source("ziprecruiter", "ZipRecruiter", ("ziprecruiter.com",), "Generic Aggregator", 4, "Aggregator - Verify First", True),
     _source("flexjobs", "FlexJobs", ("flexjobs.com",), "Gated Source", 4, "Gated Source", True, True, "Canonical apply details may be hidden behind a subscription."),
     _source("ladders", "Ladders", ("theladders.com", "ladders.com"), "Compensation-Focused Aggregator", 4, "Aggregator - Verify First", True),
@@ -290,6 +301,9 @@ def _display_from_domain(url: str) -> str:
 def classify_source(url: Any = "", source_label: Any = "") -> Dict[str, Any]:
     """Find a registry entry by URL domain, then by a supplied source label."""
     host = source_domain(url)
+    parsed_path = urlparse(str(url or "")).path.lower()
+    if host == "google.com" and "/about/careers/" in parsed_path:
+        return dict(next(entry for entry in SOURCE_REGISTRY if entry["source_key"] == "google_careers"))
     for entry in SOURCE_REGISTRY:
         if host and any(_domain_matches(host, domain) for domain in entry["domains"]):
             return dict(entry)
@@ -466,18 +480,18 @@ def normalize_job_source(record: Dict[str, Any], today: Optional[date] = None) -
     if inferred_employer:
         notes.append(
             "Source label indicates an employer careers page, but the original source URL "
-            "was not stored. Verify manually if needed."
+            "was not stored."
         )
-        warnings.append("Original source URL missing; verify manually if needed")
+        warnings.append("Original source URL unavailable")
     elif not original_url:
         notes.append("source URL is missing")
         warnings.append("Source URL missing")
     elif source_type == "Unknown Source":
-        notes.append("source domain is not in the registry; verify manually")
-        warnings.append("Unknown source domain")
+        notes.append("source metadata is unavailable for this domain")
+        warnings.append("Source domain is not recognized")
     if age_days is None:
-        notes.append("posting date missing; verify manually")
-        warnings.append("Posting date missing or malformed")
+        notes.append("posting date unavailable")
+        warnings.append("Posting date unavailable")
     if registry.get("notes") and registry["source_key"] != "unknown" and not inferred_employer:
         notes.append(str(registry["notes"]))
 
@@ -490,26 +504,26 @@ def normalize_job_source(record: Dict[str, Any], today: Optional[date] = None) -
         if stale_age:
             notes.append(f"posting age indicates stale risk: {age_days} days old")
         warnings.append("Role may be stale, closed, or expired")
-        next_step = "Verify manually before generating package."
+        next_step = "Open the original posting to confirm it is still active."
     elif aged_posting:
-        notes.append(f"posting is {age_days} days old; verify that it is still active")
+        notes.append(f"posting is {age_days} days old; active status is unconfirmed")
         warnings.append("Posting appears older than 30 days")
-        next_step = "Verify manually before generating package."
+        next_step = "Open the original posting to confirm it is still active."
     elif registry["gated"] and not canonical_url:
-        next_step = "Verify manually before investing time."
-        warnings.append("Canonical employer application is not visible")
+        next_step = "Open the original posting for the available application details."
+        warnings.append("Employer application path unavailable")
     elif source_type in AGGREGATOR_TYPES and not canonical_url:
-        next_step = "Verify on employer site before generating package or applying."
-        warnings.append("No canonical employer apply URL found")
+        next_step = "Open the original posting and confirm the employer apply path before submitting."
+        warnings.append("Employer application path unavailable")
     elif source_type == "Unknown Source" or (not original_url and not inferred_employer):
-        next_step = "Verify the source and role manually before applying."
+        next_step = "Review the saved posting details before submitting."
     elif inferred_employer:
-        next_step = "Verify manually if needed, then use the employer career site."
+        next_step = "Employer source label saved; original URL unavailable."
     elif verification_status == "Industry Board" and not canonical_url:
-        next_step = "Verify on employer site before generating package or applying."
-        warnings.append("Industry job board source requires employer-site verification")
+        next_step = "Open the original posting and confirm the employer apply path before submitting."
+        warnings.append("Original employer posting should be confirmed before submitting")
     elif source_type in EMPLOYER_TYPES and age_days is None:
-        next_step = "Official employer source detected; verify posting freshness if date is missing."
+        next_step = "Posting date unavailable; the package can still be prepared."
     else:
         next_step = "Proceed using the canonical employer application."
 
@@ -527,6 +541,12 @@ def normalize_job_source(record: Dict[str, Any], today: Optional[date] = None) -
         "original_source_url": original_url,
         "source_domain": source_domain(classification_url),
         "source_name": source_name,
+        "source_recognition": (
+            "Known source" if registry["source_key"] != "unknown" else "Unrecognized source"
+        ),
+        "metadata_status": (
+            "Metadata unavailable" if age_days is None else "Metadata available"
+        ),
         "source_type": source_type if original_url or inferred_employer else "Unknown Source",
         "source_trust_label": trust_label if original_url or inferred_employer else "Unknown Source",
         "verification_status": verification_status,

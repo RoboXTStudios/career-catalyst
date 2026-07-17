@@ -17,6 +17,7 @@ except ImportError:
 
 CONFIDENCE_ORDER = {"low": 1, "medium": 2, "high": 3}
 BUILDER_IDS = {"campaignos", "career_catalyst", "roboxt_studios"}
+PERSONAL_EVIDENCE_IDS = BUILDER_IDS | {"photography_creative_voice"}
 DEFAULT_MAX_CARDS = 4
 
 
@@ -128,7 +129,7 @@ def select_evidence_cards(
     selected: list[tuple[int, dict[str, Any]]] = []
     for card in cards:
         card_id = str(card["id"])
-        if not include_personal_projects and card_id in BUILDER_IDS:
+        if not include_personal_projects and card_id in PERSONAL_EVIDENCE_IDS:
             continue
         confidence = CONFIDENCE_ORDER[str(card["confidence_level"])]
         if confidence < minimum:
@@ -159,6 +160,33 @@ def select_evidence_cards(
             selected.append((score, card))
     selected.sort(key=lambda item: (-item[0], item[1]["id"]))
     return [card for _, card in selected[:max_cards]]
+
+
+def professional_evidence_recommendations(
+    role: dict[str, Any],
+    cards: list[dict[str, Any]] | None = None,
+    *,
+    max_cards: int = DEFAULT_MAX_CARDS,
+    include_personal_projects: bool = False,
+) -> dict[str, Any]:
+    """Return one shared, applicant-safe evidence recommendation payload."""
+    selected = select_evidence_cards(
+        role,
+        cards,
+        max_cards=max_cards,
+        include_personal_projects=include_personal_projects,
+    )
+    proof_points = []
+    for card in selected:
+        points = [str(point).strip() for point in card.get("proof_points", []) if str(point).strip()]
+        if points:
+            proof_points.append(points[0])
+    return {
+        "cards": selected,
+        "ids": [str(card["id"]) for card in selected],
+        "labels": [str(card["label"]) for card in selected],
+        "proof_points": proof_points,
+    }
 
 
 def load_writing_voice_profile(project_root: str | Path | None = None, level: int | None = None) -> dict[str, Any]:
