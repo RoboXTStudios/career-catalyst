@@ -45,11 +45,12 @@ class TailorResumeTests(unittest.TestCase):
 
         self.assertIn("## Core Competencies", content)
 
-    def test_generated_resume_contains_campaignos(self):
+    def test_generated_resume_excludes_personal_projects(self):
         result = tailor_resume("executive_operations", SAMPLE_JOB, PROJECT_ROOT)
         content = Path(result["output_path"]).read_text(encoding="utf-8")
 
-        self.assertIn("CampaignOS", content)
+        for term in ("Career Catalyst", "CampaignOS", "Substack"):
+            self.assertNotIn(term, content)
 
     def test_generated_resume_preserves_canonical_platform_language(self):
         result = tailor_resume("executive_operations", SAMPLE_JOB, PROJECT_ROOT)
@@ -79,7 +80,7 @@ def _project_names_and_bullet_counts(parsed_job, resume_profile="executive_opera
     return {project["name"]: len(bullets) for project, bullets in projects}
 
 
-def test_azira_style_resume_omits_editorial_projects_and_keeps_campaignos_brief():
+def test_azira_style_resume_omits_personal_projects():
     parsed_job = {
         "job_title": "Director, Chief of Staff & Business Operations",
         "company": "Azira",
@@ -89,10 +90,10 @@ def test_azira_style_resume_omits_editorial_projects_and_keeps_campaignos_brief(
     projects = _project_names_and_bullet_counts(parsed_job)
     assert "Substack Writer" not in projects
     assert "OMG23 Multiverse Newsletter" not in projects
-    assert projects["CampaignOS"] == 1
+    assert "CampaignOS" not in projects
 
 
-def test_product_ai_resume_allows_campaignos_more_prominently():
+def test_product_ai_resume_still_omits_personal_projects():
     parsed_job = {
         "job_title": "AI Product Manager",
         "company": "Netflix",
@@ -100,7 +101,7 @@ def test_product_ai_resume_allows_campaignos_more_prominently():
         "keywords": ["AI product", "workflow automation", "internal tools", "systems design"],
     }
     projects = _project_names_and_bullet_counts(parsed_job, "product_ai")
-    assert projects["CampaignOS"] >= 3
+    assert "CampaignOS" not in projects
 
 
 def test_traditional_pmo_resume_omits_creative_editorial_projects():
@@ -113,7 +114,7 @@ def test_traditional_pmo_resume_omits_creative_editorial_projects():
     projects = _project_names_and_bullet_counts(parsed_job)
     assert "Substack Writer" not in projects
     assert "OMG23 Multiverse Newsletter" not in projects
-    assert projects["CampaignOS"] == 1
+    assert "CampaignOS" not in projects
 
 
 if __name__ == "__main__":

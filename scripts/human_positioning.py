@@ -9,7 +9,9 @@ from typing import Any, Sequence
 TENURE_FORWARD_PATTERNS = (
     r"\b\d{1,2}\+?\s+years?\s+of\s+experience\b",
     r"\bover\s+(?:two|three|four)\s+decades\b",
+    r"\bmore\s+than\s+(?:two|three|four)\s+decades\b",
     r"\bdecades?\s+of\s+experience\b",
+    r"\blong-standing\s+career\b",
     r"\blong[- ]term\s+hands[- ]on\s+experience\b",
     r"\bdating\s+back\s+to\s+the\s+(?:19|20)\d0s\b",
 )
@@ -26,13 +28,14 @@ POSITIONING_CLICHES = (
     "accomplished executive",
     "highly accomplished",
 )
+PERSONAL_PROJECT_TERMS = ("Career Catalyst", "CampaignOS", "Substack")
 
 
 PROFILE_SUMMARIES = {
     "executive_operations": (
         "Operations leader known for finding the real constraint in complex work and turning it into "
         "clear decisions, usable systems, and dependable delivery. Connects business operations, "
-        "workflow governance, cross-functional collaboration, and AI workflow design to reduce "
+        "workflow governance, cross-functional collaboration, and practical process design to reduce "
         "ambiguity and help teams move with confidence."
     ),
     "entertainment_marketing": (
@@ -47,15 +50,15 @@ PROFILE_SUMMARIES = {
         "and repeatable ways of working that protect both quality and human voice."
     ),
     "product_ai": (
-        "Product-minded operations builder who turns recurring friction into useful AI-enabled "
-        "workflows, validation rules, and decision tools. Works from the problem outward, combining "
+        "Product-minded operations leader who turns recurring friction into useful workflows, "
+        "validation rules, and decision tools. Works from the problem outward, combining "
         "structured discovery, hands-on systems design, governance, and human judgment to make "
         "complex work easier to run."
     ),
     "google_youtube_operations": (
         "Strategy and operations leader known for translating Google and YouTube platform capabilities "
         "into advertiser activation, measurement readiness, and workable cross-functional routines. "
-        "Connects brand goals, product feedback, campaign operations, and AI-enabled systems to make "
+        "Connects brand goals, product feedback, campaign operations, and governance to make "
         "adoption clearer and execution more measurable."
     ),
 }
@@ -85,6 +88,36 @@ def validate_human_positioning(text: str, artifact: str) -> None:
         raise HumanPositioningError(
             f"Generated {artifact} contains tenure-forward or clichéd positioning: {violations[0]}"
         )
+
+
+def personal_project_violations(text: str) -> list[str]:
+    """Return personal-project names that leaked into applicant-facing copy."""
+    lowered = str(text or "").lower()
+    return [term for term in PERSONAL_PROJECT_TERMS if term.lower() in lowered]
+
+
+def validate_applicant_evidence(text: str, artifact: str) -> None:
+    """Reject applicant-facing copy that references disabled personal projects."""
+    violations = personal_project_violations(text)
+    if violations:
+        raise HumanPositioningError(
+            f"Generated {artifact} contains disabled personal-project evidence: {violations[0]}"
+        )
+
+
+def replace_personal_project_paragraphs(text: str, replacement: str) -> str:
+    """Replace project-led paragraphs with one verified professional evidence paragraph."""
+    paragraphs = [part.strip() for part in re.split(r"\n\s*\n", str(text or "")) if part.strip()]
+    cleaned: list[str] = []
+    replacement_used = False
+    for paragraph in paragraphs:
+        if personal_project_violations(paragraph):
+            if replacement and not replacement_used:
+                cleaned.append(replacement.strip())
+                replacement_used = True
+            continue
+        cleaned.append(paragraph)
+    return "\n\n".join(cleaned)
 
 
 def professional_summary(

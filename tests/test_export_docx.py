@@ -95,19 +95,22 @@ class ExportDocxTests(unittest.TestCase):
         ):
             self.assertIn(heading, table_text)
 
-    def test_styled_output_contains_platforms_and_campaignos(self):
+    def test_styled_output_contains_platforms_without_personal_projects(self):
         result = export_styled_docx(MARKDOWN_RESUME, PROJECT_ROOT)
         document = Document(result["output_path"])
         content = _document_text(document)
 
         self.assertIn("Platforms & Technologies", content)
-        self.assertIn("CampaignOS", content)
+        for term in ("Career Catalyst", "CampaignOS", "Substack"):
+            self.assertNotIn(term, content)
 
-    def test_ats_output_contains_campaignos(self):
+    def test_ats_output_excludes_personal_projects(self):
         result = export_ats_docx(MARKDOWN_RESUME, PROJECT_ROOT)
         document = Document(result["output_path"])
 
-        self.assertIn("CampaignOS", _document_text(document))
+        content = _document_text(document)
+        for term in ("Career Catalyst", "CampaignOS", "Substack"):
+            self.assertNotIn(term, content)
 
     def test_styled_output_contains_full_clickable_linkedin_url(self):
         result = export_styled_docx(MARKDOWN_RESUME, PROJECT_ROOT)
@@ -133,14 +136,16 @@ class ExportDocxTests(unittest.TestCase):
         self.assertNotIn(OLD_LINKEDIN_URL, content)
         self.assertNotIn("LinkedIn: linkedin.com/", content)
 
-    def test_exports_use_polished_profile_and_campaignos_language(self):
+    def test_exports_use_human_profile_and_professional_evidence(self):
         for exporter in (export_styled_docx, export_ats_docx):
             result = exporter(MARKDOWN_RESUME, PROJECT_ROOT)
             content = _document_text(Document(result["output_path"]))
             self.assertNotIn("Emphasizes", content)
             self.assertNotIn("Relevant strengths include", content)
-            self.assertIn("Proven record leading cross-functional teams", content)
-            self.assertIn("standardizes workflow governance", content)
+            self.assertIn("known for finding the real constraint", content)
+            self.assertIn("Introduced scalable workflows", content)
+            for term in ("Career Catalyst", "CampaignOS", "Substack"):
+                self.assertNotIn(term, content)
 
     def test_exports_preserve_canonical_platform_language(self):
         for exporter in (export_styled_docx, export_ats_docx):

@@ -108,8 +108,9 @@ def select_evidence_cards(
     *,
     max_cards: int = DEFAULT_MAX_CARDS,
     minimum_confidence: str = "medium",
+    include_personal_projects: bool = False,
 ) -> list[dict[str, Any]]:
-    """Select focused evidence cards for a role, preferring relevance over breadth."""
+    """Select role evidence; personal projects require an explicit opt-in."""
     cards = cards if cards is not None else load_evidence_cards()
     category = role_evidence_category(role)
     text = _role_text(role)
@@ -127,6 +128,8 @@ def select_evidence_cards(
     selected: list[tuple[int, dict[str, Any]]] = []
     for card in cards:
         card_id = str(card["id"])
+        if not include_personal_projects and card_id in BUILDER_IDS:
+            continue
         confidence = CONFIDENCE_ORDER[str(card["confidence_level"])]
         if confidence < minimum:
             continue

@@ -8,7 +8,11 @@ try:
     from .filename_utils import build_upload_filename
     from .load_data import load_all_yaml
     from .evidence_engine import load_writing_voice_profile
-    from .human_positioning import professional_summary, validate_human_positioning
+    from .human_positioning import (
+        professional_summary,
+        validate_applicant_evidence,
+        validate_human_positioning,
+    )
     from .parse_job import parse_job_description
     from .package_context import validate_material_context
     from .role_context import is_google_youtube_role
@@ -23,7 +27,11 @@ except ImportError:
     from filename_utils import build_upload_filename
     from load_data import load_all_yaml
     from evidence_engine import load_writing_voice_profile
-    from human_positioning import professional_summary, validate_human_positioning
+    from human_positioning import (
+        professional_summary,
+        validate_applicant_evidence,
+        validate_human_positioning,
+    )
     from parse_job import parse_job_description
     from package_context import validate_material_context
     from role_context import is_google_youtube_role
@@ -74,7 +82,6 @@ PROFILE_PRIORITIES = {
         "partnership",
     ),
     "product_ai": (
-        "campaignos",
         "ai workflow design",
         "operational automation",
         "product development",
@@ -244,7 +251,14 @@ def _select_core_competencies(
 def _platform_categories(career_data: Dict[str, Any]) -> List[Tuple[str, List[str]]]:
     categories = career_data["data"]["platforms"].get("platform_categories", [])
     return [
-        (str(category["name"]), [str(item) for item in category.get("items", [])])
+        (
+            str(category["name"]),
+            [
+                str(item)
+                for item in category.get("items", [])
+                if str(item).strip().lower() != "substack"
+            ],
+        )
         for category in categories
         if isinstance(category, dict) and category.get("name")
     ]
@@ -396,18 +410,10 @@ def _selected_projects(
     category = plan.get("role_category")
     section_rules = plan.get("resume_section_rules", {})
     creative_rule = section_rules.get("creative_editorial_projects")
-    campaignos_rule = section_rules.get("campaignos")
-
-    campaignos = next((project for project in projects if project.get("name") == "CampaignOS"), None)
-    if campaignos:
-        bullets = _campaignos_bullets(career_data)
-        if campaignos_rule == "supporting":
-            bullets = bullets[:1]
-        selected.append((campaignos, bullets))
 
     for project in projects:
         name = project.get("name")
-        if name == "CampaignOS" or not _project_is_relevant(str(name), parsed_job, resume_profile):
+        if name in {"CampaignOS", "Substack Writer"} or not _project_is_relevant(str(name), parsed_job, resume_profile):
             continue
         if creative_rule == "omit" and name in {"Substack Writer", "OMG23 Multiverse Newsletter"}:
             continue
@@ -572,6 +578,7 @@ def tailor_resume(
         _render_markdown(career_data, parsed_job, match_report, resume_profile)
     )
     markdown, rewrite_notes = rewrite_banned_voice_phrases(markdown)
+    validate_applicant_evidence(markdown, "tailored resume")
     banned_phrases = list(career_data["config"].get("voice", {}).get("avoid", []))
     banned_phrases.extend(load_writing_voice_profile(root).get("banned_phrases", []))
     banned_phrases.extend(material_editing_plan(parsed_job, root).get("banned_phrases", []))

@@ -17,6 +17,7 @@ try:
     from .package_generator import PackageGenerationError, resolve_job_reference
     from .package_context import validate_material_context
     from .role_context import is_google_youtube_role
+    from .human_positioning import personal_project_violations, positioning_violations
 except ImportError:
     from application_tracker import follow_up_action_state, get_record_status, load_application_tracker, update_prospect
     from dynamic_role_intelligence import get_effective_voice_profile
@@ -27,6 +28,7 @@ except ImportError:
     from package_generator import PackageGenerationError, resolve_job_reference
     from package_context import validate_material_context
     from role_context import is_google_youtube_role
+    from human_positioning import personal_project_violations, positioning_violations
 
 
 PathInput = Union[str, Path]
@@ -133,8 +135,8 @@ def _intelligent_role_angle(
         "ai_operations_systems": (
             "matrix operations, capacity visibility, dashboards, automation, and organizational clarity",
             "creating shared cadences, decision paths, and accountable workflows across a fast-moving matrix",
-            "campaignos_ai_operations",
-            "I make matrixed work more visible and manageable through clear cadences, useful signals, and thoughtful automation.",
+            "workflow_governance",
+            "I make matrixed work more visible and manageable through clear cadences, useful signals, and practical governance.",
         ),
         "streaming_strategy": (
             "streaming, content and franchise/IP priorities, audience context, and executable strategy",
@@ -296,8 +298,8 @@ def _role_angle(
             ),
             experience=_achievement_statement(
                 career_data,
-                "campaignos_ai_operations",
-                "I designed an AI-powered operations system for workflow governance, quality assurance, and operational visibility.",
+                "workflow_governance",
+                "I introduced scalable workflow governance, quality assurance, and operational reporting practices.",
             ),
             core_value=(
                 "I turn complex marketing operations into practical systems, dashboards, and "
@@ -393,12 +395,12 @@ def _role_angle(
             ),
             experience=_achievement_statement(
                 career_data,
-                "campaignos_ai_operations",
-                "I designed AI-enabled workflow governance, quality assurance, and operational reporting systems.",
+                "workflow_governance",
+                "I introduced workflow governance, quality assurance, and operational reporting across complex teams.",
             ),
             core_value=(
                 "I make matrixed work more visible and manageable through clear cadences, useful "
-                "capacity signals, dashboards, and thoughtful automation."
+                "capacity signals, dashboards, and practical governance."
             ),
             who_to_look_for=(
                 "recruiter or talent acquisition partner for operations leadership",
@@ -553,6 +555,16 @@ def _validate_message(
     if "—" in text:
         raise FollowupGenerationError("Follow-up messages must not contain em dashes.")
     lowered = text.lower()
+    project_violations = personal_project_violations(text)
+    positioning_issues = positioning_violations(text)
+    if project_violations:
+        raise FollowupGenerationError(
+            f"Generated follow-up contains disabled personal-project evidence: {project_violations[0]}"
+        )
+    if positioning_issues:
+        raise FollowupGenerationError(
+            f"Generated follow-up contains tenure-forward positioning: {positioning_issues[0]}"
+        )
     for phrase in (*BANNED_PHRASES, *voice_avoid):
         if phrase.lower() in lowered:
             raise FollowupGenerationError(
@@ -612,11 +624,7 @@ def _strategy_content(
         )
     sources.extend(
         relative_path
-        for relative_path in (
-            "data/positions.yml",
-            "data/achievements.yml",
-            "data/projects.yml",
-        )
+        for relative_path in ("data/positions.yml", "data/achievements.yml")
         if (root / relative_path).is_file()
     )
     sources.extend(
@@ -800,6 +808,14 @@ def generate_followups(
         )
         if "—" in strategy:
             raise FollowupGenerationError("Follow-up strategy must not contain em dashes.")
+        if personal_project_violations(strategy):
+            raise FollowupGenerationError(
+                "Follow-up strategy contains disabled personal-project evidence."
+            )
+        if positioning_violations(strategy):
+            raise FollowupGenerationError(
+                "Follow-up strategy contains tenure-forward positioning."
+            )
         validate_material_context(strategy, parsed_job, "Followup_Strategy")
         outputs["followup_strategy"] = str(
             _write_output(root, role, company, "Followup Strategy", strategy)

@@ -104,10 +104,10 @@ class GoogleYouTubeCalibrationTests(unittest.TestCase):
                 maximum_words=100,
             )
 
-    def test_campaignos_is_supporting_proof_not_the_headline(self):
+    def test_personal_projects_are_excluded_from_google_materials(self):
         for name, content in self.contents.items():
-            self.assertIn("CampaignOS", content, name)
-            self.assertLess(content.find("YouTube"), content.find("CampaignOS"), name)
+            for term in ("Career Catalyst", "CampaignOS", "Substack"):
+                self.assertNotIn(term, content, name)
 
     def test_disney_experience_remains_evidence_of_advertiser_scale(self):
         for name in ("resume", "cover_letter", "hiring_manager", "strategy_pack"):

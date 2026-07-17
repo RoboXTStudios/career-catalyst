@@ -171,9 +171,10 @@ class EntertainmentCalibrationTests(unittest.TestCase):
             self.assertLessEqual(lowered.count("ad operations"), 1, name)
             self.assertNotIn("networks", lowered, name)
 
-    def test_campaignos_remains_in_all_playstation_materials(self):
+    def test_personal_projects_are_excluded_from_playstation_materials(self):
         for name, content in self.contents.items():
-            self.assertIn("CampaignOS", content, name)
+            for term in ("Career Catalyst", "CampaignOS", "Substack"):
+                self.assertNotIn(term, content, name)
 
     def test_playstation_docx_exports_preserve_taxonomy_and_table_invariants(self):
         styled_text = _document_text(self.styled_document)
@@ -186,7 +187,8 @@ class EntertainmentCalibrationTests(unittest.TestCase):
             self.assertRegex(content, r"Disney Streaming|DSS")
             self.assertIn("20th Century", content)
             self.assertIn("franchise/IP", content)
-            self.assertIn("CampaignOS", content)
+            for term in ("Career Catalyst", "CampaignOS", "Substack"):
+                self.assertNotIn(term, content)
 
     def test_all_playstation_outputs_exist_and_are_non_empty(self):
         output_paths = [Path(result["output_path"]) for result in self.results.values()]

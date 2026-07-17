@@ -7,28 +7,26 @@ try:
     from .generate_cover_letter import (
         ApplicationMaterialError,
         _as_first_person,
-        _campaignos_is_relevant,
         _entertainment_scope,
         _job_focus,
         _position,
-        _project,
         load_generation_context,
         save_material,
     )
     from .role_context import is_google_youtube_role
+    from .human_positioning import validate_applicant_evidence
 except ImportError:
     from generate_cover_letter import (
         ApplicationMaterialError,
         _as_first_person,
-        _campaignos_is_relevant,
         _entertainment_scope,
         _job_focus,
         _position,
-        _project,
         load_generation_context,
         save_material,
     )
     from role_context import is_google_youtube_role
+    from human_positioning import validate_applicant_evidence
 
 
 PathInput = Union[str, Path]
@@ -49,17 +47,17 @@ DYNAMIC_MESSAGE_FOCUS = {
 }
 
 DYNAMIC_MESSAGE_PROOF = {
-    "music_content_strategy": "I created Multiverse and continue developing my writing through Substack alongside entertainment marketing leadership.",
-    "editorial_content_strategy": "I created Multiverse, write through Substack, and have built the operating systems that keep high-volume work moving.",
-    "community_growth": "Multiverse, Substack, and large-scale audience campaign work give me both community and operating proof points.",
-    "gtm_product_activation": "My background includes platform activation, measurement readiness, large advertiser execution, and CampaignOS product thinking.",
-    "product_strategy_ops": "I have aligned business, analytics, and technology partners and built CampaignOS as a current product and systems proof point.",
-    "transformation_advisory": "My experience spans senior stakeholder alignment, operating-model design, and CampaignOS as strategy translated into a working system.",
-    "ai_operations_systems": "I built CampaignOS around automation, governance, validation, dashboards, and better operational decisions.",
+    "music_content_strategy": "At OMG23, I created and managed Multiverse, an internal culture publication that reached 400+ employees.",
+    "editorial_content_strategy": "At OMG23, I created and managed Multiverse while building the contributor process that kept the publication moving.",
+    "community_growth": "Multiverse and large-scale entertainment campaign work give me both audience and operating proof points.",
+    "gtm_product_activation": "My professional background includes platform activation, measurement readiness, and large-advertiser execution.",
+    "product_strategy_ops": "I have aligned business, analytics, and technology partners around workflows, milestones, and decisions.",
+    "transformation_advisory": "My experience spans senior stakeholder alignment, workflow governance, and practical operating-model design.",
+    "ai_operations_systems": "I have built governance, validation, quality standards, and clearer decision paths across complex teams.",
     "streaming_strategy": "I have led theatrical and streaming entertainment work and built systems that turn cross-functional priorities into execution.",
     "business_operations": "I have built workflow governance, execution standards, dashboards, and operational reporting across complex teams.",
-    "creative_marketing_ops": "I have led large-scale entertainment marketing work and built creative workflows, quality standards, and CampaignOS.",
-    "generic_senior_operator": "I have built workflow governance, execution standards, and CampaignOS systems around recurring operating problems.",
+    "creative_marketing_ops": "I have led large-scale entertainment marketing work and built creative workflows and quality standards.",
+    "generic_senior_operator": "I have built workflow governance and execution standards around recurring operating problems.",
 }
 
 
@@ -81,11 +79,11 @@ def _profile_recruiter_content(context: Dict[str, Any]) -> str:
     profile_copy = {
         "disney": (
             "product and technology strategy, executive operating rhythms, and enterprise entertainment",
-            "My Disney Studios Theatrical and Disney Streaming/DSS experience gives me context for the scale, while CampaignOS reflects my current systems thinking.",
+            "My Disney Studios Theatrical and Disney Streaming/DSS work gives me practical context for the scale and coordination involved.",
         ),
         "paramount": (
             "marketing operations, creative capacity, workflow visibility, and high-volume entertainment execution",
-            "I have led cross-functional entertainment work at scale and built AI-enabled workflow and reporting systems through CampaignOS.",
+            "I have led cross-functional entertainment work at scale and built clearer workflows, quality practices, and reporting rhythms.",
         ),
         "uta": (
             "transformation advisory, operating models, and strategy translated into execution",
@@ -93,11 +91,11 @@ def _profile_recruiter_content(context: Dict[str, Any]) -> str:
         ),
         "fieldai": (
             "matrix operations, organizational efficiency, capacity visibility, and AI workflow systems",
-            "I built CampaignOS around automation, governance, dashboards, and better operational decisions.",
+            "I have built governance, quality standards, and decision visibility across a fast-moving matrix.",
         ),
         "bandsintown": (
             "music, audience connection, editorial voice, and content systems",
-            "Alongside entertainment marketing leadership, I created Multiverse and now write through my Substack, giving me both editorial and operational proof points.",
+            "Alongside entertainment marketing leadership, I created and managed Multiverse, an internal publication reaching 400+ employees.",
         ),
         "crunchyroll": (
             "streaming, fandom, franchise/IP, and enterprise strategy",
@@ -130,32 +128,32 @@ def _profile_hiring_manager_content(context: Dict[str, Any]) -> str:
         "disney": (
             "aligning product, engineering, data, and business partners through useful OKRs and executive operating rhythms",
             "My work across Disney Studios Theatrical and Disney Streaming/DSS taught me how priorities move through a large entertainment ecosystem and where clear decisions matter most.",
-            "CampaignOS adds a current product and systems proof point through workflow governance, validation, and operational visibility.",
+            "My professional work adds a systems proof point through workflow governance, validation, and operational visibility.",
         ),
         "paramount": (
             "making marketing operations a practical connective layer between strategy, creative capacity, and delivery",
             "I built workflows and quality practices across creative, marketing, media, analytics, technology, and operations for high-volume entertainment campaigns.",
-            "CampaignOS reflects how I use AI enablement, dashboards, and workflow systems to improve visibility without adding process for its own sake.",
+            "That work reflects how I use workflow systems and reporting to improve visibility without adding process for its own sake.",
         ),
         "uta": (
             "moving from a sound transformation hypothesis to an operating model and recommendation stakeholders can use",
             "My background across media, marketing, advertising, and technology lets me move between executive context, client-facing communication, and delivery detail.",
-            "Building CampaignOS strengthened my approach to structured discovery, systems design, and carrying strategy through to implementation.",
+            "Workflow and governance work strengthened my approach to structured discovery, systems design, and carrying strategy through to implementation.",
         ),
         "fieldai": (
             "creating capacity visibility, decision paths, and shared operating cadences across a fast-moving matrix",
             "I designed governance, dashboards, quality systems, and execution standards across several functions in a fast-moving matrix.",
-            "CampaignOS is direct evidence of my AI-forward systems work, including automation, validation frameworks, and operational reporting.",
+            "My governance and quality work provides evidence of validation frameworks, operational reporting, and clearer decision paths.",
         ),
         "bandsintown": (
             "writing with a distinct voice for artists, industry partners, and fans while building the content systems that keep quality consistent",
             "I have led entertainment marketing work and created Multiverse, an editorial publication centered on creativity, culture, music, innovation, and employee storytelling.",
-            "My Substack has given me another place to develop a personal voice across music, creativity, technology, AI, and life after corporate leadership.",
+            "Building the publication required editorial judgment, contributor guidance, and a repeatable content process that protected its human voice.",
         ),
         "crunchyroll": (
             "turning streaming, fandom, and franchise priorities into an enterprise strategy teams can execute",
             "My theatrical and streaming background spans Disney Studios Theatrical, Disney Streaming/DSS, and coordination across creative, media, technology, analytics, and operations.",
-            "CampaignOS demonstrates how I translate recurring cross-functional friction into clearer governance, validation, and reporting systems.",
+            "My workflow-governance work demonstrates how I translate recurring cross-functional friction into clearer validation and reporting practices.",
         ),
     }
     copy = profile_copy.get(profile_key)
@@ -193,15 +191,14 @@ def _recruiter_content(context: Dict[str, Any]) -> str:
     position = _position(career_data, "OMG23")
     position_company = str(position.get("company") or "OMG23 / OMD Entertainment").split(",")[0]
     entertainment_scope = _entertainment_scope(career_data)
-    campaignos = _project(career_data, "CampaignOS")
 
     if is_google_youtube_role(parsed_job):
         message = (
             f"{role_reference} at {company} caught my attention because it connects "
             "YouTube product activation, GTM operations, and large advertiser execution. I have translated Google and YouTube platform "
             "capabilities into campaign execution, measurement readiness, and operational workflows "
-            "across large entertainment advertisers. CampaignOS is a current proof point for how I "
-            "turn recurring operational needs into usable systems. I'm curious which activation or "
+            "across large entertainment advertisers. That work taught me how recurring activation "
+            "needs become usable workflows. I'm curious which activation or "
             "feedback-loop challenge matters most to the team right now."
         )
         question = (
@@ -219,8 +216,6 @@ def _recruiter_content(context: Dict[str, Any]) -> str:
         f"{_as_first_person(entertainment_scope)} I built workflows, quality practices, and operating "
         "standards that helped cross-functional campaign teams coordinate complex work."
     )
-    if _campaignos_is_relevant(context) and campaignos:
-        message += " I also built CampaignOS to turn operational challenges into scalable systems."
     question = (
         "I'm curious which part of that operating challenge matters most to the team. If my "
         "perspective is relevant to the search, I'd be glad to share more context."
@@ -237,7 +232,6 @@ def _hiring_manager_content(context: Dict[str, Any]) -> str:
     position = _position(career_data, "OMG23")
     position_company = str(position.get("company") or "OMG23 / OMD Entertainment").split(",")[0]
 
-    campaignos = _project(career_data, "CampaignOS")
     entertainment_scope = _entertainment_scope(career_data)
 
     if is_google_youtube_role(parsed_job):
@@ -255,8 +249,8 @@ def _hiring_manager_content(context: Dict[str, Any]) -> str:
             "and operational rigor behind that experience."
         )
         project = (
-            "CampaignOS adds a current systems proof point: I designed the platform to standardize "
-            "workflow governance, quality assurance, validation, and operational visibility."
+            "At OMG23, I built workflow governance, quality practices, and measurement-readiness "
+            "routines that gave teams clearer operational visibility."
         )
         close = (
             "I'm curious where the team sees the hardest adoption or feedback-loop problem around "
@@ -281,20 +275,16 @@ def _hiring_manager_content(context: Dict[str, Any]) -> str:
         "practices around that work, and learned how much operational clarity matters when creative, "
         "marketing, media, analytics, technology, and external partners need to move together."
     )
-    project = ""
-    if _campaignos_is_relevant(context) and campaignos:
-        project = (
-            "CampaignOS grew from that same instinct. I designed the AI-powered operations platform "
-            "to standardize workflow governance, automate quality assurance, and give teams better "
-            "consistency and visibility."
-        )
+    project = (
+        "I also introduced workflow governance and execution standards that improved consistency "
+        "and visibility across marketing, technology, analytics, and creative teams."
+    )
     close = (
         "I'm curious where the team loses the most time or context and what matters first. If useful, "
         "I'd be glad to compare notes on what has worked in similar environments."
     )
     parts = ["Hello,", opening, experience]
-    if project:
-        parts.append(project)
+    parts.append(project)
     parts.extend([close, "Best,\n\nTrisha Lynch"])
     return "\n\n".join(parts)
 
@@ -312,18 +302,21 @@ def generate_message(
 
     context = load_generation_context(job_path, project_root)
     if normalized_type == "recruiter":
+        content = _recruiter_content(context)
+        validate_applicant_evidence(content, "recruiter message")
         return save_material(
             context,
             "Recruiter_Message",
-            _recruiter_content(context),
+            content,
             minimum_words=80,
             maximum_words=130,
         )
-
+    content = _hiring_manager_content(context)
+    validate_applicant_evidence(content, "hiring manager message")
     return save_material(
         context,
         "Hiring_Manager_Message",
-        _hiring_manager_content(context),
+        content,
         minimum_words=120,
         maximum_words=180,
     )

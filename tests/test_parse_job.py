@@ -182,7 +182,8 @@ class GreenhouseUrlImportRegressionTests(unittest.TestCase):
             state["prospect_description"],
             "Manual pasted text stays available for fallback.",
         )
-        self.assertIn("source URL was saved", state["prospect_import_result"][1])
+        self.assertIn("saved the posting URL", state["prospect_import_result"][1])
+        self.assertIn("Paste the description below", state["prospect_import_result"][1])
 
     def test_url_import_does_not_mutate_widget_owned_input_key(self):
         import app

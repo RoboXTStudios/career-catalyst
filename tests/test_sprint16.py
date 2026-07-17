@@ -49,8 +49,9 @@ class Sprint16SourceAndScoringTests(unittest.TestCase):
     def test_aeg_partial_import_message_preserves_official_source(self):
         preview = app.import_failure_preview(AEG_URL, "page blocked")
         self.assertEqual(preview["verification"]["source_type"], "Direct Employer")
-        self.assertIn("Import partially failed", preview["message"])
-        self.assertIn("re-parse and re-score", preview["message"])
+        self.assertIn("saved the posting URL", preview["message"])
+        self.assertIn("Paste the description below", preview["message"])
+        self.assertIn("continue parsing and scoring", preview["message"])
 
     def test_missing_required_fields_are_not_scored_or_passed(self):
         fixtures = (

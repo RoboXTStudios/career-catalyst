@@ -7,15 +7,14 @@ try:
     from .filename_utils import build_upload_filename
     from .generate_cover_letter import (
         _achievement,
-        _campaignos_is_relevant,
         _entertainment_scope,
         _is_creative_product_operations_role,
         _join_human,
         _position,
-        _project,
         _word_count,
         load_generation_context,
     )
+    from .human_positioning import validate_applicant_evidence
     from .text_cleanup import cleanup_repeated_words
     from .role_context import google_claim_violations, is_google_youtube_role
     from .package_context import validate_material_context
@@ -23,15 +22,14 @@ except ImportError:
     from filename_utils import build_upload_filename
     from generate_cover_letter import (
         _achievement,
-        _campaignos_is_relevant,
         _entertainment_scope,
         _is_creative_product_operations_role,
         _join_human,
         _position,
-        _project,
         _word_count,
         load_generation_context,
     )
+    from human_positioning import validate_applicant_evidence
     from text_cleanup import cleanup_repeated_words
     from role_context import google_claim_violations, is_google_youtube_role
     from package_context import validate_material_context
@@ -169,7 +167,6 @@ def _why_trisha(context: Dict[str, Any]) -> str:
     leadership = _achievement(career_data, "cross_functional_leadership")
     disney_plus = _achievement(career_data, "disney_plus_launch_support")
     workflow = _achievement(career_data, "workflow_governance")
-    campaignos = _project(career_data, "CampaignOS")
 
     if is_google_youtube_role(context["parsed_job"]):
         google_familiarity = _achievement(
@@ -177,8 +174,8 @@ def _why_trisha(context: Dict[str, Any]) -> str:
             "google_youtube_platform_familiarity",
         )
         value = (
-            "Trisha brings more than 20 years of strategy, marketing operations, and digital media "
-            "experience across large entertainment advertisers. "
+            "Trisha is known for making complex marketing operations clearer and more executable "
+            "across large entertainment advertisers. "
             f"{_as_third_person(google_familiarity)} Her background includes translating Google and "
             "YouTube platform capabilities into campaign execution, measurement readiness, and "
             "operational workflows, connecting brand objectives with practical activation at scale.\n\n"
@@ -189,38 +186,25 @@ def _why_trisha(context: Dict[str, Any]) -> str:
             "advertiser complexity, align senior stakeholders, and turn platform capabilities into "
             "consistent execution. Her experience with workflow governance, measurement readiness, "
             "and operational standards maps directly to GTM operations, seller enablement, and product "
-            "feedback loops."
+            "feedback loops. She works by learning how information and decisions move, then building "
+            "the lightest useful structure around ownership, quality, and visibility."
         )
-        if campaignos:
-            value += (
-                "\n\nCampaignOS is a supporting proof point for her operational systems thinking. "
-                "She designed the AI-powered platform to standardize workflow governance, quality "
-                "assurance, validation, and reporting, showing how she turns recurring execution "
-                "problems into scalable systems."
-            )
         return value
 
     value = (
-        "Trisha brings more than 20 years of enterprise entertainment marketing and business "
-        "operations experience, with a career built around helping complex teams move from strategy "
-        f"to consistent execution. At {position_company}, she progressed from Campaign Manager to "
-        f"Group Director. {_as_third_person(leadership)} {_as_third_person(disney_plus)} "
+        "Trisha is known for helping complex entertainment teams move from strategy to consistent "
+        f"execution. At {position_company}, she progressed from Campaign Manager to Group Director. "
+        f"{_as_third_person(leadership)} {_as_third_person(disney_plus)} "
         f"{_as_third_person(entertainment_scope)}\n\n"
         f"Her relevance is broader than any one function. {_as_third_person(workflow)} She has worked across marketing, "
         "creative, media, analytics, engineering, technology, operations, quality assurance, and "
         "external partners. That experience gives her a practical view of where handoffs, milestones, "
         "decision paths, and operating standards can help or hinder the work. She understands that "
         "creative and product organizations need clarity and accountability, but not process for its "
-        "own sake."
+        "own sake. Her approach starts with observation: understand the handoffs, find the recurring "
+        "friction, and build a practical operating rhythm that people can actually use. That combination "
+        "of scale, curiosity, and execution discipline is the value she would bring to this role."
     )
-    if _campaignos_is_relevant(context) and campaignos:
-        value += (
-            "\n\nCampaignOS adds a current proof point for her systems thinking. As Founder & Product "
-            "Lead, she designed an AI-powered operations platform for workflow governance, quality "
-            "assurance, validation, and operational reporting. That work connects her entertainment "
-            "operations background with thoughtful AI application and shows how she turns recurring "
-            "operational problems into usable systems."
-        )
     return value
 
 
@@ -321,18 +305,10 @@ def _strategic_pov_note(context: Dict[str, Any]) -> str:
             "clear operating rhythms, and decision-ready visibility into progress and friction. Large "
             "advertisers also need enough flexibility to connect platform capabilities to distinct "
             "brand objectives and market conditions.\n\n"
-            "CampaignOS is a supporting example of how I approach these systems questions. I built it "
-            "to make workflows, validation, quality assurance, and reporting more consistent. In this "
-            "role, I would bring the same practical discipline to activation strategy, seller "
-            "enablement, stakeholder alignment, and product feedback loops."
-        )
-
-    campaignos_relevant = _campaignos_is_relevant(context)
-    campaignos_text = ""
-    if campaignos_relevant:
-        campaignos_text = (
-            " CampaignOS grew from this same belief: recurring operational problems can often be "
-            "made easier through clearer workflows, validation, quality assurance, and useful reporting."
+            "In my professional work, that discipline has meant creating shared campaign workflows, "
+            "quality checks, measurement readiness practices, and reporting across creative, media, "
+            "analytics, technology, and campaign operations. I would bring that same practical approach "
+            "to activation strategy, seller enablement, stakeholder alignment, and product feedback loops."
         )
 
     return (
@@ -346,10 +322,9 @@ def _strategic_pov_note(context: Dict[str, Any]) -> str:
         "is to create enough shared structure that teams can move quickly without losing quality, "
         "context, or accountability. Good operating systems reduce avoidable friction and protect the "
         "time people need for creative and strategic thinking.\n\n"
-        "I think about AI in the same practical way. It can be valuable when applied thoughtfully to "
-        "workflow, quality assurance, documentation, validation, and repeatable reporting. It should "
-        "support better decisions and cleaner execution, not become a layer of novelty that teams have "
-        f"to work around.{campaignos_text}\n\n"
+        "I think about technology in the same practical way. It is valuable when it makes workflow, "
+        "quality assurance, documentation, validation, or reporting easier to use. It should support "
+        "better decisions and cleaner execution, not become a layer of novelty that teams have to work around.\n\n"
         "The best operators help teams move faster without losing the quality of the work. They listen "
         "before designing solutions, make decision paths visible, and know when a lightweight practice "
         "is more useful than a large process. In this role, I would focus on connecting strategic "
@@ -387,14 +362,10 @@ def _interview_talking_points(context: Dict[str, Any]) -> List[Tuple[str, str]]:
             ),
             (
                 "Applying operational systems thinking",
-                "CampaignOS is a supporting proof point for how I use workflow governance, validation, quality assurance, and reporting to improve consistency and visibility.",
+                "At OMG23, I used workflow governance, validation, quality assurance, and reporting to improve consistency and visibility across campaign operations.",
             ),
         ]
 
-    campaignos_point = (
-        "CampaignOS shows how I approach recurring operational problems: map the workflow, build "
-        "validation and quality into the process, and improve visibility without adding noise."
-    )
     return [
         (
             "Connecting entertainment IP to execution",
@@ -413,8 +384,8 @@ def _interview_talking_points(context: Dict[str, Any]) -> List[Tuple[str, str]]:
             "I introduced scalable workflows, governance practices, and execution standards across marketing, technology, analytics, and creative teams.",
         ),
         (
-            "Applying AI without making it gimmicky",
-            campaignos_point,
+            "Building practical operating systems",
+            "My professional workflow work starts by mapping the handoffs, building quality into the process, and improving visibility without adding noise.",
         ),
         (
             "Understanding entertainment marketing scale",
@@ -485,6 +456,10 @@ def _render_strategy_pack(context: Dict[str, Any]) -> str:
 
 
 def _validate_strategy_pack(context: Dict[str, Any], content: str) -> None:
+    try:
+        validate_applicant_evidence(content, "strategy pack")
+    except ValueError as exc:
+        raise StrategyPackError(str(exc)) from exc
     if "—" in content:
         raise StrategyPackError("Strategy packs must not contain em dashes.")
     if "placeholder" in content.lower():

@@ -24,16 +24,32 @@ except ImportError:
 
 
 BLOCKED_PRIMARY_HOSTS = (
-    "indeed.com",
     "linkedin.com",
     "entertainmentcareers.net",
     "entertainmentcareers.com",
 )
 MINIMUM_DESCRIPTION_LENGTH = 80
+IMPORT_EXTRACTION_FALLBACK_MESSAGE = (
+    "Career Catalyst saved the posting URL but could not reliably extract the full job "
+    "description. Paste the description below to continue parsing and scoring."
+)
+BLOCKED_CONTENT_SIGNALS = (
+    "access denied",
+    "enable javascript to continue",
+    "verify you are human",
+    "complete the security check",
+    "captcha",
+    "page not found",
+    "job is no longer available",
+)
 
 
 class JobImportError(Exception):
     """Raised when a career page cannot produce a safe, useful import."""
+
+    def __init__(self, message: str, partial_data: Optional[Dict[str, Any]] = None) -> None:
+        super().__init__(message)
+        self.partial_data = dict(partial_data or {})
 
 
 class _VisibleTextParser(HTMLParser):
@@ -47,6 +63,8 @@ class _VisibleTextParser(HTMLParser):
         self.h1_parts: list[str] = []
         self.text_parts: list[str] = []
         self.site_name = ""
+        self.meta_title = ""
+        self.meta_description = ""
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, Optional[str]]]) -> None:
         lowered = tag.lower()
@@ -56,8 +74,16 @@ class _VisibleTextParser(HTMLParser):
             self.current_heading = lowered
         if lowered == "meta":
             attributes = {key.lower(): value or "" for key, value in attrs}
-            if attributes.get("property", "").lower() == "og:site_name":
+            meta_key = (
+                attributes.get("property") or attributes.get("name") or ""
+            ).lower()
+            content = attributes.get("content", "").strip()
+            if meta_key == "og:site_name":
                 self.site_name = attributes.get("content", "").strip()
+            elif meta_key in {"og:title", "twitter:title"} and not self.meta_title:
+                self.meta_title = content
+            elif meta_key in {"description", "og:description", "twitter:description"} and not self.meta_description:
+                self.meta_description = content
 
     def handle_endtag(self, tag: str) -> None:
         lowered = tag.lower()
@@ -98,8 +124,13 @@ def _fetch_json(url: str, timeout: int = 12) -> Dict[str, Any]:
     request = Request(
         url,
         headers={
-            "User-Agent": "CareerCatalyst/0.0.20 (local personal career-page importer)",
+            "User-Agent": (
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36 "
+                "CareerCatalyst/0.0.22"
+            ),
             "Accept": "application/json",
+            "Accept-Language": "en-US,en;q=0.9",
         },
     )
     try:
@@ -163,10 +194,38 @@ def _extract_greenhouse_job(url: str, timeout: int = 12) -> Optional[Dict[str, A
     create_job_markdown(parsed)
     return parsed
 
-def _manual_fallback(message: str) -> JobImportError:
+def _manual_fallback(
+    message: str, partial_data: Optional[Dict[str, Any]] = None
+) -> JobImportError:
     return JobImportError(
-        f"{message} Keep the official URL and paste the job description text manually."
+        f"{message} {IMPORT_EXTRACTION_FALLBACK_MESSAGE}", partial_data=partial_data
     )
+
+
+def is_usable_job_description(value: Any) -> bool:
+    """Return true only for substantive job content, never block/interstitial copy."""
+    text = re.sub(r"\s+", " ", str(value or "")).strip()
+    lowered = text.lower()
+    if len(text) < MINIMUM_DESCRIPTION_LENGTH or len(re.findall(r"\b\w+\b", text)) < 15:
+        return False
+    if any(signal in lowered for signal in BLOCKED_CONTENT_SIGNALS):
+        return False
+    job_signals = (
+        "responsibil",
+        "qualif",
+        "requirement",
+        "experience",
+        "the role",
+        "this role",
+        "the team",
+        "skills",
+        "operations",
+        "strategy",
+        "marketing",
+        "product",
+        "work with",
+    )
+    return any(signal in lowered for signal in job_signals)
 
 
 def _validated_url(url: str) -> str:
@@ -188,14 +247,18 @@ def fetch_job_page(url: str, timeout: int = 12) -> str:
     hostname = (urlparse(clean_url).hostname or "").lower()
     if any(hostname == host or hostname.endswith(f".{host}") for host in BLOCKED_PRIMARY_HOSTS):
         raise _manual_fallback(
-            "Automated import supports official company career pages; this board is supported "
-            "for source classification but not automated page import."
+            "This source does not provide a public page that Career Catalyst can safely import."
         )
     request = Request(
         clean_url,
         headers={
-            "User-Agent": "CareerCatalyst/0.0.20 (local personal career-page importer)",
+            "User-Agent": (
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36 "
+                "CareerCatalyst/0.0.22"
+            ),
             "Accept": "text/html,application/xhtml+xml",
+            "Accept-Language": "en-US,en;q=0.9",
         },
     )
     try:
@@ -229,11 +292,20 @@ def _walk_json(value: Any) -> Iterable[Dict[str, Any]]:
 
 def _job_posting(html: str) -> Optional[Dict[str, Any]]:
     scripts = re.findall(
-        r"<script\b[^>]*type=[\"']application/ld\+json[\"'][^>]*>(.*?)</script>",
+        r"<script\b([^>]*)>(.*?)</script>",
         html,
         flags=re.IGNORECASE | re.DOTALL,
     )
-    for script in scripts:
+    for attributes, script in scripts:
+        type_match = re.search(
+            r"\btype\s*=\s*[\"']([^\"']+)[\"']", attributes, flags=re.I
+        )
+        script_type = type_match.group(1).lower() if type_match else ""
+        if not (
+            script_type.startswith("application/ld+json")
+            or script_type == "application/json"
+        ):
+            continue
         try:
             loaded = json.loads(unescape(script).strip())
         except (json.JSONDecodeError, TypeError):
@@ -243,6 +315,45 @@ def _job_posting(html: str) -> Optional[Dict[str, Any]]:
             types = item_type if isinstance(item_type, list) else [item_type]
             if any(str(value).lower() == "jobposting" for value in types):
                 return item
+            description = next(
+                (
+                    item.get(key)
+                    for key in ("description", "jobDescription", "descriptionHtml")
+                    if item.get(key)
+                ),
+                "",
+            )
+            title = next(
+                (
+                    item.get(key)
+                    for key in ("title", "jobTitle", "positionTitle")
+                    if item.get(key)
+                ),
+                "",
+            )
+            organization = next(
+                (
+                    item.get(key)
+                    for key in ("hiringOrganization", "company", "companyName", "organization")
+                    if item.get(key)
+                ),
+                "",
+            )
+            if (
+                is_valid_role_title(str(title or ""))
+                and is_usable_job_description(_plain_html_text(description))
+                and organization
+            ):
+                return {
+                    "@type": "JobPosting",
+                    "title": title,
+                    "hiringOrganization": organization,
+                    "description": description,
+                    "jobLocation": item.get("jobLocation") or item.get("location"),
+                    "baseSalary": item.get("baseSalary") or item.get("salary"),
+                    "datePosted": item.get("datePosted") or item.get("postedDate"),
+                    "identifier": item.get("identifier") or item.get("jobId"),
+                }
     return None
 
 
@@ -350,9 +461,18 @@ def create_job_markdown(job_data: Dict[str, Any]) -> str:
     title = preferred_role_title("", title, source_url)
     company = company or fallback.get("company", "")
     description = str(job_data.get("job_description") or job_data.get("description") or "").strip()
-    if not title or not company or len(description) < MINIMUM_DESCRIPTION_LENGTH:
+    if not title or not company or not is_usable_job_description(description):
         raise _manual_fallback(
-            "The page did not provide a complete title, company, and job description."
+            "The page did not provide a complete title, company, and job description.",
+            partial_data={
+                "job_title": title,
+                "company": company,
+                "location": job_data.get("location"),
+                "salary_range": job_data.get("salary_range"),
+                "posting_date": job_data.get("posting_date"),
+                "job_id": job_data.get("job_id") or fallback.get("job_id"),
+                "job_description": description if is_usable_job_description(description) else "",
+            },
         )
     location = str(job_data.get("location") or "").strip() or "Not specified"
     work_arrangement = (
@@ -390,9 +510,19 @@ def extract_job_text(html: str, url: str) -> str:
     posting = _job_posting(html)
     if posting:
         organization = posting.get("hiringOrganization") or {}
-        company = organization.get("name") if isinstance(organization, dict) else organization
+        company = (
+            organization.get("name") or organization.get("legalName")
+            if isinstance(organization, dict)
+            else organization
+        )
         description = _plain_html_text(posting.get("description"))
         location = _structured_location(posting)
+        identifier = posting.get("identifier")
+        job_id = (
+            identifier.get("value") or identifier.get("name")
+            if isinstance(identifier, dict)
+            else identifier
+        )
         return create_job_markdown(
             {
                 "job_title": posting.get("title"),
@@ -401,6 +531,7 @@ def extract_job_text(html: str, url: str) -> str:
                 "work_arrangement": _work_arrangement(location, description),
                 "salary_range": _structured_salary(posting),
                 "posting_date": posting.get("datePosted"),
+                "job_id": job_id,
                 "source": _source_name(url),
                 "official_url": url,
                 "job_description": description,
@@ -409,7 +540,7 @@ def extract_job_text(html: str, url: str) -> str:
 
     parser = _VisibleTextParser()
     parser.feed(html)
-    page_title = " ".join(parser.title_parts).strip()
+    page_title = parser.meta_title or " ".join(parser.title_parts).strip()
     title = " ".join(parser.h1_parts).strip() or page_title
     company = parser.site_name
     match = re.match(r"Job Application for (.+?) at (.+?)(?:\s*[|\-].*)?$", title, re.I)
@@ -417,10 +548,20 @@ def extract_job_text(html: str, url: str) -> str:
         title, company = match.group(1).strip(), match.group(2).strip()
     elif " @ " in title:
         title, company = (part.strip() for part in title.split(" @ ", 1))
-    title = re.sub(r"\s*[|\-]\s*(?:careers?|jobs?).*$", "", title, flags=re.I).strip()
+    title = re.sub(
+        r"\s*[|\-–—]\s*(?:[^|\-–—]{0,80}\s+)?(?:careers?|jobs?)\s*$",
+        "",
+        title,
+        flags=re.I,
+    ).strip()
     title, company = _clean_identity(title, company)
     visible_text = "\n".join(parser.text_parts)
-    metadata = extract_metadata(visible_text)
+    description = (
+        visible_text
+        if is_usable_job_description(visible_text)
+        else parser.meta_description
+    )
+    metadata = extract_metadata(f"{page_title}\n{visible_text}")
     location = metadata.get("location") or "Not specified"
     return create_job_markdown(
         {
@@ -432,7 +573,7 @@ def extract_job_text(html: str, url: str) -> str:
             "posting_date": metadata.get("posting_date"),
             "source": _source_name(url),
             "official_url": url,
-            "job_description": visible_text,
+            "job_description": description,
         }
     )
 
@@ -445,6 +586,7 @@ def parse_imported_job(raw_text: str, url: str) -> Dict[str, Any]:
     )
     description = (description_match.group(1) if description_match else raw_text).strip()
     fallback = infer_job_fields_from_url(url)
+    job_id_match = re.search(r"^Job ID:\s*(.+?)\s*$", raw_text, flags=re.I | re.M)
     title, company = _clean_identity(metadata.get("job_title"), metadata.get("company"))
     title = preferred_role_title("", title, url)
     company = company or fallback.get("company", "")
@@ -457,7 +599,9 @@ def parse_imported_job(raw_text: str, url: str) -> Dict[str, Any]:
         "work_arrangement": work_arrangement or "Not specified",
         "salary_range": metadata.get("salary_range") or "",
         "posting_date": metadata.get("posting_date") or "",
-        "job_id": fallback.get("job_id") or "",
+        "job_id": (job_id_match.group(1).strip() if job_id_match else "")
+        or fallback.get("job_id")
+        or "",
         "source": _source_name(url),
         "source_url": url,
         "official_url": url,

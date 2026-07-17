@@ -8,10 +8,12 @@ from typing import Any, Dict, Optional, Union
 try:
     from .filename_utils import build_upload_filename
     from .generate_cover_letter import load_generation_context
+    from .human_positioning import personal_project_violations, validate_applicant_evidence
     from .package_context import validate_material_context
 except ImportError:
     from filename_utils import build_upload_filename
     from generate_cover_letter import load_generation_context
+    from human_positioning import personal_project_violations, validate_applicant_evidence
     from package_context import validate_material_context
 
 
@@ -28,7 +30,11 @@ def generate_interview_prep(
     company = str(parsed.get("company") or "the company")
     role = str(parsed.get("job_title") or "the role")
     keywords = [str(value) for value in parsed.get("keywords", [])[:6]]
-    proof_points = [str(value) for value in intelligence.get("proof_points_to_emphasize", [])[:4]]
+    proof_points = [
+        str(value)
+        for value in intelligence.get("proof_points_to_emphasize", [])
+        if not personal_project_violations(str(value))
+    ][:4]
     themes = keywords or ["cross-functional leadership", "operating clarity", "measurable execution"]
     content = "\n".join(
         (
@@ -42,13 +48,23 @@ def generate_interview_prep(
             "",
             "### Proof Points to Prepare",
             "",
-            *(f"- {value}" for value in (proof_points or ["cross-functional leadership", "workflow governance", "CampaignOS"])),
+            *(
+                f"- {value}"
+                for value in (
+                    proof_points
+                    or [
+                        "cross-functional leadership across creative, media, analytics, and technology",
+                        "workflow governance and quality assurance",
+                        "Disney theatrical and streaming campaign operations",
+                    ]
+                )
+            ),
             "",
             "### Story Prompts",
             "",
             "- A time you turned an unclear cross-functional problem into a practical operating plan.",
             "- A time you improved a process without losing the trust or judgment of the people doing the work.",
-            "- A time you used data, automation, or an AI-enabled workflow to improve visibility and execution.",
+            "- A time you used data, workflow design, or reporting to improve visibility and execution.",
             "- A decision where you balanced speed, quality, stakeholder needs, and limited capacity.",
             "",
             "### Questions to Ask",
@@ -64,6 +80,7 @@ def generate_interview_prep(
             "",
         )
     )
+    validate_applicant_evidence(content, "interview prep")
     validate_material_context(content, parsed, "Interview_Prep")
     filename = build_upload_filename(
         "Trisha Lynch", role, company, "Interview Prep", "txt"

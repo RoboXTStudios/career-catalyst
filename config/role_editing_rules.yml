@@ -12,9 +12,12 @@ role_editing_rules:
     lead_evidence:
       - governance_qa_delivery
       - omg23_disney_leadership
-    supporting_evidence:
-      - campaignos
+    supporting_evidence: []
     omitted_evidence:
+      - CampaignOS
+      - campaignos
+      - Career Catalyst
+      - career_catalyst
       - Substack Writer
       - OMG23 Multiverse Newsletter
       - RoboXT creative manifesto
@@ -43,7 +46,7 @@ role_editing_rules:
     preferred_cover_letter_framing: I help senior teams turn broad priorities into clear plans, ownership, communication rhythms, and follow-through.
     resume_section_rules:
       selected_projects: minimize
-      campaignos: supporting
+      campaignos: omit
       creative_editorial_projects: omit
   marketing_operations_entertainment:
     signals:
@@ -61,8 +64,11 @@ role_editing_rules:
       - martech_campaign_execution
     supporting_evidence:
       - governance_qa_delivery
-      - campaignos
     omitted_evidence:
+      - CampaignOS
+      - campaignos
+      - Career Catalyst
+      - career_catalyst
       - RoboXT creative manifesto
       - roboxt_studios
       - Substack Writer
@@ -76,7 +82,7 @@ role_editing_rules:
     banned_phrases: []
     resume_section_rules:
       selected_projects: include
-      campaignos: supporting
+      campaignos: omit
       creative_editorial_projects: minimize
   product_ai_operations:
     signals:
@@ -90,12 +96,15 @@ role_editing_rules:
       - roadmap
       - product manager
     lead_evidence:
-      - campaignos
       - governance_qa_delivery
     supporting_evidence:
       - omg23_disney_leadership
+    omitted_evidence:
+      - CampaignOS
+      - campaignos
+      - Career Catalyst
       - career_catalyst
-    omitted_evidence: []
+      - Substack Writer
     preferred_terms:
       - AI workflows
       - product judgment
@@ -105,7 +114,7 @@ role_editing_rules:
     banned_phrases: []
     resume_section_rules:
       selected_projects: include
-      campaignos: lead
+      campaignos: omit
       creative_editorial_projects: contextual
   traditional_pmo_governance:
     signals:
@@ -121,9 +130,12 @@ role_editing_rules:
     lead_evidence:
       - governance_qa_delivery
       - omg23_disney_leadership
-    supporting_evidence:
-      - campaignos
+    supporting_evidence: []
     omitted_evidence:
+      - CampaignOS
+      - campaignos
+      - Career Catalyst
+      - career_catalyst
       - Substack Writer
       - OMG23 Multiverse Newsletter
       - RoboXT creative manifesto
@@ -144,5 +156,5 @@ role_editing_rules:
       - builder's mindset
     resume_section_rules:
       selected_projects: minimize
-      campaignos: supporting
+      campaignos: omit
       creative_editorial_projects: omit

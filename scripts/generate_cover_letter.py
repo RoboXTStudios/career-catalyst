@@ -13,7 +13,11 @@ try:
     from .company_voice import company_voice_context
     from .evidence_engine import load_evidence_cards, load_writing_voice_profile, select_evidence_cards
     from .filename_utils import build_upload_filename, company_display_name
-    from .human_positioning import positioning_violations
+    from .human_positioning import (
+        positioning_violations,
+        replace_personal_project_paragraphs,
+        validate_applicant_evidence,
+    )
     from .load_data import load_all_yaml
     from .parse_job import parse_job_description
     from .package_context import validate_material_context
@@ -32,7 +36,11 @@ except ImportError:
     from company_voice import company_voice_context
     from evidence_engine import load_evidence_cards, load_writing_voice_profile, select_evidence_cards
     from filename_utils import build_upload_filename, company_display_name
-    from human_positioning import positioning_violations
+    from human_positioning import (
+        positioning_violations,
+        replace_personal_project_paragraphs,
+        validate_applicant_evidence,
+    )
     from load_data import load_all_yaml
     from parse_job import parse_job_description
     from package_context import validate_material_context
@@ -147,6 +155,7 @@ def save_material(
         )
 
     validate_material_context(content, context["parsed_job"], suffix)
+    validate_applicant_evidence(content, suffix)
     positioning_issues = positioning_violations(content)
     if positioning_issues:
         raise ApplicationMaterialError(
@@ -356,6 +365,49 @@ def _position(career_data: Dict[str, Any], company_fragment: str) -> Dict[str, A
 def _project(career_data: Dict[str, Any], project_name: str) -> Dict[str, Any]:
     projects = career_data["data"]["projects"].get("projects", [])
     return next((item for item in projects if item.get("name") == project_name), {})
+
+
+def _professional_evidence_paragraph(context: Dict[str, Any]) -> str:
+    """Return role-relevant proof grounded only in stored professional experience."""
+    career_data = context.get("career_data", {})
+    parsed_job = context.get("parsed_job", {})
+    role_family = str(context.get("role_family") or "")
+    role_title = str(parsed_job.get("job_title") or "").lower()
+    if not career_data.get("data"):
+        return (
+            "At OMG23 / OMD Entertainment, I led cross-functional work across creative, marketing, "
+            "media, analytics, technology, and campaign operations. I introduced workflow governance "
+            "and execution standards that made ownership, handoffs, and decisions easier to see."
+        )
+    editorial_title = any(
+        signal in role_title
+        for signal in ("copywriter", "editorial", "content strategist", "communications")
+    )
+    if role_family in {"music_content_strategy", "editorial_content_strategy", "community_growth"} and editorial_title:
+        editorial = _achievement(career_data, "multiverse_editorial")
+        if editorial:
+            return (
+                f"At OMG23 / OMD Entertainment, {_as_first_person(editorial)} I built the contributor "
+                "framework and recurring content process around the publication, balancing a clear "
+                "editorial voice with dependable delivery. The work reached 400+ employees and showed "
+                "how a human point of view and a reliable operating process can strengthen each other."
+            )
+    if is_google_youtube_role(parsed_job):
+        platform = _achievement(career_data, "google_youtube_platform_familiarity")
+        return (
+            f"At OMG23 / OMD Entertainment, {_as_first_person(platform)} The work connected brand "
+            "goals, media execution, analytics, technology, and senior stakeholders around decisions "
+            "teams could act on. It also required clear measurement readiness, quality checks, and "
+            "feedback across large advertiser programs where small operational gaps could slow adoption."
+        )
+    workflow = _achievement(career_data, "workflow_governance")
+    return (
+        f"At OMG23 / OMD Entertainment, {_as_first_person(workflow)} The useful change was not more "
+        "process; it was clearer ownership, more dependable handoffs, quality assurance (QA), and "
+        "better operational risk visibility in the "
+        "decisions affecting delivery. That work connected creative, marketing, analytics, and "
+        "technology partners around shared standards while keeping day-to-day execution practical."
+    )
 
 
 def _entertainment_scope(career_data: Dict[str, Any]) -> str:
@@ -1059,34 +1111,41 @@ def _cover_letter_content(context: Dict[str, Any]) -> str:
     if not context.get("material_editing_plan"):
         context = dict(context)
         context["material_editing_plan"] = material_editing_plan(context["parsed_job"], context.get("root"))
+    builder: Callable[[Dict[str, Any]], str]
     if profile_key in builders:
-        return builders[profile_key](context)
-    role_category = context["material_editing_plan"].get("role_category")
-    if role_category in {"chief_of_staff_business_operations", "product_ai_operations"}:
-        return _role_sensitive_cover_letter_content(context)
-    if role_family == "music_content_strategy":
-        return _bandsintown_cover_letter_content(context)
-    if _is_creative_product_operations_role(context["parsed_job"]):
-        return _default_cover_letter_content(context)
-    if _is_technical_operations_role(context["parsed_job"]):
-        return _technical_operations_cover_letter_content(context)
-    effective = context.get("effective_voice_profile", {})
-    if effective.get("company_category") == "gaming_fandom":
-        return _default_cover_letter_content(context)
-    has_job_context = any(
-        parsed_value
-        for parsed_value in (
-            context["parsed_job"].get("company"),
-            context["parsed_job"].get("job_title"),
-            str(context["parsed_job"].get("raw_text") or "").strip(),
-        )
+        builder = builders[profile_key]
+    else:
+        role_category = context["material_editing_plan"].get("role_category")
+        if role_category in {"chief_of_staff_business_operations", "product_ai_operations"}:
+            builder = _role_sensitive_cover_letter_content
+        elif role_family == "music_content_strategy":
+            builder = _bandsintown_cover_letter_content
+        elif _is_creative_product_operations_role(context["parsed_job"]):
+            builder = _default_cover_letter_content
+        elif _is_technical_operations_role(context["parsed_job"]):
+            builder = _technical_operations_cover_letter_content
+        else:
+            effective = context.get("effective_voice_profile", {})
+            has_job_context = any(
+                parsed_value
+                for parsed_value in (
+                    context["parsed_job"].get("company"),
+                    context["parsed_job"].get("job_title"),
+                    str(context["parsed_job"].get("raw_text") or "").strip(),
+                )
+            )
+            builder = (
+                _default_cover_letter_content
+                if effective.get("company_category") == "gaming_fandom"
+                else _dynamic_cover_letter_content
+                if effective.get("source") == "dynamic_inference" and has_job_context
+                else _default_cover_letter_content
+            )
+    content = replace_personal_project_paragraphs(
+        builder(context), _professional_evidence_paragraph(context)
     )
-    builder = (
-        _dynamic_cover_letter_content
-        if effective.get("source") == "dynamic_inference" and has_job_context
-        else _default_cover_letter_content
-    )
-    return builder(context)
+    validate_applicant_evidence(content, "cover letter")
+    return content
 
 
 def generate_cover_letter(

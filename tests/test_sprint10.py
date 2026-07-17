@@ -80,14 +80,16 @@ class Sprint10Tests(unittest.TestCase):
                 fetch_job_page("https://careers.example.com/jobs/123")
 
         self.assertIn("could not be reached", str(context.exception))
-        self.assertIn("paste the job description text manually", str(context.exception))
+        self.assertIn("saved the posting URL", str(context.exception))
+        self.assertIn("Paste the description below", str(context.exception))
 
-    def test_aggregator_url_is_rejected_as_primary_source(self):
-        with self.assertRaises(JobImportError) as context:
-            fetch_job_page("https://www.indeed.com/viewjob?jk=123")
+    def test_indeed_url_is_attempted_before_manual_fallback(self):
+        with patch("scripts.job_importer.urlopen", side_effect=URLError("offline")):
+            with self.assertRaises(JobImportError) as context:
+                fetch_job_page("https://www.indeed.com/viewjob?jk=123")
 
-        self.assertIn("official company career pages", str(context.exception))
-        self.assertIn("paste the job description text manually", str(context.exception))
+        self.assertIn("could not be reached", str(context.exception))
+        self.assertIn("saved the posting URL", str(context.exception))
 
     def test_json_ld_job_page_imports_without_heavy_scraping(self):
         posting = {
@@ -110,7 +112,7 @@ class Sprint10Tests(unittest.TestCase):
 
         self.assertEqual(imported["company"], "Acme Entertainment")
         self.assertEqual(imported["job_title"], "Director, Marketing Operations")
-        self.assertEqual(imported["source"], "Official Greenhouse")
+        self.assertEqual(imported["source"], "Greenhouse")
         self.assertIn("cross-functional marketing operations", imported["job_description"])
 
     def test_pasted_text_creates_job_file_and_tracker_entry(self):

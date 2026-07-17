@@ -57,17 +57,25 @@ def test_traditional_pmo_omits_roboxt_and_campaignos():
     assert "campaignos" not in selected_ids
 
 
-def test_builder_friendly_role_includes_builder_projects():
+def test_builder_friendly_role_omits_builder_projects_by_default():
     selected = select_evidence_cards(role("Builder in Residence", "Human Agency builder founder startup AI workflow automation product operations"))
     selected_ids = ids(selected)
-    assert {"campaignos", "career_catalyst"} <= selected_ids
+    assert not ({"campaignos", "career_catalyst"} & selected_ids)
 
 
-def test_martech_role_can_include_campaignos_when_relevant():
+def test_builder_projects_require_explicit_opt_in():
+    selected = select_evidence_cards(
+        role("Builder in Residence", "Human Agency builder founder startup AI workflow automation product operations"),
+        include_personal_projects=True,
+    )
+    assert {"campaignos", "career_catalyst"} & ids(selected)
+
+
+def test_martech_role_uses_professional_evidence_by_default():
     selected = select_evidence_cards(role("Martech Operations Lead", "CRM martech adtech automation measurement campaign workflow systems"))
     selected_ids = ids(selected)
     assert "martech_campaign_execution" in selected_ids
-    assert "campaignos" in selected_ids
+    assert "campaignos" not in selected_ids
 
 
 def test_default_writing_voice_level_is_three_and_bans_corporate_phrases():
@@ -138,10 +146,9 @@ def test_ea_marketing_operations_cover_letter_uses_grounded_calm_voice():
     ):
         assert phrase not in lowered
 
-    assert content.index("OMG23 / OMD Entertainment") < content.index("CampaignOS")
-    assert content.index("Disney") < content.index("CampaignOS")
-    assert lowered.count("campaignos") == 1
-    assert "supporting proof point" in lowered
+    assert "omg23 / omd entertainment" in lowered
+    assert "campaignos" not in lowered
+    assert "workflow governance" in lowered
     assert "i would welcome the chance" in lowered
     assert "excited" not in lowered
     assert "enthusiasm" not in lowered
@@ -161,10 +168,10 @@ def test_azira_chief_of_staff_classifies_for_role_editing():
     )
     plan = material_editing_plan(parsed, PROJECT_ROOT)
     assert plan["role_category"] == "chief_of_staff_business_operations"
-    assert "campaignos" in plan["supporting_evidence"]
+    assert "campaignos" in plan["omitted_evidence"]
 
 
-def test_azira_cover_letter_leads_with_operating_support_and_keeps_campaignos_supporting():
+def test_azira_cover_letter_leads_with_operating_support_and_professional_evidence():
     parsed = role(
         "Director, Chief of Staff & Business Operations",
         "chief of staff business operations leadership team operating cadence planning rhythms ownership risks follow-through",
@@ -179,12 +186,11 @@ def test_azira_cover_letter_leads_with_operating_support_and_keeps_campaignos_su
     assert "planning rhythms" in lowered
     assert "ownership" in lowered
     assert "follow-through" in lowered
-    assert lowered.count("campaignos") == 1
-    assert "supporting proof point" in lowered
-    assert content.index("senior team operating support") < content.index("CampaignOS")
+    assert "campaignos" not in lowered
+    assert "omg23 / omd entertainment" in lowered
 
 
-def test_netflix_ai_product_manager_classifies_and_allows_campaignos_lead():
+def test_netflix_ai_product_manager_classifies_and_omits_personal_projects():
     parsed = role(
         "AI Product Manager",
         "Netflix AI product manager platform operations workflow automation internal tools systems design roadmap",
@@ -195,8 +201,9 @@ def test_netflix_ai_product_manager_classifies_and_allows_campaignos_lead():
     selected_ids = ids(select_evidence_cards(parsed))
     content = _cover_letter_content({**dynamic_context(parsed, select_evidence_cards(parsed)), "material_editing_plan": plan})
     assert plan["role_category"] == "product_ai_operations"
-    assert "campaignos" in selected_ids
-    assert content.index("CampaignOS") < content.index("Disney")
+    assert "campaignos" not in selected_ids
+    assert "CampaignOS" not in content
+    assert "OMG23 / OMD Entertainment" in content
 
 
 def test_ea_marketing_operations_classifies_as_entertainment_operations():

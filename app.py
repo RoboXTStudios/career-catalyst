@@ -58,7 +58,13 @@ from scripts.generate_followups import (
     generate_followups,
     generate_missing_followups,
 )
-from scripts.job_importer import MINIMUM_DESCRIPTION_LENGTH, JobImportError, import_job_from_url
+from scripts.job_importer import (
+    IMPORT_EXTRACTION_FALLBACK_MESSAGE,
+    MINIMUM_DESCRIPTION_LENGTH,
+    JobImportError,
+    import_job_from_url,
+    is_usable_job_description,
+)
 from scripts.job_identity import infer_job_fields_from_url, preferred_role_title
 from scripts.job_freshness import detect_job_freshness
 from scripts.job_source_registry import normalize_job_source
@@ -80,7 +86,7 @@ from scripts.package_generator import (
 )
 from scripts.parse_job import extract_metadata, parse_job_description, salary_parsing_warning
 from scripts.prospect_intake import ProspectIntakeError, create_prospect
-from scripts.score_match import score_job_data, score_job_match
+from scripts.score_match import incomplete_match_report, score_job_data, score_job_match
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -1800,7 +1806,11 @@ def detect_prospect_intelligence(values: Dict[str, Any]) -> Dict[str, Any]:
         salary_parsing_warning(values.get("job_description"))
         and (not salary_value or re.fullmatch(r"\$\s*\d{1,2}", salary_value))
     )
-    intelligence["match_report"] = score_job_data(values, PROJECT_ROOT)
+    intelligence["match_report"] = (
+        score_job_data(values, PROJECT_ROOT)
+        if prospect_has_usable_job_content(values)
+        else incomplete_match_report(values)
+    )
     intelligence["job_description"] = str(values.get("job_description") or "")
     intelligence["location"] = str(values.get("location") or "")
     intelligence["work_arrangement"] = str(values.get("work_arrangement") or "")
@@ -1828,9 +1838,25 @@ def reparse_prospect_fields(values: Dict[str, Any]) -> Dict[str, Any]:
     for key in ("company", "location", "job_id", "source"):
         if not refreshed.get(key) and fallback.get(key):
             refreshed[key] = fallback[key]
-    refreshed["match_report"] = score_job_data(refreshed, PROJECT_ROOT)
+    refreshed["match_report"] = (
+        score_job_data(refreshed, PROJECT_ROOT)
+        if prospect_has_usable_job_content(refreshed)
+        else incomplete_match_report(refreshed)
+    )
     refreshed["source_verification"] = normalize_job_source(refreshed)
     return refreshed
+
+
+def prospect_has_usable_job_content(values: Dict[str, Any]) -> bool:
+    """Gate parsing/scoring on a reliable identity and substantive description."""
+    company = str(values.get("company") or "").strip()
+    title = str(values.get("job_title") or values.get("role") or "").strip()
+    description = values.get("job_description") or values.get("description") or ""
+    return bool(
+        company
+        and is_valid_role_title(title)
+        and is_usable_job_description(description)
+    )
 
 
 def import_failure_preview(url: str, error_message: str) -> Dict[str, Any]:
@@ -1844,10 +1870,7 @@ def import_failure_preview(url: str, error_message: str) -> Dict[str, Any]:
             "description. Paste the job description manually before saving or generating a package."
         )
     elif verification.get("source_type") == "Direct Employer":
-        message = (
-            "Import partially failed. The source URL was saved. Paste the job "
-            "description below, then re-parse and re-score."
-        )
+        message = IMPORT_EXTRACTION_FALLBACK_MESSAGE
     elif verification.get("source_type") in {
         "Industry Job Board",
         "Gaming Industry Job Board",
@@ -1913,16 +1936,27 @@ def apply_prospect_url_import_state(
 
     try:
         imported = import_callable(url)
-    except (JobImportError, OSError, ValueError):
-        message = (
-            "Import partially failed. The source URL was saved. Paste the job "
-            "description below, then re-parse and re-score."
-        )
-        session_state["prospect_import_result"] = ("error", message)
+    except (JobImportError, OSError, ValueError) as error:
+        partial_data = getattr(error, "partial_data", {})
+        for state_key, imported_key in (
+            ("prospect_company", "company"),
+            ("prospect_role", "job_title"),
+            ("prospect_location", "location"),
+            ("prospect_salary", "salary_range"),
+            ("prospect_posting_date", "posting_date"),
+            ("prospect_job_id", "job_id"),
+        ):
+            if partial_data.get(imported_key) and not session_state.get(state_key):
+                session_state[state_key] = partial_data[imported_key]
+        if is_usable_job_description(partial_data.get("job_description")):
+            session_state["prospect_description"] = partial_data["job_description"]
+        message = IMPORT_EXTRACTION_FALLBACK_MESSAGE
+        session_state["prospect_import_result"] = ("warning", message)
         session_state["prospect_next_action"] = (
             "Paste the job description and re-score before generating package."
         )
         session_state["prospect_intelligence_stale"] = True
+        session_state.pop("prospect_match_report", None)
         return {"status": "partial", "message": message, "verification": verification}
 
     imported_title = imported.get("job_title")
@@ -1944,16 +1978,17 @@ def apply_prospect_url_import_state(
             session_state[state_key] = imported[imported_key]
     if imported.get("source_name") or imported.get("source"):
         session_state["prospect_source"] = imported.get("source_name") or imported.get("source")
-    incomplete = bool(
-        not session_state.get("prospect_company")
-        or not session_state.get("prospect_role")
-        or len(str(session_state.get("prospect_description") or "").strip())
-        < MINIMUM_DESCRIPTION_LENGTH
+    incomplete = not prospect_has_usable_job_content(
+        {
+            "company": session_state.get("prospect_company"),
+            "job_title": session_state.get("prospect_role"),
+            "job_description": session_state.get("prospect_description"),
+        }
     )
     message = (
         "Imported title looked like job description text. Please confirm the role title before saving."
         if title_rejected
-        else "Import partially failed. Paste the job description below, then re-parse and re-score."
+        else IMPORT_EXTRACTION_FALLBACK_MESSAGE
         if incomplete
         else "Imported the role details. Review them before saving."
     )
@@ -1962,6 +1997,18 @@ def apply_prospect_url_import_state(
         message,
     )
     session_state["prospect_intelligence_stale"] = bool(title_rejected or incomplete)
+    if not title_rejected and not incomplete:
+        scoring_values = {
+            "company": session_state.get("prospect_company"),
+            "job_title": session_state.get("prospect_role"),
+            "job_description": session_state.get("prospect_description"),
+            "official_url": url,
+        }
+        session_state["prospect_match_report"] = score_job_data(
+            scoring_values, PROJECT_ROOT
+        )
+    else:
+        session_state.pop("prospect_match_report", None)
     return {
         "status": "partial" if title_rejected or incomplete else "success",
         "message": message,
@@ -2014,10 +2061,7 @@ def prospect_warning_messages(intelligence: Dict[str, Any]) -> list[str]:
             "Paste the job description manually before saving or generating a package."
         )
     if verification.get("source_type") == "Direct Employer" and len(description) < MINIMUM_DESCRIPTION_LENGTH:
-        messages.append(
-            "Import partially failed. Official employer source detected. Paste the job "
-            "description below, then re-parse and re-score."
-        )
+        messages.append(IMPORT_EXTRACTION_FALLBACK_MESSAGE)
     if verification.get("source_type") == "Employer ATS" and (
         verification.get("freshness_risk") in {"Unknown", "High"}
     ):
@@ -2167,7 +2211,7 @@ def _render_add_prospect(st: Any) -> None:
             "success" if report.get("match_score") is not None else "error",
             "Re-parsed current fields and refreshed the match score."
             if report.get("match_score") is not None
-            else "Import partially failed. Paste the job description below, then re-parse and re-score.",
+            else IMPORT_EXTRACTION_FALLBACK_MESSAGE,
         )
         st.session_state["prospect_intelligence_stale"] = bool(
             report.get("match_score") is None
@@ -2197,10 +2241,7 @@ def _render_add_prospect(st: Any) -> None:
         "next_action": st.session_state["prospect_next_action"],
     }
     match_report = None
-    if any(
-        values.get(key)
-        for key in ("company", "job_title", "job_description", "official_url")
-    ):
+    if prospect_has_usable_job_content(values):
         intelligence = detect_prospect_intelligence(values)
         match_report = intelligence.get("match_report")
         _render_intelligence_preview(st, intelligence)

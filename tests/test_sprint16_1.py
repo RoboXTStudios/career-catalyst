@@ -67,7 +67,8 @@ class Sprint161UrlIntakeTests(unittest.TestCase):
             "Director, Product, MarTech and Engagement Platforms",
         )
         self.assertEqual(state["prospect_job_id"], "1395690500")
-        self.assertIn("source URL was saved", state["prospect_import_result"][1])
+        self.assertIn("saved the posting URL", state["prospect_import_result"][1])
+        self.assertIn("Paste the description below", state["prospect_import_result"][1])
 
     def test_enter_and_button_submit_use_the_same_import_helper(self):
         source = inspect.getsource(app._render_add_prospect)

@@ -46,8 +46,10 @@ class StrategyPackTests(unittest.TestCase):
         self.assertIn("Crunchyroll", self.content)
         self.assertIn("Director, Enterprise Strategy & Initiatives", self.content)
 
-    def test_strategy_pack_contains_campaignos_for_relevant_role(self):
-        self.assertIn("CampaignOS", self.content)
+    def test_strategy_pack_uses_professional_evidence_only(self):
+        for term in ("Career Catalyst", "CampaignOS", "Substack"):
+            self.assertNotIn(term, self.content)
+        self.assertIn("OMG23", self.content)
 
     def test_strategy_pack_has_role_specific_talking_points_and_questions(self):
         talking_section = self.content.split("### Interview Talking Points", 1)[1].split(

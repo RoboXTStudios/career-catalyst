@@ -127,8 +127,9 @@ class CompanyVoiceProfileTests(unittest.TestCase):
     def test_paramount_letter_centers_creative_marketing_operations(self):
         content = self.contents["paramount"].lower()
         self.assertIn("marketing operations", content)
-        self.assertIn("creative capacity", content)
-        self.assertIn("campaignos", content)
+        self.assertIn("capacity", content)
+        self.assertIn("workflow", content)
+        self.assertNotIn("campaignos", content)
 
     def test_uta_letter_uses_transformation_advisory_language(self):
         content = self.contents["uta"].lower()
@@ -142,14 +143,15 @@ class CompanyVoiceProfileTests(unittest.TestCase):
         self.assertIn("matrix operations", content)
         self.assertIn("organizational efficiency", content)
         self.assertIn("automation", content)
-        self.assertIn("campaignos", content)
+        self.assertIn("workflow", content)
+        self.assertNotIn("campaignos", content)
 
     def test_bandsintown_letter_is_music_aware_editorial_and_human(self):
         content = self.contents["bandsintown"]
         lowered = content.lower()
         self.assertIn("music", lowered)
         self.assertIn("audience connection", lowered)
-        self.assertIn("Substack", content)
+        self.assertNotIn("Substack", content)
         self.assertIn("Multiverse", content)
         self.assertIn("artists, industry partners, and fans", lowered)
         self.assertNotIn("generic marketing operations", lowered)
@@ -182,7 +184,8 @@ class CompanyVoiceProfileTests(unittest.TestCase):
         ]
         for content in materials:
             self.assertIn("music", content.lower())
-            self.assertTrue("Substack" in content or "Multiverse" in content)
+            self.assertIn("Multiverse", content)
+            self.assertNotIn("Substack", content)
 
     def test_generation_results_expose_detected_context(self):
         for profile_key, result in self.results.items():

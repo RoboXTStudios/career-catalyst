@@ -16,10 +16,12 @@ from docx.shared import Inches, Pt, RGBColor, Twips
 
 try:
     from .filename_utils import build_upload_filename, short_company_name
+    from .human_positioning import PERSONAL_PROJECT_TERMS, validate_applicant_evidence
     from .load_data import DataLoadError, load_yaml_file
     from .parse_job import JobParseError, parse_job_description
 except ImportError:
     from filename_utils import build_upload_filename, short_company_name
+    from human_positioning import PERSONAL_PROJECT_TERMS, validate_applicant_evidence
     from load_data import DataLoadError, load_yaml_file
     from parse_job import JobParseError, parse_job_description
 
@@ -140,7 +142,16 @@ def _load_platform_categories(project_root: Path) -> List[Dict[str, Any]]:
             raise DocxExportError(
                 f"Canonical platform category '{category['name']}' must contain an items list."
             )
-    return categories
+    disabled = {term.lower() for term in PERSONAL_PROJECT_TERMS}
+    return [
+        {
+            **category,
+            "items": [
+                item for item in category["items"] if item.strip().lower() not in disabled
+            ],
+        }
+        for category in categories
+    ]
 
 
 def _set_style_font(
@@ -818,6 +829,12 @@ def _export_docx(
         markdown = source_path.read_text(encoding="utf-8")
     except (OSError, UnicodeError) as error:
         raise DocxExportError(f"Unable to read Markdown resume {markdown_path}: {error}") from error
+    try:
+        validate_applicant_evidence(markdown, "DOCX source resume")
+    except ValueError as error:
+        raise DocxExportError(
+            "DOCX export blocked personal-project evidence. Regenerate the tailored resume first."
+        ) from error
 
     document_info = _load_document(root, mode)
     document = document_info["document"]
