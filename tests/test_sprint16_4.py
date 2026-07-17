@@ -159,9 +159,15 @@ class PackageContextIsolationTests(unittest.TestCase):
             self.assertEqual(netflix["company"], "Netflix")
             self.assertEqual(netflix["role_title"], "Program Manager, Design")
             self.assertNotIn("YouTube", netflix["job_description"])
+            self.assertEqual(netflix["selected_package_paths"], {})
+            self.assertTrue(netflix["context_stale"])
             self.assertEqual(
-                netflix["selected_package_paths"],
-                {"Recruiter Message": "netflix.txt"},
+                netflix["context_diagnostics"]["prior_context_source"],
+                "tracker_material_paths",
+            )
+            self.assertEqual(
+                netflix["context_diagnostics"]["mismatch_reason"],
+                "unversioned_material_paths",
             )
             self.assertIn("YouTube", google["role_intelligence"]["description"])
             self.assertNotIn("Netflix", google_again["role_intelligence"]["description"])
@@ -195,7 +201,7 @@ class PackageContextIsolationTests(unittest.TestCase):
                 }
             ]
             with self.assertRaisesRegex(
-                PackageGenerationError, "Package context mismatch detected"
+                PackageGenerationError, CONTEXT_MISMATCH_MESSAGE
             ):
                 build_package_context("netflix-role", tracker, root)
 

@@ -22,6 +22,7 @@ try:
     from .job_freshness import detect_job_freshness
     from .job_source_registry import normalize_job_source
     from .parse_job import JobParseError, extract_metadata, parse_job_description
+    from .package_context import prospect_context_fingerprint
     from .score_match import persisted_match_fields, score_job_match
 except ImportError:
     from application_tracker import add_prospect, make_tracker_id
@@ -38,6 +39,7 @@ except ImportError:
     from job_freshness import detect_job_freshness
     from job_source_registry import normalize_job_source
     from parse_job import JobParseError, extract_metadata, parse_job_description
+    from package_context import prospect_context_fingerprint
     from score_match import persisted_match_fields, score_job_match
 
 
@@ -333,7 +335,19 @@ def create_prospect(
         source_url=official_url,
     )
     freshness = detect_job_freshness(markdown)
-    match_report = _source_adjusted_match_report(score_job_match(job_path, root), verification)
+    match_report = _source_adjusted_match_report(
+        score_job_match(job_path, root), verification
+    )
+    context_fingerprint = prospect_context_fingerprint(
+        {
+            "prospect_id": tracker_id,
+            "company": company,
+            "job_title": role,
+            "job_description": description,
+            "source_url": official_url,
+        },
+        {**intelligence, "match_report": match_report},
+    )
     field_warnings = _field_warnings(normalized, verification, intelligence)
     next_action = _merge_next_action(job_data.get("next_action"), verification)
 
@@ -362,6 +376,7 @@ def create_prospect(
             "company_voice_source": intelligence["source"],
             "company_voice_label": intelligence.get("company_voice_label", intelligence["profile_name"]),
             "company_inference_confidence": intelligence.get("confidence_label", "Medium"),
+            "context_fingerprint": context_fingerprint,
             "posting_date": freshness.get("posting_date") or "",
             "posting_age_days": freshness.get("age_days"),
             "freshness": freshness["category"],
@@ -422,7 +437,19 @@ def add_prospect_from_job_file(
             "raw_text": raw_text,
         }
     )
-    match_report = _source_adjusted_match_report(score_job_match(resolved, root), verification)
+    match_report = _source_adjusted_match_report(
+        score_job_match(resolved, root), verification
+    )
+    context_fingerprint = prospect_context_fingerprint(
+        {
+            "prospect_id": tracker_id,
+            "company": company,
+            "job_title": role,
+            "raw_text": raw_text,
+            "source_url": str(parsed.get("source_url") or ""),
+        },
+        {**intelligence, "match_report": match_report},
+    )
     location = str(parsed.get("location") or "").strip() or "Not specified"
     work_arrangement = str(parsed.get("work_arrangement") or "").strip() or _work_arrangement(location, raw_text)
     normalized_for_warnings = {
@@ -454,6 +481,7 @@ def add_prospect_from_job_file(
             "company_voice_source": intelligence["source"],
             "company_voice_label": intelligence.get("company_voice_label", intelligence["profile_name"]),
             "company_inference_confidence": intelligence.get("confidence_label", "Medium"),
+            "context_fingerprint": context_fingerprint,
             "posting_date": freshness.get("posting_date") or "",
             "posting_age_days": freshness.get("age_days"),
             "freshness": freshness["category"],

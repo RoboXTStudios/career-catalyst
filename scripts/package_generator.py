@@ -31,7 +31,11 @@ try:
         preferred_material_paths,
         validate_package_outputs,
     )
-    from .package_context import PackageContextMismatchError
+    from .package_context import (
+        CONTEXT_MISMATCH_MESSAGE,
+        PackageContextMismatchError,
+        prospect_context_fingerprint,
+    )
     from .materials_library import organize_package_outputs
     from .filename_utils import company_display_name
     from .parse_job import JobParseError, parse_job_description
@@ -62,7 +66,11 @@ except ImportError:
         preferred_material_paths,
         validate_package_outputs,
     )
-    from package_context import PackageContextMismatchError
+    from package_context import (
+        CONTEXT_MISMATCH_MESSAGE,
+        PackageContextMismatchError,
+        prospect_context_fingerprint,
+    )
     from materials_library import organize_package_outputs
     from filename_utils import company_display_name
     from parse_job import JobParseError, parse_job_description
@@ -177,15 +185,27 @@ def build_package_context(
     parsed_company = company_display_name(raw_company)
     if normalize_tracker_value(tracker_company) != normalize_tracker_value(parsed_company):
         raise PackageGenerationError(
-            "Package context mismatch detected. Regenerate from the selected role. "
-            f"Tracker company '{tracker_company}' does not match job company '{parsed_company}'."
+            CONTEXT_MISMATCH_MESSAGE,
+            details={
+                "context_mismatch": True,
+                "mismatch_status": "confirmed",
+                "mismatch_reason": "tracker_job_company_conflict",
+                "selected_prospect_id": prospect_id,
+                "conflicting_companies": [tracker_company, parsed_company],
+            },
         )
     tracker_role = normalize_tracker_value(application.get("role"))
     parsed_role = normalize_tracker_value(role_title)
     if tracker_role and parsed_role and tracker_role != parsed_role:
         raise PackageGenerationError(
-            "Package context mismatch detected. Regenerate from the selected role. "
-            f"Tracker role '{application.get('role')}' does not match job role '{role_title}'."
+            CONTEXT_MISMATCH_MESSAGE,
+            details={
+                "context_mismatch": True,
+                "mismatch_status": "confirmed",
+                "mismatch_reason": "tracker_job_role_conflict",
+                "selected_prospect_id": prospect_id,
+                "conflicting_roles": [application.get("role"), role_title],
+            },
         )
     source_url = str(
         parsed.get("source_url")
@@ -194,7 +214,9 @@ def build_package_context(
         or application.get("source_url")
         or ""
     )
-    job_description = str(parsed.get("raw_text") or application.get("job_description") or "")
+    job_description = str(
+        parsed.get("raw_text") or application.get("job_description") or ""
+    )
     intelligence = get_effective_voice_profile(
         company_name=raw_company,
         job_title=role_title,
@@ -204,16 +226,68 @@ def build_package_context(
     job_reference = (
         str(job_path.relative_to(root)) if job_path.is_relative_to(root) else str(job_path)
     )
+    match_report = score_job_match(job_reference, root)
+    computed_fingerprint = prospect_context_fingerprint(
+        {
+            "prospect_id": str(application.get("id") or prospect_id),
+            "company": raw_company,
+            "job_title": role_title,
+            "raw_text": job_description,
+            "source_url": source_url,
+        },
+        {**intelligence, "match_report": match_report},
+    )
+    stored_fingerprint = str(application.get("context_fingerprint") or "").strip()
+    stored_revision = int(application.get("prospect_revision") or 0)
+    current_revision = (
+        stored_revision + 1
+        if stored_fingerprint and stored_fingerprint != computed_fingerprint
+        else max(1, stored_revision)
+    )
+    context_stale = stored_fingerprint != computed_fingerprint
     manifest = application.get("package_manifest")
     if isinstance(manifest, dict):
-        if str(manifest.get("prospect_id") or "") != str(application.get("id") or ""):
+        if str(manifest.get("prospect_id") or "") != str(
+            application.get("id") or ""
+        ):
             raise PackageGenerationError(
-                "Package context mismatch detected. Regenerate from the selected role. "
-                "Stored package manifest belongs to a different prospect."
+                CONTEXT_MISMATCH_MESSAGE,
+                details={
+                    "context_mismatch": True,
+                    "mismatch_status": "confirmed",
+                    "mismatch_reason": "manifest_prospect_id_conflict",
+                    "selected_prospect_id": str(application.get("id") or prospect_id),
+                    "package_context_prospect_id": str(
+                        manifest.get("prospect_id") or ""
+                    ),
+                    "selected_prospect_revision": current_revision,
+                    "package_context_revision": manifest.get("prospect_revision"),
+                    "prior_context_source": "package_manifest",
+                },
             )
-        selected_package_paths = dict(manifest.get("materials") or {})
+        manifest_fingerprint = str(manifest.get("context_fingerprint") or "").strip()
+        manifest_revision = int(manifest.get("prospect_revision") or 0)
+        manifest_stale = bool(
+            (manifest_fingerprint and manifest_fingerprint != computed_fingerprint)
+            or (manifest_revision and manifest_revision != current_revision)
+            or (
+                bool(manifest.get("materials"))
+                and (not manifest_fingerprint or not manifest_revision)
+            )
+        )
+        selected_package_paths = (
+            {}
+            if context_stale or manifest_stale
+            else dict(manifest.get("materials") or {})
+        )
     else:
-        selected_package_paths = dict(application.get("material_paths") or {})
+        manifest_fingerprint = ""
+        manifest_revision = 0
+        manifest_stale = False
+        legacy_paths_stale = bool(application.get("material_paths"))
+        selected_package_paths = {}
+    if isinstance(manifest, dict):
+        legacy_paths_stale = False
     return {
         "prospect_id": str(application.get("id") or prospect_id),
         "slug": str(application.get("stable_slug") or application.get("id") or prospect_id),
@@ -227,9 +301,85 @@ def build_package_context(
         "source_url": source_url,
         "job_description": job_description,
         "role_intelligence": intelligence,
-        "match_report": score_job_match(job_reference, root),
+        "match_report": match_report,
         "selected_package_paths": selected_package_paths,
+        "context_fingerprint": computed_fingerprint,
+        "prospect_revision": current_revision,
+        "context_stale": context_stale or manifest_stale or legacy_paths_stale,
+        "context_diagnostics": {
+            "selected_prospect_id": str(application.get("id") or prospect_id),
+            "selected_prospect_revision": current_revision,
+            "selected_prospect_fingerprint": computed_fingerprint,
+            "package_context_prospect_id": (
+                str(manifest.get("prospect_id") or "")
+                if isinstance(manifest, dict)
+                else ""
+            ),
+            "package_context_revision": manifest_revision,
+            "package_context_fingerprint": manifest_fingerprint,
+            "prior_context_source": (
+                "package_manifest"
+                if isinstance(manifest, dict)
+                else "tracker_material_paths"
+                if legacy_paths_stale
+                else "none"
+            ),
+            "mismatch_reason": (
+                "unversioned_material_paths"
+                if legacy_paths_stale
+                else "package_manifest_stale"
+                if manifest_stale
+                else "saved_context_changed"
+                if context_stale
+                else ""
+            ),
+        },
     }
+
+
+def refresh_saved_package_context(
+    prospect_id: str,
+    project_root: Optional[PathInput] = None,
+    *,
+    context: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """Bind the selected tracker record to its latest saved job and clear old derivatives."""
+    root = Path(project_root) if project_root is not None else Path.cwd()
+    current = context or build_package_context(
+        prospect_id, load_application_tracker(root), root
+    )
+    tracker_id = str(current["prospect_id"])
+    fingerprint = str(current["context_fingerprint"])
+    updated = update_prospect(
+        tracker_id,
+        {
+            "context_fingerprint": fingerprint,
+            "material_paths": {},
+        },
+        root,
+    )
+    revision = int(updated.get("prospect_revision") or current["prospect_revision"])
+    update_prospect(
+        tracker_id,
+        {
+            "package_manifest": {
+                "prospect_id": tracker_id,
+                "prospect_revision": revision,
+                "context_fingerprint": fingerprint,
+                "materials": {},
+            },
+            "material_paths": {},
+        },
+        root,
+    )
+    refreshed = build_package_context(
+        tracker_id, load_application_tracker(root), root
+    )
+    refreshed["context_diagnostics"]["automatic_refresh_attempted"] = True
+    refreshed["context_diagnostics"]["refreshed_validation_passed"] = not refreshed[
+        "context_stale"
+    ]
+    return refreshed
 
 
 def resolve_job_reference(
@@ -308,6 +458,7 @@ def generate_package(
     project_root: Optional[PathInput] = None,
     generate_followups_too: Optional[bool] = None,
     override_closed: bool = False,
+    _context_refresh_attempted: bool = False,
 ) -> Dict[str, Any]:
     """Generate all package materials and apply the safe Drafted-to-Reviewed transition."""
     root = Path(project_root) if project_root is not None else Path.cwd()
@@ -315,6 +466,10 @@ def generate_package(
         resolved = resolve_job_reference(job_file_or_tracker_id, root)
         selected_id = str(resolved["application"].get("id") or "")
         context = build_package_context(selected_id, load_application_tracker(root), root)
+        automatic_refresh_attempted = bool(_context_refresh_attempted)
+        if context.get("context_stale"):
+            context = refresh_saved_package_context(selected_id, root, context=context)
+            automatic_refresh_attempted = True
         job_path = Path(context["job_path"])
         application = context["application"]
         job_reference = str(context["job_reference"])
@@ -455,6 +610,8 @@ def generate_package(
         manifest = organized.get("manifest")
         if manifest:
             manifest["materials"] = preferred_paths
+            manifest["context_fingerprint"] = context["context_fingerprint"]
+            manifest["prospect_revision"] = context["prospect_revision"]
             manifest_path = Path(str(manifest["manifest_path"]))
             manifest_path.write_text(
                 json.dumps(
@@ -471,7 +628,12 @@ def generate_package(
                 "package_manifest": (
                     manifest
                     if manifest
-                    else {"prospect_id": tracker_id, "materials": preferred_paths}
+                    else {
+                        "prospect_id": tracker_id,
+                        "prospect_revision": context["prospect_revision"],
+                        "context_fingerprint": context["context_fingerprint"],
+                        "materials": preferred_paths,
+                    }
                 ),
             },
             root,
@@ -483,6 +645,22 @@ def generate_package(
     except PackageGenerationError:
         raise
     except PackageContextMismatchError as error:
+        if not locals().get("automatic_refresh_attempted", _context_refresh_attempted):
+            refresh_saved_package_context(
+                locals().get("selected_id") or str(job_file_or_tracker_id), root
+            )
+            recovered = generate_package(
+                job_file_or_tracker_id,
+                root,
+                generate_followups_too=generate_followups_too,
+                override_closed=override_closed,
+                _context_refresh_attempted=True,
+            )
+            recovered["context_recovery"] = {
+                "automatic_refresh_attempted": True,
+                "refreshed_validation_passed": True,
+            }
+            return recovered
         material_key = {
             "Recruiter_Message": "recruiter_message",
             "Hiring_Manager_Message": "hiring_manager_message",
@@ -495,11 +673,33 @@ def generate_package(
         blocked_reason = "Blocked: package context mismatch"
         checklist = validate_package_outputs({}, {material_key: blocked_reason})
         raise PackageGenerationError(
-            str(error),
+            CONTEXT_MISMATCH_MESSAGE,
             checklist=checklist,
             details={
+                "context_mismatch": True,
+                "mismatch_status": "confirmed",
                 "material_type": error.material_type,
                 "violations": list(error.violations),
+                "mismatch_reason": "foreign_material_context",
+                "selected_prospect_id": locals().get("selected_id", ""),
+                "selected_prospect_revision": (
+                    locals().get("context") or {}
+                ).get("prospect_revision"),
+                "package_context_prospect_id": (
+                    locals().get("context") or {}
+                ).get("prospect_id"),
+                "package_context_revision": (
+                    locals().get("context") or {}
+                ).get("prospect_revision"),
+                "prior_context_source": (
+                    ((locals().get("context") or {}).get("context_diagnostics") or {}).get(
+                        "prior_context_source"
+                    )
+                ),
+                "conflicting_indicators": list(error.violations),
+                "automatic_refresh_attempted": True,
+                "refreshed_validation_passed": False,
+                **error.diagnostics,
             },
         ) from error
     except (OSError, TrackerValidationError, ValueError) as error:
@@ -533,4 +733,11 @@ def generate_package(
         "material_errors": material_errors,
         "outputs": outputs,
         "package_checklist": checklist,
+        "prospect_revision": context["prospect_revision"],
+        "context_fingerprint": context["context_fingerprint"],
+        "context_diagnostics": {
+            **context.get("context_diagnostics", {}),
+            "automatic_refresh_attempted": locals().get("automatic_refresh_attempted", False),
+            "refreshed_validation_passed": True,
+        },
     }

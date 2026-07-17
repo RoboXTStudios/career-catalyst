@@ -82,8 +82,10 @@ except (AttributeError, ImportError):
 from scripts.package_generator import (
     PackageGenerationError,
     generate_package,
+    refresh_saved_package_context,
     resolve_job_reference,
 )
+from scripts.package_context import CONTEXT_MISMATCH_MESSAGE
 from scripts.parse_job import extract_metadata, parse_job_description, salary_parsing_warning
 from scripts.prospect_intake import ProspectIntakeError, create_prospect
 from scripts.prospect_validation import compute_prospect_validation_state
@@ -459,6 +461,15 @@ def reset_package_preview_for_selection(
     previous = str(session_state.get("package_preview_prospect_id") or "").strip()
     if previous == selected:
         return False
+    invalidate_package_context_state(session_state)
+    session_state["package_preview_prospect_id"] = selected
+    return True
+
+
+def invalidate_package_context_state(
+    session_state: Any, prospect_id: str = ""
+) -> None:
+    """Discard only role-derived session state after a material prospect change."""
     for key in (
         "last_package_outputs",
         "last_package_result",
@@ -469,10 +480,11 @@ def reset_package_preview_for_selection(
         "package_company_voice",
         "package_company_category",
         "package_role_family",
+        "package_context_recovery",
     ):
         session_state.pop(key, None)
-    session_state["package_preview_prospect_id"] = selected
-    return True
+    if prospect_id:
+        session_state["package_preview_prospect_id"] = str(prospect_id)
 
 
 def mark_prospect_intelligence_stale(session_state: Any) -> None:
@@ -481,6 +493,7 @@ def mark_prospect_intelligence_stale(session_state: Any) -> None:
     session_state.pop("prospect_match_report", None)
     session_state.pop("prospect_validation_state", None)
     session_state.pop("prospect_role_intelligence", None)
+    invalidate_package_context_state(session_state)
     session_state["prospect_import_result"] = (
         "warning",
         "Role details changed. Re-parse to refresh the current analysis.",
@@ -1422,6 +1435,17 @@ def _render_role_card(
         if posting_url:
             link_columns[1].link_button("Open Posting", posting_url, use_container_width=True)
             st.caption(f"Source URL: {posting_url}")
+        recovered = _render_context_recovery_action(
+            st,
+            tracker_id,
+            key=f"dashboard_context_recovery_{tracker_id}",
+        )
+        if recovered:
+            st.session_state["dashboard_notice"] = (
+                f"Refreshed role context and generated package for "
+                f"{application.get('company')} — {application.get('role')}."
+            )
+            st.rerun()
         if primary_actions:
             action_columns = st.columns(len(primary_actions))
             for column, (label, action_key) in zip(action_columns, primary_actions):
@@ -1442,7 +1466,14 @@ def _render_role_card(
                         with st.spinner("Generating application package…"):
                             generate_package(tracker_id, PROJECT_ROOT)
                     except PackageGenerationError as error:
-                        st.error(str(error))
+                        _remember_context_recovery(
+                            st.session_state, tracker_id, error
+                        )
+                        st.error(
+                            CONTEXT_MISMATCH_MESSAGE
+                            if error.details.get("context_mismatch")
+                            else str(error)
+                        )
                     else:
                         st.session_state["dashboard_notice"] = (
                             f"Generated package for {application.get('company')} — "
@@ -1889,6 +1920,7 @@ def apply_manual_reparse_state(session_state: Any) -> Dict[str, Any]:
     session_state["prospect_match_report"] = report
     session_state["prospect_validation_state"] = refreshed["validation_state"]
     session_state["prospect_role_intelligence"] = refreshed["role_intelligence"]
+    invalidate_package_context_state(session_state)
     if complete:
         session_state.pop("prospect_import_result", None)
         session_state["prospect_next_action"] = "Review fit and generate application package."
@@ -1898,6 +1930,119 @@ def apply_manual_reparse_state(session_state: Any) -> Dict[str, Any]:
             IMPORT_EXTRACTION_FALLBACK_MESSAGE,
         )
     return refreshed
+
+
+def persist_and_generate_prospect(
+    values: Dict[str, Any],
+    session_state: Any,
+    project_root: Path = PROJECT_ROOT,
+    *,
+    creator: Any = None,
+    generator: Any = None,
+) -> Dict[str, Any]:
+    """Persist the form first, invalidate derivatives, then generate from the saved ID."""
+    create = creator or create_prospect
+    generate = generator or generate_package
+    intake = create(build_prospect_payload(values), project_root)
+    tracker_id = str(intake["tracker_id"])
+    session_state["last_saved_prospect_id"] = tracker_id
+    invalidate_package_context_state(session_state, tracker_id)
+    package = generate(tracker_id, project_root)
+    return {"intake": intake, "package": package}
+
+
+def refresh_role_context_and_retry(
+    session_state: Any,
+    tracker_id: str,
+    project_root: Path = PROJECT_ROOT,
+    *,
+    prospect_values: Optional[Dict[str, Any]] = None,
+    creator: Any = None,
+    generator: Any = None,
+    refresher: Any = None,
+    **generation_options: Any,
+) -> Dict[str, Any]:
+    """Perform the supported one-action context refresh and one generation retry."""
+    if prospect_values is not None:
+        create = creator or create_prospect
+        intake = create(build_prospect_payload(prospect_values), project_root)
+        tracker_id = str(intake["tracker_id"])
+        session_state["last_saved_prospect_id"] = tracker_id
+    generate = generator or generate_package
+    refresh = refresher or refresh_saved_package_context
+    invalidate_package_context_state(session_state, tracker_id)
+    refreshed = refresh(tracker_id, project_root)
+    result = generate(
+        tracker_id,
+        project_root,
+        _context_refresh_attempted=True,
+        **generation_options,
+    )
+    result.setdefault("context_recovery", {})
+    result["context_recovery"].update(
+        {
+            "automatic_refresh_attempted": True,
+            "refreshed_validation_passed": True,
+            "prospect_revision": refreshed.get("prospect_revision"),
+        }
+    )
+    return result
+
+
+def _remember_context_recovery(
+    session_state: Any, tracker_id: str, error: PackageGenerationError
+) -> None:
+    if not error.details.get("context_mismatch"):
+        return
+    session_state["package_context_recovery"] = {
+        "tracker_id": str(tracker_id),
+        "message": CONTEXT_MISMATCH_MESSAGE,
+    }
+
+
+def _render_context_recovery_action(
+    st: Any,
+    tracker_id: str,
+    *,
+    key: str,
+    prospect_values: Optional[Dict[str, Any]] = None,
+    generate_followups_too: Optional[bool] = None,
+    override_closed: bool = False,
+) -> Optional[Dict[str, Any]]:
+    recovery = st.session_state.get("package_context_recovery") or {}
+    if str(recovery.get("tracker_id") or "") != str(tracker_id):
+        return None
+    st.warning(CONTEXT_MISMATCH_MESSAGE)
+    if not st.button("Refresh Role Context & Try Again", key=key, type="primary"):
+        return None
+    options: Dict[str, Any] = {"override_closed": override_closed}
+    if generate_followups_too is not None:
+        options["generate_followups_too"] = generate_followups_too
+    try:
+        with st.spinner("Refreshing the saved role context and trying once more…"):
+            result = refresh_role_context_and_retry(
+                st.session_state,
+                tracker_id,
+                PROJECT_ROOT,
+                prospect_values=prospect_values,
+                **options,
+            )
+    except (ProspectIntakeError, PackageGenerationError, TrackerValidationError) as error:
+        is_context_mismatch = isinstance(
+            error, PackageGenerationError
+        ) and error.details.get("context_mismatch")
+        if isinstance(error, PackageGenerationError):
+            _remember_context_recovery(st.session_state, tracker_id, error)
+        st.error(CONTEXT_MISMATCH_MESSAGE if is_context_mismatch else str(error))
+        if isinstance(error, PackageGenerationError) and error.checklist:
+            _render_package_summary(st, {"package_checklist": error.checklist})
+        return None
+    st.session_state.pop("package_context_recovery", None)
+    st.session_state["last_package_outputs"] = result["outputs"]
+    st.session_state["last_package_result"] = result
+    st.session_state["package_preview_prospect_id"] = tracker_id
+    st.success("Career Catalyst refreshed the role context before generating this package.")
+    return result
 
 
 def prospect_has_usable_job_content(values: Dict[str, Any]) -> bool:
@@ -1968,6 +2113,7 @@ def apply_prospect_url_import_state(
     session_state["prospect_import_url"] = url
     session_state["prospect_url_last_imported"] = url
     session_state["prospect_original_source_url"] = url
+    invalidate_package_context_state(session_state)
     fallback = infer_job_fields_from_url(url)
     verification = normalize_job_source({"official_url": url})
     canonical = str(verification.get("canonical_apply_url") or url)
@@ -2314,6 +2460,21 @@ def _render_add_prospect(st: Any) -> None:
         and title_is_valid
         and len(values["job_description"].strip()) >= MINIMUM_DESCRIPTION_LENGTH
     )
+    pending_recovery = st.session_state.get("package_context_recovery") or {}
+    pending_tracker_id = str(pending_recovery.get("tracker_id") or "")
+    if pending_tracker_id:
+        recovered_package = _render_context_recovery_action(
+            st,
+            pending_tracker_id,
+            key=f"intake_context_recovery_{pending_tracker_id}",
+            prospect_values=values,
+        )
+        if recovered_package:
+            _render_package_summary(st, recovered_package)
+            _show_output_paths(
+                st, recovered_package["outputs"], "intake_recovery_output"
+            )
+            return
     save_column, generate_column = st.columns(2)
     save_clicked = save_column.button(
         "Save Prospect", use_container_width=True, disabled=not complete_for_save
@@ -2331,22 +2492,33 @@ def _render_add_prospect(st: Any) -> None:
 
     try:
         with st.spinner("Saving prospect…"):
-            intake = create_prospect(build_prospect_payload(values), PROJECT_ROOT)
             if generate_clicked:
-                package = generate_package(intake["tracker_id"], PROJECT_ROOT)
+                workflow = persist_and_generate_prospect(
+                    values, st.session_state, PROJECT_ROOT
+                )
+                intake = workflow["intake"]
+                package = workflow["package"]
                 st.session_state["package_preview_prospect_id"] = intake["tracker_id"]
                 st.session_state["last_package_outputs"] = package["outputs"]
                 st.session_state["last_package_result"] = package
                 focus_dashboard_role(st.session_state, intake["tracker_id"])
                 st.session_state["dashboard_materials_role_id"] = intake["tracker_id"]
             else:
+                intake = create_prospect(build_prospect_payload(values), PROJECT_ROOT)
                 dashboard = generate_dashboard(PROJECT_ROOT)
                 st.session_state["last_package_outputs"] = {
                     "job_file": intake["job_file_path"],
                     "dashboard": dashboard["output_path"],
                 }
     except (ProspectIntakeError, PackageGenerationError, TrackerValidationError) as error:
-        st.error(str(error))
+        if isinstance(error, PackageGenerationError) and error.details.get(
+            "context_mismatch"
+        ):
+            tracker_id = str(st.session_state.get("last_saved_prospect_id") or "")
+            _remember_context_recovery(st.session_state, tracker_id, error)
+            st.error(CONTEXT_MISMATCH_MESSAGE)
+        else:
+            st.error(str(error))
         return
 
     st.success(
@@ -2354,6 +2526,8 @@ def _render_add_prospect(st: Any) -> None:
         + (" and generated the full package." if generate_clicked else ".")
     )
     if generate_clicked:
+        if package.get("context_diagnostics", {}).get("automatic_refresh_attempted"):
+            st.caption("Career Catalyst refreshed the role context before generating this package.")
         _render_package_summary(st, package)
     _show_output_paths(st, st.session_state["last_package_outputs"], "intake_output")
 
@@ -2460,6 +2634,13 @@ def _render_generate_package(st: Any) -> None:
             value=False,
             key=f"package_closed_override_{tracker_id}",
         )
+    _render_context_recovery_action(
+        st,
+        tracker_id,
+        key=f"package_context_recovery_{tracker_id}",
+        generate_followups_too=generate_followups_too,
+        override_closed=override_closed,
+    )
     if st.button("Generate Package", type="primary"):
         try:
             with st.spinner("Generating resumes, messages, strategy pack, and dashboard…"):
@@ -2470,12 +2651,23 @@ def _render_generate_package(st: Any) -> None:
                     override_closed=override_closed,
                 )
         except PackageGenerationError as error:
-            st.error(str(error))
+            _remember_context_recovery(st.session_state, tracker_id, error)
+            st.error(
+                CONTEXT_MISMATCH_MESSAGE
+                if error.details.get("context_mismatch")
+                else str(error)
+            )
             if error.checklist:
                 _render_package_summary(
                     st, {"package_checklist": error.checklist}
                 )
         else:
+            if result.get("context_diagnostics", {}).get(
+                "automatic_refresh_attempted"
+            ):
+                st.caption(
+                    "Career Catalyst refreshed the role context before generating this package."
+                )
             st.success(
                 f"Generated {result['job_title']} at {result['company']} — status: {result['status']}."
             )

@@ -216,7 +216,7 @@ def _cover_letter_value_sentences(context: Dict[str, Any]) -> List[str]:
         "ai_operations_systems": "I build AI-enabled workflows with a practical bias: reduce repetitive work, surface risks earlier, and leave important judgment with the people closest to the work.",
     }.get(
         role_family,
-        "I bring a practical operating style: listen closely, clarify the real constraint, and build enough structure for people to move with confidence.",
+        "I start by listening closely, clarifying the real constraint, and building enough structure for people to move with confidence.",
     )
     return [
         role_sentence,
@@ -859,7 +859,7 @@ def _google_cover_letter_content(context: Dict[str, Any]) -> str:
     closing = (
         f"I would welcome the chance to learn how the {company} team is approaching YouTube Brand "
         "Auction activation and seller readiness. I would bring an advertiser-grounded perspective, "
-        "product fluency, and a practical operating style focused on clear adoption and measurable learning."
+        "product fluency, and a grounded approach to clear adoption and measurable learning."
         " I am comfortable moving between data, stakeholder context, and execution detail, especially "
         "when a product's success depends on many groups understanding the same priority clearly. "
         "The useful measure is whether that shared understanding changes adoption and execution."

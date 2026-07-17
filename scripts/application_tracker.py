@@ -95,6 +95,14 @@ VALID_MATCH_TIERS = (
 )
 VALID_MATCH_ACTIONS = ("Generate Package", "Review First", "Pass")
 VALID_MATCH_CONFIDENCE = ("Low", "Medium", "High")
+DERIVED_PACKAGE_FIELDS = (
+    "material_paths",
+    "package_manifest",
+    "package_quality",
+    "opportunity_score",
+    "apply_recommendation",
+    "opportunity_dimensions",
+)
 
 
 class TrackerValidationError(Exception):
@@ -595,6 +603,36 @@ def _explicit_updates(values: Dict[str, Any]) -> Dict[str, Any]:
     return {key: value for key, value in values.items() if value is not None}
 
 
+def _apply_context_revision(
+    entry: Dict[str, Any], incoming: Dict[str, Any], *, created: bool = False
+) -> bool:
+    """Advance the saved revision and discard derived package state when context changes."""
+    incoming_fingerprint = str(incoming.get("context_fingerprint") or "").strip()
+    if not incoming_fingerprint:
+        return False
+    previous_fingerprint = str(entry.get("context_fingerprint") or "").strip()
+    changed = bool(previous_fingerprint and previous_fingerprint != incoming_fingerprint)
+    if created:
+        incoming["prospect_revision"] = max(
+            1, int(incoming.get("prospect_revision") or 1)
+        )
+    elif not previous_fingerprint:
+        incoming["prospect_revision"] = max(
+            1, int(entry.get("prospect_revision") or 0) + 1
+        )
+        changed = any(field in entry for field in DERIVED_PACKAGE_FIELDS)
+        if changed:
+            for field in DERIVED_PACKAGE_FIELDS:
+                entry.pop(field, None)
+    elif changed:
+        incoming["prospect_revision"] = int(entry.get("prospect_revision") or 1) + 1
+        for field in DERIVED_PACKAGE_FIELDS:
+            entry.pop(field, None)
+    else:
+        incoming["prospect_revision"] = int(entry.get("prospect_revision") or 1)
+    return changed
+
+
 def add_prospect(
     prospect: Dict[str, Any],
     project_root: Optional[PathInput] = None,
@@ -637,11 +675,13 @@ def add_prospect(
             "next_action": str(incoming.get("next_action") or ""),
             "show_on_dashboard": bool(incoming.get("show_on_dashboard", True)),
         }
+        _apply_context_revision(entry, incoming, created=True)
         entry.update(incoming)
         applications.append(entry)
     else:
         entry = existing
         original_status = str(existing.get("status") or "Drafted")
+        _apply_context_revision(entry, incoming)
         entry.update(incoming)
         # Intake must never demote an application that has progressed beyond drafting.
         if original_status in INTAKE_PROTECTED_STATUSES or (
@@ -672,6 +712,7 @@ def update_prospect(
 
     cleaned = _explicit_updates(updates)
     cleaned.pop("id", None)
+    _apply_context_revision(entry, cleaned)
     if "status" in cleaned:
         raw_status = str(cleaned["status"]).strip()
         cleaned["status"] = normalize_status(raw_status)
@@ -830,6 +871,22 @@ def validate_tracker_entries(
         confidence = application.get("confidence")
         if confidence is not None and confidence not in VALID_MATCH_CONFIDENCE:
             errors.append(f"{label} field confidence is not supported.")
+        context_fingerprint = application.get("context_fingerprint")
+        if context_fingerprint is not None and not re.fullmatch(
+            r"[a-f0-9]{64}", str(context_fingerprint)
+        ):
+            errors.append(
+                f"{label} field context_fingerprint must be a SHA-256 hex digest."
+            )
+        prospect_revision = application.get("prospect_revision")
+        if prospect_revision is not None and (
+            isinstance(prospect_revision, bool)
+            or not isinstance(prospect_revision, int)
+            or prospect_revision < 1
+        ):
+            errors.append(
+                f"{label} field prospect_revision must be a positive integer."
+            )
         for list_field, minimum, maximum in (
             ("match_strengths", 3, 5),
             ("match_gaps", 1, 5),
