@@ -1334,6 +1334,14 @@ def _render_role_card(
             ),
             unsafe_allow_html=True,
         )
+        role_lens = intelligence.get("role_lens") or {}
+        if role_lens:
+            secondary = role_lens.get("secondary_label")
+            st.caption(
+                f"Role lens: {role_lens.get('primary_label') or _humanize_taxonomy(role_lens.get('primary'))}"
+                + (f" · Secondary: {secondary}" if secondary else "")
+                + f" · Lens confidence: {role_lens.get('confidence_label', 'Medium')}"
+            )
         signal = next_action_signal(application)
         st.markdown("#### Next Action")
         st.markdown(f"**{html.escape(str(signal['label']))}** — {html.escape(str(signal['reason']))}")

@@ -146,7 +146,7 @@ def test_ea_marketing_operations_cover_letter_uses_grounded_calm_voice():
     ):
         assert phrase not in lowered
 
-    assert "omg23 / omd entertainment" in lowered
+    assert "omg23 / omnicom media group" in lowered
     assert "campaignos" not in lowered
     assert "workflow governance" in lowered
     assert "i would welcome the chance" in lowered
@@ -187,7 +187,7 @@ def test_azira_cover_letter_leads_with_operating_support_and_professional_eviden
     assert "ownership" in lowered
     assert "follow-through" in lowered
     assert "campaignos" not in lowered
-    assert "omg23 / omd entertainment" in lowered
+    assert "omg23 / omnicom media group" in lowered
 
 
 def test_netflix_ai_product_manager_classifies_and_omits_personal_projects():
@@ -203,7 +203,7 @@ def test_netflix_ai_product_manager_classifies_and_omits_personal_projects():
     assert plan["role_category"] == "product_ai_operations"
     assert "campaignos" not in selected_ids
     assert "CampaignOS" not in content
-    assert "OMG23 / OMD Entertainment" in content
+    assert "OMG23 / Omnicom Media Group" in content
 
 
 def test_ea_marketing_operations_classifies_as_entertainment_operations():

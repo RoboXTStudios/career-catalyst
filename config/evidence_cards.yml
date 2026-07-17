@@ -1,11 +1,11 @@
 evidence_cards:
   - id: omg23_disney_leadership
-    label: OMG23 / Disney entertainment leadership
+    label: OMG23 / Omnicom Media Group entertainment leadership
     short_description: Large-scale entertainment campaign operations leadership across Disney theatrical and streaming work.
     proof_points:
       - Advanced from Campaign Manager to Group Director while leading Disney Studios Theatrical and Disney Streaming/DSS campaign operations.
       - Led cross-functional teams of 60+ across creative, marketing, media, analytics, technology, and operations.
-    tags: [entertainment_marketing_operations, creative_operations, cross_functional_leadership, measurable_impact, ambiguity_reduction]
+    tags: [entertainment_marketing_operations, creative_operations, cross_functional_leadership, team_leadership, team_enablement, measurable_impact, ambiguity_reduction]
     strongest_role_fits: [entertainment marketing operations, creative operations, media operations]
     when_to_use: Use when a role needs entertainment marketing, campaign operations, stakeholder coordination, or senior delivery leadership.
     when_to_avoid: Avoid as the lead proof point for roles that are primarily founder, editorial, or unrelated to marketing operations.
@@ -51,7 +51,7 @@ evidence_cards:
     proof_points:
       - Introduced scalable workflows, governance practices, and execution standards across marketing, technology, analytics, and creative teams.
       - Connected quality assurance, measurement readiness, and partner coordination in campaign delivery.
-    tags: [governance, qa, pmo, cross_functional_leadership, ambiguity_reduction]
+    tags: [governance, qa, pmo, cross_functional_leadership, change_adoption, ownership_clarity, usable_standards, ambiguity_reduction]
     strongest_role_fits: [traditional PMO, governance, delivery leadership, operations]
     when_to_use: Use for PMO, governance, delivery, process excellence, QA, or executive visibility roles.
     when_to_avoid: Avoid making it sound more technical or quantified than the stored evidence supports.
@@ -75,7 +75,7 @@ evidence_cards:
     proof_points:
       - Created and served as Managing Editor of Multiverse, an internal editorial publication reaching 400+ employees.
       - Built a contributor process around creativity, innovation, culture, music, and employee storytelling.
-    tags: [editorial, storytelling, creative_operations, interesting_project, systems_built, measurable_impact]
+    tags: [editorial, storytelling, creative_operations, employee_communication, interesting_project, systems_built, measurable_impact]
     strongest_role_fits: [content strategy, editorial operations, community role, creative operations]
     when_to_use: Use when a role values editorial judgment, content systems, audience understanding, or community communication.
     when_to_avoid: Avoid when editorial evidence would distract from a role centered on governance, PMO, or technical delivery.

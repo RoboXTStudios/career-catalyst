@@ -11,9 +11,11 @@ from typing import Any, Dict, Iterable, Optional, Tuple
 try:
     from .evidence_engine import professional_evidence_recommendations
     from .load_data import load_yaml_file
+    from .role_lens import build_requirement_map, classify_role_lens
 except ImportError:
     from evidence_engine import professional_evidence_recommendations
     from load_data import load_yaml_file
+    from role_lens import build_requirement_map, classify_role_lens
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -32,6 +34,7 @@ COMPANY_CATEGORIES = (
 )
 
 ROLE_FAMILIES = (
+    "people_operations",
     "creative_marketing_ops",
     "product_strategy_ops",
     "transformation_advisory",
@@ -276,6 +279,11 @@ CATEGORY_GUIDANCE = {
 }
 
 ROLE_GUIDANCE = {
+    "people_operations": {
+        "tone": ["warm", "people-centered", "practical", "observant"],
+        "angle": "improve how teams communicate, understand ownership, adopt change, and use practical systems in their day-to-day work",
+        "proof_points": ["team leadership", "cross-functional collaboration", "change adoption", "usable standards"],
+    },
     "music_content_strategy": {
         "tone": ["editorial", "music-aware", "human"],
         "angle": "connect music culture and audience understanding with voice, content strategy, and repeatable editorial systems",
@@ -477,7 +485,12 @@ def infer_company_context(
 
 
 def detect_role_family(job_title: str = "", job_description: str = "") -> str:
-    """Infer one role family from title-first, deterministic rules."""
+    """Infer one role family while allowing substantive functional signals to lead."""
+    role_lens = classify_role_lens(
+        {"job_title": job_title, "job_description": job_description}
+    )
+    if role_lens["primary"] == "people_operations":
+        return "people_operations"
     title = _normalize(job_title)
     description = _normalize(job_description)
     combined = f"{title} {description}"
@@ -619,6 +632,8 @@ def _shared_evidence(
     job_description: str,
     company_category: str,
     role_family: str,
+    role_lens: Optional[Dict[str, Any]] = None,
+    requirement_map: Optional[list[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     return professional_evidence_recommendations(
         {
@@ -627,6 +642,9 @@ def _shared_evidence(
             "raw_text": job_description,
             "company_category": company_category,
             "role_family": role_family,
+            "primary_role_lens": (role_lens or {}).get("primary"),
+            "role_lens": role_lens or {},
+            "requirement_map": requirement_map or [],
             "keywords": [],
         }
     )
@@ -641,12 +659,33 @@ def build_dynamic_voice_profile(
     """Build normalized local voice guidance for an unknown company."""
     context = infer_company_context(company_name, job_title, job_description, source_url)
     category = context["company_category"]
+    role_lens = classify_role_lens(
+        {
+            "company": company_name,
+            "job_title": job_title,
+            "job_description": job_description,
+        }
+    )
+    requirement_map = build_requirement_map(
+        {
+            "company": company_name,
+            "job_title": job_title,
+            "job_description": job_description,
+        },
+        role_lens,
+    )
     role_family = detect_role_family(job_title, job_description)
     category_guidance = CATEGORY_GUIDANCE[category]
     role_guidance = ROLE_GUIDANCE[role_family]
     proof_avoid = _proof_avoidance(category)
     evidence = _shared_evidence(
-        company_name, job_title, job_description, category, role_family
+        company_name,
+        job_title,
+        job_description,
+        category,
+        role_family,
+        role_lens,
+        requirement_map,
     )
     is_music_operations = category == "music_entertainment_operations" and role_family in {
         "business_operations", "product_strategy_ops", "transformation_advisory", "generic_senior_operator"
@@ -658,8 +697,18 @@ def build_dynamic_voice_profile(
         "source": "dynamic_inference",
         "company_category": category,
         "role_family": role_family,
-        "tone": _dedupe((*category_guidance["tone"], *role_guidance["tone"])),
-        "cover_letter_angle": _dedupe((*category_guidance["cover_letter_angle"], role_guidance["angle"])),
+        "role_lens": role_lens,
+        "requirement_map": requirement_map,
+        "tone": _dedupe(
+            role_guidance["tone"]
+            if role_lens["primary"] == "people_operations"
+            else (*category_guidance["tone"], *role_guidance["tone"])
+        ),
+        "cover_letter_angle": _dedupe(
+            [role_guidance["angle"]]
+            if role_lens["primary"] == "people_operations"
+            else (*category_guidance["cover_letter_angle"], role_guidance["angle"])
+        ),
         "proof_points_to_emphasize": evidence["proof_points"],
         "selected_evidence_ids": evidence["ids"],
         "selected_evidence_labels": evidence["labels"],
@@ -670,7 +719,7 @@ def build_dynamic_voice_profile(
         "reasoning_summary": context["reasoning_summary"],
         "company_voice_label": "Music + Operational Transformation" if is_music_operations else f"Dynamic {category.replace('_', ' ').title()}",
         "company_category_label": "Music / Entertainment Operations" if category == "music_entertainment_operations" else category.replace("_", " ").title(),
-        "role_family_label": "Strategic Operations" if is_music_operations else role_family.replace("_", " ").title(),
+        "role_family_label": role_lens["primary_label"] if role_lens["primary"] == "people_operations" else "Strategic Operations" if is_music_operations else role_family.replace("_", " ").title(),
     }
 
 
@@ -707,9 +756,17 @@ def get_effective_voice_profile(
     profile_name, profile, match_type = match
     category = dynamic["company_category"]
     role_family = dynamic["role_family"]
+    role_lens = dynamic["role_lens"]
+    requirement_map = dynamic["requirement_map"]
     proof_avoid = _proof_avoidance(category)
     evidence = _shared_evidence(
-        company_name, job_title, job_description, category, role_family
+        company_name,
+        job_title,
+        job_description,
+        category,
+        role_family,
+        role_lens,
+        requirement_map,
     )
     confidence = 0.99 if match_type == "exact" else 0.9
     article = "an" if match_type == "exact" else "a"
@@ -719,9 +776,17 @@ def get_effective_voice_profile(
         "source": "known_profile",
         "company_category": category,
         "role_family": role_family,
-        "tone": _dedupe(profile.get("tone", dynamic["tone"])),
+        "role_lens": role_lens,
+        "requirement_map": requirement_map,
+        "tone": _dedupe(
+            dynamic["tone"]
+            if role_lens["primary"] == "people_operations"
+            else profile.get("tone", dynamic["tone"])
+        ),
         "cover_letter_angle": _dedupe(
-            (*profile.get("cover_letter_angle", []), *dynamic["cover_letter_angle"])
+            dynamic["cover_letter_angle"]
+            if role_lens["primary"] == "people_operations"
+            else (*profile.get("cover_letter_angle", []), *dynamic["cover_letter_angle"])
         ),
         "proof_points_to_emphasize": evidence["proof_points"],
         "selected_evidence_ids": evidence["ids"],

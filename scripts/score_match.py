@@ -13,6 +13,7 @@ try:
         extract_responsibilities,
         parse_job_description,
     )
+    from .role_lens import build_requirement_map, classify_role_lens
 except ImportError:
     from load_data import DataLoadError, load_all_yaml
     from job_freshness import detect_job_freshness
@@ -22,6 +23,7 @@ except ImportError:
         extract_responsibilities,
         parse_job_description,
     )
+    from role_lens import build_requirement_map, classify_role_lens
 
 
 GENERIC_TERMS = {
@@ -820,6 +822,31 @@ def _score_parsed_job(parsed_job: Dict[str, Any], root: Path) -> Dict[str, Any]:
         "tailoring_notes": [],
     }
     report = _decision_match_report(parsed_job, report)
+    role_lens = classify_role_lens(parsed_job)
+    requirement_map = build_requirement_map(parsed_job, role_lens)
+    report["role_lens"] = role_lens
+    report["requirement_map"] = requirement_map
+    if role_lens["primary"] == "people_operations":
+        unsupported = _dedupe(
+            str(item.get("normalized_concept") or "")
+            for item in requirement_map
+            if item.get("strength") == "Unsupported"
+        )
+        if unsupported:
+            penalty = min(12, 2 * len(unsupported))
+            report["match_score"] = max(0, int(report["match_score"]) - penalty)
+            report["match_band"] = _match_band(report["match_score"])
+            report["match_tier"] = _match_tier(report["match_score"])
+            report["match_gaps"] = _dedupe(
+                [
+                    *report.get("match_gaps", []),
+                    "Direct evidence is not established for: "
+                    + ", ".join(unsupported[:5])
+                    + ".",
+                ]
+            )[:5]
+            if report.get("recommended_action") == "Generate Package":
+                report["recommended_action"] = "Review First"
     report["tailoring_notes"] = _tailoring_notes(
         report, top_skills, top_projects, top_experience
     )

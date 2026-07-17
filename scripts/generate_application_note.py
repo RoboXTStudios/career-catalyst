@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
 try:
+    from .employer_identity import OMG23_DISPLAY_NAME
     from .generate_cover_letter import (
         _position,
         load_generation_context,
@@ -11,6 +12,7 @@ try:
     )
     from .role_context import is_google_youtube_role
 except ImportError:
+    from employer_identity import OMG23_DISPLAY_NAME
     from generate_cover_letter import (
         _position,
         load_generation_context,
@@ -22,6 +24,7 @@ except ImportError:
 PathInput = Union[str, Path]
 
 DYNAMIC_NOTE_FOCUS = {
+    "people_operations": "team effectiveness, ownership clarity, communication, change adoption, and practical systems",
     "music_content_strategy": "music, audience understanding, editorial voice, and content systems",
     "editorial_content_strategy": "editorial judgment, audience clarity, voice, and dependable content operations",
     "transformation_advisory": "transformation, stakeholder recommendations, operating models, and implementation",
@@ -41,6 +44,15 @@ def _profile_application_note(context: Dict[str, Any]) -> str:
     profile_key = context.get("profile_key", "default")
     company = parsed_job.get("company") or "the organization"
     role = parsed_job.get("job_title") or "This opportunity"
+    if context.get("role_lens", {}).get("primary") == "people_operations":
+        return (
+            f"The {role} role at {company} stood out because it focuses on how people, process, "
+            "communication, and business priorities work together. At "
+            f"{OMG23_DISPLAY_NAME}, I led cross-functional teams and introduced clearer workflows, "
+            "responsibilities, standards, and communication practices. My background is in operations "
+            "rather than traditional HR, and I would bring that experience transparently to improving "
+            "how teams adopt practical systems and work together."
+        )
     notes = {
         "disney": (
             f"The {role} role at {company} caught my attention because it connects product and "

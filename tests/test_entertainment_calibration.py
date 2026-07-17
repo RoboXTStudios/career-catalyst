@@ -70,10 +70,10 @@ class EntertainmentCalibrationTests(unittest.TestCase):
 
     def test_cover_letter_uses_employer_shorthand_after_full_mention(self):
         cover_letter = self.contents["cover_letter"]
-        full_name = "OMG23 / OMD Entertainment, Omnicom Media Group"
+        full_name = "OMG23 / Omnicom Media Group"
 
         self.assertEqual(cover_letter.count(full_name), 1)
-        self.assertIn("systems mindset I developed at OMG23", cover_letter)
+        self.assertIn("At OMG23, I introduced scalable workflows", cover_letter)
 
     def test_playstation_outputs_use_upload_friendly_filenames(self):
         expected_names = {

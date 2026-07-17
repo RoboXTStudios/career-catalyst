@@ -12,6 +12,11 @@ from docx.shared import Inches, Pt, RGBColor
 try:
     from .company_voice import company_voice_context
     from .evidence_engine import load_evidence_cards, load_writing_voice_profile, select_evidence_cards
+    from .employer_identity import (
+        OMG23_DISPLAY_NAME,
+        canonical_employer_name,
+        normalize_applicant_employer_names,
+    )
     from .filename_utils import build_upload_filename, company_display_name
     from .human_positioning import (
         positioning_violations,
@@ -21,6 +26,7 @@ try:
     from .load_data import load_all_yaml
     from .parse_job import parse_job_description
     from .package_context import validate_material_context
+    from .role_lens import enforce_role_lens_quality
     from .role_context import (
         google_claim_violations,
         is_google_youtube_role,
@@ -35,6 +41,11 @@ try:
 except ImportError:
     from company_voice import company_voice_context
     from evidence_engine import load_evidence_cards, load_writing_voice_profile, select_evidence_cards
+    from employer_identity import (
+        OMG23_DISPLAY_NAME,
+        canonical_employer_name,
+        normalize_applicant_employer_names,
+    )
     from filename_utils import build_upload_filename, company_display_name
     from human_positioning import (
         positioning_violations,
@@ -44,6 +55,7 @@ except ImportError:
     from load_data import load_all_yaml
     from parse_job import parse_job_description
     from package_context import validate_material_context
+    from role_lens import enforce_role_lens_quality
     from role_context import google_claim_violations, is_google_youtube_role
     from role_editing import (
         material_editing_plan,
@@ -80,6 +92,11 @@ def load_generation_context(
     parsed_job = dict(parsed_job)
     parsed_job["company_legal_name"] = parsed_job.get("company")
     parsed_job["company"] = company_display_name(parsed_job.get("company"))
+    role_lens = dict(voice_context.get("role_lens") or {})
+    requirement_map = list(voice_context.get("requirement_map") or [])
+    parsed_job["primary_role_lens"] = role_lens.get("primary")
+    parsed_job["role_lens"] = role_lens
+    parsed_job["requirement_map"] = requirement_map
     evidence_cards = load_evidence_cards(root)
     writing_voice = load_writing_voice_profile(root)
     selected_evidence = select_evidence_cards(parsed_job, evidence_cards)
@@ -92,6 +109,8 @@ def load_generation_context(
         "evidence_cards": evidence_cards,
         "selected_evidence_cards": selected_evidence,
         "material_editing_plan": editing_plan,
+        "role_lens": role_lens,
+        "requirement_map": requirement_map,
         "parsed_job": parsed_job,
         "match_report": score_job_match(job_path, root),
         **voice_context,
@@ -112,7 +131,18 @@ def save_material(
     repair_attempts: int = 3,
 ) -> Dict[str, Any]:
     """Validate and save one Markdown application material, repairing length when configured."""
-    content = cleanup_repeated_words(content)
+    content = normalize_applicant_employer_names(cleanup_repeated_words(content))
+    content, role_lens_quality = enforce_role_lens_quality(
+        content,
+        context.get("role_lens", {}),
+        material_type=suffix,
+    )
+    if not role_lens_quality["valid"]:
+        reason = role_lens_quality["violations"][0]
+        raise ApplicationMaterialError(
+            "Generated application material does not match the role lens: "
+            f"{reason['code']} ({reason['detail']})."
+        )
     rewrite_notes: list[dict[str, str]] = []
     content, initial_rewrites = rewrite_banned_voice_phrases(content)
     rewrite_notes.extend(initial_rewrites)
@@ -202,6 +232,9 @@ def save_material(
         "repair_attempts": attempts,
         "warnings": list(context.get("material_warnings", [])),
         "banned_phrase_rewrites": rewrite_notes,
+        "role_lens": context.get("role_lens", {}),
+        "requirement_map": context.get("requirement_map", []),
+        "role_lens_quality": role_lens_quality,
     }
 
 
@@ -424,7 +457,7 @@ def _entertainment_scope(career_data: Dict[str, Any]) -> str:
 
 def _employer_names(position: Dict[str, Any]) -> tuple[str, str]:
     """Return the full employer name and a safe shorthand for later mentions."""
-    full_name = str(position.get("company") or "OMG23 / OMD Entertainment")
+    full_name = canonical_employer_name(position.get("company") or OMG23_DISPLAY_NAME)
     shorthand = "OMG23" if "OMG23" in full_name else full_name
     return full_name, shorthand
 
@@ -946,6 +979,45 @@ def _uta_cover_letter_content(context: Dict[str, Any]) -> str:
     return _signed_content(opening, experience, proof, closing)
 
 
+def _people_operations_cover_letter_content(context: Dict[str, Any]) -> str:
+    """Translate verified operations evidence without relabeling it as HR experience."""
+    parsed_job = context["parsed_job"]
+    company = str(parsed_job.get("company") or "the organization")
+    role = str(parsed_job.get("job_title") or "People Operations role")
+    opening = (
+        f"What interests me about the {role} role at {company} is the opportunity to improve "
+        "how people experience the way an organization works. Much of my career has focused on "
+        "listening to teams, noticing where ownership or communication is breaking down, and "
+        "building practical structures that help people work together more effectively. The posting's "
+        "focus on cross-functional programs, usable systems, clear reporting, and team effectiveness "
+        "makes that connection especially relevant."
+    )
+    experience = (
+        f"During my time at {OMG23_DISPLAY_NAME}, I led cross-functional teams and partnered across "
+        "marketing, technology, analytics, creative, media, and operations. The business context was "
+        "entertainment marketing, but the day-to-day questions were human ones: Do people understand "
+        "what is expected? Is ownership clear? Can teams make decisions and navigate change without "
+        "adding unnecessary friction? I introduced workflows, responsibilities, quality standards, "
+        "and communication practices that made handoffs more dependable and gave teams a shared way "
+        "to work through demanding priorities."
+    )
+    transfer = (
+        "My experience is rooted in operations rather than a traditional HR function, so I would not "
+        "present adjacent work as ownership of employee relations, HR systems, or People policy. What "
+        "I do bring is a practical understanding of how change is adopted: listen to the people closest "
+        "to the work, find the recurring friction, document expectations clearly, and build only enough "
+        "structure to help teams use the change in their daily work. I have learned that consistency "
+        "comes from trust and clarity, not from adding process for its own sake."
+    )
+    closing = (
+        f"I would bring {company} a thoughtful, people-centered operating approach, grounded in team "
+        "leadership, cross-functional partnership, and practical implementation. I would be glad to "
+        "help the People team turn business priorities into programs and ways of working that teams "
+        "can understand, adopt, and sustain."
+    )
+    return _signed_content(opening, experience, transfer, closing)
+
+
 def _fieldai_cover_letter_content(context: Dict[str, Any]) -> str:
     parsed_job = context["parsed_job"]
     company = parsed_job.get("company") or "FieldAI"
@@ -1112,7 +1184,9 @@ def _cover_letter_content(context: Dict[str, Any]) -> str:
         context = dict(context)
         context["material_editing_plan"] = material_editing_plan(context["parsed_job"], context.get("root"))
     builder: Callable[[Dict[str, Any]], str]
-    if profile_key in builders:
+    if context.get("role_lens", {}).get("primary") == "people_operations":
+        builder = _people_operations_cover_letter_content
+    elif profile_key in builders:
         builder = builders[profile_key]
     else:
         role_category = context["material_editing_plan"].get("role_category")
@@ -1144,6 +1218,7 @@ def _cover_letter_content(context: Dict[str, Any]) -> str:
     content = replace_personal_project_paragraphs(
         builder(context), _professional_evidence_paragraph(context)
     )
+    content = normalize_applicant_employer_names(content)
     validate_applicant_evidence(content, "cover letter")
     return content
 

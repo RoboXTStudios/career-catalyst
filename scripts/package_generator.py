@@ -486,6 +486,10 @@ def generate_package(
             {
                 "company_category": intelligence["company_category"],
                 "role_family": intelligence["role_family"],
+                "role_lens": intelligence.get("role_lens", {}).get("primary"),
+                "secondary_role_lens": intelligence.get("role_lens", {}).get("secondary"),
+                "role_lens_confidence": intelligence.get("role_lens", {}).get("confidence"),
+                "requirement_map": intelligence.get("requirement_map", []),
                 "company_voice_profile": intelligence["profile_name"],
                 "company_voice_source": intelligence["source"],
                 "company_voice_label": intelligence.get("company_voice_label", intelligence["profile_name"]),
@@ -530,6 +534,19 @@ def generate_package(
             interview_prep = {}
 
         quality = calculate_package_quality(score, resume, cover_letter, intelligence)
+        role_lens_quality = {
+            label: result.get("role_lens_quality")
+            for label, result in {
+                "resume": resume,
+                "cover_letter": cover_letter,
+                "recruiter_message": recruiter,
+                "hiring_manager_message": hiring_manager,
+                "application_note": application_note,
+                "strategy_pack": strategy_pack,
+                "interview_prep": interview_prep,
+            }.items()
+            if isinstance(result, dict) and result.get("role_lens_quality")
+        }
         package_summary = save_package_summary(root, parsed, freshness, opportunity, quality)
 
         tracker_id = str(application["id"])
@@ -723,12 +740,15 @@ def generate_package(
         "confidence": score.get("confidence"),
         "company_category": intelligence["company_category"],
         "role_family": intelligence["role_family"],
+        "role_lens": intelligence.get("role_lens", {}),
+        "requirement_map": intelligence.get("requirement_map", []),
         "company_voice_profile": intelligence["profile_name"],
         "company_voice_source": intelligence["source"],
         "company_voice_label": intelligence.get("company_voice_label", intelligence["profile_name"]),
         "freshness": freshness,
         "opportunity": opportunity,
         "package_quality": quality,
+        "role_lens_quality": role_lens_quality,
         "followup_error": followup_error,
         "material_errors": material_errors,
         "outputs": outputs,

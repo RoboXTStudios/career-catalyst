@@ -5,6 +5,11 @@ from __future__ import annotations
 import re
 from typing import Any, Sequence
 
+try:
+    from .role_lens import classify_role_lens
+except ImportError:
+    from role_lens import classify_role_lens
+
 
 TENURE_FORWARD_PATTERNS = (
     r"\b\d{1,2}\+?\s+years?\s+of\s+experience\b",
@@ -32,6 +37,12 @@ PERSONAL_PROJECT_TERMS = ("Career Catalyst", "CampaignOS", "Substack")
 
 
 PROFILE_SUMMARIES = {
+    "people_operations": (
+        "Operations leader known for improving how cross-functional teams communicate, understand "
+        "ownership, and adopt practical ways of working. Builds clear workflows, usable standards, "
+        "and dependable communication practices that reduce day-to-day friction while helping teams "
+        "execute business priorities with confidence."
+    ),
     "executive_operations": (
         "Operations leader known for finding the real constraint in complex work and turning it into "
         "clear decisions, usable systems, and dependable delivery. Connects business operations, "
@@ -126,7 +137,11 @@ def professional_summary(
     competencies: Sequence[str] = (),
 ) -> str:
     """Build an identity/approach/outcome summary while ATS terms remain in competencies."""
+    role_lens = classify_role_lens(parsed_job)
     profile_key = (
+        "people_operations"
+        if role_lens["primary"] == "people_operations"
+        else
         "google_youtube_operations"
         if "youtube" in " ".join(
             str(parsed_job.get(key) or "") for key in ("job_title", "company", "raw_text")

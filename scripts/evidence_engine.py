@@ -17,7 +17,7 @@ except ImportError:
 
 CONFIDENCE_ORDER = {"low": 1, "medium": 2, "high": 3}
 BUILDER_IDS = {"campaignos", "career_catalyst", "roboxt_studios"}
-PERSONAL_EVIDENCE_IDS = BUILDER_IDS | {"photography_creative_voice"}
+PERSONAL_EVIDENCE_IDS = BUILDER_IDS | {"photography_creative_voice", "substack"}
 DEFAULT_MAX_CARDS = 4
 
 
@@ -80,6 +80,8 @@ def _signals(text: str, terms: tuple[str, ...]) -> int:
 
 def role_evidence_category(role: dict[str, Any]) -> str:
     """Infer the evidence-selection category from role metadata and description."""
+    if str(role.get("primary_role_lens") or "") == "people_operations":
+        return "people_operations"
     editing_category = detect_role_editing_category(role)
     if editing_category == "chief_of_staff_business_operations":
         return "chief_of_staff_business_operations"
@@ -117,6 +119,7 @@ def select_evidence_cards(
     text = _role_text(role)
     minimum = CONFIDENCE_ORDER[minimum_confidence]
     category_tags = {
+        "people_operations": {"team_leadership", "team_enablement", "change_adoption", "employee_communication", "ownership_clarity", "usable_standards", "cross_functional_leadership"},
         "chief_of_staff_business_operations": {"governance", "qa", "pmo", "cross_functional_leadership", "ambiguity_reduction"},
         "product_ai_operations": {"builder", "ai_workflows", "product_thinking", "systems_built", "governance", "ambiguity_reduction"},
         "builder_friendly": {"builder", "ai_workflows", "product_thinking", "systems_built", "ambiguity_reduction"},
@@ -154,6 +157,18 @@ def select_evidence_cards(
             score += 5
         if category == "chief_of_staff_business_operations" and card_id in {"governance_qa_delivery", "omg23_disney_leadership"}:
             score += 5
+        if category == "people_operations" and card_id in {
+            "omg23_disney_leadership",
+            "governance_qa_delivery",
+            "multiverse_editorial",
+        }:
+            score += {
+                "omg23_disney_leadership": 8,
+                "governance_qa_delivery": 7,
+                "multiverse_editorial": 3,
+            }[card_id]
+        if category == "people_operations" and card_id == "martech_campaign_execution":
+            score -= 12
         if category == "product_ai_operations" and card_id == "campaignos":
             score += 6
         if score >= 5:
@@ -177,10 +192,30 @@ def professional_evidence_recommendations(
         include_personal_projects=include_personal_projects,
     )
     proof_points = []
+    people_operations = str(role.get("primary_role_lens") or "") == "people_operations"
     for card in selected:
         points = [str(point).strip() for point in card.get("proof_points", []) if str(point).strip()]
         if points:
-            proof_points.append(points[0])
+            if people_operations:
+                safe_point = next(
+                    (
+                        point
+                        for point in points
+                        if not any(
+                            term in point.lower()
+                            for term in (
+                                "campaign operations",
+                                "platform",
+                                "advertiser",
+                                "measurement readiness",
+                            )
+                        )
+                    ),
+                    points[0],
+                )
+                proof_points.append(safe_point)
+            else:
+                proof_points.append(points[0])
     return {
         "cards": selected,
         "ids": [str(card["id"]) for card in selected],

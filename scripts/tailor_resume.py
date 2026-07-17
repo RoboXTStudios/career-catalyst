@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 try:
+    from .employer_identity import normalize_applicant_employer_names
     from .filename_utils import build_upload_filename
     from .load_data import load_all_yaml
     from .evidence_engine import load_writing_voice_profile
@@ -15,6 +16,7 @@ try:
     )
     from .parse_job import parse_job_description
     from .package_context import validate_material_context
+    from .role_lens import classify_role_lens, enforce_role_lens_quality
     from .role_context import is_google_youtube_role
     from .role_editing import (
         material_editing_plan,
@@ -24,6 +26,7 @@ try:
     from .score_match import score_job_match
     from .text_cleanup import cleanup_repeated_words
 except ImportError:
+    from employer_identity import normalize_applicant_employer_names
     from filename_utils import build_upload_filename
     from load_data import load_all_yaml
     from evidence_engine import load_writing_voice_profile
@@ -34,6 +37,7 @@ except ImportError:
     )
     from parse_job import parse_job_description
     from package_context import validate_material_context
+    from role_lens import classify_role_lens, enforce_role_lens_quality
     from role_context import is_google_youtube_role
     from role_editing import (
         material_editing_plan,
@@ -100,6 +104,19 @@ GOOGLE_YOUTUBE_COMPETENCIES = (
     "Senior Stakeholder Alignment",
     "Product Feedback Loops",
     "Operational Excellence",
+)
+
+PEOPLE_OPERATIONS_TRANSFERABLE_COMPETENCIES = (
+    "Cross-Functional Leadership",
+    "Team Enablement",
+    "Change Management",
+    "Stakeholder Communication",
+    "Ownership & Responsibility Clarity",
+    "Process Implementation",
+    "Workflow Governance",
+    "Operational Consistency",
+    "Executive Communication",
+    "Continuous Improvement",
 )
 
 PROJECT_RELEVANCE_TERMS = {
@@ -241,6 +258,8 @@ def _select_core_competencies(
         ranked.append((score, -index, skill))
 
     selected = [skill for _score, _index, skill in sorted(ranked, reverse=True) if _score > 0]
+    if classify_role_lens(parsed_job)["primary"] == "people_operations":
+        selected = list(PEOPLE_OPERATIONS_TRANSFERABLE_COMPETENCIES) + selected
     if is_google_youtube_role(parsed_job):
         selected = list(GOOGLE_YOUTUBE_COMPETENCIES) + selected
     if len(selected) < 8:
@@ -271,6 +290,15 @@ def _profile_summary(
     resume_profile: str,
     parsed_job: Dict[str, Any],
 ) -> str:
+    if classify_role_lens(parsed_job)["primary"] == "people_operations":
+        summary = (
+            "Operations leader known for improving how cross-functional teams communicate, "
+            "understand ownership, and adopt practical ways of working. Builds clear workflows, "
+            "usable standards, and dependable communication practices that reduce day-to-day "
+            "friction while helping teams execute business priorities with confidence."
+        )
+        validate_human_positioning(summary, "professional summary")
+        return summary
     profile_key = "google_youtube_operations" if is_google_youtube_role(parsed_job) else resume_profile
     configured = (
         career_data["data"]
@@ -311,6 +339,23 @@ def _select_experience_bullets(
     candidate_bullets = []
     candidate_bullets.extend(omg_position.get("highlights", []))
     candidate_bullets.extend(_achievement_bullets(career_data))
+    people_operations = classify_role_lens(parsed_job)["primary"] == "people_operations"
+    if people_operations:
+        deduped = _dedupe(candidate_bullets)
+        preferred_starts = (
+            "Led cross-functional teams of 60+",
+            "Introduced scalable workflows",
+            "Aligned creative, marketing, media, analytics, technology, and operations teams",
+            "Established workflows, milestones, quality standards, and partner coordination",
+            "Partnered across creative, marketing, media, analytics, engineering, technology, operations",
+            "Created and served as Managing Editor of Multiverse",
+            "Advanced from Campaign Manager to Group Director",
+        )
+        return [
+            next(bullet for bullet in deduped if bullet.startswith(prefix))
+            for prefix in preferred_starts
+            if any(bullet.startswith(prefix) for bullet in deduped)
+        ]
 
     sample_priorities = (
         "60+",
@@ -336,6 +381,18 @@ def _select_experience_bullets(
     )
     keywords = [str(keyword) for keyword in parsed_job.get("keywords", [])]
     priorities = PROFILE_PRIORITIES[resume_profile] + sample_priorities
+    if people_operations:
+        priorities += (
+            "60+",
+            "cross-functional teams",
+            "aligned",
+            "workflow",
+            "standards",
+            "ownership",
+            "partnered",
+            "employee storytelling",
+            "communication",
+        )
     if is_google_youtube_role(parsed_job):
         priorities += (
             "google advertising products",
@@ -356,6 +413,16 @@ def _select_experience_bullets(
 
     selected = []
     for _score, _index, bullet in sorted(ranked, reverse=True):
+        if people_operations and any(
+            term in bullet.lower()
+            for term in (
+                "google and youtube",
+                "advertising platform",
+                "multimillion-dollar",
+                "campaign activation",
+            )
+        ):
+            continue
         normalized = _normalize_text(bullet)
         if any(normalized in _normalize_text(existing) or _normalize_text(existing) in normalized for existing in selected):
             continue
@@ -458,6 +525,10 @@ def _render_markdown(
     candidate = personal_brand["candidate"]
     competencies = _select_core_competencies(career_data, parsed_job, match_report, resume_profile)
     platforms = _platform_categories(career_data)
+    if classify_role_lens(parsed_job)["primary"] == "people_operations":
+        platforms = [
+            item for item in platforms if item[0] != "AdTech & Measurement"
+        ]
     positions = career_data["data"]["positions"].get("positions", [])
     omg_position = next(
         (position for position in positions if "OMG23" in position.get("company", "")),
@@ -469,9 +540,6 @@ def _render_markdown(
     development = _professional_development(career_data)
 
     lines = [
-        f"<!-- career-catalyst-job-title: {parsed_job.get('job_title') or 'Role'} -->",
-        f"<!-- career-catalyst-company: {parsed_job.get('company') or 'Company'} -->",
-        "",
         f"# {candidate.get('name', 'Trisha Lynch')}",
         "",
         candidate.get("headline", ""),
@@ -557,7 +625,9 @@ def _render_markdown(
     lines.extend(f"- {line}" for line in development)
     lines.append("")
 
-    return "\n".join(line for line in lines if line is not None)
+    return normalize_applicant_employer_names(
+        "\n".join(line for line in lines if line is not None)
+    )
 
 
 def tailor_resume(
@@ -577,6 +647,14 @@ def tailor_resume(
     markdown = cleanup_repeated_words(
         _render_markdown(career_data, parsed_job, match_report, resume_profile)
     )
+    role_lens = classify_role_lens(parsed_job)
+    markdown, role_lens_quality = enforce_role_lens_quality(
+        markdown, role_lens, material_type="resume"
+    )
+    if not role_lens_quality["valid"]:
+        raise ResumeTailoringError(
+            f"Generated resume does not match role lens: {role_lens_quality['violations'][0]['code']}"
+        )
     markdown, rewrite_notes = rewrite_banned_voice_phrases(markdown)
     validate_applicant_evidence(markdown, "tailored resume")
     banned_phrases = list(career_data["config"].get("voice", {}).get("avoid", []))
@@ -621,4 +699,6 @@ def tailor_resume(
             else []
         ),
         "banned_phrase_rewrites": rewrite_notes,
+        "role_lens": role_lens,
+        "role_lens_quality": role_lens_quality,
     }

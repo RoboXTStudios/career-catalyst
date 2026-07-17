@@ -212,7 +212,7 @@ def test_three_existing_prospects_generate_professional_evidence_only():
             _assert_applicant_safe(material)
         assert "## Core Competencies" in resume
         assert "## Professional Experience" in resume
-        assert "OMG23 / OMD Entertainment" in resume
+        assert "OMG23 / Omnicom Media Group" in resume
         assert any(
             signal in " ".join(materials).lower()
             for signal in ("60+", "400+", "workflow governance", "quality")

@@ -10,23 +10,27 @@ from typing import Any, Dict, Optional, Union
 try:
     from .application_tracker import follow_up_action_state, get_record_status, load_application_tracker, update_prospect
     from .dynamic_role_intelligence import get_effective_voice_profile
+    from .employer_identity import normalize_applicant_employer_names
     from .filename_utils import build_upload_filename, company_display_name
     from .generate_cover_letter import load_generation_context
     from .generate_dashboard import generate_dashboard
     from .load_data import load_all_yaml
     from .package_generator import PackageGenerationError, resolve_job_reference
     from .package_context import validate_material_context
+    from .role_lens import enforce_role_lens_quality
     from .role_context import is_google_youtube_role
     from .human_positioning import personal_project_violations, positioning_violations
 except ImportError:
     from application_tracker import follow_up_action_state, get_record_status, load_application_tracker, update_prospect
     from dynamic_role_intelligence import get_effective_voice_profile
+    from employer_identity import normalize_applicant_employer_names
     from filename_utils import build_upload_filename, company_display_name
     from generate_cover_letter import load_generation_context
     from generate_dashboard import generate_dashboard
     from load_data import load_all_yaml
     from package_generator import PackageGenerationError, resolve_job_reference
     from package_context import validate_material_context
+    from role_lens import enforce_role_lens_quality
     from role_context import is_google_youtube_role
     from human_positioning import personal_project_violations, positioning_violations
 
@@ -102,6 +106,12 @@ def _intelligent_role_angle(
 ) -> RoleAngle:
     role_family = str(effective_profile.get("role_family") or "generic_senior_operator")
     family_copy = {
+        "people_operations": (
+            "team effectiveness, ownership clarity, communication, change adoption, and practical systems",
+            "turning business priorities into programs and ways of working that managers and teams can understand, use, and sustain",
+            "cross_functional_leadership",
+            "My operations background helps teams improve communication, ownership, and change adoption without relabeling that work as traditional HR experience.",
+        ),
         "music_content_strategy": (
             "music, audience connection, editorial voice, and content systems",
             "writing with a distinct voice for different music audiences while building a reliable content operation",
@@ -179,6 +189,7 @@ def _intelligent_role_angle(
         career_data, achievement_id, fallback_experience
     )
     leader_title = {
+        "people_operations": "People Operations or organizational effectiveness leader",
         "music_content_strategy": "content, editorial, or artist marketing leader",
         "editorial_content_strategy": "content or editorial leader",
         "transformation_advisory": "transformation or advisory leader",
@@ -757,6 +768,10 @@ def generate_followups(
             {
                 "company_category": effective_profile["company_category"],
                 "role_family": effective_profile["role_family"],
+                "role_lens": effective_profile.get("role_lens", {}).get("primary"),
+                "secondary_role_lens": effective_profile.get("role_lens", {}).get("secondary"),
+                "role_lens_confidence": effective_profile.get("role_lens", {}).get("confidence"),
+                "requirement_map": effective_profile.get("requirement_map", []),
                 "company_voice_profile": effective_profile["profile_name"],
                 "company_voice_source": effective_profile["source"],
             },
@@ -778,14 +793,27 @@ def generate_followups(
                 company, role, angle, post_application
             ),
         }
+        role_lens = effective_profile.get("role_lens", {})
+        messages = {
+            key: normalize_applicant_employer_names(message)
+            for key, message in messages.items()
+        }
         voice_avoid = tuple(
             _clean(phrase)
             for phrase in context.get("voice", {}).get("avoid", [])
             if _clean(phrase)
         )
         for key, message in messages.items():
-            _validate_message(key, message, parsed_job, voice_avoid)
-            validate_material_context(message, parsed_job, key)
+            guarded, quality = enforce_role_lens_quality(
+                message, role_lens, material_type=key
+            )
+            if not quality["valid"]:
+                raise FollowupGenerationError(
+                    f"{key} does not match role lens: {quality['violations'][0]['code']}"
+                )
+            messages[key] = guarded
+            _validate_message(key, guarded, parsed_job, voice_avoid)
+            validate_material_context(guarded, parsed_job, key)
 
         output_specs = (
             ("recruiter_followup", "Recruiter Followup"),
@@ -806,6 +834,15 @@ def generate_followups(
             root,
             post_application,
         )
+        strategy = normalize_applicant_employer_names(strategy)
+        strategy, strategy_quality = enforce_role_lens_quality(
+            strategy, role_lens, material_type="followup_strategy"
+        )
+        if not strategy_quality["valid"]:
+            raise FollowupGenerationError(
+                "Follow-up strategy does not match role lens: "
+                f"{strategy_quality['violations'][0]['code']}"
+            )
         if "—" in strategy:
             raise FollowupGenerationError("Follow-up strategy must not contain em dashes.")
         if personal_project_violations(strategy):
@@ -834,6 +871,8 @@ def generate_followups(
         "job_path": str(job_path) if job_path is not None else None,
         "company_category": effective_profile["company_category"],
         "role_family": effective_profile["role_family"],
+        "role_lens": effective_profile.get("role_lens", {}),
+        "requirement_map": effective_profile.get("requirement_map", []),
         "company_voice_profile": effective_profile["profile_name"],
         "company_voice_source": effective_profile["source"],
         "outreach_mode": (

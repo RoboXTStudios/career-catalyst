@@ -6,15 +6,19 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
 try:
+    from .employer_identity import normalize_applicant_employer_names
     from .filename_utils import build_upload_filename
     from .generate_cover_letter import load_generation_context
     from .human_positioning import personal_project_violations, validate_applicant_evidence
     from .package_context import validate_material_context
+    from .role_lens import enforce_role_lens_quality
 except ImportError:
+    from employer_identity import normalize_applicant_employer_names
     from filename_utils import build_upload_filename
     from generate_cover_letter import load_generation_context
     from human_positioning import personal_project_violations, validate_applicant_evidence
     from package_context import validate_material_context
+    from role_lens import enforce_role_lens_quality
 
 
 PathInput = Union[str, Path]
@@ -35,7 +39,55 @@ def generate_interview_prep(
         for value in intelligence.get("proof_points_to_emphasize", [])
         if not personal_project_violations(str(value))
     ][:4]
-    themes = keywords or ["cross-functional leadership", "operating clarity", "measurable execution"]
+    people_operations = context.get("role_lens", {}).get("primary") == "people_operations"
+    themes = (
+        [
+            "team effectiveness and leadership",
+            "cross-functional partnership",
+            "change adoption",
+            "ownership and communication clarity",
+            "usable systems and standards",
+            "transparent transferable fit",
+        ]
+        if people_operations
+        else keywords
+        or ["cross-functional leadership", "operating clarity", "measurable execution"]
+    )
+    unsupported = [
+        item
+        for item in context.get("requirement_map", [])
+        if item.get("strength") == "Unsupported"
+    ]
+    questions = (
+        [
+            "Where do managers and teams experience the most recurring friction in current People programs or processes?",
+            "Which responsibilities require deep HR subject-matter ownership, and where would strong operating leadership add the most value?",
+            "How does feedback from managers, employees, and People Operations specialists shape program improvements today?",
+            "What would meaningful progress look like in the first 90 days for both execution and team experience?",
+        ]
+        if people_operations
+        else [
+            "What would meaningful progress look like in the first 90 days?",
+            "Where does work lose the most time, context, or ownership today?",
+            "Which relationships will matter most for this person to build early?",
+            "How does the team balance immediate delivery with longer-term operational improvement?",
+        ]
+    )
+    story_prompts = (
+        [
+            "A time you listened to several teams and found the recurring friction behind a process problem.",
+            "A time clearer ownership or communication improved how people worked together.",
+            "A change that teams adopted because the workflow and expectations were practical.",
+            "A time you led a cross-functional team through competing priorities without adding unnecessary bureaucracy.",
+        ]
+        if people_operations
+        else [
+            "A time you turned an unclear cross-functional problem into a practical operating plan.",
+            "A time you improved a process without losing the trust or judgment of the people doing the work.",
+            "A time you used data, workflow design, or reporting to improve visibility and execution.",
+            "A decision where you balanced speed, quality, stakeholder needs, and limited capacity.",
+        ]
+    )
     content = "\n".join(
         (
             "# Interview Prep",
@@ -62,17 +114,19 @@ def generate_interview_prep(
             "",
             "### Story Prompts",
             "",
-            "- A time you turned an unclear cross-functional problem into a practical operating plan.",
-            "- A time you improved a process without losing the trust or judgment of the people doing the work.",
-            "- A time you used data, workflow design, or reporting to improve visibility and execution.",
-            "- A decision where you balanced speed, quality, stakeholder needs, and limited capacity.",
+            *(f"- {value}" for value in story_prompts),
+            "",
+            "### Requirement Gaps",
+            "",
+            *(
+                f"- {item['normalized_concept']}: do not claim direct ownership; discuss the "
+                "operations background as transferable only if asked."
+                for item in unsupported
+            ),
             "",
             "### Questions to Ask",
             "",
-            "- What would meaningful progress look like in the first 90 days?",
-            "- Where does work lose the most time, context, or ownership today?",
-            "- Which relationships will matter most for this person to build early?",
-            "- How does the team balance immediate delivery with longer-term operational improvement?",
+            *(f"- {value}" for value in questions),
             "",
             "### Voice Reminder",
             "",
@@ -80,6 +134,14 @@ def generate_interview_prep(
             "",
         )
     )
+    content = normalize_applicant_employer_names(content)
+    content, quality = enforce_role_lens_quality(
+        content, context.get("role_lens", {}), material_type="interview_prep"
+    )
+    if not quality["valid"]:
+        raise ValueError(
+            f"Interview prep does not match role lens: {quality['violations'][0]['code']}"
+        )
     validate_applicant_evidence(content, "interview prep")
     validate_material_context(content, parsed, "Interview_Prep")
     filename = build_upload_filename(
@@ -93,4 +155,7 @@ def generate_interview_prep(
         "job_title": role,
         "company": company,
         "output_path": str(output_path),
+        "role_lens": context.get("role_lens", {}),
+        "requirement_map": context.get("requirement_map", []),
+        "role_lens_quality": quality,
     }

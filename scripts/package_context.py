@@ -129,6 +129,25 @@ def prospect_context_fingerprint(
         "job_description": re.sub(r"\s+", " ", _description_text(values)).strip(),
         "company_category": str(intelligence.get("company_category") or ""),
         "role_family": str(intelligence.get("role_family") or ""),
+        "role_lens": str(
+            (intelligence.get("role_lens") or {}).get("primary")
+            if isinstance(intelligence.get("role_lens"), dict)
+            else intelligence.get("role_lens") or ""
+        ),
+        "secondary_role_lens": str(
+            (intelligence.get("role_lens") or {}).get("secondary") or ""
+        )
+        if isinstance(intelligence.get("role_lens"), dict)
+        else "",
+        "requirement_map": [
+            {
+                "concept": str(item.get("normalized_concept") or ""),
+                "strength": str(item.get("strength") or ""),
+                "evidence_ids": sorted(str(value) for value in item.get("evidence_ids", [])),
+            }
+            for item in intelligence.get("requirement_map", [])
+            if isinstance(item, dict)
+        ],
         "evidence_ids": sorted(
             str(value)
             for value in intelligence.get("selected_evidence_ids", [])

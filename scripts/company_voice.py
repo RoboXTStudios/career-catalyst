@@ -19,6 +19,7 @@ except ImportError:
 
 
 ROLE_FAMILY_LABELS = {
+    "people_operations": "People Operations",
     "creative_marketing_ops": "Creative & Marketing Operations",
     "product_strategy_ops": "Product Strategy & Operations",
     "transformation_advisory": "Transformation Advisory",
@@ -94,4 +95,6 @@ def company_voice_context(
         "company_category": effective["company_category"],
         "role_family": role_family,
         "role_family_label": ROLE_FAMILY_LABELS[role_family],
+        "role_lens": effective.get("role_lens", {}),
+        "requirement_map": effective.get("requirement_map", []),
     }

@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
 try:
+    from .employer_identity import OMG23_DISPLAY_NAME
     from .generate_cover_letter import (
         ApplicationMaterialError,
         _as_first_person,
@@ -16,6 +17,7 @@ try:
     from .role_context import is_google_youtube_role
     from .human_positioning import validate_applicant_evidence
 except ImportError:
+    from employer_identity import OMG23_DISPLAY_NAME
     from generate_cover_letter import (
         ApplicationMaterialError,
         _as_first_person,
@@ -33,6 +35,7 @@ PathInput = Union[str, Path]
 MESSAGE_TYPES = ("recruiter", "hiring_manager")
 
 DYNAMIC_MESSAGE_FOCUS = {
+    "people_operations": "how teams communicate, understand ownership, adopt change, and use practical systems",
     "music_content_strategy": "music, audience connection, editorial voice, and content systems",
     "editorial_content_strategy": "editorial judgment, audience clarity, brand voice, and repeatable content systems",
     "transformation_advisory": "transformation thinking, stakeholder recommendations, operating models, and execution",
@@ -47,6 +50,7 @@ DYNAMIC_MESSAGE_FOCUS = {
 }
 
 DYNAMIC_MESSAGE_PROOF = {
+    "people_operations": "I have led cross-functional teams and introduced clearer workflows, responsibilities, standards, and communication practices people could use in daily work.",
     "music_content_strategy": "At OMG23, I created and managed Multiverse, an internal culture publication that reached 400+ employees.",
     "editorial_content_strategy": "At OMG23, I created and managed Multiverse while building the contributor process that kept the publication moving.",
     "community_growth": "Multiverse and large-scale entertainment campaign work give me both audience and operating proof points.",
@@ -76,6 +80,17 @@ def _profile_recruiter_content(context: Dict[str, Any]) -> str:
     company = parsed_job.get("company") or "the organization"
     role = parsed_job.get("job_title")
     role_reference = f"The {role} role" if role else "This opportunity"
+    if context.get("role_lens", {}).get("primary") == "people_operations":
+        message = (
+            f"{role_reference} at {company} stood out because it focuses on how people, process, "
+            "communication, and business priorities come together. My background is in operations "
+            "rather than a traditional HR function. At "
+            f"{OMG23_DISPLAY_NAME}, I led cross-functional teams and built clearer ways of working "
+            "around ownership, communication, standards, and change. The value I would bring is a "
+            "practical understanding of how teams adopt systems and work together more effectively. "
+            "I would be glad to share more context if that transferable perspective is useful."
+        )
+        return "\n\n".join(["Hello,", message, "Best,\n\nTrisha Lynch"])
     profile_copy = {
         "disney": (
             "product and technology strategy, executive operating rhythms, and enterprise entertainment",
@@ -124,6 +139,29 @@ def _profile_hiring_manager_content(context: Dict[str, Any]) -> str:
     company = parsed_job.get("company") or "the organization"
     role = parsed_job.get("job_title")
     role_reference = f"The {role} role" if role else "This opportunity"
+    if context.get("role_lens", {}).get("primary") == "people_operations":
+        opening = (
+            f"What interests me about {role_reference.lower()} at {company} is the work of turning "
+            "business priorities into programs and systems that teams can actually use. The posting's "
+            "focus on cross-functional partnership, clear reporting, continuous improvement, and team "
+            "effectiveness points to a practical challenge: improving consistency without losing the "
+            "human context behind how work gets done."
+        )
+        experience = (
+            f"At {OMG23_DISPLAY_NAME}, I led cross-functional teams and introduced clearer workflows, "
+            "responsibilities, standards, and communication practices across several functions. My "
+            "experience comes from operations rather than a traditional HR function, but it has consistently "
+            "required listening to teams, identifying recurring friction, and helping people adopt new "
+            "ways of working without adding unnecessary bureaucracy."
+        )
+        close = (
+            "I am curious where managers and teams experience the most avoidable friction today, and "
+            "which People programs need stronger ownership, communication, or implementation first. "
+            "I would be glad to compare notes on building structure people can trust and sustain."
+        )
+        return "\n\n".join(
+            ["Hello,", opening, experience, close, "Best,\n\nTrisha Lynch"]
+        )
     profile_copy = {
         "disney": (
             "aligning product, engineering, data, and business partners through useful OKRs and executive operating rhythms",
