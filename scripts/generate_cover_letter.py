@@ -209,6 +209,15 @@ def load_generation_context(
         match_report,
         combined_selected_evidence,
     )
+    career_coach = dict(package_context.get("career_coach") or {})
+    if career_coach:
+        positioning = str(career_coach.get("recommended_positioning") or "").strip()
+        if positioning:
+            application_strategy["candidate_positioning"] = positioning
+            application_strategy["cover_letter_thesis"] = positioning
+        lead_with = list(career_coach.get("lead_with") or [])
+        if lead_with:
+            application_strategy["resume_emphasis"] = lead_with
     editing_plan = material_editing_plan(parsed_job, root)
     return {
         "root": root,
@@ -232,6 +241,7 @@ def load_generation_context(
         "role_interpretation": role_interpretation,
         "hiring_manager_lens": hiring_manager_lens,
         "application_strategy": application_strategy,
+        "career_coach": career_coach,
         "interview_preparation": interview_preparation_model(
             role_interpretation, hiring_manager_lens, application_strategy
         ),

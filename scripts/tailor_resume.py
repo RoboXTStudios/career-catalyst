@@ -660,6 +660,16 @@ def tailor_resume(
     career_data = load_all_yaml(root)
     parsed_job = parse_job_description(root / job_path)
     package_context = dict(package_context or {})
+    career_coach = dict(package_context.get("career_coach") or {})
+    coach_emphasis = [
+        str(value).strip()
+        for value in career_coach.get("lead_with") or []
+        if str(value).strip()
+    ]
+    if coach_emphasis:
+        parsed_job["keywords"] = list(
+            dict.fromkeys([*(parsed_job.get("keywords") or []), *coach_emphasis])
+        )
     role_interpretation = dict(package_context.get("role_interpretation") or {})
     evidence_selection_overrides = dict(
         package_context.get("evidence_selection_overrides")
@@ -756,9 +766,11 @@ def tailor_resume(
         "role_lens": role_lens,
         "role_lens_quality": role_lens_quality,
         "role_interpretation": parsed_job.get("role_interpretation", {}),
-        "resume_emphasis": evidence_priorities(
+        "resume_emphasis": coach_emphasis
+        or evidence_priorities(
             (parsed_job.get("role_interpretation") or {}).get("primary_archetype")
         ),
+        "career_coach": career_coach,
         "evidence_profile_recommendations": resume_recommendations,
         "evidence_gap_analysis": match_report.get("evidence_gap_analysis", {}),
         "role_evidence_selection": match_report.get("role_evidence_selection", {}),

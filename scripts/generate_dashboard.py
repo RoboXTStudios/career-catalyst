@@ -18,6 +18,8 @@ if __package__:
         TrackerValidationError,
         follow_up_action_state,
         get_record_status,
+        is_active_prospect,
+        is_archived,
         normalize_tracker_value,
         tracker_company_keys,
         tracker_role_keys,
@@ -45,6 +47,8 @@ else:
         TrackerValidationError,
         follow_up_action_state,
         get_record_status,
+        is_active_prospect,
+        is_archived,
         normalize_tracker_value,
         tracker_company_keys,
         tracker_role_keys,
@@ -326,6 +330,8 @@ def sort_dashboard_records(
 
 
 def _is_hidden(record: Dict[str, Any]) -> bool:
+    if is_archived(record):
+        return True
     status = get_record_status(record)
     if status in HIDDEN_STATUSES:
         return True
@@ -350,11 +356,14 @@ def filter_dashboard_records(
     source_type: str = "All",
     verification_status: str = "All",
     trust_label: str = "All",
+    include_archived: bool = False,
 ) -> List[Dict[str, Any]]:
     """Apply safe dashboard filters without requiring complete tracker records."""
     query = normalize_tracker_value(search)
     filtered = []
     for record in records:
+        if is_archived(record) and not include_archived:
+            continue
         tier = str(record.get("match_tier") or "Not scored yet")
         if match_tier != "All" and tier != match_tier:
             continue
@@ -2141,8 +2150,13 @@ def generate_dashboard(project_root: PathInput = Path.cwd()) -> Dict[str, Any]:
     try:
         package_data = load_application_packages(root)
         packages = package_data["packages"]
+        packages = [
+            package
+            for package in packages
+            if not package.get("tracker") or is_active_prospect(package["tracker"])
+        ]
         unassigned = package_data["unassigned"]
-        groups = package_data["groups"]
+        groups = _partition_packages(packages)
         counts = _summary_counts(root, groups)
         dashboard_directory.mkdir(parents=True, exist_ok=True)
         output_path.write_text(

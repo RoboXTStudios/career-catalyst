@@ -9,6 +9,7 @@ from typing import Any, Dict, Optional, Union
 
 try:
     from .application_strategy import build_application_strategy, build_hiring_manager_lens
+    from .career_coach import build_career_coach_brief
     from .application_tracker import (
         TrackerValidationError,
         load_application_tracker,
@@ -48,6 +49,7 @@ try:
     from .tailor_resume import tailor_resume
 except ImportError:
     from application_strategy import build_application_strategy, build_hiring_manager_lens
+    from career_coach import build_career_coach_brief
     from application_tracker import (
         TrackerValidationError,
         load_application_tracker,
@@ -311,6 +313,21 @@ def build_package_context(
         if stored_fingerprint and stored_fingerprint != computed_fingerprint
         else max(1, stored_revision)
     )
+    coach_source = {
+        **application,
+        "context_fingerprint": computed_fingerprint,
+        "prospect_revision": current_revision,
+        "role_interpretation": intelligence.get("role_interpretation") or {},
+        "application_strategy": intelligence.get("application_strategy") or {},
+        "role_evidence_selection": intelligence.get("role_evidence_selection") or {},
+        **persisted_match_fields(match_report),
+    }
+    career_coach = build_career_coach_brief(coach_source)
+    intelligence["career_coach"] = career_coach
+    strategy = intelligence.get("application_strategy") or {}
+    strategy["career_coach_positioning"] = career_coach.get("recommended_positioning")
+    strategy["career_coach_lead_with"] = list(career_coach.get("lead_with") or [])
+    intelligence["application_strategy"] = strategy
     context_stale = stored_fingerprint != computed_fingerprint
     manifest = application.get("package_manifest")
     if isinstance(manifest, dict):
@@ -371,6 +388,7 @@ def build_package_context(
         "match_report": match_report,
         "role_evidence_selection": intelligence["role_evidence_selection"],
         "hiring_manager_brief": intelligence["hiring_manager_brief"],
+        "career_coach": career_coach,
         "evidence_selection_overrides": saved_evidence_overrides,
         "selected_package_paths": selected_package_paths,
         "context_fingerprint": computed_fingerprint,
@@ -565,6 +583,7 @@ def generate_package(
                 "hiring_manager_lens": intelligence.get("hiring_manager_lens", {}),
                 "application_strategy": intelligence.get("application_strategy", {}),
                 "hiring_manager_brief": context.get("hiring_manager_brief", {}),
+                "career_coach_brief": context.get("career_coach", {}),
                 "role_evidence_selection": context.get("role_evidence_selection", {}),
                 "evidence_selection_overrides": context.get("evidence_selection_overrides", {}),
                 "company_voice_profile": intelligence["profile_name"],
@@ -583,6 +602,7 @@ def generate_package(
                 "score_dirty": False,
                 "application_strategy_dirty": False,
                 "hiring_manager_brief_dirty": False,
+                "career_coach_dirty": False,
                 "package_dirty": True,
                 **persisted_match_fields(score),
             },
@@ -599,6 +619,7 @@ def generate_package(
             "role_interpretation": intelligence.get("role_interpretation", {}),
             "hiring_manager_lens": intelligence.get("hiring_manager_lens", {}),
             "application_strategy": intelligence.get("application_strategy", {}),
+            "career_coach": context.get("career_coach", {}),
             "role_evidence_selection": context.get("role_evidence_selection", {}),
             "evidence_selection_overrides": context.get("evidence_selection_overrides", {}),
             "public_transparency_requested": bool(public_transparency_requested),
@@ -655,6 +676,7 @@ def generate_package(
                 "hiring_manager_lens": intelligence.get("hiring_manager_lens", {}),
                 "application_strategy": intelligence.get("application_strategy", {}),
                 "hiring_manager_brief": context.get("hiring_manager_brief", {}),
+                "career_coach_brief": context.get("career_coach", {}),
             },
             root,
         )

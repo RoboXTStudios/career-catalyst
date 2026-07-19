@@ -57,18 +57,26 @@ STATUS_ALIASES = {
     "on hold": "Under Consideration",
     "passed": "Withdrawn / Closed",
     "pass": "Withdrawn / Closed",
-    "declined": "Withdrawn / Closed",
+    "withdrawn": "Withdrawn / Closed",
+    "offer declined": "Withdrawn / Closed",
     "do not pursue": "Withdrawn / Closed",
     "hidden": "Withdrawn / Closed",
     "invalid": "Withdrawn / Closed",
     "invalid hidden": "Withdrawn / Closed",
     "archived": "Withdrawn / Closed",
     "closed": "Withdrawn / Closed",
+    "posting closed": "Withdrawn / Closed",
+    "role filled": "Withdrawn / Closed",
     "stale closed risk": "Withdrawn / Closed",
 }
 ACTIVE_STATUSES = {"Applied", "Under Consideration", "Interviewing", "Offer"}
 DRAFT_STATUSES = {"Drafted"}
-HIDDEN_STATUSES = {"Rejected", "Withdrawn / Closed"}
+TERMINAL_ARCHIVE_STATUSES = {
+    "Rejected",
+    "Withdrawn / Closed",
+}
+HIDDEN_STATUSES = set(TERMINAL_ARCHIVE_STATUSES)
+ACTIVE_WORK_STATUSES = set(VALID_STATUSES) - TERMINAL_ARCHIVE_STATUSES
 INTAKE_PROTECTED_STATUSES = {
     "Active",
     "Applied",
@@ -176,6 +184,81 @@ def get_record_status(record: Dict[str, Any]) -> str:
 def legacy_status_value(record: Dict[str, Any]) -> str:
     """Expose the stored pre-normalization value for audit/migration safety."""
     return str(record.get("legacy_status") or record.get("status") or "").strip()
+
+
+def is_terminal_status(value: Any) -> bool:
+    """Return whether a status represents a durable inactive lifecycle state."""
+    return normalize_status(value) in TERMINAL_ARCHIVE_STATUSES
+
+
+def is_archived(record: Dict[str, Any]) -> bool:
+    """Read archive visibility without mutating legacy records."""
+    return record.get("is_archived") is True
+
+
+def is_active_prospect(record: Dict[str, Any]) -> bool:
+    """Return whether a role belongs in current-work views."""
+    return not is_archived(record) and get_record_status(record) not in TERMINAL_ARCHIVE_STATUSES
+
+
+def _archive_reason(status: Any) -> str:
+    token = normalize_tracker_value(status)
+    normalized = normalize_status(status)
+    if normalized == "Rejected":
+        return "Rejected"
+    if token in {"withdrawn", "offer declined"}:
+        return "Withdrawn"
+    if token in {"closed", "posting closed", "role filled"}:
+        return "Closed"
+    if normalized == "Withdrawn / Closed":
+        return "Withdrawn" if "withdraw" in token else "Closed" if "closed" in token else "Other"
+    return "Other"
+
+
+def _apply_archive_lifecycle(
+    entry: Dict[str, Any], previous_status: str = "", *, migrated: bool = False,
+    archive_status: Any = None,
+) -> bool:
+    """Apply one idempotent archive or restore transition after an explicit save."""
+    status = get_record_status(entry)
+    changed = False
+    if status in TERMINAL_ARCHIVE_STATUSES:
+        if not is_archived(entry):
+            archived_at = datetime.now().isoformat(timespec="seconds")
+            entry["is_archived"] = True
+            entry["archived_at"] = archived_at
+            raw_archive_status = archive_status or entry.get("status") or status
+            entry["archive_reason"] = _archive_reason(raw_archive_status)
+            entry["archived_from_status"] = str(raw_archive_status)
+            entry["show_on_dashboard"] = False
+            history = entry.setdefault("archive_history", [])
+            if isinstance(history, list):
+                history.append(
+                    {
+                        "event": "archived",
+                        "status": status,
+                        "reason": entry["archive_reason"],
+                        "date": date.today().isoformat(),
+                        "migrated": bool(migrated),
+                    }
+                )
+            changed = True
+    elif is_archived(entry):
+        entry["is_archived"] = False
+        entry["restored_at"] = datetime.now().isoformat(timespec="seconds")
+        entry["show_on_dashboard"] = True
+        history = entry.setdefault("archive_history", [])
+        if isinstance(history, list):
+            history.append(
+                {
+                    "event": "restored",
+                    "from_status": previous_status or entry.get("archived_from_status") or "",
+                    "to_status": status,
+                    "date": date.today().isoformat(),
+                }
+            )
+        changed = True
+    return changed
 
 
 def workflow_status_bucket(record: Dict[str, Any]) -> str:
@@ -373,7 +456,7 @@ def follow_up_action_state(
     """Return the one contextual follow-up action a role can show today."""
     status = get_record_status(record)
     portal_url = _portal_url(record)
-    if record.get("show_on_dashboard") is False or legacy_status_value(record) in {
+    if is_archived(record) or record.get("show_on_dashboard") is False or legacy_status_value(record) in {
         "Invalid",
         "Invalid/Hidden",
     }:
@@ -621,6 +704,7 @@ def mark_role_evidence_selections_dirty(
             "score_dirty": True,
             "application_strategy_dirty": True,
             "hiring_manager_brief_dirty": True,
+            "career_coach_dirty": True,
             "package_dirty": True,
         }
         if any(application.get(key) != value for key, value in updates.items()):
@@ -676,6 +760,7 @@ def _apply_context_revision(
                 entry.pop(field, None)
     elif changed:
         incoming["prospect_revision"] = int(entry.get("prospect_revision") or 1) + 1
+        incoming["career_coach_dirty"] = True
         for field in DERIVED_PACKAGE_FIELDS:
             entry.pop(field, None)
     else:
@@ -727,6 +812,7 @@ def add_prospect(
         }
         _apply_context_revision(entry, incoming, created=True)
         entry.update(incoming)
+        _apply_archive_lifecycle(entry)
         applications.append(entry)
     else:
         entry = existing
@@ -741,6 +827,8 @@ def add_prospect(
         entry.setdefault("company_aliases", [])
         entry.setdefault("role_aliases", [])
         entry.setdefault("show_on_dashboard", True)
+        if "status" in incoming:
+            _apply_archive_lifecycle(entry, original_status)
 
     save_application_tracker(applications, project_root)
     return {"tracker_id": tracker_id, "application": dict(entry), "created": created}
@@ -763,12 +851,19 @@ def update_prospect(
     cleaned = _explicit_updates(updates)
     cleaned.pop("id", None)
     _apply_context_revision(entry, cleaned)
+    archive_status: Any = None
     if "status" in cleaned:
         raw_status = str(cleaned["status"]).strip()
+        archive_status = raw_status
         cleaned["status"] = normalize_status(raw_status)
         if cleaned["status"] != raw_status and not entry.get("legacy_status"):
             cleaned["legacy_status"] = raw_status
+    previous_primary_status = get_record_status(entry)
     entry.update(cleaned)
+    if "status" in cleaned:
+        _apply_archive_lifecycle(
+            entry, previous_primary_status, archive_status=archive_status
+        )
     save_application_tracker(applications, project_root)
     return dict(entry)
 
@@ -818,8 +913,108 @@ def update_status(
             )
     if status == "Applied" and not entry.get("submitted_date"):
         entry["submitted_date"] = date.today().isoformat()
+    _apply_archive_lifecycle(entry, previous_primary_status, archive_status=raw_status)
     save_application_tracker(applications, project_root)
     return dict(entry)
+
+
+def archive_prospect(
+    tracker_id: str,
+    reason: str = "Other",
+    project_root: Optional[PathInput] = None,
+) -> Dict[str, Any]:
+    """Archive a role manually without changing its application status."""
+    applications = load_application_tracker(project_root)
+    entry = next(
+        (application for application in applications if application.get("id") == tracker_id),
+        None,
+    )
+    if entry is None:
+        raise TrackerUpdateError(f"Tracker entry not found: {tracker_id}")
+    if not is_archived(entry):
+        status = get_record_status(entry)
+        entry.update(
+            {
+                "is_archived": True,
+                "archived_at": datetime.now().isoformat(timespec="seconds"),
+                "archive_reason": str(reason or "Other").strip() or "Other",
+                "archived_from_status": status,
+                "show_on_dashboard": False,
+            }
+        )
+        history = entry.setdefault("archive_history", [])
+        if isinstance(history, list):
+            history.append(
+                {
+                    "event": "archived",
+                    "status": status,
+                    "reason": entry["archive_reason"],
+                    "date": date.today().isoformat(),
+                    "migrated": False,
+                }
+            )
+        save_application_tracker(applications, project_root)
+    return dict(entry)
+
+
+def restore_prospect(
+    tracker_id: str,
+    project_root: Optional[PathInput] = None,
+) -> Dict[str, Any]:
+    """Restore archive visibility while preserving status, materials, and history."""
+    applications = load_application_tracker(project_root)
+    entry = next(
+        (application for application in applications if application.get("id") == tracker_id),
+        None,
+    )
+    if entry is None:
+        raise TrackerUpdateError(f"Tracker entry not found: {tracker_id}")
+    if is_archived(entry):
+        status = get_record_status(entry)
+        entry["is_archived"] = False
+        entry["restored_at"] = datetime.now().isoformat(timespec="seconds")
+        entry["show_on_dashboard"] = status in ACTIVE_WORK_STATUSES
+        history = entry.setdefault("archive_history", [])
+        if isinstance(history, list):
+            history.append(
+                {
+                    "event": "restored",
+                    "from_status": entry.get("archived_from_status") or status,
+                    "to_status": status,
+                    "date": date.today().isoformat(),
+                }
+            )
+        save_application_tracker(applications, project_root)
+    return dict(entry)
+
+
+def migrate_closed_role_archives(
+    project_root: Optional[PathInput] = None,
+    *,
+    apply: bool = False,
+) -> Dict[str, Any]:
+    """Report or idempotently archive existing terminal roles on explicit request."""
+    applications = load_application_tracker(project_root)
+    candidate_ids: list[str] = []
+    for entry in applications:
+        if (
+            is_archived(entry)
+            or entry.get("restored_at")
+            or get_record_status(entry) not in TERMINAL_ARCHIVE_STATUSES
+        ):
+            continue
+        candidate_ids.append(str(entry.get("id") or ""))
+        if apply:
+            _apply_archive_lifecycle(entry, migrated=True)
+    if apply and candidate_ids:
+        save_application_tracker(applications, project_root)
+    return {
+        "dry_run": not apply,
+        "candidate_count": len(candidate_ids),
+        "archived_count": len(candidate_ids) if apply else 0,
+        "candidate_ids": candidate_ids,
+        "total_records": len(applications),
+    }
 
 
 def hide_role(
@@ -892,6 +1087,14 @@ def validate_tracker_entries(
 
         if not isinstance(application["show_on_dashboard"], bool):
             errors.append(f"{label} field show_on_dashboard must be true or false.")
+        if application.get("is_archived") is not None and not isinstance(
+            application.get("is_archived"), bool
+        ):
+            errors.append(f"{label} field is_archived must be true or false when present.")
+        if application.get("archive_history") is not None and not isinstance(
+            application.get("archive_history"), list
+        ):
+            errors.append(f"{label} field archive_history must be a list when present.")
 
         for aliases_field in ("company_aliases", "role_aliases"):
             aliases = application.get(aliases_field, [])

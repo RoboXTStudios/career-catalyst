@@ -19,8 +19,11 @@ from scripts.application_tracker import (
     TrackerValidationError,
     follow_up_action_state,
     get_record_status,
+    is_active_prospect,
+    is_archived,
     load_application_tracker,
     normalize_status,
+    restore_prospect,
     update_prospect,
     update_status,
     workflow_status_bucket,
@@ -52,6 +55,10 @@ from scripts.generate_dashboard import (
     structured_recommended_next_steps,
 )
 from scripts.career_signals import next_action_signal, select_todays_focus, status_date
+from scripts.career_coach import (
+    build_career_coach_brief,
+    career_coach_is_stale,
+)
 from scripts.generate_followups import (
     FOLLOWUP_ELIGIBLE_STATUSES,
     FollowupGenerationError,
@@ -374,6 +381,7 @@ APP_CSS = """
 
 def summarize_applications(applications: list[Dict[str, Any]]) -> Dict[str, int]:
     """Return concise, non-empty counts for the primary workflow statuses."""
+    applications = [item for item in applications if not is_archived(item)]
     counts = {status: 0 for status in VALID_STATUSES}
     for application in applications:
         status = get_record_status(application)
@@ -3367,6 +3375,7 @@ ANALYSIS_DIRTY_FIELDS = (
     "score_dirty",
     "application_strategy_dirty",
     "hiring_manager_brief_dirty",
+    "career_coach_dirty",
 )
 
 
@@ -3426,6 +3435,7 @@ def saved_application_voice(application: Dict[str, Any]) -> Dict[str, Any]:
         "hiring_manager_lens": dict(application.get("hiring_manager_lens") or {}),
         "application_strategy": dict(application.get("application_strategy") or {}),
         "hiring_manager_brief": dict(application.get("hiring_manager_brief") or {}),
+        "career_coach": dict(application.get("career_coach_brief") or {}),
         "proof_points_to_emphasize": list(
             application.get("proof_points_to_emphasize") or []
         ),
@@ -3460,6 +3470,7 @@ def persist_evidence_overrides_if_changed(
             "score_dirty": True,
             "application_strategy_dirty": True,
             "hiring_manager_brief_dirty": True,
+            "career_coach_dirty": True,
             "package_dirty": True,
         },
         project_root,
@@ -3518,17 +3529,267 @@ def refresh_saved_application_analysis(
         "role_evidence_selection": context.get("role_evidence_selection") or {},
         "evidence_selection_overrides": context.get("evidence_selection_overrides") or {},
         "context_fingerprint": context.get("context_fingerprint"),
+        "prospect_revision": context.get("prospect_revision"),
         "prospect_evidence_dirty": False,
         "role_analysis_dirty": False,
         "score_dirty": False,
         "application_strategy_dirty": False,
         "hiring_manager_brief_dirty": False,
+        "career_coach_dirty": False,
         "package_dirty": True,
         **persisted_match_fields(report),
     }
+    updates["career_coach_brief"] = build_career_coach_brief(
+        {**context.get("application", {}), **updates}
+    )
     updated = write(tracker_id, updates, project_root)
     invalidate_tracker_cache()
     return updated
+
+
+def refresh_saved_career_coach(
+    tracker_id: str,
+    project_root: Path = PROJECT_ROOT,
+    *,
+    writer: Any = None,
+) -> Dict[str, Any]:
+    """Explicitly refresh coaching from persisted analysis without rebuilding a graph."""
+    applications = load_application_tracker(project_root)
+    application = next(
+        (item for item in applications if str(item.get("id") or "") == tracker_id),
+        None,
+    )
+    if application is None:
+        raise TrackerValidationError(f"Tracker entry not found: {tracker_id}")
+    brief = build_career_coach_brief(application)
+    write = writer or update_prospect
+    updated = write(
+        tracker_id,
+        {"career_coach_brief": brief, "career_coach_dirty": False},
+        project_root,
+    )
+    invalidate_tracker_cache()
+    return updated
+
+
+def _render_career_coach_brief(
+    st: Any, brief: Dict[str, Any], *, scope_key: str = "prospect"
+) -> None:
+    """Render concise saved strategy; deeper references remain opt-in."""
+    st.markdown("## Career Coach")
+    st.markdown("### Recommended Positioning")
+    st.write(str(brief.get("recommended_positioning") or "Review the role analysis first."))
+
+    columns = st.columns(2)
+    with columns[0]:
+        st.markdown("### Lead With")
+        for value in brief.get("lead_with") or []:
+            st.markdown(f"- {value}")
+    with columns[1]:
+        st.markdown("### Downplay or De-emphasize")
+        values = list(brief.get("downplay") or [])
+        if values:
+            for value in values:
+                st.markdown(f"- {value}")
+        else:
+            st.caption("No specific secondary theme needs to be called out.")
+
+    st.markdown("### Likely Hiring Manager Concerns")
+    concerns = list(brief.get("hiring_manager_concerns") or [])
+    if concerns:
+        for value in concerns:
+            st.markdown(f"- {value}")
+    else:
+        st.caption("No material concern is supported by the saved role and career information.")
+
+    st.markdown("### How to Address Them")
+    responses = list(brief.get("concern_responses") or [])
+    if responses:
+        for item in responses:
+            if not isinstance(item, dict):
+                continue
+            st.markdown(f"**{item.get('concern') or 'Concern'}**")
+            st.write(str(item.get("response_strategy") or ""))
+    else:
+        st.caption("Keep answers specific, candid, and grounded in the saved career record.")
+
+    st.markdown("### Best Stories to Tell")
+    stories = list(brief.get("best_stories") or [])
+    if not stories:
+        st.caption("Refresh the role analysis after verified interview stories are available.")
+    for index, story in enumerate(stories):
+        if not isinstance(story, dict):
+            continue
+        with st.expander(str(story.get("title") or f"Story {index + 1}")):
+            st.write(str(story.get("why_it_matters") or ""))
+            st.markdown(f"**Angle:** {story.get('angle_to_emphasize') or ''}")
+            star = story.get("star") or {}
+            for label, key in (
+                ("Situation", "situation"),
+                ("Task", "task"),
+                ("Action", "action"),
+                ("Result", "result"),
+            ):
+                st.markdown(f"**{label}:** {star.get(key) or 'Not recorded.'}")
+
+    question_columns = st.columns(2)
+    with question_columns[0]:
+        st.markdown("### Questions to Prepare For")
+        for value in brief.get("questions_to_prepare_for") or []:
+            st.markdown(f"- {value}")
+    with question_columns[1]:
+        st.markdown("### Questions to Ask Them")
+        for value in brief.get("questions_to_ask_them") or []:
+            st.markdown(f"- {value}")
+
+    st.markdown("### Next Best Action")
+    st.info(str(brief.get("next_best_action") or "Review the role and decide what to do next."))
+
+    advanced_key = f"career_coach_advanced_{scope_key}"
+    if st.button(
+        "How Career Catalyst Chose This Strategy",
+        key=f"open_{advanced_key}",
+    ):
+        st.session_state[advanced_key] = not st.session_state.get(advanced_key, False)
+        st.rerun()
+    if st.session_state.get(advanced_key, False):
+        st.caption(
+            "This optional view lists the saved career records used for the strategy. "
+            "It does not rebuild the career profile."
+        )
+        for reference in brief.get("supporting_references") or []:
+            if isinstance(reference, dict):
+                st.markdown(
+                    f"- {reference.get('title') or 'Career record'} "
+                    f"(`{reference.get('id') or 'saved record'}`)"
+                )
+
+
+def _render_career_coach(st: Any) -> None:
+    st.markdown('<h2 class="cc-section-heading">Prospect Strategy</h2>', unsafe_allow_html=True)
+    applications = _load_applications(st)
+    if not applications:
+        st.info("Add a prospect first.")
+        return
+    by_id = {str(item["id"]): item for item in applications}
+    tracker_id = st.selectbox(
+        "Prospect",
+        tuple(by_id),
+        format_func=lambda value: _application_label(by_id[value]),
+        key="career_coach_tracker_id",
+    )
+    application = by_id[tracker_id]
+    status_text = get_record_status(application)
+    archive_text = " · Archived" if is_archived(application) else ""
+    st.caption(f"{company_display_name(application.get('company'))} · {status_text}{archive_text}")
+    brief = dict(application.get("career_coach_brief") or {})
+    stale = bool(application.get("career_coach_dirty")) or career_coach_is_stale(
+        application, brief
+    )
+    action_column, note_column = st.columns((1, 3))
+    if brief and stale:
+        note_column.caption("The saved strategy may be out of date. You can keep using it or refresh it.")
+    elif brief:
+        note_column.caption("Using the saved strategy. Nothing is regenerated during navigation.")
+    else:
+        note_column.caption("Create a strategy from the prospect’s saved analysis.")
+    if action_column.button(
+        "Refresh Strategy" if brief else "Create Strategy",
+        type="primary",
+        use_container_width=True,
+        key=f"refresh_career_coach_{tracker_id}",
+    ):
+        try:
+            if application_analysis_is_dirty(application):
+                refresh_saved_application_analysis(tracker_id, applications, PROJECT_ROOT)
+            else:
+                refresh_saved_career_coach(tracker_id, PROJECT_ROOT)
+        except Exception as error:
+            st.error(f"Career Coach refresh failed: {error}")
+        else:
+            st.rerun()
+    if brief:
+        _render_career_coach_brief(st, brief, scope_key=tracker_id)
+        with st.expander("Hiring Manager Brief", expanded=False):
+            _render_hiring_manager_brief(
+                st, dict(application.get("hiring_manager_brief") or {})
+            )
+    with st.expander("Prospect Record", expanded=False):
+        st.markdown(f"**Status:** {get_record_status(application)}")
+        st.write(str(application.get("notes") or "No notes saved."))
+        history = list(application.get("application_history") or [])
+        if history:
+            st.markdown("**Application History**")
+            for event in history:
+                if isinstance(event, dict):
+                    st.markdown(
+                        f"- {event.get('date') or 'Date not recorded'} · "
+                        f"{event.get('event') or 'Update'} · "
+                        f"{event.get('from') or ''} → {event.get('to') or ''}"
+                    )
+        package = _saved_package_map([application]).get(tracker_id, {})
+        files = dict(package.get("files") or {})
+        if files:
+            st.markdown("**Saved Materials**")
+            _material_button_rows(st, tracker_id, files)
+
+
+def open_archived_prospect(session_state: Any, tracker_id: str) -> None:
+    """Navigate from Archive to the full saved prospect on the next UI rerun."""
+    session_state["career_coach_tracker_id"] = tracker_id
+    session_state["active_workspace_page"] = "Career Coach"
+
+
+def _render_archive(st: Any) -> None:
+    st.markdown('<h2 class="cc-section-heading">Archive</h2>', unsafe_allow_html=True)
+    st.caption("Closed roles stay here with their full history and materials intact.")
+    applications = [item for item in _load_applications(st) if is_archived(item)]
+    if not applications:
+        st.info("No roles are archived.")
+        return
+    query = st.text_input("Search archived roles", key="archive_search").strip().lower()
+    statuses = ("All",) + tuple(sorted({get_record_status(item) for item in applications}))
+    companies = ("All",) + tuple(
+        sorted({company_display_name(item.get("company")) for item in applications})
+    )
+    filters = st.columns(2)
+    selected_status = filters[0].selectbox("Status", statuses, key="archive_status")
+    selected_company = filters[1].selectbox("Company", companies, key="archive_company")
+    records = []
+    for application in applications:
+        searchable = f"{application.get('company', '')} {application.get('role', '')}".lower()
+        if query and query not in searchable:
+            continue
+        if selected_status != "All" and get_record_status(application) != selected_status:
+            continue
+        if selected_company != "All" and company_display_name(application.get("company")) != selected_company:
+            continue
+        records.append(application)
+    st.caption(f"{len(records)} archived role{'s' if len(records) != 1 else ''}")
+    for application in records:
+        tracker_id = str(application.get("id") or "")
+        with st.container(border=True):
+            st.markdown(
+                f"**{company_display_name(application.get('company'))} — {application.get('role')}**"
+            )
+            st.caption(
+                f"{get_record_status(application)} · {application.get('archive_reason') or 'Other'} · "
+                f"Archived {str(application.get('archived_at') or 'date not recorded')[:10]}"
+            )
+            actions = st.columns(2)
+            if actions[0].button(
+                "Restore", key=f"archive_restore_{tracker_id}", use_container_width=True
+            ):
+                restore_prospect(tracker_id, PROJECT_ROOT)
+                invalidate_tracker_cache()
+                st.rerun()
+            actions[1].button(
+                "Open Prospect",
+                key=f"archive_open_{tracker_id}",
+                use_container_width=True,
+                on_click=open_archived_prospect,
+                args=(st.session_state, tracker_id),
+            )
 
 
 def submitted_applications(
@@ -3538,7 +3799,8 @@ def submitted_applications(
     return [
         application
         for application in applications
-        if get_record_status(application) in {"Applied", "Follow-up", "Interviewing"}
+        if is_active_prospect(application)
+        and get_record_status(application) in {"Applied", "Follow-up", "Interviewing"}
     ]
 
 
@@ -3549,7 +3811,8 @@ def networking_applications(
     return [
         application
         for application in applications
-        if get_record_status(application) in FOLLOWUP_ELIGIBLE_STATUSES
+        if is_active_prospect(application)
+        and get_record_status(application) in FOLLOWUP_ELIGIBLE_STATUSES
     ]
 
 
@@ -3592,6 +3855,7 @@ def _render_generate_package(st: Any) -> None:
         unsafe_allow_html=True,
     )
     applications = _load_applications(st)
+    applications = [item for item in applications if is_active_prospect(item)]
     if not applications:
         st.info("Add a prospect first.")
         return
@@ -4004,6 +4268,7 @@ def _render_update_status(st: Any) -> None:
 def _render_dashboard(st: Any) -> None:
     dashboard_path = PROJECT_ROOT / "exports" / "dashboard" / "index.html"
     applications = _load_applications(st)
+    applications = [item for item in applications if is_active_prospect(item)]
     if not applications:
         return
     packages = _saved_package_map(applications)
@@ -4459,12 +4724,14 @@ def _render_evidence_explorer(st: Any) -> None:
 
 UI_PAGES = (
     "Dashboard",
+    "Career Coach",
     "Career Intelligence",
     "Add Prospect",
     "Generate Materials",
     "Follow-Up",
     "Advanced Status Update",
     "Outputs",
+    "Archive",
 )
 
 
@@ -4476,6 +4743,7 @@ def render_active_page(
     """Render only the selected page; passive navigation must not execute other pages."""
     page_renderers = renderers or {
         "Dashboard": _render_dashboard,
+        "Career Coach": _render_career_coach,
         "Career Intelligence": _render_evidence_explorer,
         "Evidence & Capabilities": _render_evidence_explorer,
         "Add Prospect": _render_add_prospect,
@@ -4484,6 +4752,7 @@ def render_active_page(
         "Follow-Up": _render_followups,
         "Advanced Status Update": _render_update_status,
         "Outputs": _render_recent_outputs,
+        "Archive": _render_archive,
     }
     renderer = page_renderers.get(selected_page)
     if renderer is None:

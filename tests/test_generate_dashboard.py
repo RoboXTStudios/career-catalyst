@@ -82,18 +82,11 @@ class GenerateDashboardTests(unittest.TestCase):
             self.assertFalse(link.startswith("file:"))
         self.assertNotIn(str(PROJECT_ROOT), self.content)
 
-    def test_google_tracker_status_and_notes_apply_to_google_card(self):
-        self.assertIn("Google", self.content)
-        self.assertIn(
+    def test_rejected_google_role_is_excluded_from_active_dashboard(self):
+        self.assertNotIn(
             "Strategy and Operations Lead, YouTube Auction Brand",
             self.content,
         )
-        self.assertIn("Official Google Careers", self.content)
-        self.assertIn(
-            "Submitted application using Google-tailored styled resume and cover letter.",
-            self.content,
-        )
-        self.assertIn('<span class="badge status-applied">Applied</span>', self.content)
 
     def test_applied_section_preserves_all_applied_roles_without_duplicate_cards(self):
         applications = load_application_tracker(PROJECT_ROOT)
@@ -112,11 +105,7 @@ class GenerateDashboardTests(unittest.TestCase):
         self.assertEqual(len(role_ids), len(set(role_ids)))
 
     def test_invalid_playstation_role_is_not_in_active_section(self):
-        self.assertIn("Director, Ad Operations &amp; Technology", self.content)
-        self.assertRegex(
-            self.content,
-            r'data-status="Withdrawn / Closed"[^>]*>.*?Director, Ad Operations &amp; Technology',
-        )
+        self.assertNotIn("Director, Ad Operations &amp; Technology", self.content)
         self.assertIn("closedOnAll", self.content)
 
     def test_crunchyroll_role_matches_tracker_status(self):
@@ -127,7 +116,7 @@ class GenerateDashboardTests(unittest.TestCase):
             if item["id"] == "crunchyroll_enterprise_strategy_paused"
         )
         role = "Director, Enterprise Strategy &amp; Initiatives"
-        self.assertIn(role, self.content)
+        self.assertNotIn(role, self.content)
         self.assertEqual(get_record_status(crunchyroll), "Withdrawn / Closed")
 
     def test_dashboard_summary_distinguishes_tracker_states(self):

@@ -10,6 +10,7 @@ if __package__:
         TrackerValidationError,
         TrackerUpdateError,
         hide_role,
+        migrate_closed_role_archives,
         update_status,
         validate_application_tracker,
     )
@@ -52,6 +53,7 @@ else:
         TrackerUpdateError,
         TrackerValidationError,
         hide_role,
+        migrate_closed_role_archives,
         update_status,
         validate_application_tracker,
     )
@@ -535,6 +537,21 @@ def hide_role_command(tracker_id: str, reason: str) -> int:
     return 0
 
 
+def migrate_archives_command(apply: bool = False) -> int:
+    try:
+        report = migrate_closed_role_archives(PROJECT_ROOT, apply=apply)
+    except (TrackerUpdateError, TrackerValidationError) as error:
+        print(f"Could not evaluate archive migration: {error}", file=sys.stderr)
+        return 1
+    mode = "Applied" if apply else "Dry run"
+    print(f"{mode}: {report['candidate_count']} existing closed roles eligible for archive.")
+    if apply:
+        print(f"Archived: {report['archived_count']}")
+    for tracker_id in report["candidate_ids"]:
+        print(f"- {tracker_id}")
+    return 0
+
+
 def launcher_info_command() -> int:
     launcher_path = PROJECT_ROOT / "launchers" / "Open_Career_Catalyst.command"
     print("Career Catalyst macOS launcher")
@@ -625,6 +642,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     hide_parser.add_argument("tracker_id")
     hide_parser.add_argument("reason", nargs="+")
+    migration_parser = subparsers.add_parser(
+        "migrate-archives",
+        help="Dry-run or explicitly archive existing terminal tracker records",
+    )
+    migration_parser.add_argument(
+        "--apply", action="store_true", help="Persist the reported archive transitions"
+    )
     subparsers.add_parser(
         "launcher-info", help="Show how to open Career Catalyst with the macOS launcher"
     )
@@ -674,6 +698,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         return update_status_command(args.tracker_id, args.status)
     if args.command == "hide-role":
         return hide_role_command(args.tracker_id, " ".join(args.reason))
+    if args.command == "migrate-archives":
+        return migrate_archives_command(args.apply)
     if args.command == "launcher-info":
         return launcher_info_command()
 

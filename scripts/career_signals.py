@@ -12,9 +12,17 @@ import re
 from typing import Any, Dict, Iterable, Mapping, Optional
 
 try:
-    from .application_tracker import follow_up_action_state, get_record_status
+    from .application_tracker import (
+        follow_up_action_state,
+        get_record_status,
+        is_active_prospect,
+    )
 except ImportError:
-    from application_tracker import follow_up_action_state, get_record_status
+    from application_tracker import (
+        follow_up_action_state,
+        get_record_status,
+        is_active_prospect,
+    )
 
 
 IN_FLIGHT_STATUSES = frozenset(
@@ -145,7 +153,7 @@ def select_todays_focus(
     candidates = []
     for index, source in enumerate(records):
         record = dict(source)
-        if record.get("show_on_dashboard") is False:
+        if record.get("show_on_dashboard") is False or not is_active_prospect(record):
             continue
         status = get_record_status(record)
         if status in {"Rejected", "Withdrawn / Closed"}:
@@ -182,7 +190,11 @@ def operational_signal_summary(
     records: Iterable[Mapping[str, Any]], today: Optional[date] = None
 ) -> Dict[str, Any]:
     """Return the privacy-limited, read-only Ground Control signal payload."""
-    visible = [dict(item) for item in records if item.get("show_on_dashboard") is not False]
+    visible = [
+        dict(item)
+        for item in records
+        if item.get("show_on_dashboard") is not False and is_active_prospect(dict(item))
+    ]
     statuses = [get_record_status(item) for item in visible]
     focus = select_todays_focus(visible, today)
     follow_ups_due = sum(

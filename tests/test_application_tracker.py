@@ -83,7 +83,10 @@ class ApplicationTrackerTests(unittest.TestCase):
     def test_applied_and_visibility_states_are_preserved(self):
         by_id = {application["id"]: application for application in self.applications}
 
-        self.assertEqual(by_id["playstation_head_global_creative_ops"]["status"], "Paused")
+        self.assertEqual(
+            by_id["playstation_head_global_creative_ops"]["status"],
+            "Withdrawn / Closed",
+        )
         self.assertEqual(
             get_record_status(by_id["playstation_head_global_creative_ops"]),
             "Withdrawn / Closed",
@@ -94,7 +97,7 @@ class ApplicationTrackerTests(unittest.TestCase):
         )
         self.assertEqual(
             by_id["paramount_director_marketing_operations"]["status"],
-            "Active",
+            "Applied",
         )
         self.assertEqual(
             get_record_status(by_id["paramount_director_marketing_operations"]),
