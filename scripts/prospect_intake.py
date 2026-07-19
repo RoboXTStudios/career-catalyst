@@ -21,6 +21,7 @@ try:
         validate_official_url,
     )
     from .job_freshness import detect_job_freshness
+    from .hiring_manager_brief import build_hiring_manager_brief
     from .job_source_registry import normalize_job_source
     from .parse_job import JobParseError, extract_metadata, parse_job_description
     from .package_context import prospect_context_fingerprint
@@ -39,6 +40,7 @@ except ImportError:
         validate_official_url,
     )
     from job_freshness import detect_job_freshness
+    from hiring_manager_brief import build_hiring_manager_brief
     from job_source_registry import normalize_job_source
     from parse_job import JobParseError, extract_metadata, parse_job_description
     from package_context import prospect_context_fingerprint
@@ -247,6 +249,12 @@ def _refresh_downstream_intelligence(
     intelligence["hiring_manager_lens"] = lens
     intelligence["application_strategy"] = build_application_strategy(
         interpretation, lens, match_report, cards
+    )
+    intelligence["hiring_manager_brief"] = build_hiring_manager_brief(
+        match_report,
+        intelligence["role_evidence_selection"],
+        lens,
+        intelligence["application_strategy"],
     )
 
 
@@ -469,6 +477,8 @@ def create_prospect(
             or intelligence.get("role_interpretation", {}),
             "hiring_manager_lens": intelligence.get("hiring_manager_lens", {}),
             "application_strategy": intelligence.get("application_strategy", {}),
+            "hiring_manager_brief": intelligence.get("hiring_manager_brief", {}),
+            "hiring_manager_brief_dirty": False,
             "role_evidence_selection": match_report.get("role_evidence_selection", {}),
             "evidence_selection_overrides": dict(
                 normalized.get("evidence_selection_overrides") or {}
@@ -592,6 +602,8 @@ def add_prospect_from_job_file(
             or intelligence.get("role_interpretation", {}),
             "hiring_manager_lens": intelligence.get("hiring_manager_lens", {}),
             "application_strategy": intelligence.get("application_strategy", {}),
+            "hiring_manager_brief": intelligence.get("hiring_manager_brief", {}),
+            "hiring_manager_brief_dirty": False,
             "role_evidence_selection": match_report.get("role_evidence_selection", {}),
             "evidence_selection_overrides": {},
             "company_voice_profile": intelligence["profile_name"],

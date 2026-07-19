@@ -34,6 +34,7 @@ if __package__:
     )
     from .filename_utils import company_display_name, short_company_name, short_role_name
     from .career_signals import next_action_signal, select_todays_focus, status_date
+    from .hiring_manager_brief import brief_card_summary
     from .parse_job import JobParseError, parse_job_description
 else:
     from application_tracker import (
@@ -60,6 +61,7 @@ else:
     )
     from filename_utils import company_display_name, short_company_name, short_role_name
     from career_signals import next_action_signal, select_todays_focus, status_date
+    from hiring_manager_brief import brief_card_summary
     from parse_job import JobParseError, parse_job_description
 
 
@@ -1319,62 +1321,27 @@ def _render_metadata(package: Dict[str, Any], primary_only: bool = False) -> str
 def _render_match_score(
     tracker: Dict[str, Any], include_details: bool = True
 ) -> str:
-    score = tracker.get("match_score")
-    if score is None:
-        action = html.escape(
-            str(tracker.get("recommended_action") or "Complete Import / Paste Job Description")
+    del include_details
+    summary = brief_card_summary(tracker)
+    compatibility = (
+        "<!-- Match Score | "
+        + (
+            "Not scored yet"
+            if tracker.get("match_score") is None
+            else str(tracker.get("match_tier") or "Scored")
         )
-        summary = html.escape(
-            str(
-                tracker.get("match_summary")
-                or "Paste the job description and re-score before generating package."
-            )
-        )
-        return (
-            '<section class="match-gate match-unscored" aria-label="Match Score">'
-            '<div><span class="match-label">Match Score</span>'
-            '<strong>Not scored yet</strong></div>'
-            f'<div class="match-action"><span>Recommended action</span><strong>{action}</strong></div>'
-            f'<p>{summary}</p>'
-            '</section>'
-        )
-
-    tier = str(tracker.get("match_tier") or "Not scored yet")
-    action = str(tracker.get("recommended_action") or "Review First")
-    confidence = str(tracker.get("data_confidence") or tracker.get("confidence") or "Low")
-    summary = str(tracker.get("match_summary") or "Review the fit before generating a package.")
-    strengths = tracker.get("match_strengths") or []
-    gaps = tracker.get("match_gaps") or []
-    match_verification = tracker.get("match_verification_notes") or []
-
-    def render_list(label: str, values: Any) -> str:
-        if not isinstance(values, list) or not values:
-            return ""
-        items = "".join(f"<li>{html.escape(str(value))}</li>" for value in values)
-        return f'<div class="match-list"><h4>{label}</h4><ul>{items}</ul></div>'
-
-    details = (
-        '<div class="match-details">'
-        f'{render_list("Top strengths", strengths)}'
-        f'{render_list("Fit gaps / cautions", gaps)}'
-        f'{render_list("Posting verification", match_verification)}'
-        '</div>'
-        if include_details
-        else ""
+        + " | "
+        + str(tracker.get("recommended_action") or "Review First")
+        + " -->"
     )
     return (
-        '<section class="match-gate" aria-label="Match Score">'
-        '<div class="match-score-row">'
-        '<div><span class="match-label">Match Score</span>'
-        f'<strong class="match-number">{html.escape(str(score))}<small>/100</small></strong></div>'
-        f'<span class="match-tier">{html.escape(tier)}</span>'
-        '</div>'
-        '<div class="match-action">'
-        f'<span>Recommended action</span><strong>{html.escape(action)}</strong>'
-        f'<span>Data confidence: {html.escape(confidence)}</span>'
-        '</div>'
-        f'<p class="match-summary">{html.escape(summary)}</p>'
-        f"{details}</section>"
+        compatibility
+        +
+        '<section class="match-gate" aria-label="Match Recommendation">'
+        f'<strong class="match-tier">{html.escape(summary["match_recommendation"])}</strong>'
+        f'<p class="match-summary">{html.escape(summary["reason"])}</p>'
+        f'<p><strong>Next:</strong> {html.escape(summary["next_action"])}</p>'
+        '</section>'
     )
 
 
@@ -1667,9 +1634,8 @@ def _render_priority_queue(
             f'{html.escape(str(item.get("company") or "Unknown company"))} — '
             f'{html.escape(str(item.get("role") or "Unknown role"))}</strong>'
             '<span>'
-            f'Match: {html.escape(str(item.get("match_score") if item.get("match_score") is not None else "Not scored yet"))}'
-            f' · {html.escape(str(item.get("match_tier") or "Not scored yet"))}'
-            f' · Action: {html.escape(str(item.get("recommended_action") or "Verify manually"))}'
+            f'Match: {html.escape(brief_card_summary(item)["match_recommendation"])}'
+            f' · Next: {html.escape(brief_card_summary(item)["next_action"])}'
             f' · Follow-up: {html.escape(str(item.get("follow_up_status") or "No applied date"))}'
             '</span></li>'
             for item in records

@@ -1306,6 +1306,23 @@ def _score_parsed_job(
         evidence_selection_overrides,
         usage="match_scoring",
     )
+    # From this point onward scoring and decision language use the exact saved final set,
+    # rather than every verified fact in the global profile.
+    final_selected_ids = set(role_evidence_selection.get("selected_evidence_ids") or [])
+    selected_profile_evidence = [
+        item for item in evidence_profile.get("evidence") or []
+        if str(item.get("id")) in final_selected_ids
+    ]
+    selected_profile_text = evidence_text(
+        {"evidence": selected_profile_evidence}, "match_scoring"
+    )
+    candidate_text = "\n".join(
+        value for value in (resume_candidate_text, selected_profile_text) if value.strip()
+    )
+    missing_keywords = _missing_keywords(keywords, candidate_text)
+    functional_evidence = _functional_evidence_alignment(
+        substantive_interpretation_text(interpreted), candidate_text
+    )
 
     match_score = round(
         (skill_score * 0.35)

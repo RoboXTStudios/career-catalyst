@@ -11,6 +11,7 @@ import streamlit as st
 from .application_tracker import TRACKER_PATH, load_application_tracker
 from .capability_graph import CAPABILITY_GRAPH_PATH, load_capability_graph
 from .evidence_profile import EVIDENCE_PROFILE_PATH, load_evidence_profile
+from .evidence_summary import EVIDENCE_SUMMARY_PATH, load_evidence_page_summary
 from .generate_dashboard import load_application_packages
 
 
@@ -77,6 +78,17 @@ def _cached_application_tracker(
 
 
 @st.cache_data(show_spinner=False)
+def _cached_evidence_page_summary(
+    root_value: str,
+    summary_signature: tuple[bool, int, int],
+    evidence_signature: tuple[tuple[bool, int, int], ...],
+    graph_signature: tuple[bool, int, int],
+) -> dict[str, Any]:
+    del summary_signature, evidence_signature, graph_signature
+    return load_evidence_page_summary(Path(root_value))
+
+
+@st.cache_data(show_spinner=False)
 def _cached_application_packages(
     root_value: str,
     tracker_signature: tuple[bool, int, int],
@@ -89,6 +101,16 @@ def _cached_application_packages(
 def load_cached_evidence_profile(project_root: str | Path) -> dict[str, Any]:
     root = Path(project_root).resolve()
     return _cached_evidence_profile(str(root), _evidence_signature(root))
+
+
+def load_cached_evidence_page_summary(project_root: str | Path) -> dict[str, Any]:
+    root = Path(project_root).resolve()
+    return _cached_evidence_page_summary(
+        str(root),
+        _file_signature(root / EVIDENCE_SUMMARY_PATH),
+        _evidence_signature(root),
+        _file_signature(root / CAPABILITY_GRAPH_PATH),
+    )
 
 
 def load_cached_capability_graph(project_root: str | Path) -> dict[str, Any]:
@@ -120,10 +142,12 @@ def invalidate_evidence_caches() -> None:
     """Invalidate evidence and its true dependent, the capability graph."""
     _cached_evidence_profile.clear()
     _cached_capability_graph.clear()
+    _cached_evidence_page_summary.clear()
 
 
 def invalidate_capability_cache() -> None:
     _cached_capability_graph.clear()
+    _cached_evidence_page_summary.clear()
 
 
 def invalidate_tracker_cache() -> None:

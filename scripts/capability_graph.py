@@ -577,6 +577,13 @@ def save_capability_review(
         yaml.safe_dump(stored, sort_keys=False, allow_unicode=True, width=100),
         encoding="utf-8",
     )
+    # Capability review is an explicit mutation, so updating the lightweight aggregate is safe.
+    try:
+        from .evidence_summary import refresh_evidence_page_summary
+    except ImportError:
+        from evidence_summary import refresh_evidence_page_summary
+
+    refresh_evidence_page_summary(root)
     return path
 
 

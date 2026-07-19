@@ -1,0 +1,95 @@
+schema_version: 1
+generated_at: '2026-07-19T18:02:50+00:00'
+profile_updated_at: '2026-07-18T00:00:00+00:00'
+graph_updated_at: '2026-07-18T00:00:00+00:00'
+profile_summary:
+  career_profile: You are a senior operations and transformation leader whose experience spans advertising
+    technology and technical implementation, product and workflow design, team leadership, and AI-enabled
+    product development. Your strongest positioning is at the intersection of complex operations, product
+    thinking, technical translation, and organizational improvement.
+  strongest_areas:
+  - Operations Leadership
+  - Advertising Technology
+  - Technical Problem Solving
+  - Product and Workflow Design
+  - People Development
+  - AI Product and Workflow Leadership
+  featured_projects_and_experience:
+  - Disney Studios Theatrical
+  - Disney Streaming/DSS
+  - Career Catalyst
+  - Disney privacy-safe reporting
+  - Campaign Operations Leadership
+  - Advertising Technology
+  - Google and YouTube Platforms
+  - Campaign Manager 360
+  top_capabilities:
+  - id: ai_evaluation
+    name: AI Evaluation
+    strength: Direct Experience
+  - id: ai_product_ownership
+    name: AI Product Ownership
+    strength: Direct Experience
+  - id: ai_product_strategy
+    name: AI Product Strategy
+    strength: Direct Experience
+  - id: ai_quality_assurance
+    name: AI Quality Assurance
+    strength: Direct Experience
+  - id: ai_workflow_design
+    name: AI Workflow Design
+    strength: Direct Experience
+  - id: ai_assisted_software_delivery
+    name: AI-assisted Software Delivery
+    strength: Direct Experience
+  - id: confidence_verification_design
+    name: Confidence and Verification Design
+    strength: Direct Experience
+  - id: context_engineering
+    name: Context Engineering
+    strength: Direct Experience
+  major_projects:
+  - name: Disney Studios Theatrical
+    evidence_count: 13
+  - name: Disney Streaming/DSS
+    evidence_count: 13
+  - name: Career Catalyst
+    evidence_count: 11
+  - name: Disney privacy-safe reporting
+    evidence_count: 1
+  key_experience_not_on_resume:
+  - id: cm360
+    title: Campaign Manager 360
+    company: OMG23 / Omnicom Media Group
+    role: Campaign Operations leadership
+  - id: dv360
+    title: DV360
+    company: OMG23 / Omnicom Media Group
+    role: Campaign Operations leadership
+  - id: conversion_tracking
+    title: Conversion Tracking
+    company: OMG23 / Omnicom Media Group
+    role: Campaign Operations leadership
+  - id: server_to_server_conversion_api
+    title: Server-to-Server Conversion API
+    company: OMG23 / Omnicom Media Group
+    role: Campaign Operations leadership
+  - id: technical_troubleshooting
+    title: Technical Troubleshooting
+    company: OMG23 / Omnicom Media Group
+    role: Campaign Operations leadership
+  - id: career_catalyst_product_vision
+    title: Career Catalyst Product Vision and Strategy
+    company: Independent
+    role: Product Owner and Domain Expert
+  - id: career_catalyst_requirements_engineering
+    title: Career Catalyst Requirements Engineering
+    company: Independent
+    role: Requirements Architect
+  - id: career_catalyst_ai_workflow_architecture
+    title: Career Catalyst AI Workflow Architecture
+    company: Independent
+    role: AI Workflow Designer and Context Designer
+  total_verified_evidence: 25
+  total_confirmed_capabilities: 0
+needs_review: []

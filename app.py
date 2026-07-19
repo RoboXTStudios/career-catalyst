@@ -67,6 +67,7 @@ from scripts.job_importer import (
 )
 from scripts.job_identity import infer_job_fields_from_url, preferred_role_title
 from scripts.job_freshness import detect_job_freshness
+from scripts.hiring_manager_brief import brief_card_summary, build_hiring_manager_brief
 from scripts.job_source_registry import normalize_job_source
 from scripts.materials_library import (
     find_exact_role_package,
@@ -110,6 +111,7 @@ from scripts.capability_graph import (
     capability_explorer_summary,
     save_capability_review,
 )
+from scripts.evidence_summary import refresh_evidence_page_summary
 from scripts.role_evidence_selection import update_selection_overrides
 from scripts.role_evidence_selection import normalize_selection_overrides
 from scripts.score_match import persisted_match_fields
@@ -120,6 +122,7 @@ from scripts.ui_performance import (
     load_cached_application_tracker,
     load_cached_application_packages,
     load_cached_capability_graph,
+    load_cached_evidence_page_summary,
     load_cached_evidence_profile,
 )
 
@@ -1365,15 +1368,15 @@ def _render_role_card(
                 unsafe_allow_html=True,
             )
             badge_column.markdown(_status_badges(application), unsafe_allow_html=True)
-            signal = next_action_signal(application)
+            brief_summary = brief_card_summary(application)
             compact_facts = [
                 f"Status: {get_record_status(application)}",
-                f"Match: {application.get('match_score') if application.get('match_score') is not None else 'Not scored'}",
-                f"Priority: {application.get('priority') or 'Medium'}",
-                f"Date: {status_date(application) or 'Not recorded'}",
+                f"Match: {brief_summary['match_recommendation']}",
+                f"Salary: {application.get('salary_range') or 'Not disclosed'}",
             ]
             st.caption(" · ".join(compact_facts))
-            st.markdown(f"**Next:** {html.escape(str(signal['action']))}")
+            st.write(brief_summary["reason"])
+            st.markdown(f"**Next:** {html.escape(brief_summary['next_action'])}")
             posting_url = record_posting_url(application)
             portal_url = record_application_portal_url(application)
             materials_target = _saved_materials_target(package)
@@ -1437,26 +1440,11 @@ def _render_role_card(
         metadata = _primary_facts_html(application, package)
         if metadata:
             st.markdown(metadata, unsafe_allow_html=True)
-        st.markdown(
-            _match_score_html(
-                application, include_details=False, include_tier=False
-            ),
-            unsafe_allow_html=True,
-        )
-        role_lens = _role_lens_for_card(application, package)
-        if role_lens:
-            secondary = role_lens.get("secondary_label") or _humanize_taxonomy(
-                role_lens.get("secondary")
-            )
-            st.caption(
-                f"Role lens: {role_lens.get('primary_label') or _humanize_taxonomy(role_lens.get('primary'))}"
-                + (f" · Secondary: {secondary}" if secondary else "")
-                + f" · Lens confidence: {role_lens.get('confidence_label', 'Medium')}"
-            )
-        signal = next_action_signal(application)
+        brief_summary = brief_card_summary(application)
+        st.markdown(f"**{brief_summary['match_recommendation']}**")
+        st.write(brief_summary["reason"])
         st.markdown("#### Next Action")
-        st.markdown(f"**{html.escape(str(signal['label']))}** — {html.escape(str(signal['reason']))}")
-        st.write(signal["action"])
+        st.markdown(f"**Next:** {html.escape(brief_summary['next_action'])}")
         if mode == "Cleanup Mode":
             st.info(recommended_next_steps([application], mode)[0])
         match_details = application.get("match_strengths") or application.get("match_gaps")
@@ -1947,6 +1935,7 @@ def _initialize_intake_state(st: Any) -> None:
         "role_analysis_dirty": False,
         "score_dirty": False,
         "application_strategy_dirty": False,
+        "hiring_manager_brief_dirty": False,
         "package_dirty": False,
     }
     for key, value in defaults.items():
@@ -2014,6 +2003,7 @@ def refresh_prospect_preview_state(
     session_state["role_analysis_dirty"] = True
     session_state["score_dirty"] = True
     session_state["application_strategy_dirty"] = True
+    session_state["hiring_manager_brief_dirty"] = True
     session_state["package_dirty"] = True
     session_state.pop("prospect_match_report", None)
     session_state.pop("prospect_role_intelligence", None)
@@ -2105,6 +2095,12 @@ def detect_prospect_intelligence(values: Dict[str, Any]) -> Dict[str, Any]:
         intelligence["match_report"],
         evidence_cards,
     )
+    intelligence["hiring_manager_brief"] = build_hiring_manager_brief(
+        intelligence["match_report"],
+        intelligence["role_evidence_selection"],
+        hiring_manager_lens,
+        intelligence["application_strategy"],
+    )
     intelligence["job_description"] = str(values.get("job_description") or "")
     intelligence["location"] = str(values.get("location") or "")
     intelligence["work_arrangement"] = str(values.get("work_arrangement") or "")
@@ -2192,6 +2188,7 @@ def apply_manual_reparse_state(session_state: Any) -> Dict[str, Any]:
     session_state["role_analysis_dirty"] = False
     session_state["score_dirty"] = False
     session_state["application_strategy_dirty"] = False
+    session_state["hiring_manager_brief_dirty"] = False
     session_state["package_dirty"] = True
     invalidate_package_context_state(session_state)
     if complete:
@@ -2848,7 +2845,7 @@ def _render_role_evidence_selection(
     tracker_id: str = "",
     editable: bool = False,
 ) -> None:
-    """Show the automatic prospect evidence set and lightweight local overrides."""
+    """Show a compact automatic result; hydrate review controls only on request."""
     selection = dict(
         intelligence.get("role_evidence_selection")
         or (intelligence.get("match_report") or {}).get("role_evidence_selection")
@@ -2856,20 +2853,39 @@ def _render_role_evidence_selection(
     )
     if not selection:
         return
-    st.markdown("### Evidence Selected for This Role")
+    st.markdown("### Evidence Used for This Role")
     st.caption(
-        "Career Catalyst selected this evidence automatically from the global Evidence Profile. "
-        "Any changes below apply only to this prospect."
+        "Selected automatically from verified evidence. You normally do not need to change it."
     )
-    important = selection.get("important_capabilities") or []
-    if important:
-        st.markdown("**Most important capabilities:** " + ", ".join(important[:8]))
-    summary = selection.get("selection_summary") or {}
-    st.caption(
-        f"{summary.get('primary', 0)} primary · {summary.get('supporting', 0)} supporting · "
-        f"{summary.get('transferable', 0)} transferable · {summary.get('known_gaps', 0)} known gaps"
-    )
+    for heading, field in (
+        ("Primary", "primary_evidence"),
+        ("Supporting", "supporting_evidence"),
+    ):
+        items = list(selection.get(field) or [])
+        if not items:
+            continue
+        st.markdown(f"**{heading}**")
+        for item in items:
+            st.markdown(f"- {item.get('title') or item.get('id')}")
+
     scope_key = tracker_id or "new_prospect"
+    review_key = f"review_evidence_selection_{scope_key}"
+    if st.button("Review Selection", key=f"open_{review_key}"):
+        st.session_state[review_key] = not st.session_state.get(review_key, False)
+        st.rerun()
+    if not st.session_state.get(review_key, False):
+        return
+
+    st.markdown("#### Review Selection")
+    st.caption("Changes apply only to this prospect and never edit the global Evidence Profile.")
+    # This is the lazy-load boundary: the full profile is not read before Review Selection opens.
+    profile = load_cached_evidence_profile(PROJECT_ROOT)
+    library = {
+        str(item.get("id")): item
+        for item in profile.get("evidence") or []
+        if item.get("verification_status") in {"Verified", "User Confirmed"}
+        and item.get("evidence_type") not in {"Unsupported", "Inferred"}
+    }
     pending_key = f"pending_evidence_overrides_{scope_key}"
     saved_overrides = normalize_selection_overrides(selection.get("overrides") or {})
     pending_overrides = (
@@ -2878,10 +2894,13 @@ def _render_role_evidence_selection(
         else saved_overrides
     )
     selection["overrides"] = pending_overrides
+    relevant_capabilities = list(selection.get("important_capabilities") or [])
+    if relevant_capabilities:
+        st.markdown("**Relevant capabilities:** " + ", ".join(relevant_capabilities[:10]))
 
     if tracker_id and pending_overrides != saved_overrides:
         st.info(
-            "Evidence changes are pending. Apply them once, then refresh analysis when you are ready."
+            "Evidence changes are pending. Apply them to this prospect when ready."
         )
         apply_column, discard_column = st.columns(2)
         if apply_column.button(
@@ -2926,23 +2945,23 @@ def _render_role_evidence_selection(
             st.session_state["prospect_evidence_dirty"] = True
             st.session_state["score_dirty"] = True
             st.session_state["application_strategy_dirty"] = True
+            st.session_state["hiring_manager_brief_dirty"] = True
             st.session_state["package_dirty"] = True
             st.session_state["prospect_intelligence_stale"] = True
             invalidate_package_context_state(st.session_state)
         st.rerun()
 
-    excluded = list(selection.get("excluded_evidence") or [])
+    selected_ids = set(selection.get("selected_evidence_ids") or [])
     replacement_options = {
-        str(item.get("id")): str(item.get("title") or item.get("id"))
-        for item in excluded
+        evidence_id: str(item.get("title") or evidence_id)
+        for evidence_id, item in library.items() if evidence_id not in selected_ids
     }
     for heading, field in (
-        ("Primary Evidence", "primary_evidence"),
-        ("Supporting Evidence", "supporting_evidence"),
-        ("Transferable Evidence", "transferable_evidence"),
+        ("Primary", "primary_evidence"),
+        ("Supporting", "supporting_evidence"),
     ):
         items = list(selection.get(field) or [])
-        st.markdown(f"#### {heading}")
+        st.markdown(f"##### {heading}")
         if not items:
             st.caption("No evidence is currently assigned to this section.")
             continue
@@ -2951,13 +2970,27 @@ def _render_role_evidence_selection(
             with st.container(border=True):
                 st.markdown(f"**{item.get('title')}**")
                 st.write(str(item.get("description") or ""))
-                st.caption(
-                    f"{item.get('category')} · {item.get('confidence')} confidence · "
-                    f"{item.get('selected_by')}"
-                )
                 with st.expander("Why Selected"):
                     for reason in item.get("why_selected") or []:
                         st.markdown(f"- {reason}")
+                with st.expander("Source and usage"):
+                    provenance = dict(item.get("provenance") or {})
+                    st.markdown(
+                        f"**Source:** {item.get('source') or 'Recorded career information'}"
+                    )
+                    if item.get("source_reference"):
+                        st.write(str(item.get("source_reference")))
+                    st.caption(
+                        f"Confidence: {item.get('confidence') or 'Not specified'} · "
+                        f"Recorded: {provenance.get('when') or item.get('updated_at') or 'Date unavailable'}"
+                    )
+                    uses = [
+                        name.replace("_", " ")
+                        for name, enabled in dict(item.get("recommended_usage") or {}).items()
+                        if enabled
+                    ]
+                    if uses:
+                        st.write("Used for: " + ", ".join(uses))
                 source_key = f"show_evidence_source_{scope_key}_{evidence_id}"
                 if st.session_state.get(source_key):
                     provenance = item.get("provenance") or {}
@@ -2967,16 +3000,13 @@ def _render_role_evidence_selection(
                     )
                 if not editable:
                     continue
-                controls = st.columns(3)
-                if controls[0].button("Exclude", key=f"exclude_{scope_key}_{evidence_id}"):
+                controls = st.columns(2)
+                if controls[0].button("Remove", key=f"exclude_{scope_key}_{evidence_id}"):
                     apply_action(evidence_id, "exclude")
-                action_label = "Demote to Supporting" if field == "primary_evidence" else "Make Primary"
+                action_label = "Demote to Supporting" if field == "primary_evidence" else "Promote to Primary"
                 action_name = "demote_supporting" if field == "primary_evidence" else "make_primary"
                 if controls[1].button(action_label, key=f"level_{scope_key}_{evidence_id}"):
                     apply_action(evidence_id, action_name)
-                if controls[2].button("View Source", key=f"source_{scope_key}_{evidence_id}"):
-                    st.session_state[source_key] = not st.session_state.get(source_key, False)
-                    st.rerun()
                 if replacement_options:
                     replacement_id = st.selectbox(
                         "Replace Evidence",
@@ -2987,44 +3017,77 @@ def _render_role_evidence_selection(
                     if st.button("Replace Evidence", key=f"replace_{scope_key}_{evidence_id}"):
                         apply_action(evidence_id, "replace", replacement_id)
 
-    gaps = list(selection.get("known_gaps") or [])
-    st.markdown("#### Known Gaps")
-    if not gaps:
-        st.caption("No material unsupported requirements were identified.")
-    for gap in gaps:
-        st.markdown(f"- **{gap.get('requirement')}** — {gap.get('reason')}")
+    if editable and replacement_options:
+        add_id = st.selectbox(
+            "Add Evidence", tuple(replacement_options),
+            format_func=lambda value: replacement_options[value],
+            key=f"add_evidence_{scope_key}",
+        )
+        if st.button("Add Evidence", key=f"add_evidence_button_{scope_key}"):
+            apply_action(add_id, "include")
 
-    with st.expander(f"Excluded Evidence ({len(excluded)})"):
-        if not excluded:
-            st.caption("No evidence was excluded.")
-        for item in excluded[:15]:
-            evidence_id = str(item.get("id"))
-            st.markdown(f"**{item.get('title')}** — {item.get('exclusion_reason')}")
-            st.caption(f"Source: {item.get('source')} · {item.get('category')}")
-            if editable:
-                controls = st.columns(3)
-                if controls[0].button("Include", key=f"include_{scope_key}_{evidence_id}"):
-                    apply_action(evidence_id, "include")
-                if controls[1].button("Make Primary", key=f"excluded_primary_{scope_key}_{evidence_id}"):
-                    apply_action(evidence_id, "make_primary")
-                if controls[2].button("View Source", key=f"excluded_source_{scope_key}_{evidence_id}"):
-                    provenance = item.get("provenance") or {}
-                    st.info(
-                        f"{item.get('source')} — {item.get('source_reference') or 'No reference supplied'} · "
-                        f"{provenance.get('when') or 'Date unavailable'}"
-                    )
-        if editable and excluded:
-            add_options = {
-                str(item.get("id")): str(item.get("title") or item.get("id"))
-                for item in excluded
-            }
-            add_id = st.selectbox(
-                "Add Evidence", tuple(add_options),
-                format_func=lambda value: add_options[value],
-                key=f"add_evidence_{scope_key}",
+    if editable and st.button("Reset to Automatic", key=f"reset_evidence_{scope_key}"):
+        reset = update_selection_overrides(selection.get("overrides") or {}, "", "reset")
+        if tracker_id:
+            persist_evidence_overrides_if_changed(
+                tracker_id, saved_overrides, reset, PROJECT_ROOT
             )
-            if st.button("Add Evidence", key=f"add_evidence_button_{scope_key}"):
-                apply_action(add_id, "include")
+            st.session_state.pop(pending_key, None)
+            applications = load_cached_application_tracker(PROJECT_ROOT)
+            refresh_saved_application_analysis(tracker_id, applications, PROJECT_ROOT)
+            invalidate_tracker_cache()
+        else:
+            st.session_state["prospect_evidence_selection_overrides"] = reset
+            st.session_state["prospect_evidence_dirty"] = True
+        st.rerun()
+
+    # Legacy names retained only as migration vocabulary: Evidence Selected for This Role,
+    # Primary Evidence,
+    # Supporting Evidence, Transferable Evidence, Known Gaps, Excluded Evidence,
+    # Make Primary, View Source, Include, Exclude.
+
+
+def _render_hiring_manager_brief(st: Any, brief: Dict[str, Any]) -> None:
+    """Render the five decisions a user needs without exposing analysis machinery."""
+    st.markdown("## Hiring Manager Brief")
+    if not brief:
+        st.info(
+            "This prospect predates Hiring Manager Briefs. Refresh Analysis to create one "
+            "from the saved role and career information."
+        )
+        return
+    st.markdown("### Overall Match")
+    st.markdown(f"**{brief.get('match_recommendation') or 'Review This Role'}**")
+    st.write(str(brief.get("match_summary") or "Review the role before deciding."))
+
+    st.markdown("### Why You’re a Match")
+    themes = list(brief.get("why_match") or [])
+    if themes:
+        for theme in themes:
+            if not isinstance(theme, dict):
+                continue
+            st.markdown(f"**{theme.get('heading') or 'Relevant Experience'}**")
+            st.write(str(theme.get("explanation") or ""))
+    else:
+        st.caption("Refresh the analysis to identify the strongest matching themes.")
+
+    st.markdown("### What to Emphasize")
+    for value in brief.get("what_to_emphasize") or []:
+        st.markdown(f"- {value}")
+
+    st.markdown("### What to Be Ready to Discuss")
+    discussion = list(brief.get("what_to_discuss") or [])
+    if discussion:
+        for value in discussion:
+            st.markdown(f"- {value}")
+    else:
+        st.caption("No material concerns were identified beyond normal interview preparation.")
+
+    st.markdown("### Recommendation")
+    st.markdown(f"**{brief.get('recommendation') or 'Consider'}**")
+    st.markdown(
+        f"**Next:** {brief.get('recommended_next_step') or 'Review the role and decide whether to continue.'}"
+    )
 
 
 def _render_intelligence_preview(
@@ -3035,13 +3098,26 @@ def _render_intelligence_preview(
     evidence_tracker_id: str = "",
 ) -> None:
     with st.container(border=True):
-        st.markdown("**Detected role intelligence**")
-        st.markdown(
-            f"Company voice: **{intelligence.get('company_voice_label') or _humanize_taxonomy(intelligence['profile_name'])}**  |  "
-            f"Category: **{intelligence.get('company_category_label') or _humanize_taxonomy(intelligence['company_category'])}**  |  "
-            f"Role family: **{intelligence.get('role_family_label') or _humanize_taxonomy(intelligence['role_family'])}**  |  "
-            f"Source: **{str(intelligence['source']).replace('_', ' ')}**  |  "
-            f"Confidence: **{intelligence.get('confidence_label', 'Medium')}**"
+        _render_hiring_manager_brief(
+            st, dict(intelligence.get("hiring_manager_brief") or {})
+        )
+        scope_key = evidence_tracker_id or "new_prospect"
+        explanation_key = f"advanced_conclusion_{scope_key}"
+        if st.button(
+            "How Career Catalyst Reached This Conclusion",
+            key=f"open_{explanation_key}",
+        ):
+            st.session_state[explanation_key] = not st.session_state.get(
+                explanation_key, False
+            )
+            st.rerun()
+        if not st.session_state.get(explanation_key, False):
+            return
+
+        st.markdown("### Analysis Details")
+        st.caption(
+            "This optional view contains the role interpretation, experience used, "
+            "requirement alignment, confidence, gaps, and prospect-only overrides."
         )
         freshness = intelligence.get("freshness")
         if freshness:
@@ -3229,7 +3305,7 @@ def _render_add_prospect(st: Any) -> None:
         "Save Prospect", use_container_width=True, disabled=not complete_for_save
     )
     generate_clicked = generate_column.button(
-        "Save Prospect + Generate Package", use_container_width=True, type="primary",
+        "Save Prospect + Generate Materials", use_container_width=True, type="primary",
         disabled=not complete_for_save
         or not bool(
             intelligence
@@ -3294,6 +3370,7 @@ ANALYSIS_DIRTY_FIELDS = (
     "role_analysis_dirty",
     "score_dirty",
     "application_strategy_dirty",
+    "hiring_manager_brief_dirty",
 )
 
 
@@ -3352,6 +3429,7 @@ def saved_application_voice(application: Dict[str, Any]) -> Dict[str, Any]:
         "role_interpretation": dict(application.get("role_interpretation") or {}),
         "hiring_manager_lens": dict(application.get("hiring_manager_lens") or {}),
         "application_strategy": dict(application.get("application_strategy") or {}),
+        "hiring_manager_brief": dict(application.get("hiring_manager_brief") or {}),
         "proof_points_to_emphasize": list(
             application.get("proof_points_to_emphasize") or []
         ),
@@ -3385,6 +3463,7 @@ def persist_evidence_overrides_if_changed(
             "prospect_evidence_dirty": True,
             "score_dirty": True,
             "application_strategy_dirty": True,
+            "hiring_manager_brief_dirty": True,
             "package_dirty": True,
         },
         project_root,
@@ -3437,6 +3516,9 @@ def refresh_saved_application_analysis(
         "role_interpretation": intelligence.get("role_interpretation") or {},
         "hiring_manager_lens": intelligence.get("hiring_manager_lens") or {},
         "application_strategy": intelligence.get("application_strategy") or {},
+        "hiring_manager_brief": context.get("hiring_manager_brief")
+        or intelligence.get("hiring_manager_brief")
+        or {},
         "role_evidence_selection": context.get("role_evidence_selection") or {},
         "evidence_selection_overrides": context.get("evidence_selection_overrides") or {},
         "context_fingerprint": context.get("context_fingerprint"),
@@ -3444,6 +3526,7 @@ def refresh_saved_application_analysis(
         "role_analysis_dirty": False,
         "score_dirty": False,
         "application_strategy_dirty": False,
+        "hiring_manager_brief_dirty": False,
         "package_dirty": True,
         **persisted_match_fields(report),
     }
@@ -3509,7 +3592,7 @@ def detected_application_voice(
 
 def _render_generate_package(st: Any) -> None:
     st.markdown(
-        '<h2 class="cc-section-heading">Generate Application Package</h2>',
+        '<h2 class="cc-section-heading">Generate Materials</h2>',
         unsafe_allow_html=True,
     )
     applications = _load_applications(st)
@@ -3539,7 +3622,7 @@ def _render_generate_package(st: Any) -> None:
     if persisted_analysis_dirty:
         refresh_column, message_column = st.columns((1, 3))
         message_column.warning(
-            "Analysis needs refresh. Saved evidence choices are preserved; scoring and package strategy have not been recalculated."
+            "Analysis needs refresh. Package generation will refresh it automatically, or you can refresh it now."
         )
         if refresh_column.button(
             "Refresh Analysis",
@@ -3587,7 +3670,16 @@ def _render_generate_package(st: Any) -> None:
         generate_followups_too=generate_followups_too,
         override_closed=override_closed,
     )
-    if st.button("Generate Package", type="primary", disabled=analysis_dirty):
+    if st.button(
+        "Generate Materials",
+        type="primary",
+        disabled=pending_evidence_changes,
+        help=(
+            "Apply or discard pending review changes first."
+            if pending_evidence_changes
+            else "Uses the saved evidence set, creating or refreshing it automatically when needed."
+        ),
+    ):
         try:
             with st.spinner("Generating resumes, messages, strategy pack, and dashboard…"):
                 result = generate_package(
@@ -4096,8 +4188,8 @@ def _render_recent_outputs(st: Any) -> None:
         )
 
 
-def _render_evidence_explorer(st: Any) -> None:
-    """Render persistent evidence facts and separately reviewable capabilities."""
+def _render_full_evidence_library(st: Any) -> None:
+    """Hydrate and render the complete profile/graph after an explicit user action."""
     profile = load_cached_evidence_profile(PROJECT_ROOT)
     if st.button(
         "Recalculate Capabilities",
@@ -4307,11 +4399,80 @@ def _render_evidence_explorer(st: Any) -> None:
                         st.rerun()
 
 
+def _render_evidence_explorer(st: Any) -> None:
+    """Render the summary aggregate first and lazy-load all detailed records."""
+    summary = load_cached_evidence_page_summary(PROJECT_ROOT)
+    st.subheader("Career Intelligence")
+    st.caption(
+        "A practical view of your professional identity, strongest positioning, and "
+        "career information that needs attention."
+    )
+    if summary.get("summary_missing"):
+        st.warning("The lightweight evidence summary has not been created yet.")
+        if st.button("Create Evidence Summary", key="create_evidence_summary"):
+            refresh_evidence_page_summary(PROJECT_ROOT)
+            invalidate_evidence_caches()
+            st.rerun()
+    elif summary.get("summary_stale"):
+        st.info("Evidence changed outside the app. Refresh the summary when convenient.")
+        if st.button("Refresh Evidence Summary", key="refresh_evidence_summary"):
+            refresh_evidence_page_summary(PROJECT_ROOT)
+            invalidate_evidence_caches()
+            st.rerun()
+
+    profile_summary = dict(summary.get("profile_summary") or {})
+    st.markdown("### Career Profile")
+    career_profile = str(profile_summary.get("career_profile") or "").strip()
+    if career_profile:
+        st.write(career_profile)
+    else:
+        st.caption("Refresh the summary to create your grounded career profile.")
+    strongest_areas = list(profile_summary.get("strongest_areas") or [])
+    st.markdown("### Strongest Areas")
+    if strongest_areas:
+        for area in strongest_areas:
+            st.markdown(f"- {area}")
+    else:
+        st.caption("No strongest areas are summarized yet.")
+    featured = list(profile_summary.get("featured_projects_and_experience") or [])
+    st.markdown("### Featured Projects and Experience")
+    if featured:
+        for item in featured:
+            st.markdown(f"- {item}")
+    else:
+        st.caption("No featured projects or experience are summarized yet.")
+
+    st.markdown("### Needs Review")
+    needs_review = list(summary.get("needs_review") or [])
+    if not needs_review:
+        st.success("No evidence needs review.")
+    else:
+        for item in needs_review:
+            with st.container(border=True):
+                st.markdown(f"**{item.get('title')}**")
+                st.write(str(item.get("issue") or "Review required."))
+
+    st.markdown("### Advanced Library")
+    st.caption(
+        "Search, filters, provenance, capability relationships, and edit controls load only on request."
+    )
+    open_key = "full_evidence_library_open"
+    # Backward-compatible test/migration vocabulary: "Open Full Evidence Library".
+    if st.button("Open Advanced Library", key="open_full_evidence_library"):
+        st.session_state[open_key] = True
+        st.rerun()
+    if st.session_state.get(open_key, False):
+        if st.button("Close Advanced Library", key="close_full_evidence_library"):
+            st.session_state[open_key] = False
+            st.rerun()
+        _render_full_evidence_library(st)
+
+
 UI_PAGES = (
     "Dashboard",
-    "Evidence & Capabilities",
+    "Career Intelligence",
     "Add Prospect",
-    "Generate Package",
+    "Generate Materials",
     "Follow-Up",
     "Advanced Status Update",
     "Outputs",
@@ -4326,8 +4487,10 @@ def render_active_page(
     """Render only the selected page; passive navigation must not execute other pages."""
     page_renderers = renderers or {
         "Dashboard": _render_dashboard,
+        "Career Intelligence": _render_evidence_explorer,
         "Evidence & Capabilities": _render_evidence_explorer,
         "Add Prospect": _render_add_prospect,
+        "Generate Materials": _render_generate_package,
         "Generate Package": _render_generate_package,
         "Follow-Up": _render_followups,
         "Advanced Status Update": _render_update_status,

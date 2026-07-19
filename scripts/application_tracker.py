@@ -557,6 +557,7 @@ def save_application_tracker(
     project_root: Optional[PathInput] = None,
 ) -> Path:
     """Validate and save tracker entries without reordering their fields."""
+    migrate_application_evidence_selections(applications)
     report = validate_tracker_entries(applications)
     if report["errors"]:
         raise TrackerValidationError(" ".join(report["errors"]))
@@ -579,6 +580,55 @@ def save_application_tracker(
             f"Unable to save application tracker {TRACKER_PATH}: {error}"
         ) from error
     return tracker_path
+
+
+def migrate_application_evidence_selections(
+    applications: List[Dict[str, Any]],
+) -> int:
+    """Add independent overrides to legacy records without rebuilding any selection."""
+    try:
+        from .role_evidence_selection import migrate_legacy_selection_to_overrides
+    except ImportError:
+        from role_evidence_selection import migrate_legacy_selection_to_overrides
+
+    migrated = 0
+    for application in applications:
+        selection = application.get("role_evidence_selection")
+        if not isinstance(selection, dict) or not selection:
+            continue
+        existing = application.get("evidence_selection_overrides")
+        normalized = migrate_legacy_selection_to_overrides(
+            selection,
+            existing if isinstance(existing, dict) else None,
+        )
+        if existing != normalized:
+            application["evidence_selection_overrides"] = normalized
+            migrated += 1
+    return migrated
+
+
+def mark_role_evidence_selections_dirty(
+    project_root: Optional[PathInput] = None,
+) -> int:
+    """Invalidate saved role selections after an explicit global evidence mutation."""
+    applications = load_application_tracker(project_root)
+    changed = 0
+    for application in applications:
+        if not application.get("role_evidence_selection"):
+            continue
+        updates = {
+            "prospect_evidence_dirty": True,
+            "score_dirty": True,
+            "application_strategy_dirty": True,
+            "hiring_manager_brief_dirty": True,
+            "package_dirty": True,
+        }
+        if any(application.get(key) != value for key, value in updates.items()):
+            application.update(updates)
+            changed += 1
+    if changed:
+        save_application_tracker(applications, project_root)
+    return changed
 
 
 def save_tracker(

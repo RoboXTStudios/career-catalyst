@@ -24,6 +24,7 @@ try:
     from .generate_dashboard import generate_dashboard
     from .generate_messages import generate_message
     from .generate_interview_prep import generate_interview_prep
+    from .hiring_manager_brief import build_hiring_manager_brief
     from .generate_strategy_pack import generate_strategy_pack
     from .job_freshness import detect_job_freshness
     from .opportunity_scoring import score_opportunity
@@ -62,6 +63,7 @@ except ImportError:
     from generate_dashboard import generate_dashboard
     from generate_messages import generate_message
     from generate_interview_prep import generate_interview_prep
+    from hiring_manager_brief import build_hiring_manager_brief
     from generate_strategy_pack import generate_strategy_pack
     from job_freshness import detect_job_freshness
     from opportunity_scoring import score_opportunity
@@ -281,6 +283,12 @@ def build_package_context(
             for item in selected_evidence(intelligence["role_evidence_selection"])
         ],
     )
+    intelligence["hiring_manager_brief"] = build_hiring_manager_brief(
+        match_report,
+        intelligence["role_evidence_selection"],
+        intelligence["hiring_manager_lens"],
+        intelligence["application_strategy"],
+    )
     computed_fingerprint = prospect_context_fingerprint(
         {
             "prospect_id": str(application.get("id") or prospect_id),
@@ -362,6 +370,7 @@ def build_package_context(
         "role_intelligence": intelligence,
         "match_report": match_report,
         "role_evidence_selection": intelligence["role_evidence_selection"],
+        "hiring_manager_brief": intelligence["hiring_manager_brief"],
         "evidence_selection_overrides": saved_evidence_overrides,
         "selected_package_paths": selected_package_paths,
         "context_fingerprint": computed_fingerprint,
@@ -556,6 +565,7 @@ def generate_package(
                 or intelligence.get("role_interpretation", {}),
                 "hiring_manager_lens": intelligence.get("hiring_manager_lens", {}),
                 "application_strategy": intelligence.get("application_strategy", {}),
+                "hiring_manager_brief": context.get("hiring_manager_brief", {}),
                 "role_evidence_selection": context.get("role_evidence_selection", {}),
                 "evidence_selection_overrides": context.get("evidence_selection_overrides", {}),
                 "company_voice_profile": intelligence["profile_name"],
@@ -573,6 +583,7 @@ def generate_package(
                 "role_analysis_dirty": False,
                 "score_dirty": False,
                 "application_strategy_dirty": False,
+                "hiring_manager_brief_dirty": False,
                 "package_dirty": True,
                 **persisted_match_fields(score),
             },
@@ -649,6 +660,7 @@ def generate_package(
                 "package_quality": quality,
                 "hiring_manager_lens": intelligence.get("hiring_manager_lens", {}),
                 "application_strategy": intelligence.get("application_strategy", {}),
+                "hiring_manager_brief": context.get("hiring_manager_brief", {}),
             },
             root,
         )

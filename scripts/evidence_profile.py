@@ -263,6 +263,12 @@ def save_evidence_profile(
     root = _root(project_root)
     path = root / EVIDENCE_PROFILE_PATH
     path.parent.mkdir(parents=True, exist_ok=True)
+    previous = {}
+    if path.is_file():
+        try:
+            previous = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError):
+            previous = {}
     normalized = dict(profile)
     normalized["schema_version"] = SCHEMA_VERSION
     normalized["profile_updated_at"] = _now()
@@ -272,10 +278,44 @@ def save_evidence_profile(
         if isinstance(item, dict)
     ]
     normalized["discoveries"] = list(normalized.get("discoveries") or [])
+    def verified_records(values: dict[str, Any]) -> list[dict[str, Any]]:
+        return sorted(
+            [
+                dict(item)
+                for item in values.get("evidence") or []
+                if isinstance(item, dict)
+                and item.get("verification_status") in {"Verified", "User Confirmed"}
+                and item.get("evidence_type") not in {"Unsupported", "Inferred"}
+            ],
+            key=lambda item: str(item.get("id") or ""),
+        )
+
+    verified_evidence_changed = verified_records(previous) != verified_records(normalized)
     path.write_text(
         yaml.safe_dump(normalized, sort_keys=False, allow_unicode=True, width=100),
         encoding="utf-8",
     )
+    # The summary is rebuilt only after this explicit mutation, never on page navigation.
+    try:
+        from .evidence_summary import refresh_evidence_page_summary
+        from .application_tracker import (
+            TrackerValidationError,
+            mark_role_evidence_selections_dirty,
+        )
+    except ImportError:
+        from evidence_summary import refresh_evidence_page_summary
+        from application_tracker import (
+            TrackerValidationError,
+            mark_role_evidence_selections_dirty,
+        )
+
+    refresh_evidence_page_summary(root, profile=normalized)
+    if verified_evidence_changed:
+        try:
+            mark_role_evidence_selections_dirty(root)
+        except TrackerValidationError:
+            # Standalone profiles and test fixtures do not require a tracker.
+            pass
     return path
 
 
