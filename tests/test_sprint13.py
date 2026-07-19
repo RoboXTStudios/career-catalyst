@@ -69,7 +69,7 @@ class MatchScoreModelTests(unittest.TestCase):
             report["match_gaps"],
         )
 
-    def test_missing_salary_is_not_disclosed_and_reduces_confidence(self):
+    def test_missing_salary_is_a_verification_note_not_a_fit_gap(self):
         report = score_job_data(
             {
                 "company": "Signal Media",
@@ -87,9 +87,10 @@ class MatchScoreModelTests(unittest.TestCase):
 
         self.assertEqual(report["salary_range"], "Not disclosed")
         self.assertNotEqual(report["confidence"], "High")
-        self.assertTrue(any("not disclosed" in gap.lower() for gap in report["match_gaps"]))
+        self.assertFalse(any("salary" in gap.lower() or "compensation" in gap.lower() for gap in report["match_gaps"]))
+        self.assertIn("Salary information unavailable.", report["verification_notes"])
 
-    def test_closed_role_is_always_a_pass(self):
+    def test_closed_role_keeps_fit_classification_but_requires_review(self):
         report = score_job_data(
             {
                 "company": "Closed Media",
@@ -106,9 +107,9 @@ class MatchScoreModelTests(unittest.TestCase):
             PROJECT_ROOT,
         )
 
-        self.assertEqual(report["match_tier"], "Pass")
-        self.assertEqual(report["recommended_action"], "Pass")
-        self.assertLessEqual(report["match_score"], 25)
+        self.assertEqual(report["match_tier"], "Strong Match")
+        self.assertEqual(report["recommended_action"], "Review First")
+        self.assertTrue(any("appears closed" in note.lower() for note in report["verification_notes"]))
 
 
 class MatchScorePersistenceAndDashboardTests(unittest.TestCase):

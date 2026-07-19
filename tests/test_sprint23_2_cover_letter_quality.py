@@ -176,8 +176,9 @@ def test_uta_golden_fixture_preserves_people_operations_boundary(golden_outputs)
     ).read_text(encoding="utf-8")
 
     assert content == expected
-    assert "operations rather than a traditional HR function" in content
-    assert "ownership of employee relations, HR systems, or People policy" in content
+    assert "operations rather than a traditional HR function" not in content
+    assert "ownership of employee relations, HR systems, or People policy" not in content
+    assert "I bring a practical understanding of how change is adopted" in content
     assert not any(
         phrase in content.lower()
         for phrase in (

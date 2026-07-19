@@ -10,9 +10,22 @@ from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
 
 try:
+    from .application_strategy import (
+        TECHNICAL_ARCHETYPES,
+        build_application_strategy,
+        build_hiring_manager_lens,
+        interview_preparation_model,
+        role_specificity_check,
+    )
     from .company_voice import company_voice_context
     from .cover_letter_quality import cover_letter_quality_pass
-    from .evidence_engine import load_evidence_cards, load_writing_voice_profile, select_evidence_cards
+    from .evidence_engine import load_evidence_cards, load_writing_voice_profile
+    from .evidence_profile import (
+        evidence_as_card,
+        load_evidence_profile,
+    )
+    from .capability_graph import load_capability_graph
+    from .role_evidence_selection import selected_evidence as selected_role_evidence
     from .employer_identity import (
         OMG23_DISPLAY_NAME,
         canonical_employer_name,
@@ -27,6 +40,7 @@ try:
     from .load_data import load_all_yaml
     from .parse_job import parse_job_description
     from .package_context import validate_material_context
+    from .public_advocacy import rewrite_public_advocacy, validate_public_advocacy
     from .role_lens import enforce_role_lens_quality
     from .role_context import (
         GOOGLE_IMPLICATION_PHRASES,
@@ -41,9 +55,19 @@ try:
     from .score_match import score_job_match
     from .text_cleanup import cleanup_repeated_words
 except ImportError:
+    from application_strategy import (
+        TECHNICAL_ARCHETYPES,
+        build_application_strategy,
+        build_hiring_manager_lens,
+        interview_preparation_model,
+        role_specificity_check,
+    )
     from company_voice import company_voice_context
     from cover_letter_quality import cover_letter_quality_pass
-    from evidence_engine import load_evidence_cards, load_writing_voice_profile, select_evidence_cards
+    from evidence_engine import load_evidence_cards, load_writing_voice_profile
+    from evidence_profile import evidence_as_card, load_evidence_profile
+    from capability_graph import load_capability_graph
+    from role_evidence_selection import selected_evidence as selected_role_evidence
     from employer_identity import (
         OMG23_DISPLAY_NAME,
         canonical_employer_name,
@@ -58,6 +82,7 @@ except ImportError:
     from load_data import load_all_yaml
     from parse_job import parse_job_description
     from package_context import validate_material_context
+    from public_advocacy import rewrite_public_advocacy, validate_public_advocacy
     from role_lens import enforce_role_lens_quality
     from role_context import (
         GOOGLE_IMPLICATION_PHRASES,
@@ -83,6 +108,7 @@ class ApplicationMaterialError(Exception):
 def load_generation_context(
     job_path: PathInput,
     project_root: Optional[PathInput] = None,
+    package_context: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Load career data, parsed job details, and the match report."""
     root = Path(project_root) if project_root is not None else Path.cwd()
@@ -92,9 +118,16 @@ def load_generation_context(
 
     career_data = load_all_yaml(root)
     parsed_job = parse_job_description(resolved_job_path)
+    package_context = dict(package_context or {})
+    saved_interpretation = (
+        package_context.get("role_interpretation")
+        or (package_context.get("role_intelligence") or {}).get("role_interpretation")
+        or {}
+    )
     voice_context = company_voice_context(
         parsed_job,
         career_data["config"].get("company_voice_profiles", {}),
+        saved_interpretation if isinstance(saved_interpretation, dict) else None,
     )
     parsed_job = dict(parsed_job)
     parsed_job["company_legal_name"] = parsed_job.get("company")
@@ -104,9 +137,78 @@ def load_generation_context(
     parsed_job["primary_role_lens"] = role_lens.get("primary")
     parsed_job["role_lens"] = role_lens
     parsed_job["requirement_map"] = requirement_map
+    parsed_job["role_interpretation"] = dict(
+        voice_context.get("role_interpretation") or {}
+    )
     evidence_cards = load_evidence_cards(root)
+    evidence_profile = load_evidence_profile(root)
     writing_voice = load_writing_voice_profile(root)
-    selected_evidence = select_evidence_cards(parsed_job, evidence_cards)
+    evidence_selection_overrides = dict(
+        package_context.get("evidence_selection_overrides")
+        or (package_context.get("role_evidence_selection") or {}).get("overrides")
+        or {}
+    )
+    match_report = (
+        score_job_match(
+            job_path,
+            root,
+            parsed_job["role_interpretation"],
+            evidence_selection_overrides or None,
+        )
+        if parsed_job.get("role_interpretation")
+        else score_job_match(
+            job_path, root, evidence_selection_overrides=evidence_selection_overrides or None
+        )
+    )
+    role_interpretation = dict(
+        match_report.get("role_interpretation")
+        or parsed_job.get("role_interpretation")
+        or {}
+    )
+    parsed_job["role_interpretation"] = role_interpretation
+    role_evidence_selection = dict(
+        match_report.get("role_evidence_selection") or {}
+    )
+    exact_role_evidence = selected_role_evidence(role_evidence_selection)
+    selected_profile_evidence = [
+        item for item in exact_role_evidence
+        if (item.get("recommended_usage") or {}).get("cover_letter", True)
+    ][:6]
+    selected_interview_profile_evidence = [
+        item for item in exact_role_evidence
+        if (item.get("recommended_usage") or {}).get("interview", True)
+    ][:8]
+    exact_role_evidence_cards = [evidence_as_card(item) for item in exact_role_evidence]
+    combined_selected_evidence = list(exact_role_evidence_cards)
+    effective_voice = dict(voice_context.get("effective_voice_profile") or {})
+    effective_voice.update({
+        "selected_evidence_ids": [item["id"] for item in exact_role_evidence_cards],
+        "selected_evidence_labels": [item["label"] for item in exact_role_evidence_cards],
+        "proof_points_to_emphasize": [
+            point
+            for item in exact_role_evidence_cards
+            for point in item.get("proof_points") or []
+        ],
+        "profile_evidence_to_emphasize": selected_profile_evidence,
+        "selected_profile_evidence_ids": [
+            str(item.get("id")) for item in selected_profile_evidence
+        ],
+    })
+    voice_context["effective_voice_profile"] = effective_voice
+    capability_graph = load_capability_graph(root, evidence_profile)
+    alignment_matrix = list(
+        (match_report.get("capability_graph") or {}).get("alignment_matrix") or []
+    )
+    gap_analysis = dict(match_report.get("evidence_gap_analysis") or {})
+    hiring_manager_lens = build_hiring_manager_lens(
+        role_interpretation, alignment_matrix, gap_analysis
+    )
+    application_strategy = build_application_strategy(
+        role_interpretation,
+        hiring_manager_lens,
+        match_report,
+        combined_selected_evidence,
+    )
     editing_plan = material_editing_plan(parsed_job, root)
     return {
         "root": root,
@@ -114,12 +216,27 @@ def load_generation_context(
         "voice": career_data["config"].get("voice", {}),
         "writing_voice": writing_voice,
         "evidence_cards": evidence_cards,
-        "selected_evidence_cards": selected_evidence,
+        "selected_evidence_cards": exact_role_evidence_cards,
+        "combined_selected_evidence_cards": combined_selected_evidence,
+        "evidence_profile": evidence_profile,
+        "selected_profile_evidence": selected_profile_evidence,
+        "selected_interview_profile_evidence": selected_interview_profile_evidence,
+        "capability_graph": capability_graph,
+        "alignment_matrix": alignment_matrix,
+        "evidence_gap_analysis": gap_analysis,
+        "role_evidence_selection": role_evidence_selection,
+        "evidence_selection_overrides": evidence_selection_overrides,
         "material_editing_plan": editing_plan,
         "role_lens": role_lens,
         "requirement_map": requirement_map,
+        "role_interpretation": role_interpretation,
+        "hiring_manager_lens": hiring_manager_lens,
+        "application_strategy": application_strategy,
+        "interview_preparation": interview_preparation_model(
+            role_interpretation, hiring_manager_lens, application_strategy
+        ),
         "parsed_job": parsed_job,
-        "match_report": score_job_match(job_path, root),
+        "match_report": match_report,
         **voice_context,
     }
 
@@ -139,6 +256,20 @@ def save_material(
 ) -> Dict[str, Any]:
     """Validate and save one Markdown application material, repairing length when configured."""
     content = normalize_applicant_employer_names(cleanup_repeated_words(content))
+    advocacy_review: Dict[str, Any] = {}
+
+    def apply_public_advocacy(value: str) -> str:
+        nonlocal advocacy_review
+        parsed = context.get("parsed_job") or {}
+        rewritten, advocacy_review = rewrite_public_advocacy(
+            value,
+            company=str(parsed.get("company") or "the organization"),
+            role=str(parsed.get("job_title") or "the role"),
+            transparency_requested=bool(context.get("public_transparency_requested")),
+        )
+        return rewritten
+
+    content = apply_public_advocacy(content)
     content, role_lens_quality = enforce_role_lens_quality(
         content,
         context.get("role_lens", {}),
@@ -157,11 +288,13 @@ def save_material(
     attempts = 0
     while not minimum_words <= word_count <= maximum_words and repair_content and attempts < repair_attempts:
         content = cleanup_repeated_words(repair_content(content, context))
+        content = apply_public_advocacy(content)
         content, attempt_rewrites = rewrite_banned_voice_phrases(content)
         rewrite_notes.extend(attempt_rewrites)
         word_count = _word_count(content)
         attempts += 1
     cover_letter_quality = None
+    interpretation_quality = None
     if suffix.lower().replace(" ", "_") == "cover_letter":
         prohibited_rewrites = list(GOOGLE_IMPLICATION_PHRASES)
         for requirement in context.get("requirement_map", []):
@@ -189,6 +322,20 @@ def save_material(
                 "Generated application material does not match the role lens after quality cleanup: "
                 f"{reason['code']} ({reason['detail']})."
             )
+        role_interpretation = context.get("role_interpretation") or {}
+        if isinstance(role_interpretation, dict) and role_interpretation:
+            interpretation_quality = role_specificity_check(
+                content,
+                role_interpretation,
+                context.get("hiring_manager_lens") or {},
+            )
+            if not interpretation_quality["valid"]:
+                reason = (interpretation_quality.get("failure_reasons") or [
+                    "The cover letter does not match the confirmed role interpretation."
+                ])[0]
+                raise ApplicationMaterialError(
+                    "Cover letter interpretation mismatch: " + str(reason)
+                )
     if "—" in content:
         raise ApplicationMaterialError("Generated application materials must not contain em dashes.")
     if "placeholder" in content.lower():
@@ -227,6 +374,14 @@ def save_material(
             "Generated application materials contain tenure-forward or clichéd positioning: "
             f"{positioning_issues[0]}"
         )
+    try:
+        advocacy_review = validate_public_advocacy(
+            content,
+            suffix,
+            transparency_requested=bool(context.get("public_transparency_requested")),
+        )
+    except ValueError as error:
+        raise ApplicationMaterialError(str(error)) from error
 
     parsed_job = context["parsed_job"]
     personal_brand = context["career_data"]["data"].get("personal_brand", {})
@@ -271,6 +426,11 @@ def save_material(
         "requirement_map": context.get("requirement_map", []),
         "role_lens_quality": role_lens_quality,
         "cover_letter_quality": cover_letter_quality,
+        "interpretation_quality": interpretation_quality,
+        "role_interpretation": context.get("role_interpretation", {}),
+        "hiring_manager_lens": context.get("hiring_manager_lens", {}),
+        "application_strategy": context.get("application_strategy", {}),
+        "public_advocacy_review": advocacy_review,
     }
 
 
@@ -623,6 +783,44 @@ def _technical_operations_cover_letter_content(context: Dict[str, Any]) -> str:
     return _signed_content(opening, experience, fit, closing)
 
 
+def _interpretation_aware_technical_cover_letter_content(context: Dict[str, Any]) -> str:
+    """Ground technical-solutions and ad-tech letters in the confirmed function."""
+    parsed = context["parsed_job"]
+    company = str(parsed.get("company") or "the organization")
+    role = str(parsed.get("job_title") or "technical solutions position")
+    role_reference = role if role.lower().endswith((" role", " position")) else f"{role} role"
+    interpretation = context.get("role_interpretation") or {}
+    hiring_lens = context.get("hiring_manager_lens") or {}
+    archetype = str(interpretation.get("primary_archetype") or "Technical Solutions / Solutions Consulting")
+    if archetype == "Advertising Technology / Ad Operations":
+        role_focus = (
+            "advertising technology, advertiser problem-solving, measurement reliability, and partnership across sales, product, and engineering"
+        )
+    elif archetype == "Sales Engineering":
+        role_focus = (
+            "technical customer discovery, credible solution design, and partnership across sales, product, and engineering"
+        )
+    else:
+        role_focus = (
+            "technical products, customer problem-solving, implementation reliability, and partnership across sales, product, and engineering"
+        )
+    opening = (
+        f"The {role_reference} at {company} caught my attention because it sits at the intersection of {role_focus}. "
+        f"The posting appears to need a leader who can help make complex platform capabilities usable, resolve difficult technical blockers, and turn recurring advertiser issues into better support and product feedback. That is a more specific challenge than general operations, and it is the part of the role I find most compelling."
+    )
+    experience = (
+        "At OMG23 / OMD Entertainment, Omnicom Media Group, I led campaign operations across Disney Studios Theatrical and Disney Streaming/DSS while working across creative, media, analytics, technology, and operations. My direct advertising technology work included Google and YouTube activation, CM360 and DV360 campaign implementation, trafficking and launch readiness, conversion tracking, measurement validation, QA, and technical troubleshooting for large entertainment advertisers. I translated platform requirements into decisions and workflows that kept delivery reliable under demanding launch timelines."
+    )
+    proof = (
+        "I also supported server-to-server conversion API implementation from the business and campaign-operations side: clarifying requirements, coordinating the right technical partners, validating launch readiness, and troubleshooting measurement issues. Alongside that work, I led Supervisors, Senior Campaign Managers, Campaign Managers, and Coordinators and built validation and escalation practices that surfaced delivery risk earlier. That experience taught me how to partner across technical and business teams, solve advertiser implementation challenges, and build operational practices that improve delivery quality at scale while keeping teams aligned around clear owners, validation steps, and escalation paths."
+    )
+    closing_problem = str(hiring_lens.get("hiring_problem") or "make technical products reliable and usable for advertisers").rstrip(".")
+    closing = (
+        f"I would welcome the opportunity to contribute relevant advertising-platform experience, measurement and delivery discipline, and a practical approach to helping {company} {closing_problem[0].lower() + closing_problem[1:]}. I look forward to discussing how that experience can support the team's immediate goals."
+    )
+    return _signed_content(opening, experience, proof, closing)
+
+
 def _role_sensitive_cover_letter_content(context: Dict[str, Any]) -> str:
     parsed_job = context["parsed_job"]
     plan = context.get("material_editing_plan") or material_editing_plan(parsed_job, context.get("root"))
@@ -663,27 +861,29 @@ def _role_sensitive_cover_letter_content(context: Dict[str, Any]) -> str:
             "clear workflows, thoughtful schemas, feedback loops, and automation that leaves room for human judgment."
         )
         experience = (
-            "CampaignOS is the most relevant proof point for that work. I designed and developed an AI-powered "
-            "operations platform around schema-driven workflows, validation frameworks, workflow governance, QA, "
-            "risk flags, and operational reporting. The work required product judgment: translating recurring "
-            "business needs into tools that make execution easier to understand and maintain."
+            "I am the product owner and domain lead for a functioning AI-enabled career intelligence product. "
+            "I defined the product vision, decomposed user and system failures into requirements and acceptance "
+            "criteria, and designed the multi-stage workflow that connects role interpretation, evidence, scoring, "
+            "generation, persistence, and quality checks. I directed implementation through Codex while retaining "
+            "ownership of product decisions, evaluation, and user acceptance testing."
         )
         proof = (
-            "My Disney and OMG23 background gives that product work its operating context. I led cross-functional "
-            "entertainment campaign teams through complex handoffs, stakeholder needs, measurement readiness, "
-            "quality standards, dependencies, and delivery routines where tools only mattered if teams could use them."
+            "The product includes human-in-the-loop review, evidence provenance, review and verification states, "
+            "user confirmation and rejection controls, and safeguards that keep generated claims grounded in verified evidence. I built regression "
+            "and qualitative evaluation around real job descriptions, then used failures to refine prompts, context, "
+            "schemas, requirements, and test coverage. My work at OMG23 / Omnicom Media Group leading Disney "
+            "campaign operations keeps that product judgment grounded in how people actually make decisions "
+            "under delivery pressure."
         )
         lesson = (
-            "That work changed how I approach a new system. I start by watching where context disappears, "
-            "which decisions arrive too late, and what people are already doing to compensate. Only then do I "
-            "shape the workflow, data model, or automation. It is a slower question at the beginning, but it "
-            "usually produces a simpler tool and a more durable change in how the team works. The evidence "
-            "comes from whether people can make the next decision with less friction."
+            "I bring hands-on AI product ownership, workflow and requirements design, prompt and context design, "
+            "human review, evaluation, safety review, Codex implementation direction, and UAT. That combination "
+            "helps teams turn ambitious AI concepts into reliable product behavior people can understand and use."
         )
         closing = (
             f"I would welcome the chance to learn how {company} is shaping this product work and where the team "
             f"needs stronger {preferred or 'AI workflows, product judgment, workflow governance, and usable tools'}. "
-            "I would bring both builder range and the enterprise operations experience to keep the solution grounded."
+            "I would bring hands-on AI product judgment and enterprise operations experience to keep the solution grounded."
         )
         return _signed_content(opening, experience, proof, lesson, closing)
 
@@ -1038,9 +1238,7 @@ def _people_operations_cover_letter_content(context: Dict[str, Any]) -> str:
         "to work through demanding priorities."
     )
     transfer = (
-        "My experience is rooted in operations rather than a traditional HR function, so I would not "
-        "present adjacent work as ownership of employee relations, HR systems, or People policy. What "
-        "I do bring is a practical understanding of how change is adopted: listen to the people closest "
+        "I bring a practical understanding of how change is adopted: listen to the people closest "
         "to the work, find the recurring friction, document expectations clearly, and build only enough "
         "structure to help teams use the change in their daily work. I have learned that consistency "
         "comes from trust and clarity, not from adding process for its own sake."
@@ -1070,8 +1268,8 @@ def _fieldai_cover_letter_content(context: Dict[str, Any]) -> str:
         "I have designed operating practices across marketing, creative, analytics, technology, and "
         "delivery functions, coordinating teams of more than 60 people when the work required it. My work has included capacity and "
         "workflow planning, governance, quality systems, dashboards, partner coordination, and executive "
-        "visibility. Although much of that experience was built in entertainment, the transferable "
-        "problem is organizational: making ownership, dependencies, risk, and progress visible across "
+        "visibility. Much of that experience was built in entertainment around an organizational "
+        "problem: making ownership, dependencies, risk, and progress visible across "
         "a matrix without slowing down the people doing the work."
     )
     proof = (
@@ -1168,8 +1366,8 @@ def _dynamic_cover_letter_content(context: Dict[str, Any]) -> str:
             "At OMG23 / OMD Entertainment, Omnicom Media Group, I built workflows, governance practices, "
             "quality standards, and executive visibility across creative, marketing, media, analytics, technology, "
             "and operations. The systems supported cross-functional teams of more than 60 people and gave them "
-            "visibility for demanding entertainment work. The industry context was specific, but the operating "
-            "challenge was broadly transferable: create clarity and consistency without slowing the team down."
+            "visibility for demanding entertainment work. Across functions, the recurring operating challenge "
+            "was to create clarity and consistency without slowing the team down."
         )
 
     selected_ids = {str(card.get("id")) for card in context.get("selected_evidence_cards", [])}
@@ -1185,20 +1383,20 @@ def _dynamic_cover_letter_content(context: Dict[str, Any]) -> str:
             "CampaignOS is a current proof point for that approach. I designed and developed the AI-powered "
             "operations platform to standardize workflow governance, automate quality assurance, reduce risk, "
             "and improve reporting. Building it required product thinking, schema design, validation frameworks, "
-            "and practical judgment about where automation can help. I describe it as a working builder project, "
-            "not as proof of a larger enterprise product than the evidence supports."
+            "and practical judgment about where automation can help. That work strengthened my ability to turn "
+            "an operating problem into a usable product with clear validation and review controls."
         )
     else:
         proof = (
-            "The evidence I would bring is more operational than flashy: governance practices, quality standards, "
+            "I would bring governance practices, quality standards, "
             "clearer handoffs, and executive visibility for teams working under real delivery pressure. That work "
             "has taught me to keep claims close to the facts, name tradeoffs early, and build only the amount of "
             "process a team can trust and use."
         )
 
     closing = (
-        f"I would welcome the chance to learn how {company} is defining success for this role and where the "
-        "team sees the most useful place to begin. I would bring calm judgment, practical curiosity, "
+        f"I would welcome the opportunity to contribute to {company} in the {role} role. I would bring "
+        "calm judgment, practical curiosity, "
         "and an approach grounded in the role's actual priorities rather than assumptions about the company."
     )
     return _signed_content(opening, experience, proof, closing)
@@ -1220,7 +1418,12 @@ def _cover_letter_content(context: Dict[str, Any]) -> str:
         context = dict(context)
         context["material_editing_plan"] = material_editing_plan(context["parsed_job"], context.get("root"))
     builder: Callable[[Dict[str, Any]], str]
-    if context.get("role_lens", {}).get("primary") == "people_operations":
+    interpreted_archetype = str(
+        (context.get("role_interpretation") or {}).get("primary_archetype") or ""
+    )
+    if interpreted_archetype in TECHNICAL_ARCHETYPES:
+        builder = _interpretation_aware_technical_cover_letter_content
+    elif context.get("role_lens", {}).get("primary") == "people_operations":
         builder = _people_operations_cover_letter_content
     elif profile_key in builders:
         builder = builders[profile_key]
@@ -1255,6 +1458,19 @@ def _cover_letter_content(context: Dict[str, Any]) -> str:
         builder(context), _professional_evidence_paragraph(context)
     )
     content = normalize_applicant_employer_names(content)
+    parsed = context.get("parsed_job") or {}
+    content, advocacy_review = rewrite_public_advocacy(
+        content,
+        company=str(parsed.get("company") or "the organization"),
+        role=str(parsed.get("job_title") or "the role"),
+        transparency_requested=bool(context.get("public_transparency_requested")),
+    )
+    context["public_advocacy_review"] = advocacy_review
+    validate_public_advocacy(
+        content,
+        "cover letter",
+        transparency_requested=bool(context.get("public_transparency_requested")),
+    )
     validate_applicant_evidence(content, "cover letter")
     return content
 
@@ -1262,9 +1478,10 @@ def _cover_letter_content(context: Dict[str, Any]) -> str:
 def generate_cover_letter(
     job_path: PathInput,
     project_root: Optional[PathInput] = None,
+    package_context: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Generate and save a concise TXT cover letter with safe DOCX when available."""
-    context = load_generation_context(job_path, project_root)
+    context = load_generation_context(job_path, project_root, package_context)
     result = save_material(
         context,
         "Cover_Letter",

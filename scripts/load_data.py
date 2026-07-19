@@ -16,6 +16,11 @@ REQUIRED_DATA_FILES = (
     "data/personal_brand.yml",
 )
 
+OPTIONAL_DATA_FILES = (
+    "data/evidence_profile.yml",
+    "data/capability_graph.yml",
+)
+
 REQUIRED_CONFIG_FILES = (
     "config/settings.yml",
     "config/target_companies.yml",
@@ -93,6 +98,16 @@ def load_data_files(project_root: ProjectRoot = None) -> dict[str, dict[str, Any
     return {
         _key_from_relative_path(relative_path): load_yaml_file(relative_path, project_root)
         for relative_path in REQUIRED_DATA_FILES
+    }
+
+
+def load_optional_data_files(project_root: ProjectRoot = None) -> dict[str, dict[str, Any]]:
+    """Load additive Sprint 24 stores without changing the legacy data contract."""
+    root = _project_root(project_root)
+    return {
+        _key_from_relative_path(relative_path): load_yaml_file(relative_path, project_root)
+        for relative_path in OPTIONAL_DATA_FILES
+        if (root / relative_path).is_file()
     }
 
 

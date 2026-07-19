@@ -143,12 +143,14 @@ def _uta_materials():
     }
 
 
-def test_uta_materials_are_transparent_and_do_not_generate_unsupported_hr_claims():
+def test_uta_materials_advocate_strengths_without_generating_hr_overclaims():
     _context, materials = _uta_materials()
-    combined = "\n".join(materials.values()).lower()
+    combined = "\n".join(
+        materials[key] for key in ("cover_letter", "recruiter", "hiring_manager")
+    ).lower()
 
-    assert "operations rather than a traditional hr function" in combined
-    assert "transferable" in combined
+    assert "operations rather than a traditional hr function" not in combined
+    assert "transferable" not in combined
     for phrase in PEOPLE_OPERATIONS_OVERCLAIMS:
         assert phrase not in combined
 
@@ -174,7 +176,7 @@ def test_uta_letter_differs_materially_from_business_and_marketing_variants():
 
     assert SequenceMatcher(None, uta, business).ratio() < 0.65
     assert SequenceMatcher(None, uta, marketing).ratio() < 0.65
-    assert "traditional HR function" in uta
+    assert "traditional HR function" not in uta
     assert "traditional HR function" not in business
     assert "traditional HR function" not in marketing
 

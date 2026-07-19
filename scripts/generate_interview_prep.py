@@ -25,10 +25,12 @@ PathInput = Union[str, Path]
 
 
 def generate_interview_prep(
-    job_path: PathInput, project_root: Optional[PathInput] = None
+    job_path: PathInput,
+    project_root: Optional[PathInput] = None,
+    package_context: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Create a grounded interview-prep file from dynamic role intelligence."""
-    context = load_generation_context(job_path, project_root)
+    context = load_generation_context(job_path, project_root, package_context)
     parsed = context["parsed_job"]
     intelligence = context.get("effective_voice_profile", {})
     company = str(parsed.get("company") or "the company")
@@ -39,7 +41,17 @@ def generate_interview_prep(
         for value in intelligence.get("proof_points_to_emphasize", [])
         if not personal_project_violations(str(value))
     ][:4]
+    profile_examples = list(context.get("selected_interview_profile_evidence") or [])
+    profile_proof_points = [
+        str(item.get("description") or "").replace(
+            "Career Catalyst", "an AI-enabled career intelligence product"
+        )
+        for item in profile_examples
+        if str(item.get("description") or "").strip()
+    ][:6]
+    proof_points = [*profile_proof_points, *proof_points][:6]
     people_operations = context.get("role_lens", {}).get("primary") == "people_operations"
+    preparation = dict(context.get("interview_preparation") or {})
     themes = (
         [
             "team effectiveness and leadership",
@@ -58,6 +70,7 @@ def generate_interview_prep(
         for item in context.get("requirement_map", [])
         if item.get("strength") == "Unsupported"
     ]
+    gap_analysis = dict(context.get("evidence_gap_analysis") or {})
     questions = (
         [
             "Where do managers and teams experience the most recurring friction in current People programs or processes?",
@@ -94,6 +107,13 @@ def generate_interview_prep(
             "",
             f"## {role} at {company}",
             "",
+            "### Hiring Manager Lens",
+            "",
+            f"- Likely first question: {preparation.get('likely_first_interview_question', 'Expect a question about the role’s primary problem.')}",
+            f"- Likely functional probe: {preparation.get('likely_technical_or_functional_probe', 'Expect a detailed functional probe.')}",
+            f"- Likely concern: {preparation.get('likely_candidate_concern', 'Be ready to distinguish direct from adjacent experience.')}",
+            f"- Response strategy: {preparation.get('strongest_response_strategy', 'Use supported examples and keep ownership boundaries explicit.')}",
+            "",
             "### Likely Themes",
             "",
             *(f"- {value}" for value in themes),
@@ -104,6 +124,7 @@ def generate_interview_prep(
                 f"- {value}"
                 for value in (
                     proof_points
+                    or preparation.get("examples_to_prepare")
                     or [
                         "cross-functional leadership across creative, media, analytics, and technology",
                         "workflow governance and quality assurance",
@@ -123,10 +144,27 @@ def generate_interview_prep(
                 "operations background as transferable only if asked."
                 for item in unsupported
             ),
+            *(
+                f"- Missing from resume language: {item.get('requirement')}"
+                for item in gap_analysis.get("missing_because_not_on_resume") or []
+            ),
+            *(
+                f"- Needs confirmation: {item.get('requirement')}"
+                for item in gap_analysis.get("missing_because_needs_confirmation") or []
+            ),
+            *(
+                f"- Evidence is currently absent: {item.get('requirement')}"
+                for item in gap_analysis.get("missing_because_truly_absent") or []
+            ),
             "",
             "### Questions to Ask",
             "",
-            *(f"- {value}" for value in questions),
+            *(
+                f"- {value}"
+                for value in (
+                    preparation.get("questions_to_clarify_role") or questions
+                )
+            ),
             "",
             "### Voice Reminder",
             "",
@@ -158,4 +196,11 @@ def generate_interview_prep(
         "role_lens": context.get("role_lens", {}),
         "requirement_map": context.get("requirement_map", []),
         "role_lens_quality": quality,
+        "role_interpretation": context.get("role_interpretation", {}),
+        "hiring_manager_lens": context.get("hiring_manager_lens", {}),
+        "application_strategy": context.get("application_strategy", {}),
+        "interview_preparation": preparation,
+        "evidence_profile_examples": profile_examples,
+        "alignment_matrix": context.get("alignment_matrix", []),
+        "evidence_gap_analysis": gap_analysis,
     }

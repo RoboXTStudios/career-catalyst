@@ -1341,10 +1341,11 @@ def _render_match_score(
 
     tier = str(tracker.get("match_tier") or "Not scored yet")
     action = str(tracker.get("recommended_action") or "Review First")
-    confidence = str(tracker.get("confidence") or "Low")
+    confidence = str(tracker.get("data_confidence") or tracker.get("confidence") or "Low")
     summary = str(tracker.get("match_summary") or "Review the fit before generating a package.")
     strengths = tracker.get("match_strengths") or []
     gaps = tracker.get("match_gaps") or []
+    match_verification = tracker.get("match_verification_notes") or []
 
     def render_list(label: str, values: Any) -> str:
         if not isinstance(values, list) or not values:
@@ -1355,7 +1356,8 @@ def _render_match_score(
     details = (
         '<div class="match-details">'
         f'{render_list("Top strengths", strengths)}'
-        f'{render_list("Gaps / cautions", gaps)}'
+        f'{render_list("Fit gaps / cautions", gaps)}'
+        f'{render_list("Posting verification", match_verification)}'
         '</div>'
         if include_details
         else ""
@@ -1369,7 +1371,7 @@ def _render_match_score(
         '</div>'
         '<div class="match-action">'
         f'<span>Recommended action</span><strong>{html.escape(action)}</strong>'
-        f'<span>Confidence: {html.escape(confidence)}</span>'
+        f'<span>Data confidence: {html.escape(confidence)}</span>'
         '</div>'
         f'<p class="match-summary">{html.escape(summary)}</p>'
         f"{details}</section>"

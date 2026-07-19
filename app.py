@@ -10,7 +10,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from scripts.application_tracker import (
     ACTIVE_STATUSES,
@@ -25,6 +25,7 @@ from scripts.application_tracker import (
     update_status,
     workflow_status_bucket,
 )
+from scripts.application_strategy import build_application_strategy, build_hiring_manager_lens
 from scripts.dynamic_role_intelligence import get_effective_voice_profile
 from scripts.filename_utils import build_upload_filename, company_display_name
 from scripts.filename_utils import is_valid_role_title
@@ -40,7 +41,6 @@ from scripts.generate_dashboard import (
     VERIFICATION_STATUS_FILTERS,
     filter_dashboard_records,
     generate_dashboard,
-    load_application_packages,
     prepare_dashboard_records,
     record_application_portal_url,
     record_dashboard_reference as dashboard_role_reference,
@@ -81,6 +81,7 @@ except (AttributeError, ImportError):
     CANONICAL_VERIFICATION_STATUSES = ()
 from scripts.package_generator import (
     PackageGenerationError,
+    build_package_context,
     generate_package,
     refresh_saved_package_context,
     resolve_job_reference,
@@ -89,7 +90,38 @@ from scripts.package_context import CONTEXT_MISMATCH_MESSAGE
 from scripts.parse_job import extract_metadata, parse_job_description, salary_parsing_warning
 from scripts.prospect_intake import ProspectIntakeError, create_prospect
 from scripts.prospect_validation import compute_prospect_validation_state
+from scripts.role_interpreter import ROLE_ARCHETYPES
 from scripts.score_match import incomplete_match_report, score_job_data, score_job_match
+from scripts.evidence_profile import (
+    CONFIDENCE_LEVELS,
+    EVIDENCE_CATEGORIES,
+    RESUME_VISIBILITIES,
+    USAGE_KEYS,
+    VERIFICATION_STATUSES as EVIDENCE_VERIFICATION_STATUSES,
+    add_discovery,
+    confirm_discovery,
+    discover_evidence,
+    evidence_explorer_summary,
+    query_evidence,
+    reject_discovery,
+    save_evidence_profile,
+)
+from scripts.capability_graph import (
+    capability_explorer_summary,
+    save_capability_review,
+)
+from scripts.role_evidence_selection import update_selection_overrides
+from scripts.role_evidence_selection import normalize_selection_overrides
+from scripts.score_match import persisted_match_fields
+from scripts.ui_performance import (
+    invalidate_capability_cache,
+    invalidate_evidence_caches,
+    invalidate_tracker_cache,
+    load_cached_application_tracker,
+    load_cached_application_packages,
+    load_cached_capability_graph,
+    load_cached_evidence_profile,
+)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -786,6 +818,7 @@ def build_prospect_payload(values: Dict[str, Any]) -> Dict[str, Any]:
         "job_title": str(values.get("job_title") or "").strip(),
         "location": str(values.get("location") or "").strip(),
         "salary_range": str(values.get("salary_range") or "").strip(),
+        "salary_source": str(values.get("salary_source") or "").strip(),
         "posting_date": str(values.get("posting_date") or "").strip(),
         "source": str(values.get("source") or "Official career page").strip(),
         "priority": str(values.get("priority") or "Medium"),
@@ -795,6 +828,10 @@ def build_prospect_payload(values: Dict[str, Any]) -> Dict[str, Any]:
         "notes": str(values.get("notes") or "").strip(),
         "next_action": str(values.get("next_action") or "").strip(),
         "show_on_dashboard": bool(values.get("show_on_dashboard", True)),
+        "role_interpretation": dict(values.get("role_interpretation") or {}),
+        "evidence_selection_overrides": dict(
+            values.get("evidence_selection_overrides") or {}
+        ),
     }
 
 
@@ -956,12 +993,57 @@ def _render_summary_metrics(st: Any, applications: list[Dict[str, Any]]) -> None
 
 
 def _package_map(project_root: Path = PROJECT_ROOT) -> Dict[str, Dict[str, Any]]:
-    package_data = load_application_packages(project_root)
+    package_data = load_cached_application_packages(project_root)
     return {
         str(package.get("tracker_id")): package
         for package in package_data["packages"]
         if package.get("tracker_id")
     }
+
+
+def _saved_package_map(
+    applications: list[Dict[str, Any]],
+) -> Dict[str, Dict[str, Any]]:
+    """Build cheap dashboard package summaries from persisted tracker manifests."""
+    result: Dict[str, Dict[str, Any]] = {}
+    for application in applications:
+        tracker_id = str(application.get("id") or "")
+        if not tracker_id:
+            continue
+        manifest = dict(application.get("package_manifest") or {})
+        files = dict(
+            manifest.get("files")
+            or manifest.get("materials")
+            or application.get("material_paths")
+            or {}
+        )
+        manifest_path = str(manifest.get("manifest_path") or "")
+        package_folder = str(Path(manifest_path).parent) if manifest_path else ""
+        result[tracker_id] = {
+            **manifest,
+            "tracker_id": tracker_id,
+            "files": files,
+            "package_folder": package_folder,
+            "materials_archived": bool(manifest.get("archived")),
+            "location": application.get("location"),
+            "salary_range": application.get("salary_range"),
+            "company_category": application.get("company_category"),
+            "role_family": application.get("role_family"),
+            "role_lens": application.get("role_lens"),
+        }
+    return result
+
+
+def _saved_materials_target(package: Dict[str, Any]) -> Optional[Path]:
+    """Resolve persisted materials without scanning every package directory."""
+    folder = str(package.get("package_folder") or "")
+    if folder and Path(folder).is_dir():
+        return Path(folder)
+    for value in (package.get("files") or {}).values():
+        path = Path(str(value))
+        if path.is_file():
+            return path.parent
+    return None
 
 
 def _metadata_html(application: Dict[str, Any], package: Dict[str, Any]) -> str:
@@ -1086,7 +1168,8 @@ def _match_score_html(
     details = (
         '<div class="cc-match-details">'
         f'{render_list("Top strengths", "match_strengths")}'
-        f'{render_list("Gaps / cautions", "match_gaps")}'
+        f'{render_list("Fit gaps / cautions", "match_gaps")}'
+        f'{render_list("Posting verification", "match_verification_notes")}'
         '</div>'
         if include_details
         else ""
@@ -1105,7 +1188,7 @@ def _match_score_html(
         f"{tier}</div>"
         '<div class="cc-match-action"><span>Recommended action</span>'
         f'<strong>{html.escape(str(report.get("recommended_action") or "Review First"))}</strong>'
-        f'<span>Confidence: {html.escape(str(report.get("confidence") or "Low"))}</span></div>'
+        f'<span>Data confidence: {html.escape(str(report.get("data_confidence") or report.get("confidence") or "Low"))}</span></div>'
         f'<p class="cc-match-summary">{html.escape(str(report.get("match_summary") or "Review the fit before generating a package."))}</p>'
         f"{details}</section>"
     )
@@ -1291,12 +1374,9 @@ def _render_role_card(
             ]
             st.caption(" · ".join(compact_facts))
             st.markdown(f"**Next:** {html.escape(str(signal['action']))}")
-            files = package.get("files", {})
             posting_url = record_posting_url(application)
             portal_url = record_application_portal_url(application)
-            materials_target, _ = resolve_role_materials_target(
-                application, package, PROJECT_ROOT
-            )
+            materials_target = _saved_materials_target(package)
             action_specs = [("view", "View Role", None)]
             if portal_url:
                 action_specs.append(("portal", "Check Application Status", portal_url))
@@ -1859,18 +1939,125 @@ def _initialize_intake_state(st: Any) -> None:
         "prospect_next_action": "Review fit and generate application package.",
         "prospect_intelligence_stale": False,
         "prospect_description_source": "",
+        "prospect_salary_source": "",
+        "prospect_reviewed_fields": set(),
+        "prospect_role_interpretation": {},
+        "prospect_interpretation_feedback": "",
+        "prospect_evidence_selection_overrides": {},
+        "role_analysis_dirty": False,
+        "score_dirty": False,
+        "application_strategy_dirty": False,
+        "package_dirty": False,
     }
     for key, value in defaults.items():
         st.session_state.setdefault(key, value)
 
 
+def current_prospect_form_values(session_state: Any) -> Dict[str, Any]:
+    """Return the reviewed intake form as the canonical scoring/save payload."""
+    url = str(
+        session_state.get("prospect_url_input")
+        or session_state.get("prospect_url_value")
+        or session_state.get("prospect_url")
+        or ""
+    ).strip()
+    return {
+        "posting_url": url,
+        "application_portal_url": session_state.get("prospect_application_portal_url", ""),
+        "official_url": url,
+        "source_url": url,
+        "original_source_url": url,
+        "canonical_apply_url": session_state.get("prospect_canonical_url") or url,
+        "job_id": session_state.get("prospect_job_id"),
+        "company": session_state.get("prospect_company"),
+        "job_title": session_state.get("prospect_role"),
+        "location": session_state.get("prospect_location"),
+        "salary_range": session_state.get("prospect_salary"),
+        "salary_source": session_state.get("prospect_salary_source"),
+        "posting_date": session_state.get("prospect_posting_date"),
+        "source": session_state.get("prospect_source"),
+        "priority": session_state.get("prospect_priority"),
+        "status": session_state.get("prospect_status"),
+        "work_arrangement": session_state.get("prospect_work_arrangement"),
+        "job_description": session_state.get("prospect_description"),
+        "description_source": session_state.get("prospect_description_source", ""),
+        "notes": session_state.get("prospect_notes"),
+        "next_action": session_state.get("prospect_next_action"),
+        "role_interpretation": dict(
+            session_state.get("prospect_role_interpretation") or {}
+        ),
+        "evidence_selection_overrides": dict(
+            session_state.get("prospect_evidence_selection_overrides") or {}
+        ),
+    }
+
+
+def refresh_prospect_preview_state(
+    session_state: Any, reviewed_field: str = ""
+) -> Optional[Dict[str, Any]]:
+    """Mark edited intake analysis stale without doing expensive work in a callback."""
+    if reviewed_field:
+        reviewed = set(session_state.get("prospect_reviewed_fields") or ())
+        reviewed.add(reviewed_field)
+        session_state["prospect_reviewed_fields"] = reviewed
+        if reviewed_field == "salary_range":
+            session_state["prospect_salary_source"] = "manual"
+        if reviewed_field == "job_description":
+            session_state["prospect_description_source"] = "manual"
+        if reviewed_field in {"company", "job_title", "job_description"}:
+            session_state["prospect_role_interpretation"] = {}
+            session_state["prospect_interpretation_feedback"] = ""
+            session_state["prospect_evidence_selection_overrides"] = {}
+    invalidate_package_context_state(session_state)
+    values = current_prospect_form_values(session_state)
+    session_state["prospect_intelligence_stale"] = True
+    session_state["role_analysis_dirty"] = True
+    session_state["score_dirty"] = True
+    session_state["application_strategy_dirty"] = True
+    session_state["package_dirty"] = True
+    session_state.pop("prospect_match_report", None)
+    session_state.pop("prospect_role_intelligence", None)
+    if not prospect_has_usable_job_content(values):
+        session_state["prospect_validation_state"] = compute_prospect_validation_state(
+            values, {"match_report": incomplete_match_report(values)}
+        )
+    else:
+        session_state["prospect_validation_state"] = compute_prospect_validation_state(
+            values, {"match_report": incomplete_match_report(values) or {}}
+        )
+        session_state["prospect_import_result"] = (
+            "warning",
+            "Role details changed. Analysis needs refresh.",
+        )
+    return None
+
+
 def detect_prospect_intelligence(values: Dict[str, Any]) -> Dict[str, Any]:
     """Infer local company and role guidance from unsaved prospect fields."""
+    reviewed_interpretation = (
+        dict(values.get("role_interpretation") or {})
+        if isinstance(values.get("role_interpretation"), dict)
+        else {}
+    )
+    interpretation_overrides = dict(reviewed_interpretation.get("user_overrides") or {})
+    if reviewed_interpretation.get("user_reviewed"):
+        interpretation_overrides["user_reviewed"] = True
+        if reviewed_interpretation.get("user_feedback"):
+            interpretation_overrides["feedback"] = reviewed_interpretation["user_feedback"]
+        for field in (
+            "primary_archetype", "secondary_archetype", "plain_english_summary",
+            "technical_depth",
+            "people_management_expectation", "client_facing_expectation",
+            "strategic_vs_execution_balance",
+        ):
+            if reviewed_interpretation.get(field) not in (None, ""):
+                interpretation_overrides[field] = reviewed_interpretation[field]
     intelligence = get_effective_voice_profile(
         company_name=str(values.get("company") or ""),
         job_title=str(values.get("job_title") or values.get("role") or ""),
         job_description=str(values.get("job_description") or ""),
         source_url=str(values.get("official_url") or ""),
+        role_interpretation_overrides=interpretation_overrides or None,
     )
     intelligence["freshness"] = detect_job_freshness(
         f"Posting date: {values.get('posting_date') or ''}\n{values.get('job_description') or ''}"
@@ -1882,9 +2069,41 @@ def detect_prospect_intelligence(values: Dict[str, Any]) -> Dict[str, Any]:
         and (not salary_value or re.fullmatch(r"\$\s*\d{1,2}", salary_value))
     )
     intelligence["match_report"] = (
-        score_job_data(values, PROJECT_ROOT)
+        score_job_data(
+            {
+                **values,
+                "role_interpretation": intelligence.get("role_interpretation") or {},
+            },
+            PROJECT_ROOT,
+        )
         if prospect_has_usable_job_content(values)
         else incomplete_match_report(values)
+    )
+    intelligence["role_evidence_selection"] = dict(
+        intelligence["match_report"].get("role_evidence_selection") or {}
+    )
+    role_interpretation = dict(intelligence.get("role_interpretation") or {})
+    match_report = intelligence["match_report"]
+    hiring_manager_lens = build_hiring_manager_lens(
+        role_interpretation,
+        list((match_report.get("capability_graph") or {}).get("alignment_matrix") or []),
+        dict(match_report.get("evidence_gap_analysis") or {}),
+    )
+    proof_points = list(intelligence.get("proof_points_to_emphasize") or [])
+    evidence_ids = list(intelligence.get("selected_evidence_ids") or [])
+    evidence_cards = [
+        {
+            "id": evidence_id,
+            "proof_points": [proof_points[index]] if index < len(proof_points) else [],
+        }
+        for index, evidence_id in enumerate(evidence_ids)
+    ]
+    intelligence["hiring_manager_lens"] = hiring_manager_lens
+    intelligence["application_strategy"] = build_application_strategy(
+        role_interpretation,
+        hiring_manager_lens,
+        intelligence["match_report"],
+        evidence_cards,
     )
     intelligence["job_description"] = str(values.get("job_description") or "")
     intelligence["location"] = str(values.get("location") or "")
@@ -1911,7 +2130,15 @@ def reparse_prospect_fields(values: Dict[str, Any]) -> Dict[str, Any]:
         ("posting_date", "posting_date"),
         ("work_arrangement", "work_arrangement"),
     ):
-        if metadata.get(source):
+        current = str(refreshed.get(target) or "").strip()
+        current_is_unknown = current.lower() in {
+            "",
+            "unknown",
+            "not disclosed",
+            "not specified",
+            "n/a",
+        }
+        if current_is_unknown and metadata.get(source):
             refreshed[target] = metadata[source]
     for key in ("company", "location", "job_id", "source"):
         if not refreshed.get(key) and fallback.get(key):
@@ -1926,6 +2153,9 @@ def reparse_prospect_fields(values: Dict[str, Any]) -> Dict[str, Any]:
 
 def apply_manual_reparse_state(session_state: Any) -> Dict[str, Any]:
     """Reconcile intake state after a user-supplied description is parsed successfully."""
+    session_state["prospect_role_interpretation"] = {}
+    session_state["prospect_interpretation_feedback"] = ""
+    session_state["prospect_evidence_selection_overrides"] = {}
     refreshed = reparse_prospect_fields(
         {
             "official_url": session_state.get("prospect_url_value")
@@ -1959,6 +2189,10 @@ def apply_manual_reparse_state(session_state: Any) -> Dict[str, Any]:
     session_state["prospect_match_report"] = report
     session_state["prospect_validation_state"] = refreshed["validation_state"]
     session_state["prospect_role_intelligence"] = refreshed["role_intelligence"]
+    session_state["role_analysis_dirty"] = False
+    session_state["score_dirty"] = False
+    session_state["application_strategy_dirty"] = False
+    session_state["package_dirty"] = True
     invalidate_package_context_state(session_state)
     if complete:
         session_state.pop("prospect_import_result", None)
@@ -2147,19 +2381,29 @@ def apply_prospect_url_import_state(
         ):
             session_state[key] = ""
         mark_prospect_intelligence_stale(session_state)
+        session_state["prospect_reviewed_fields"] = set()
+        session_state["prospect_salary_source"] = ""
+        session_state["prospect_role_interpretation"] = {}
+        session_state["prospect_interpretation_feedback"] = ""
+        session_state["prospect_evidence_selection_overrides"] = {}
     session_state["prospect_context_url"] = url
     session_state["prospect_url_value"] = url
     session_state["prospect_import_url"] = url
     session_state["prospect_url_last_imported"] = url
     session_state["prospect_original_source_url"] = url
     invalidate_package_context_state(session_state)
+    reviewed_fields = set(session_state.get("prospect_reviewed_fields") or ())
     fallback = infer_job_fields_from_url(url)
     verification = normalize_job_source({"official_url": url})
     canonical = str(verification.get("canonical_apply_url") or url)
     session_state["prospect_canonical_url"] = canonical
     if fallback.get("job_id"):
         session_state["prospect_job_id"] = fallback["job_id"]
-    if verification.get("source_name") and verification.get("source_name") != "Unknown":
+    if (
+        verification.get("source_name")
+        and verification.get("source_name") != "Unknown"
+        and "source" not in reviewed_fields
+    ):
         session_state["prospect_source"] = verification["source_name"]
     for state_key, fallback_key in (
         ("prospect_company", "company"),
@@ -2186,7 +2430,10 @@ def apply_prospect_url_import_state(
         ):
             if partial_data.get(imported_key) and not session_state.get(state_key):
                 session_state[state_key] = partial_data[imported_key]
-        if is_usable_job_description(partial_data.get("job_description")):
+        if (
+            is_usable_job_description(partial_data.get("job_description"))
+            and "job_description" not in reviewed_fields
+        ):
             session_state["prospect_description"] = partial_data["job_description"]
         message = IMPORT_EXTRACTION_FALLBACK_MESSAGE
         session_state["prospect_import_result"] = ("warning", message)
@@ -2217,23 +2464,29 @@ def apply_prospect_url_import_state(
     imported_title = imported.get("job_title")
     selected_title = preferred_role_title(current_title, imported_title, url)
     title_rejected = bool(imported_title and not is_valid_role_title(imported_title))
-    if selected_title:
+    if selected_title and "job_title" not in reviewed_fields:
         session_state["prospect_role"] = selected_title
-    elif title_rejected:
+    elif title_rejected and "job_title" not in reviewed_fields:
         session_state["prospect_role"] = ""
     for state_key, imported_key in (
         ("prospect_company", "company"),
         ("prospect_location", "location"),
         ("prospect_salary", "salary_range"),
         ("prospect_posting_date", "posting_date"),
+        ("prospect_work_arrangement", "work_arrangement"),
         ("prospect_description", "job_description"),
         ("prospect_job_id", "job_id"),
     ):
-        if imported.get(imported_key):
+        if imported.get(imported_key) and imported_key not in reviewed_fields:
             session_state[state_key] = imported[imported_key]
-    if imported.get("source_name") or imported.get("source"):
+    if imported.get("salary_range") and "salary_range" not in reviewed_fields:
+        session_state["prospect_salary_source"] = "imported"
+    if (imported.get("source_name") or imported.get("source")) and "source" not in reviewed_fields:
         session_state["prospect_source"] = imported.get("source_name") or imported.get("source")
-    if is_usable_job_description(imported.get("job_description")):
+    if (
+        is_usable_job_description(imported.get("job_description"))
+        and "job_description" not in reviewed_fields
+    ):
         session_state["prospect_description_source"] = "imported"
     incomplete = not prospect_has_usable_job_content(
         {
@@ -2266,7 +2519,9 @@ def apply_prospect_url_import_state(
                 "original_source_url": url,
                 "location": session_state.get("prospect_location"),
                 "salary_range": session_state.get("prospect_salary"),
+                "salary_source": session_state.get("prospect_salary_source"),
                 "posting_date": session_state.get("prospect_posting_date"),
+                "work_arrangement": session_state.get("prospect_work_arrangement"),
                 "description_source": session_state.get("prospect_description_source"),
             }
         )
@@ -2274,6 +2529,9 @@ def apply_prospect_url_import_state(
         session_state["prospect_match_report"] = intelligence["match_report"]
         session_state["prospect_validation_state"] = intelligence["validation_state"]
         session_state["prospect_role_intelligence"] = intelligence
+        session_state["prospect_role_interpretation"] = dict(
+            intelligence.get("role_interpretation") or {}
+        )
     else:
         session_state.pop("prospect_match_report", None)
         incomplete_values = {
@@ -2330,7 +2588,452 @@ def _render_prospect_validation(st: Any, validation: Dict[str, Any]) -> None:
         st.link_button("Open Original Posting", original_url, use_container_width=False)
 
 
-def _render_intelligence_preview(st: Any, intelligence: Dict[str, Any]) -> None:
+def apply_role_interpretation_feedback(
+    session_state: Any,
+    interpretation: Dict[str, Any],
+    feedback: str,
+    overrides: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """Store a lightweight user correction as the authoritative scoring input."""
+    if feedback == "Reinterpret":
+        session_state["prospect_role_interpretation"] = {}
+        session_state["prospect_interpretation_feedback"] = ""
+        return {}
+    updated = dict(interpretation or {})
+    applied = dict(updated.get("user_overrides") or {})
+    applied.update(dict(overrides or {}))
+    if feedback == "Too technical" and "technical_depth" not in applied:
+        current = str(updated.get("technical_depth") or "Unclear")
+        applied["technical_depth"] = {
+            "High": "Moderate",
+            "Moderate": "Low",
+        }.get(current, "Low")
+    if feedback == "Too operational" and "strategic_vs_execution_balance" not in applied:
+        applied["strategic_vs_execution_balance"] = "Primarily strategic"
+    updated.update(applied)
+    updated["user_overrides"] = applied
+    updated["user_reviewed"] = True
+    updated["user_feedback"] = feedback
+    session_state["prospect_role_interpretation"] = updated
+    session_state["prospect_interpretation_feedback"] = feedback
+    return updated
+
+
+def _render_role_interpretation(
+    st: Any, intelligence: Dict[str, Any], *, editable: bool = False
+) -> None:
+    interpretation = intelligence.get("role_interpretation") or {}
+    if not isinstance(interpretation, dict) or not interpretation:
+        return
+    st.markdown("### What this role actually is")
+    confidence = float(
+        interpretation.get("interpretation_confidence")
+        or interpretation.get("confidence")
+        or 0
+    )
+    st.caption(
+        f"Primary interpretation: {interpretation.get('primary_archetype', 'Unclear')} "
+        f"· {round(confidence * 100)}% confidence · {interpretation.get('ambiguity_level', 'Low')} ambiguity"
+    )
+    st.markdown(str(interpretation.get("plain_english_summary") or ""))
+    alternates = list(interpretation.get("secondary_interpretations") or [])
+    if alternates:
+        if interpretation.get("ambiguity_level") in {"Medium", "High"}:
+            st.warning("Career Catalyst sees more than one plausible version of this role. The package will use the primary interpretation unless you confirm an alternate.")
+        with st.expander("Alternate interpretations"):
+            for index, alternate in enumerate(alternates):
+                st.markdown(
+                    f"**{index + 2}. {alternate.get('archetype')} — {alternate.get('confidence_percent', 0)}%**"
+                )
+                st.write(str(alternate.get("plain_english_description") or ""))
+                signals = alternate.get("supporting_evidence_signals") or []
+                if signals:
+                    st.caption("Signals: " + ", ".join(str(value) for value in signals))
+                if editable and st.button(
+                    f"Use {alternate.get('archetype')}",
+                    key=f"use_secondary_interpretation_{index}",
+                ):
+                    apply_role_interpretation_feedback(
+                        st.session_state,
+                        interpretation,
+                        "Use the secondary interpretation",
+                        {"primary_archetype": alternate.get("archetype")},
+                    )
+                    st.rerun()
+            st.markdown("**What would change the answer?**")
+            for question in interpretation.get("unresolved_questions") or []:
+                st.markdown(f"- {question}")
+    st.markdown("**The real business problem**")
+    st.write(str(interpretation.get("core_mission") or "Not clear from the posting."))
+    responsibilities = interpretation.get("likely_day_to_day") or interpretation.get("top_responsibilities") or []
+    if responsibilities:
+        st.markdown("**They need someone to:**")
+        for item in responsibilities[:6]:
+            st.markdown(f"- {item}")
+    st.markdown("**The real candidate profile**")
+    st.write(str(interpretation.get("candidate_profile") or "Verify the intended candidate profile."))
+    _render_hiring_manager_lens(st, intelligence)
+    st.markdown("### What determines whether this is a fit")
+    st.markdown(
+        f"Technical depth: **{interpretation.get('technical_depth', 'Unclear')}** · "
+        f"Client-facing: **{interpretation.get('client_facing_expectation', 'Not indicated')}** · "
+        f"People management: **{interpretation.get('people_management_expectation', 'Not indicated')}**"
+    )
+    questions = interpretation.get("major_fit_questions") or []
+    if questions:
+        st.markdown("**Verify before applying:**")
+        for item in questions[:5]:
+            st.markdown(f"- {item}")
+    with st.expander("Deeper role interpretation"):
+        st.markdown(
+            f"**Primary archetype:** {interpretation.get('primary_archetype', 'Unclear')}  |  "
+            f"**Secondary:** {interpretation.get('secondary_archetype') or 'None detected'}  |  "
+            f"**Confidence:** {interpretation.get('confidence_label', 'Low')}"
+        )
+        st.markdown(
+            f"**Technical depth:** {interpretation.get('technical_depth', 'Unclear')}  |  "
+            f"**People management:** {interpretation.get('people_management_expectation', 'Not indicated')}  |  "
+            f"**Client-facing:** {interpretation.get('client_facing_expectation', 'Not indicated')}"
+        )
+        must_haves = interpretation.get("true_must_haves") or []
+        preferred = interpretation.get("preferred_or_trainable") or []
+        generic = interpretation.get("generic_language") or []
+        if must_haves:
+            st.markdown("**True must-haves**")
+            for item in must_haves:
+                st.markdown(f"- {item}")
+        if preferred:
+            st.markdown("**Preferred or learnable**")
+            for item in preferred:
+                st.markdown(f"- {item}")
+        if generic:
+            st.caption("Generic language downweighted: " + ", ".join(generic))
+        hidden = interpretation.get("hidden_hiring_criteria") or []
+        if hidden:
+            st.markdown("**Likely hidden hiring criteria (inferred)**")
+            for item in hidden:
+                st.markdown(f"- {item}")
+        if st.session_state.get("debug_mode"):
+            st.json(interpretation.get("diagnostics") or {})
+    if not editable:
+        return
+    feedback_columns = st.columns(6)
+    for column, label in zip(
+        feedback_columns,
+        ("This looks right", "Too technical", "Too operational", "Too broad", "Wrong role type", "Reinterpret"),
+    ):
+        if column.button(label, key=f"role_interpretation_{label.lower().replace(' ', '_')}"):
+            apply_role_interpretation_feedback(
+                st.session_state, interpretation, label
+            )
+            st.rerun()
+    with st.expander("Correct the interpretation"):
+        current_archetype = str(interpretation.get("primary_archetype") or ROLE_ARCHETYPES[0])
+        archetype_index = ROLE_ARCHETYPES.index(current_archetype) if current_archetype in ROLE_ARCHETYPES else 0
+        archetype = st.selectbox(
+            "Primary role archetype",
+            ROLE_ARCHETYPES,
+            index=archetype_index,
+            key="prospect_interpretation_archetype_override",
+        )
+        summary = st.text_area(
+            "Plain-English role summary",
+            value=str(interpretation.get("plain_english_summary") or ""),
+            key="prospect_interpretation_summary_override",
+        )
+        technical_options = ("Low", "Moderate", "High", "Unclear")
+        technical_value = str(interpretation.get("technical_depth") or "Unclear")
+        technical = st.selectbox(
+            "Technical depth",
+            technical_options,
+            index=technical_options.index(technical_value) if technical_value in technical_options else 3,
+            key="prospect_interpretation_technical_override",
+        )
+        expectation_options = ("Required", "Likely", "Not indicated", "Unclear")
+        people_value = str(interpretation.get("people_management_expectation") or "Not indicated")
+        people = st.selectbox(
+            "People-management expectation",
+            expectation_options,
+            index=expectation_options.index(people_value) if people_value in expectation_options else 2,
+            key="prospect_interpretation_people_override",
+        )
+        client_value = str(interpretation.get("client_facing_expectation") or "Not indicated")
+        client = st.selectbox(
+            "Client-facing expectation",
+            expectation_options,
+            index=expectation_options.index(client_value) if client_value in expectation_options else 2,
+            key="prospect_interpretation_client_override",
+        )
+        balance_options = (
+            "Primarily strategic", "Balanced strategy and execution",
+            "Primarily execution", "Unclear",
+        )
+        balance_value = str(
+            interpretation.get("strategic_vs_execution_balance") or "Unclear"
+        )
+        balance = st.selectbox(
+            "Strategy-versus-execution balance",
+            balance_options,
+            index=balance_options.index(balance_value) if balance_value in balance_options else 3,
+            key="prospect_interpretation_balance_override",
+        )
+        if st.button("Apply interpretation corrections", key="apply_role_interpretation_corrections"):
+            apply_role_interpretation_feedback(
+                st.session_state,
+                interpretation,
+                "User correction",
+                {
+                    "primary_archetype": archetype,
+                    "plain_english_summary": summary,
+                    "technical_depth": technical,
+                    "people_management_expectation": people,
+                    "client_facing_expectation": client,
+                    "strategic_vs_execution_balance": balance,
+                },
+            )
+            st.rerun()
+
+
+def _render_hiring_manager_lens(st: Any, intelligence: Dict[str, Any]) -> None:
+    lens = intelligence.get("hiring_manager_lens") or {}
+    if not isinstance(lens, dict) or not lens:
+        return
+    st.markdown("### What the hiring manager is probably trying to solve")
+    st.write(str(lens.get("hiring_problem") or "Not clear from the posting."))
+    yes_factors = list(lens.get("likely_yes_factors") or [])
+    hesitations = list(lens.get("likely_hesitations") or [])
+    if yes_factors:
+        st.markdown("**Likely yes factors:** " + "; ".join(yes_factors[:3]))
+    if hesitations:
+        st.markdown("**Likely hesitation:** " + str(hesitations[0]))
+    with st.expander("Detailed hiring-manager analysis"):
+        for label, field in (
+            ("Non-negotiables", "non_negotiables"),
+            ("First resume scan", "first_scan_priorities"),
+            ("Interview probes", "interview_probe_areas"),
+            ("Application must prove", "application_proof_requirements"),
+            ("Positioning risks", "application_positioning_risks"),
+        ):
+            values = lens.get(field) or []
+            if values:
+                st.markdown(f"**{label}**")
+                for value in values:
+                    st.markdown(f"- {value}")
+
+
+def _render_application_strategy(st: Any, intelligence: Dict[str, Any]) -> None:
+    strategy = intelligence.get("application_strategy") or {}
+    if not isinstance(strategy, dict) or not strategy:
+        return
+    st.markdown("### Application strategy")
+    warning = str(strategy.get("unconfirmed_interpretation_warning") or "")
+    if warning:
+        st.warning(warning)
+    st.write(str(strategy.get("candidate_positioning") or ""))
+    direct = strategy.get("strongest_direct_evidence") or []
+    adjacent = strategy.get("strongest_adjacent_evidence") or []
+    if direct:
+        st.markdown("**Direct evidence:** " + "; ".join(str(value) for value in direct[:4]))
+    if adjacent:
+        st.markdown("**Strong adjacent evidence:** " + "; ".join(str(value) for value in adjacent[:4]))
+    st.markdown("**Honest boundary:** " + str(strategy.get("honest_boundary") or "Keep ownership claims within verified evidence."))
+    if st.session_state.get("debug_mode"):
+        st.json(strategy)
+
+
+def _render_role_evidence_selection(
+    st: Any,
+    intelligence: Dict[str, Any],
+    *,
+    tracker_id: str = "",
+    editable: bool = False,
+) -> None:
+    """Show the automatic prospect evidence set and lightweight local overrides."""
+    selection = dict(
+        intelligence.get("role_evidence_selection")
+        or (intelligence.get("match_report") or {}).get("role_evidence_selection")
+        or {}
+    )
+    if not selection:
+        return
+    st.markdown("### Evidence Selected for This Role")
+    st.caption(
+        "Career Catalyst selected this evidence automatically from the global Evidence Profile. "
+        "Any changes below apply only to this prospect."
+    )
+    important = selection.get("important_capabilities") or []
+    if important:
+        st.markdown("**Most important capabilities:** " + ", ".join(important[:8]))
+    summary = selection.get("selection_summary") or {}
+    st.caption(
+        f"{summary.get('primary', 0)} primary · {summary.get('supporting', 0)} supporting · "
+        f"{summary.get('transferable', 0)} transferable · {summary.get('known_gaps', 0)} known gaps"
+    )
+    scope_key = tracker_id or "new_prospect"
+    pending_key = f"pending_evidence_overrides_{scope_key}"
+    saved_overrides = normalize_selection_overrides(selection.get("overrides") or {})
+    pending_overrides = (
+        normalize_selection_overrides(st.session_state.get(pending_key) or {})
+        if tracker_id and pending_key in st.session_state
+        else saved_overrides
+    )
+    selection["overrides"] = pending_overrides
+
+    if tracker_id and pending_overrides != saved_overrides:
+        st.info(
+            "Evidence changes are pending. Apply them once, then refresh analysis when you are ready."
+        )
+        apply_column, discard_column = st.columns(2)
+        if apply_column.button(
+            "Apply Evidence Changes",
+            key=f"apply_evidence_changes_{scope_key}",
+            type="primary",
+            use_container_width=True,
+        ):
+            persist_evidence_overrides_if_changed(
+                tracker_id,
+                saved_overrides,
+                pending_overrides,
+                PROJECT_ROOT,
+            )
+            st.session_state.pop(pending_key, None)
+            invalidate_package_context_state(st.session_state, tracker_id)
+            st.rerun()
+        if discard_column.button(
+            "Discard Evidence Changes",
+            key=f"discard_evidence_changes_{scope_key}",
+            use_container_width=True,
+        ):
+            st.session_state.pop(pending_key, None)
+            st.rerun()
+
+    def apply_action(evidence_id: str, action: str, replacement_id: str = "") -> None:
+        if tracker_id:
+            stage_evidence_override(
+                st.session_state,
+                pending_key,
+                selection.get("overrides") or {},
+                evidence_id,
+                action,
+                replacement_id=replacement_id,
+            )
+        else:
+            updated = update_selection_overrides(
+                selection.get("overrides") or {}, evidence_id, action,
+                replacement_id=replacement_id,
+            )
+            st.session_state["prospect_evidence_selection_overrides"] = updated
+            st.session_state["prospect_evidence_dirty"] = True
+            st.session_state["score_dirty"] = True
+            st.session_state["application_strategy_dirty"] = True
+            st.session_state["package_dirty"] = True
+            st.session_state["prospect_intelligence_stale"] = True
+            invalidate_package_context_state(st.session_state)
+        st.rerun()
+
+    excluded = list(selection.get("excluded_evidence") or [])
+    replacement_options = {
+        str(item.get("id")): str(item.get("title") or item.get("id"))
+        for item in excluded
+    }
+    for heading, field in (
+        ("Primary Evidence", "primary_evidence"),
+        ("Supporting Evidence", "supporting_evidence"),
+        ("Transferable Evidence", "transferable_evidence"),
+    ):
+        items = list(selection.get(field) or [])
+        st.markdown(f"#### {heading}")
+        if not items:
+            st.caption("No evidence is currently assigned to this section.")
+            continue
+        for item in items:
+            evidence_id = str(item.get("id"))
+            with st.container(border=True):
+                st.markdown(f"**{item.get('title')}**")
+                st.write(str(item.get("description") or ""))
+                st.caption(
+                    f"{item.get('category')} · {item.get('confidence')} confidence · "
+                    f"{item.get('selected_by')}"
+                )
+                with st.expander("Why Selected"):
+                    for reason in item.get("why_selected") or []:
+                        st.markdown(f"- {reason}")
+                source_key = f"show_evidence_source_{scope_key}_{evidence_id}"
+                if st.session_state.get(source_key):
+                    provenance = item.get("provenance") or {}
+                    st.info(
+                        f"Source: {item.get('source')} — {item.get('source_reference') or 'No reference supplied'}\n\n"
+                        f"Provenance: {provenance.get('how') or 'Recorded'} · {provenance.get('when') or 'Date unavailable'}"
+                    )
+                if not editable:
+                    continue
+                controls = st.columns(3)
+                if controls[0].button("Exclude", key=f"exclude_{scope_key}_{evidence_id}"):
+                    apply_action(evidence_id, "exclude")
+                action_label = "Demote to Supporting" if field == "primary_evidence" else "Make Primary"
+                action_name = "demote_supporting" if field == "primary_evidence" else "make_primary"
+                if controls[1].button(action_label, key=f"level_{scope_key}_{evidence_id}"):
+                    apply_action(evidence_id, action_name)
+                if controls[2].button("View Source", key=f"source_{scope_key}_{evidence_id}"):
+                    st.session_state[source_key] = not st.session_state.get(source_key, False)
+                    st.rerun()
+                if replacement_options:
+                    replacement_id = st.selectbox(
+                        "Replace Evidence",
+                        tuple(replacement_options),
+                        format_func=lambda value: replacement_options[value],
+                        key=f"replacement_{scope_key}_{evidence_id}",
+                    )
+                    if st.button("Replace Evidence", key=f"replace_{scope_key}_{evidence_id}"):
+                        apply_action(evidence_id, "replace", replacement_id)
+
+    gaps = list(selection.get("known_gaps") or [])
+    st.markdown("#### Known Gaps")
+    if not gaps:
+        st.caption("No material unsupported requirements were identified.")
+    for gap in gaps:
+        st.markdown(f"- **{gap.get('requirement')}** — {gap.get('reason')}")
+
+    with st.expander(f"Excluded Evidence ({len(excluded)})"):
+        if not excluded:
+            st.caption("No evidence was excluded.")
+        for item in excluded[:15]:
+            evidence_id = str(item.get("id"))
+            st.markdown(f"**{item.get('title')}** — {item.get('exclusion_reason')}")
+            st.caption(f"Source: {item.get('source')} · {item.get('category')}")
+            if editable:
+                controls = st.columns(3)
+                if controls[0].button("Include", key=f"include_{scope_key}_{evidence_id}"):
+                    apply_action(evidence_id, "include")
+                if controls[1].button("Make Primary", key=f"excluded_primary_{scope_key}_{evidence_id}"):
+                    apply_action(evidence_id, "make_primary")
+                if controls[2].button("View Source", key=f"excluded_source_{scope_key}_{evidence_id}"):
+                    provenance = item.get("provenance") or {}
+                    st.info(
+                        f"{item.get('source')} — {item.get('source_reference') or 'No reference supplied'} · "
+                        f"{provenance.get('when') or 'Date unavailable'}"
+                    )
+        if editable and excluded:
+            add_options = {
+                str(item.get("id")): str(item.get("title") or item.get("id"))
+                for item in excluded
+            }
+            add_id = st.selectbox(
+                "Add Evidence", tuple(add_options),
+                format_func=lambda value: add_options[value],
+                key=f"add_evidence_{scope_key}",
+            )
+            if st.button("Add Evidence", key=f"add_evidence_button_{scope_key}"):
+                apply_action(add_id, "include")
+
+
+def _render_intelligence_preview(
+    st: Any,
+    intelligence: Dict[str, Any],
+    *,
+    editable_interpretation: bool = False,
+    evidence_tracker_id: str = "",
+) -> None:
     with st.container(border=True):
         st.markdown("**Detected role intelligence**")
         st.markdown(
@@ -2354,17 +3057,34 @@ def _render_intelligence_preview(st: Any, intelligence: Dict[str, Any]) -> None:
                 f"Metadata: **{verification.get('metadata_status', 'Metadata unavailable')}**"
             )
         _render_prospect_validation(st, intelligence.get("validation_state") or {})
-        angles = intelligence.get("cover_letter_angle", [])
-        if angles:
-            st.markdown(f"**Suggested cover letter angle:** {angles[0]}")
-        proof_points = intelligence.get("proof_points_to_emphasize", [])
-        if proof_points:
-            st.markdown(
-                "**Suggested proof points:** " + "; ".join(proof_points[:4])
-            )
+        _render_role_interpretation(
+            st, intelligence, editable=editable_interpretation
+        )
+        _render_role_evidence_selection(
+            st,
+            intelligence,
+            tracker_id=evidence_tracker_id,
+            editable=editable_interpretation or bool(evidence_tracker_id),
+        )
         match_report = intelligence.get("match_report")
         if isinstance(match_report, dict):
+            if st.session_state.get("debug_mode") and match_report.get(
+                "interpretation_assessment"
+            ):
+                st.markdown("**Interpretation-to-score diagnostics**")
+                st.json(match_report["interpretation_assessment"])
             st.markdown(_match_score_html(match_report), unsafe_allow_html=True)
+        _render_application_strategy(st, intelligence)
+        strategy = intelligence.get("application_strategy") or {}
+        angle = str(strategy.get("cover_letter_thesis") or "")
+        angles = intelligence.get("cover_letter_angle", [])
+        if angle or angles:
+            st.markdown(f"**Suggested cover letter angle:** {angle or angles[0]}")
+        proof_points = strategy.get("cover_letter_proof_sequence") or intelligence.get("proof_points_to_emphasize", [])
+        if proof_points:
+            st.markdown(
+                "**Suggested proof points:** " + "; ".join(str(value) for value in proof_points[:4])
+            )
 
 
 def _render_add_prospect(st: Any) -> None:
@@ -2380,12 +3100,8 @@ def _render_add_prospect(st: Any) -> None:
     def trigger_url_import() -> None:
         apply_prospect_url_import_state(st.session_state)
 
-    def mark_intelligence_stale() -> None:
-        mark_prospect_intelligence_stale(st.session_state)
-
-    def mark_description_stale() -> None:
-        st.session_state["prospect_description_source"] = "manual"
-        mark_prospect_intelligence_stale(st.session_state)
+    def refresh_reviewed_field(field: str) -> None:
+        refresh_prospect_preview_state(st.session_state, field)
 
     if not st.session_state.get("prospect_url_input"):
         st.session_state["prospect_url_input"] = st.session_state.get("prospect_url_value", "")
@@ -2403,14 +3119,29 @@ def _render_add_prospect(st: Any) -> None:
     left, right = st.columns(2)
     with left:
         st.text_input(
-            "Company", key="prospect_company", on_change=mark_intelligence_stale
+            "Company", key="prospect_company", on_change=refresh_reviewed_field,
+            args=("company",),
         )
         st.text_input(
-            "Role title", key="prospect_role", on_change=mark_intelligence_stale
+            "Role title", key="prospect_role", on_change=refresh_reviewed_field,
+            args=("job_title",),
         )
-        st.text_input("Location", key="prospect_location")
-        st.text_input("Salary range", key="prospect_salary")
-        st.text_input("Source", key="prospect_source")
+        st.text_input(
+            "Location", key="prospect_location", on_change=refresh_reviewed_field,
+            args=("location",),
+        )
+        st.text_input(
+            "Salary range", key="prospect_salary", on_change=refresh_reviewed_field,
+            args=("salary_range",),
+        )
+        st.text_input(
+            "Posting date", key="prospect_posting_date", on_change=refresh_reviewed_field,
+            args=("posting_date",),
+        )
+        st.text_input(
+            "Source", key="prospect_source", on_change=refresh_reviewed_field,
+            args=("source",),
+        )
     with right:
         st.selectbox(
             "Priority",
@@ -2423,6 +3154,8 @@ def _render_add_prospect(st: Any) -> None:
             "Work arrangement",
             ("Not specified", "Remote", "Hybrid", "On-site", "Flexible"),
             key="prospect_work_arrangement",
+            on_change=refresh_reviewed_field,
+            args=("work_arrangement",),
         )
         st.text_area("Notes", key="prospect_notes", height=104)
         st.text_area("Next action", key="prospect_next_action", height=104)
@@ -2432,52 +3165,29 @@ def _render_add_prospect(st: Any) -> None:
         key="prospect_description",
         height=360,
         help="Manual paste is always supported and is required when a career page blocks import.",
-        on_change=mark_description_stale,
+        on_change=refresh_reviewed_field,
+        args=("job_description",),
     )
 
     def reparse_current_fields() -> None:
         apply_manual_reparse_state(st.session_state)
 
-    st.button("Re-parse details and re-score", on_click=reparse_current_fields)
+    st.button("Refresh Analysis", on_click=reparse_current_fields)
 
-    values = {
-        "posting_url": st.session_state["prospect_url_value"],
-        "application_portal_url": st.session_state.get("prospect_application_portal_url", ""),
-        "official_url": st.session_state["prospect_url_value"],
-        "source_url": st.session_state["prospect_url_value"],
-        "original_source_url": st.session_state["prospect_original_source_url"],
-        "canonical_apply_url": st.session_state["prospect_canonical_url"],
-        "job_id": st.session_state["prospect_job_id"],
-        "company": st.session_state["prospect_company"],
-        "job_title": st.session_state["prospect_role"],
-        "location": st.session_state["prospect_location"],
-        "salary_range": st.session_state["prospect_salary"],
-        "posting_date": st.session_state["prospect_posting_date"],
-        "source": st.session_state["prospect_source"],
-        "priority": st.session_state["prospect_priority"],
-        "status": st.session_state["prospect_status"],
-        "work_arrangement": st.session_state["prospect_work_arrangement"],
-        "job_description": st.session_state["prospect_description"],
-        "description_source": st.session_state.get("prospect_description_source", ""),
-        "notes": st.session_state["prospect_notes"],
-        "next_action": st.session_state["prospect_next_action"],
-    }
+    values = current_prospect_form_values(st.session_state)
     match_report = None
     intelligence = None
-    if prospect_has_usable_job_content(values) and not st.session_state.get(
-        "prospect_intelligence_stale"
-    ):
-        intelligence = dict(
-            st.session_state.get("prospect_role_intelligence")
-            or detect_prospect_intelligence(values)
-        )
-        intelligence["validation_state"] = compute_prospect_validation_state(
-            values, intelligence
-        )
-        st.session_state["prospect_validation_state"] = intelligence["validation_state"]
-        st.session_state["prospect_role_intelligence"] = intelligence
-        match_report = intelligence.get("match_report")
-        _render_intelligence_preview(st, intelligence)
+    if prospect_has_usable_job_content(values):
+        if not st.session_state.get("prospect_intelligence_stale"):
+            stored_intelligence = st.session_state.get("prospect_role_intelligence")
+            if isinstance(stored_intelligence, dict) and stored_intelligence:
+                intelligence = stored_intelligence
+                match_report = intelligence.get("match_report")
+                _render_intelligence_preview(
+                    st, intelligence, editable_interpretation=True
+                )
+        if intelligence is None:
+            st.warning("Analysis needs refresh. Use Refresh Analysis when the role details are ready.")
     elif any(values.get(key) for key in ("official_url", "company", "job_title", "job_description")):
         validation = st.session_state.get("prospect_validation_state") or compute_prospect_validation_state(
             values,
@@ -2573,10 +3283,173 @@ def _render_add_prospect(st: Any) -> None:
 
 def _load_applications(st: Any) -> list[Dict[str, Any]]:
     try:
-        return load_application_tracker(PROJECT_ROOT)
+        return load_cached_application_tracker(PROJECT_ROOT)
     except TrackerValidationError as error:
         st.error(str(error))
         return []
+
+
+ANALYSIS_DIRTY_FIELDS = (
+    "prospect_evidence_dirty",
+    "role_analysis_dirty",
+    "score_dirty",
+    "application_strategy_dirty",
+)
+
+
+def application_analysis_is_dirty(application: Dict[str, Any]) -> bool:
+    """Return whether saved analysis needs an explicit refresh."""
+    return bool(
+        any(application.get(field) for field in ANALYSIS_DIRTY_FIELDS)
+        or application.get("match_score") is None
+        or not (
+            isinstance(application.get("role_interpretation"), dict)
+            and application.get("role_interpretation")
+        )
+    )
+
+
+def saved_application_voice(application: Dict[str, Any]) -> Dict[str, Any]:
+    """Build a render-only intelligence view from persisted tracker fields."""
+    role_lens = {
+        "primary": application.get("role_lens") or "general_operations",
+        "secondary": application.get("secondary_role_lens"),
+        "confidence": application.get("role_lens_confidence") or "Medium",
+    }
+    match_report = persisted_match_fields(application)
+    selection = dict(
+        application.get("role_evidence_selection")
+        or match_report.get("role_evidence_selection")
+        or {}
+    )
+    selection["overrides"] = dict(
+        application.get("evidence_selection_overrides")
+        or selection.get("overrides")
+        or {}
+    )
+    match_report["role_evidence_selection"] = selection
+    freshness = {
+        "label": application.get("freshness_label")
+        or application.get("freshness")
+        or "Not evaluated",
+        "posting_status": application.get("posting_status") or "Unknown",
+        "is_closed": str(application.get("posting_status") or "").lower()
+        in {"closed", "inactive", "expired"},
+    }
+    return {
+        "profile_name": application.get("company_voice_profile") or "saved_profile",
+        "profile_label": application.get("company_voice_label")
+        or application.get("company_voice_profile")
+        or "Saved analysis",
+        "source": application.get("company_voice_source") or "saved_tracker_analysis",
+        "company_category": application.get("company_category") or "unknown",
+        "company_category_label": application.get("company_category") or "Unknown",
+        "role_family": application.get("role_family") or "unknown",
+        "role_family_label": application.get("role_family") or "Unknown",
+        "confidence_label": application.get("company_inference_confidence") or "Medium",
+        "role_lens": role_lens,
+        "requirement_map": list(application.get("requirement_map") or []),
+        "role_interpretation": dict(application.get("role_interpretation") or {}),
+        "hiring_manager_lens": dict(application.get("hiring_manager_lens") or {}),
+        "application_strategy": dict(application.get("application_strategy") or {}),
+        "proof_points_to_emphasize": list(
+            application.get("proof_points_to_emphasize") or []
+        ),
+        "selected_evidence_ids": list(selection.get("selected_evidence_ids") or []),
+        "role_evidence_selection": selection,
+        "match_report": match_report,
+        "freshness": freshness,
+        "source_verification": normalize_job_source(application),
+        "analysis_dirty": application_analysis_is_dirty(application),
+    }
+
+
+def persist_evidence_overrides_if_changed(
+    tracker_id: str,
+    current: Dict[str, Any],
+    updated: Dict[str, Any],
+    project_root: Path = PROJECT_ROOT,
+    *,
+    writer: Any = None,
+) -> bool:
+    """Persist one prospect override only when its normalized value changed."""
+    before = normalize_selection_overrides(current)
+    after = normalize_selection_overrides(updated)
+    if before == after:
+        return False
+    write = writer or update_prospect
+    write(
+        tracker_id,
+        {
+            "evidence_selection_overrides": after,
+            "prospect_evidence_dirty": True,
+            "score_dirty": True,
+            "application_strategy_dirty": True,
+            "package_dirty": True,
+        },
+        project_root,
+    )
+    invalidate_tracker_cache()
+    return True
+
+
+def stage_evidence_override(
+    session_state: Any,
+    pending_key: str,
+    current: Dict[str, Any],
+    evidence_id: str,
+    action: str,
+    *,
+    replacement_id: str = "",
+) -> Dict[str, Any]:
+    """Stage a prospect choice in session state without persistence or analysis."""
+    updated = update_selection_overrides(
+        current,
+        evidence_id,
+        action,
+        replacement_id=replacement_id,
+    )
+    session_state[pending_key] = updated
+    return updated
+
+
+def refresh_saved_application_analysis(
+    tracker_id: str,
+    applications: list[Dict[str, Any]],
+    project_root: Path = PROJECT_ROOT,
+    *,
+    context_builder: Any = None,
+    writer: Any = None,
+) -> Dict[str, Any]:
+    """Explicitly recompute and persist only one selected prospect's analysis."""
+    build = context_builder or build_package_context
+    write = writer or update_prospect
+    context = build(tracker_id, applications, project_root)
+    intelligence = dict(context["role_intelligence"])
+    report = dict(context["match_report"])
+    updates = {
+        "company_category": intelligence.get("company_category"),
+        "role_family": intelligence.get("role_family"),
+        "role_lens": (intelligence.get("role_lens") or {}).get("primary"),
+        "secondary_role_lens": (intelligence.get("role_lens") or {}).get("secondary"),
+        "role_lens_confidence": (intelligence.get("role_lens") or {}).get("confidence"),
+        "requirement_map": intelligence.get("requirement_map") or [],
+        "role_interpretation": intelligence.get("role_interpretation") or {},
+        "hiring_manager_lens": intelligence.get("hiring_manager_lens") or {},
+        "application_strategy": intelligence.get("application_strategy") or {},
+        "role_evidence_selection": context.get("role_evidence_selection") or {},
+        "evidence_selection_overrides": context.get("evidence_selection_overrides") or {},
+        "context_fingerprint": context.get("context_fingerprint"),
+        "prospect_evidence_dirty": False,
+        "role_analysis_dirty": False,
+        "score_dirty": False,
+        "application_strategy_dirty": False,
+        "package_dirty": True,
+        **persisted_match_fields(report),
+    }
+    updated = write(tracker_id, updates, project_root)
+    invalidate_tracker_cache()
+    return updated
 
 
 def submitted_applications(
@@ -2617,22 +3490,20 @@ def detected_application_voice(
     project_root: Path = PROJECT_ROOT,
 ) -> Dict[str, Any]:
     """Return the company voice and role family shown in the package workflow."""
-    resolved = resolve_job_reference(tracker_id, project_root)
-    parsed_job = parse_job_description(resolved["job_path"])
-    intelligence = get_effective_voice_profile(
-        company_name=str(parsed_job.get("company") or ""),
-        job_title=str(parsed_job.get("job_title") or ""),
-        job_description=str(parsed_job.get("raw_text") or ""),
-        source_url=str(parsed_job.get("source_url") or ""),
-    )
+    tracker = load_application_tracker(project_root)
+    context = build_package_context(tracker_id, tracker, project_root)
+    intelligence = dict(context["role_intelligence"])
     intelligence["profile_label"] = _humanize_taxonomy(
         intelligence["profile_name"]
     )
     intelligence["role_family_label"] = _humanize_taxonomy(
         intelligence.get("role_family_label") or intelligence["role_family"]
     )
-    intelligence["freshness"] = detect_job_freshness(str(parsed_job.get("raw_text") or ""))
-    intelligence["match_report"] = score_job_match(resolved["job_path"], project_root)
+    intelligence["freshness"] = detect_job_freshness(
+        str(context["parsed_job"].get("raw_text") or "")
+    )
+    intelligence["match_report"] = context["match_report"]
+    intelligence["role_evidence_selection"] = context["role_evidence_selection"]
     return intelligence
 
 
@@ -2653,17 +3524,53 @@ def _render_generate_package(st: Any) -> None:
         key="package_tracker_id",
     )
     reset_package_preview_for_selection(st.session_state, tracker_id)
-    try:
-        voice_context = detected_application_voice(tracker_id, PROJECT_ROOT)
-    except Exception as error:
-        st.caption(f"Company voice detection unavailable: {error}")
-    else:
-        _render_intelligence_preview(st, voice_context)
     application = by_id[tracker_id]
+    voice_context = saved_application_voice(application)
+    persisted_analysis_dirty = bool(voice_context.get("analysis_dirty"))
+    pending_key = f"pending_evidence_overrides_{tracker_id}"
+    pending_evidence_changes = bool(
+        pending_key in st.session_state
+        and normalize_selection_overrides(st.session_state.get(pending_key) or {})
+        != normalize_selection_overrides(
+            application.get("evidence_selection_overrides") or {}
+        )
+    )
+    analysis_dirty = persisted_analysis_dirty or pending_evidence_changes
+    if persisted_analysis_dirty:
+        refresh_column, message_column = st.columns((1, 3))
+        message_column.warning(
+            "Analysis needs refresh. Saved evidence choices are preserved; scoring and package strategy have not been recalculated."
+        )
+        if refresh_column.button(
+            "Refresh Analysis",
+            key=f"refresh_package_analysis_{tracker_id}",
+            type="primary",
+            use_container_width=True,
+        ):
+            try:
+                with st.spinner("Refreshing analysis for this prospect…"):
+                    refresh_saved_application_analysis(
+                        tracker_id, applications, PROJECT_ROOT
+                    )
+            except Exception as error:
+                st.error(f"Analysis refresh failed: {error}")
+            else:
+                st.rerun()
+    elif pending_evidence_changes:
+        st.info("Apply the pending evidence changes below before refreshing analysis.")
+    _render_intelligence_preview(
+        st, voice_context, evidence_tracker_id=tracker_id
+    )
     generate_followups_too = st.checkbox(
         "Generate follow-up materials after package generation",
         value=get_record_status(application) == "Applied",
         key=f"package_followups_{tracker_id}",
+    )
+    public_transparency_requested = st.checkbox(
+        "Include concise transparency language when a material limitation changes the hiring decision",
+        value=False,
+        key=f"package_transparency_{tracker_id}",
+        help="Off by default. Public materials otherwise lead with the strongest truthful evidence without volunteering limitations.",
     )
     freshness = voice_context.get("freshness", {}) if "voice_context" in locals() else {}
     override_closed = False
@@ -2680,13 +3587,14 @@ def _render_generate_package(st: Any) -> None:
         generate_followups_too=generate_followups_too,
         override_closed=override_closed,
     )
-    if st.button("Generate Package", type="primary"):
+    if st.button("Generate Package", type="primary", disabled=analysis_dirty):
         try:
             with st.spinner("Generating resumes, messages, strategy pack, and dashboard…"):
                 result = generate_package(
                     tracker_id,
                     PROJECT_ROOT,
                     generate_followups_too=generate_followups_too,
+                    public_transparency_requested=public_transparency_requested,
                     override_closed=override_closed,
                 )
         except PackageGenerationError as error:
@@ -2857,12 +3765,10 @@ def _render_followups(st: Any) -> None:
         )
     else:
         st.info(f"{follow_up_action['label']} · {follow_up_action['reason']}")
-    try:
-        _render_intelligence_preview(
-            st, detected_application_voice(tracker_id, PROJECT_ROOT)
-        )
-    except Exception as error:
-        st.caption(f"Role intelligence unavailable: {error}")
+    saved_intelligence = saved_application_voice(application)
+    if saved_intelligence.get("analysis_dirty"):
+        st.warning("Analysis needs refresh before generating new role-specific materials.")
+    _render_intelligence_preview(st, saved_intelligence)
 
     if generate_clicked:
         try:
@@ -3019,11 +3925,7 @@ def _render_dashboard(st: Any) -> None:
     applications = _load_applications(st)
     if not applications:
         return
-    try:
-        packages = _package_map(PROJECT_ROOT)
-    except Exception as error:
-        st.error(f"Could not load application packages: {error}")
-        packages = {}
+    packages = _saved_package_map(applications)
 
     heading_column, refresh_column, open_column = st.columns((3, 1, 1))
     heading_column.markdown(
@@ -3194,6 +4096,249 @@ def _render_recent_outputs(st: Any) -> None:
         )
 
 
+def _render_evidence_explorer(st: Any) -> None:
+    """Render persistent evidence facts and separately reviewable capabilities."""
+    profile = load_cached_evidence_profile(PROJECT_ROOT)
+    if st.button(
+        "Recalculate Capabilities",
+        key="recalculate_capability_graph",
+        help="Explicitly rebuild the interpretation layer from the current Evidence Profile.",
+    ):
+        invalidate_capability_cache()
+    graph = load_cached_capability_graph(PROJECT_ROOT)
+    evidence_summary = evidence_explorer_summary(profile)
+    capability_summary = capability_explorer_summary(graph)
+
+    st.subheader("Evidence Profile & Career Knowledge Graph")
+    st.caption(
+        "Evidence records career facts with provenance. Capabilities are interpretations "
+        "derived from those facts and stay separately reviewable."
+    )
+    metrics = st.columns(5)
+    metrics[0].metric("Evidence", evidence_summary.get("total_evidence", 0))
+    metrics[1].metric("Categories", len(evidence_summary.get("categories") or {}))
+    metrics[2].metric("Awaiting review", len(evidence_summary.get("awaiting_confirmation") or []))
+    metrics[3].metric("Capabilities", capability_summary.get("total_capabilities", 0))
+    metrics[4].metric("Direct capabilities", capability_summary.get("direct", 0))
+
+    evidence_view, capability_view = st.tabs(("Evidence Explorer", "Capability Explorer"))
+    with evidence_view:
+        recent_titles = [
+            str(item.get("title")) for item in evidence_summary.get("recent_evidence") or []
+        ]
+        st.caption(
+            f"Verified coverage: {evidence_summary.get('verified_count', 0)} of "
+            f"{evidence_summary.get('total_evidence', 0)} · Not on resume: "
+            f"{evidence_summary.get('not_on_resume_count', 0)}"
+        )
+        if recent_titles:
+            st.markdown("**Recently updated:** " + "; ".join(recent_titles))
+        with st.expander("Propose evidence for review", expanded=False):
+            with st.form("evidence_discovery_form", clear_on_submit=True):
+                title = st.text_input("Evidence title")
+                description = st.text_area("What happened, what you owned, and the outcome")
+                category = st.selectbox("Category", sorted(EVIDENCE_CATEGORIES))
+                source_reference = st.text_input("Source reference (optional)")
+                submitted = st.form_submit_button("Add for confirmation")
+            if submitted:
+                if not title.strip() or not description.strip():
+                    st.warning("A title and description are required.")
+                else:
+                    proposal = discover_evidence(
+                        title, description, category=category, source="Conversation",
+                        source_reference=source_reference,
+                    )
+                    save_evidence_profile(add_discovery(profile, proposal), PROJECT_ROOT)
+                    invalidate_evidence_caches()
+                    st.success("Added as Medium-confidence evidence awaiting confirmation.")
+                    st.rerun()
+
+        awaiting = [
+            item for item in profile.get("discoveries") or []
+            if item.get("status") == "Awaiting Confirmation"
+        ]
+        if awaiting:
+            st.markdown("#### Awaiting confirmation")
+            for item in awaiting:
+                discovery_id = str(item.get("id"))
+                with st.expander(str(item.get("title") or "Evidence proposal")):
+                    edited_title = st.text_input(
+                        "Title", value=str(item.get("title") or ""),
+                        key=f"evidence_title_{discovery_id}",
+                    )
+                    edited_description = st.text_area(
+                        "Description", value=str(item.get("description") or ""),
+                        key=f"evidence_description_{discovery_id}",
+                    )
+                    categories = sorted(EVIDENCE_CATEGORIES)
+                    edited_category = st.selectbox(
+                        "Category", categories,
+                        index=categories.index(item.get("category"))
+                        if item.get("category") in EVIDENCE_CATEGORIES else 0,
+                        key=f"evidence_category_{discovery_id}",
+                    )
+                    confirm_col, reject_col = st.columns(2)
+                    if confirm_col.button("Confirm evidence", key=f"confirm_{discovery_id}"):
+                        updated = confirm_discovery(
+                            profile, discovery_id,
+                            {"title": edited_title, "description": edited_description, "category": edited_category},
+                        )
+                        save_evidence_profile(updated, PROJECT_ROOT)
+                        invalidate_evidence_caches()
+                        st.success("Confirmed as High-confidence user evidence.")
+                        st.rerun()
+                    if reject_col.button("Reject", key=f"reject_{discovery_id}"):
+                        save_evidence_profile(reject_discovery(profile, discovery_id), PROJECT_ROOT)
+                        invalidate_evidence_caches()
+                        st.rerun()
+
+        st.markdown("#### Search and filters")
+        search = st.text_input("Search evidence", placeholder="Platform, skill, client, role, or proof")
+        filter_row = st.columns(3)
+        category_filter = filter_row[0].selectbox("Category", [""] + sorted(EVIDENCE_CATEGORIES))
+        confidence_filter = filter_row[1].selectbox("Confidence", [""] + sorted(CONFIDENCE_LEVELS))
+        verification_filter = filter_row[2].selectbox(
+            "Verification", [""] + sorted(EVIDENCE_VERIFICATION_STATUSES)
+        )
+        filter_row_two = st.columns(3)
+        source_options = sorted({str(item.get("source")) for item in profile.get("evidence") or [] if item.get("source")})
+        source_filter = filter_row_two[0].selectbox("Source", [""] + source_options)
+        visibility_filter = filter_row_two[1].selectbox(
+            "Resume visibility", [""] + sorted(RESUME_VISIBILITIES)
+        )
+        usage_filter = filter_row_two[2].selectbox("Approved usage", [""] + list(USAGE_KEYS))
+        filtered = query_evidence(
+            profile, search=search, category=category_filter, confidence=confidence_filter,
+            source=source_filter, resume_visibility=visibility_filter, usage=usage_filter,
+            verification=verification_filter,
+        )
+        st.caption(f"Showing {len(filtered)} evidence item(s).")
+        for item in filtered:
+            with st.expander(f"{item.get('title')} · {item.get('confidence')}"):
+                st.write(item.get("description") or "No description recorded.")
+                st.caption(
+                    f"{item.get('category')} · {item.get('verification_status')} · "
+                    f"Resume: {item.get('resume_visibility')}"
+                )
+                st.markdown(f"**Source:** {item.get('source')} — {item.get('source_reference') or 'no reference supplied'}")
+                if item.get("company") or item.get("role"):
+                    st.markdown(
+                        "**Career context:** "
+                        + " · ".join(
+                            str(value) for value in (item.get("company"), item.get("role"))
+                            if value
+                        )
+                    )
+                proof_signals = [
+                    *(item.get("skills") or []), *(item.get("platforms") or [])
+                ]
+                if proof_signals:
+                    st.markdown("**Skills and platforms:** " + ", ".join(proof_signals))
+                provenance = dict(item.get("provenance") or {})
+                if provenance:
+                    st.markdown(
+                        "**Provenance:** "
+                        f"{provenance.get('how') or 'Recorded'} · "
+                        f"{provenance.get('when') or 'date unavailable'}"
+                    )
+                enabled = [name for name, allowed in (item.get("recommended_usage") or {}).items() if allowed]
+                if enabled:
+                    st.markdown("**Approved uses:** " + ", ".join(enabled))
+                related = item.get("related_evidence") or []
+                if related:
+                    st.markdown("**Related evidence:** " + ", ".join(str(value) for value in related))
+
+    with capability_view:
+        st.caption(
+            "Confirm, reject, or recalibrate a derived capability. Reviews change the "
+            "interpretation layer and never rewrite supporting evidence."
+        )
+        evidence_options = {
+            str(item.get("id")): str(item.get("title"))
+            for item in profile.get("evidence") or []
+        }
+        for capability in graph.get("capabilities") or []:
+            capability_id = str(capability.get("id"))
+            with st.expander(
+                f"{capability.get('name')} · {capability.get('strength')} · {capability.get('confidence')}"
+            ):
+                st.write(capability.get("recommended_positioning") or capability.get("description"))
+                st.caption(
+                    f"{capability.get('derivation_type')} · review status: "
+                    f"{capability.get('user_review_status')}"
+                )
+                applicable_roles = capability.get("applicable_role_archetypes") or []
+                if applicable_roles:
+                    st.markdown("**Applicable roles:** " + ", ".join(applicable_roles))
+                supporting_ids = list(capability.get("supporting_evidence_ids") or [])
+                st.markdown(
+                    "**Supporting evidence:** "
+                    + ", ".join(evidence_options.get(value, value) for value in supporting_ids)
+                )
+                limitations = st.text_area(
+                    "Limitations (one per line)", value="\n".join(capability.get("limitations") or []),
+                    key=f"capability_limitations_{capability_id}",
+                )
+                added_support = st.multiselect(
+                    "Add supporting evidence", list(evidence_options),
+                    format_func=lambda value: evidence_options.get(value, value),
+                    key=f"capability_support_{capability_id}",
+                )
+                controls = st.columns(4)
+                actions = (
+                    ("Confirm", "Confirmed", capability.get("strength")),
+                    ("Mark Direct", "Confirmed", "Direct Experience"),
+                    ("Mark Adjacent", "Confirmed", "Strong Adjacent Experience"),
+                    ("Reject", "Rejected", "Unsupported"),
+                )
+                for column, (button_label, review_status, strength) in zip(controls, actions):
+                    if column.button(button_label, key=f"{button_label}_{capability_id}"):
+                        save_capability_review(
+                            capability_id,
+                            {
+                                "user_review_status": review_status,
+                                "strength": strength,
+                                "limitations": [line.strip() for line in limitations.splitlines() if line.strip()],
+                                "supporting_evidence_ids": added_support,
+                            },
+                            PROJECT_ROOT,
+                        )
+                        invalidate_capability_cache()
+                        st.rerun()
+
+
+UI_PAGES = (
+    "Dashboard",
+    "Evidence & Capabilities",
+    "Add Prospect",
+    "Generate Package",
+    "Follow-Up",
+    "Advanced Status Update",
+    "Outputs",
+)
+
+
+def render_active_page(
+    st: Any,
+    selected_page: str,
+    renderers: Optional[Dict[str, Any]] = None,
+) -> None:
+    """Render only the selected page; passive navigation must not execute other pages."""
+    page_renderers = renderers or {
+        "Dashboard": _render_dashboard,
+        "Evidence & Capabilities": _render_evidence_explorer,
+        "Add Prospect": _render_add_prospect,
+        "Generate Package": _render_generate_package,
+        "Follow-Up": _render_followups,
+        "Advanced Status Update": _render_update_status,
+        "Outputs": _render_recent_outputs,
+    }
+    renderer = page_renderers.get(selected_page)
+    if renderer is None:
+        raise ValueError(f"Unknown UI page: {selected_page}")
+    renderer(st)
+
+
 def main() -> None:
     """Render the local application; importing this module has no Streamlit side effects."""
     import streamlit as st
@@ -3209,28 +4354,14 @@ def main() -> None:
         f'<p class="cc-description">{html.escape(UI_DESCRIPTION)}</p>',
         unsafe_allow_html=True,
     )
-    dashboard_tab, add_tab, generate_tab, followup_tab, status_tab, outputs_tab = st.tabs(
-        (
-            "Dashboard",
-            "Add Prospect",
-            "Generate Package",
-            "Follow-Up",
-            "Advanced Status Update",
-            "Outputs",
-        )
+    selected_page = st.segmented_control(
+        "Workspace",
+        UI_PAGES,
+        default="Dashboard",
+        key="active_workspace_page",
+        label_visibility="collapsed",
     )
-    with dashboard_tab:
-        _render_dashboard(st)
-    with add_tab:
-        _render_add_prospect(st)
-    with generate_tab:
-        _render_generate_package(st)
-    with followup_tab:
-        _render_followups(st)
-    with status_tab:
-        _render_update_status(st)
-    with outputs_tab:
-        _render_recent_outputs(st)
+    render_active_page(st, str(selected_page or "Dashboard"))
 
 
 if __name__ == "__main__":

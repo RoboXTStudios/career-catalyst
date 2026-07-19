@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
 try:
+    from .application_strategy import build_application_strategy, build_hiring_manager_lens
     from .application_tracker import (
         TrackerValidationError,
         load_application_tracker,
@@ -16,6 +17,7 @@ try:
         update_status,
     )
     from .dynamic_role_intelligence import get_effective_voice_profile
+    from .evidence_profile import evidence_as_card
     from .export_docx import export_ats_docx, export_styled_docx
     from .generate_application_note import generate_application_note
     from .generate_cover_letter import generate_cover_letter
@@ -41,8 +43,10 @@ try:
     from .parse_job import JobParseError, parse_job_description
     from .prospect_intake import add_prospect_from_job_file
     from .score_match import persisted_match_fields, score_job_match
+    from .role_evidence_selection import selected_evidence
     from .tailor_resume import tailor_resume
 except ImportError:
+    from application_strategy import build_application_strategy, build_hiring_manager_lens
     from application_tracker import (
         TrackerValidationError,
         load_application_tracker,
@@ -51,6 +55,7 @@ except ImportError:
         update_status,
     )
     from dynamic_role_intelligence import get_effective_voice_profile
+    from evidence_profile import evidence_as_card
     from export_docx import export_ats_docx, export_styled_docx
     from generate_application_note import generate_application_note
     from generate_cover_letter import generate_cover_letter
@@ -76,6 +81,7 @@ except ImportError:
     from parse_job import JobParseError, parse_job_description
     from prospect_intake import add_prospect_from_job_file
     from score_match import persisted_match_fields, score_job_match
+    from role_evidence_selection import selected_evidence
     from tailor_resume import tailor_resume
 
 
@@ -217,16 +223,64 @@ def build_package_context(
     job_description = str(
         parsed.get("raw_text") or application.get("job_description") or ""
     )
+    saved_interpretation = (
+        dict(application.get("role_interpretation") or {})
+        if isinstance(application.get("role_interpretation"), dict)
+        else {}
+    )
+    interpretation_overrides = dict(saved_interpretation.get("user_overrides") or {})
+    if saved_interpretation.get("user_reviewed"):
+        interpretation_overrides["user_reviewed"] = True
+        if saved_interpretation.get("user_feedback"):
+            interpretation_overrides["feedback"] = saved_interpretation["user_feedback"]
+        for field in (
+            "primary_archetype", "secondary_archetype", "plain_english_summary",
+            "technical_depth",
+            "people_management_expectation", "client_facing_expectation",
+            "strategic_vs_execution_balance",
+        ):
+            if saved_interpretation.get(field) not in (None, ""):
+                interpretation_overrides[field] = saved_interpretation[field]
     intelligence = get_effective_voice_profile(
         company_name=raw_company,
         job_title=role_title,
         job_description=job_description,
         source_url=source_url,
+        role_interpretation_overrides=interpretation_overrides or None,
+        role_interpretation_result=saved_interpretation or None,
     )
     job_reference = (
         str(job_path.relative_to(root)) if job_path.is_relative_to(root) else str(job_path)
     )
-    match_report = score_job_match(job_reference, root)
+    saved_evidence_overrides = dict(
+        application.get("evidence_selection_overrides")
+        or (application.get("role_evidence_selection") or {}).get("overrides")
+        or {}
+    )
+    match_report = score_job_match(
+        job_reference,
+        root,
+        saved_interpretation or None,
+        saved_evidence_overrides or None,
+    )
+    intelligence["role_interpretation"] = match_report.get("role_interpretation") or intelligence.get("role_interpretation", {})
+    intelligence["role_evidence_selection"] = dict(
+        match_report.get("role_evidence_selection") or {}
+    )
+    alignment_matrix = list((match_report.get("capability_graph") or {}).get("alignment_matrix") or [])
+    gap_analysis = dict(match_report.get("evidence_gap_analysis") or {})
+    intelligence["hiring_manager_lens"] = build_hiring_manager_lens(
+        intelligence["role_interpretation"], alignment_matrix, gap_analysis
+    )
+    intelligence["application_strategy"] = build_application_strategy(
+        intelligence["role_interpretation"],
+        intelligence["hiring_manager_lens"],
+        match_report,
+        [
+            evidence_as_card(item)
+            for item in selected_evidence(intelligence["role_evidence_selection"])
+        ],
+    )
     computed_fingerprint = prospect_context_fingerprint(
         {
             "prospect_id": str(application.get("id") or prospect_id),
@@ -234,6 +288,11 @@ def build_package_context(
             "job_title": role_title,
             "raw_text": job_description,
             "source_url": source_url,
+            "location": parsed.get("location") or application.get("location"),
+            "work_arrangement": parsed.get("work_arrangement") or application.get("work_arrangement"),
+            "salary_range": parsed.get("salary_range") or application.get("salary_range"),
+            "salary_source": parsed.get("salary_source") or application.get("salary_source"),
+            "posting_date": parsed.get("posting_date") or application.get("posting_date"),
         },
         {**intelligence, "match_report": match_report},
     )
@@ -302,6 +361,8 @@ def build_package_context(
         "job_description": job_description,
         "role_intelligence": intelligence,
         "match_report": match_report,
+        "role_evidence_selection": intelligence["role_evidence_selection"],
+        "evidence_selection_overrides": saved_evidence_overrides,
         "selected_package_paths": selected_package_paths,
         "context_fingerprint": computed_fingerprint,
         "prospect_revision": current_revision,
@@ -458,6 +519,7 @@ def generate_package(
     project_root: Optional[PathInput] = None,
     generate_followups_too: Optional[bool] = None,
     override_closed: bool = False,
+    public_transparency_requested: bool = False,
     _context_refresh_attempted: bool = False,
 ) -> Dict[str, Any]:
     """Generate all package materials and apply the safe Drafted-to-Reviewed transition."""
@@ -490,16 +552,28 @@ def generate_package(
                 "secondary_role_lens": intelligence.get("role_lens", {}).get("secondary"),
                 "role_lens_confidence": intelligence.get("role_lens", {}).get("confidence"),
                 "requirement_map": intelligence.get("requirement_map", []),
+                "role_interpretation": score.get("role_interpretation")
+                or intelligence.get("role_interpretation", {}),
+                "hiring_manager_lens": intelligence.get("hiring_manager_lens", {}),
+                "application_strategy": intelligence.get("application_strategy", {}),
+                "role_evidence_selection": context.get("role_evidence_selection", {}),
+                "evidence_selection_overrides": context.get("evidence_selection_overrides", {}),
                 "company_voice_profile": intelligence["profile_name"],
                 "company_voice_source": intelligence["source"],
                 "company_voice_label": intelligence.get("company_voice_label", intelligence["profile_name"]),
                 "company_inference_confidence": intelligence.get("confidence_label", "Medium"),
                 "salary_range": str(parsed.get("salary_range") or application.get("salary_range") or "Not disclosed"),
+                "salary_source": str(parsed.get("salary_source") or application.get("salary_source") or ""),
                 "posting_date": freshness.get("posting_date") or "",
                 "posting_age_days": freshness.get("age_days"),
                 "freshness": freshness["category"],
                 "freshness_label": freshness["label"],
                 "posting_status": freshness["posting_status"],
+                "prospect_evidence_dirty": False,
+                "role_analysis_dirty": False,
+                "score_dirty": False,
+                "application_strategy_dirty": False,
+                "package_dirty": True,
                 **persisted_match_fields(score),
             },
             root,
@@ -516,20 +590,34 @@ def generate_package(
             else bool(generate_followups_too)
         )
         opportunity = score_opportunity(parsed, score, intelligence, freshness)
-        resume = tailor_resume("executive_operations", job_reference, root)
+        material_context = {
+            "role_interpretation": intelligence.get("role_interpretation", {}),
+            "hiring_manager_lens": intelligence.get("hiring_manager_lens", {}),
+            "application_strategy": intelligence.get("application_strategy", {}),
+            "role_evidence_selection": context.get("role_evidence_selection", {}),
+            "evidence_selection_overrides": context.get("evidence_selection_overrides", {}),
+            "public_transparency_requested": bool(public_transparency_requested),
+        }
+        resume = tailor_resume("executive_operations", job_reference, root, material_context)
         styled = _safe_docx_export(
             export_styled_docx, resume["output_path"], root, "Styled resume DOCX"
         )
         ats = _safe_docx_export(
             export_ats_docx, resume["output_path"], root, "ATS resume DOCX"
         )
-        cover_letter = generate_cover_letter(job_reference, root)
-        recruiter = generate_message("recruiter", job_reference, root)
-        hiring_manager = generate_message("hiring-manager", job_reference, root)
-        application_note = generate_application_note(job_reference, root)
-        strategy_pack = generate_strategy_pack(job_reference, root)
+        cover_letter = generate_cover_letter(job_reference, root, material_context)
+        if isinstance(cover_letter.get("application_strategy"), dict):
+            intelligence["application_strategy"] = cover_letter["application_strategy"]
+            material_context["application_strategy"] = cover_letter["application_strategy"]
+        if isinstance(cover_letter.get("hiring_manager_lens"), dict):
+            intelligence["hiring_manager_lens"] = cover_letter["hiring_manager_lens"]
+            material_context["hiring_manager_lens"] = cover_letter["hiring_manager_lens"]
+        recruiter = generate_message("recruiter", job_reference, root, material_context)
+        hiring_manager = generate_message("hiring-manager", job_reference, root, material_context)
+        application_note = generate_application_note(job_reference, root, material_context)
+        strategy_pack = generate_strategy_pack(job_reference, root, material_context)
         try:
-            interview_prep = generate_interview_prep(job_reference, root)
+            interview_prep = generate_interview_prep(job_reference, root, material_context)
         except Exception:
             interview_prep = {}
 
@@ -559,6 +647,8 @@ def generate_package(
                 "apply_recommendation": opportunity["apply_recommendation"],
                 "opportunity_dimensions": opportunity["dimensions"],
                 "package_quality": quality,
+                "hiring_manager_lens": intelligence.get("hiring_manager_lens", {}),
+                "application_strategy": intelligence.get("application_strategy", {}),
             },
             root,
         )
@@ -652,6 +742,7 @@ def generate_package(
                         "materials": preferred_paths,
                     }
                 ),
+                "package_dirty": False,
             },
             root,
         )
@@ -738,6 +829,8 @@ def generate_package(
         "match_gaps": score.get("match_gaps", []),
         "recommended_action": score.get("recommended_action"),
         "confidence": score.get("confidence"),
+        "data_confidence": score.get("data_confidence") or score.get("confidence"),
+        "match_verification_notes": score.get("match_verification_notes", []),
         "company_category": intelligence["company_category"],
         "role_family": intelligence["role_family"],
         "role_lens": intelligence.get("role_lens", {}),

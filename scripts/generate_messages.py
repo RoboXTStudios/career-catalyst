@@ -16,6 +16,7 @@ try:
     )
     from .role_context import is_google_youtube_role
     from .human_positioning import validate_applicant_evidence
+    from .public_advocacy import rewrite_public_advocacy, validate_public_advocacy
 except ImportError:
     from employer_identity import OMG23_DISPLAY_NAME
     from generate_cover_letter import (
@@ -29,6 +30,7 @@ except ImportError:
     )
     from role_context import is_google_youtube_role
     from human_positioning import validate_applicant_evidence
+    from public_advocacy import rewrite_public_advocacy, validate_public_advocacy
 
 
 PathInput = Union[str, Path]
@@ -80,15 +82,39 @@ def _profile_recruiter_content(context: Dict[str, Any]) -> str:
     company = parsed_job.get("company") or "the organization"
     role = parsed_job.get("job_title")
     role_reference = f"The {role} role" if role else "This opportunity"
+    interpreted_archetype = str(
+        (context.get("role_interpretation") or {}).get("primary_archetype") or ""
+    )
+    selected_profile_ids = {
+        str(item.get("id")) for item in context.get("selected_profile_evidence") or []
+    }
+    if "career_catalyst_ai_product" in selected_profile_ids:
+        message = (
+            f"{role_reference} at {company} stood out because it connects AI product judgment with usable workflows and responsible delivery. "
+            "I am the product owner and domain lead for a functioning AI-enabled career intelligence product, where I defined requirements, designed human-in-the-loop workflows, evaluated outputs, directed Codex implementation, and led UAT. "
+            "That work gives me hands-on experience in AI workflow, prompt and context design, evaluation, provenance, and safety controls. I would welcome the opportunity to discuss how that product approach could support the team."
+        )
+        return "\n\n".join(["Hello,", message, "Best,\n\nTrisha Lynch"])
+    if interpreted_archetype in {
+        "Technical Solutions / Solutions Consulting",
+        "Advertising Technology / Ad Operations",
+        "Implementation / Onboarding",
+        "Sales Engineering",
+    }:
+        message = (
+            f"{role_reference} at {company} stood out because it connects technical platform execution, customer or advertiser problem-solving, and product partnership. "
+            "My direct advertising-technology experience includes Google and YouTube activation, CM360 and DV360 implementation, conversion tracking, measurement readiness, QA, and technical troubleshooting. "
+            "I have also supported server-to-server conversion API implementation from the business and campaign-operations side, partnering across technical and business teams to improve advertiser delivery. I would welcome the opportunity to contribute that experience."
+        )
+        return "\n\n".join(["Hello,", message, "Best,\n\nTrisha Lynch"])
     if context.get("role_lens", {}).get("primary") == "people_operations":
         message = (
             f"{role_reference} at {company} stood out because it focuses on how people, process, "
-            "communication, and business priorities come together. My background is in operations "
-            "rather than a traditional HR function. At "
+            "communication, and business priorities come together. At "
             f"{OMG23_DISPLAY_NAME}, I led cross-functional teams and built clearer ways of working "
             "around ownership, communication, standards, and change. The value I would bring is a "
             "practical understanding of how teams adopt systems and work together more effectively. "
-            "I would be glad to share more context if that transferable perspective is useful."
+            "I would welcome the opportunity to contribute that practical, people-centered perspective across a complex organization."
         )
         return "\n\n".join(["Hello,", message, "Best,\n\nTrisha Lynch"])
     profile_copy = {
@@ -139,6 +165,45 @@ def _profile_hiring_manager_content(context: Dict[str, Any]) -> str:
     company = parsed_job.get("company") or "the organization"
     role = parsed_job.get("job_title")
     role_reference = f"The {role} role" if role else "This opportunity"
+    interpreted_archetype = str(
+        (context.get("role_interpretation") or {}).get("primary_archetype") or ""
+    )
+    selected_profile_ids = {
+        str(item.get("id")) for item in context.get("selected_profile_evidence") or []
+    }
+    if "career_catalyst_ai_product" in selected_profile_ids:
+        opening = (
+            f"What interests me about {role_reference.lower()} at {company} is the need to turn AI capability into a product people can understand, review, and trust."
+        )
+        experience = (
+            "I am the product owner and domain lead for a functioning AI-enabled career intelligence product. I defined its product behavior and acceptance criteria, designed the reasoning and human-review workflow, and directed Codex implementation while testing the product against real jobs and failure modes. The system connects interpretation, persistent evidence, scoring, package generation, provenance, review, and user confirmation controls."
+        )
+        proof = (
+            "My hands-on AI product ownership includes workflow and requirements design, prompt and context design, evaluation, responsible-AI safeguards, UAT, and iterative delivery. I use those disciplines together to turn product intent into reliable behavior and clear user controls."
+        )
+        close = (
+            "I am curious which product decisions, evaluation challenges, and adoption risks matter most in the first six months, and how the team currently turns user feedback into reliable product behavior."
+        )
+        return "\n\n".join(["Hello,", opening, experience, proof, close, "Best,\n\nTrisha Lynch"])
+    if interpreted_archetype in {
+        "Technical Solutions / Solutions Consulting",
+        "Advertising Technology / Ad Operations",
+        "Implementation / Onboarding",
+        "Sales Engineering",
+    }:
+        opening = (
+            f"What interests me about {role_reference.lower()} at {company} is the need to make technical products reliable and usable for customers or advertisers while connecting sales, product, and engineering."
+        )
+        experience = (
+            "At OMG23 / OMD Entertainment, I led Disney theatrical and streaming campaign operations across media, analytics, technology, creative, and operations. My direct platform work included CM360 and DV360 implementation, trafficking, conversion tracking, measurement validation, launch readiness, QA, and technical troubleshooting for large entertainment advertisers."
+        )
+        proof = (
+            "I also supported server-to-server conversion API implementation from the business and campaign-operations side, clarifying requirements, coordinating technical partners, validating launch readiness, and resolving measurement issues. That work strengthened my ability to connect advertiser needs with reliable technical execution."
+        )
+        close = (
+            "I am curious how the team divides hands-on implementation, advertiser consultation, escalation ownership, and people leadership, and which of those outcomes matters most in the first six months."
+        )
+        return "\n\n".join(["Hello,", opening, experience, proof, close, "Best,\n\nTrisha Lynch"])
     if context.get("role_lens", {}).get("primary") == "people_operations":
         opening = (
             f"What interests me about {role_reference.lower()} at {company} is the work of turning "
@@ -150,14 +215,12 @@ def _profile_hiring_manager_content(context: Dict[str, Any]) -> str:
         experience = (
             f"At {OMG23_DISPLAY_NAME}, I led cross-functional teams and introduced clearer workflows, "
             "responsibilities, standards, and communication practices across several functions. My "
-            "experience comes from operations rather than a traditional HR function, but it has consistently "
-            "required listening to teams, identifying recurring friction, and helping people adopt new "
+            "experience has consistently required listening to teams, identifying recurring friction, and helping people adopt new "
             "ways of working without adding unnecessary bureaucracy."
         )
         close = (
-            "I am curious where managers and teams experience the most avoidable friction today, and "
-            "which People programs need stronger ownership, communication, or implementation first. "
-            "I would be glad to compare notes on building structure people can trust and sustain."
+            f"I would welcome the opportunity to help {company} reduce avoidable friction for managers and teams, "
+            "strengthen ownership and communication, and build People programs that employees can trust and sustain."
         )
         return "\n\n".join(
             ["Hello,", opening, experience, close, "Best,\n\nTrisha Lynch"]
@@ -220,7 +283,7 @@ def _profile_hiring_manager_content(context: Dict[str, Any]) -> str:
     )
 
 
-def _recruiter_content(context: Dict[str, Any]) -> str:
+def _raw_recruiter_content(context: Dict[str, Any]) -> str:
     career_data = context["career_data"]
     parsed_job = context["parsed_job"]
     company = parsed_job.get("company") or "the organization"
@@ -261,7 +324,23 @@ def _recruiter_content(context: Dict[str, Any]) -> str:
     return "\n\n".join(["Hello,", message, question, "Best,\n\nTrisha Lynch"])
 
 
-def _hiring_manager_content(context: Dict[str, Any]) -> str:
+def _recruiter_content(context: Dict[str, Any]) -> str:
+    parsed = context.get("parsed_job") or {}
+    content, _review = rewrite_public_advocacy(
+        _raw_recruiter_content(context),
+        company=str(parsed.get("company") or "the organization"),
+        role=str(parsed.get("job_title") or "the role"),
+        transparency_requested=bool(context.get("public_transparency_requested")),
+    )
+    validate_public_advocacy(
+        content,
+        "recruiter message",
+        transparency_requested=bool(context.get("public_transparency_requested")),
+    )
+    return content
+
+
+def _raw_hiring_manager_content(context: Dict[str, Any]) -> str:
     career_data = context["career_data"]
     parsed_job = context["parsed_job"]
     company = parsed_job.get("company") or "the organization"
@@ -327,10 +406,27 @@ def _hiring_manager_content(context: Dict[str, Any]) -> str:
     return "\n\n".join(parts)
 
 
+def _hiring_manager_content(context: Dict[str, Any]) -> str:
+    parsed = context.get("parsed_job") or {}
+    content, _review = rewrite_public_advocacy(
+        _raw_hiring_manager_content(context),
+        company=str(parsed.get("company") or "the organization"),
+        role=str(parsed.get("job_title") or "the role"),
+        transparency_requested=bool(context.get("public_transparency_requested")),
+    )
+    validate_public_advocacy(
+        content,
+        "hiring manager message",
+        transparency_requested=bool(context.get("public_transparency_requested")),
+    )
+    return content
+
+
 def generate_message(
     message_type: str,
     job_path: PathInput,
     project_root: Optional[PathInput] = None,
+    package_context: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Generate and save a recruiter or hiring manager message."""
     normalized_type = message_type.replace("-", "_").lower()
@@ -338,7 +434,7 @@ def generate_message(
         valid = ", ".join(message_type.replace("_", "-") for message_type in MESSAGE_TYPES)
         raise ApplicationMaterialError(f"Unknown message type '{message_type}'. Valid types: {valid}")
 
-    context = load_generation_context(job_path, project_root)
+    context = load_generation_context(job_path, project_root, package_context)
     if normalized_type == "recruiter":
         content = _recruiter_content(context)
         validate_applicant_evidence(content, "recruiter message")

@@ -12,10 +12,14 @@ try:
     from .evidence_engine import professional_evidence_recommendations
     from .load_data import load_yaml_file
     from .role_lens import build_requirement_map, classify_role_lens
+    from .role_interpreter import interpret_role
+    from .application_strategy import build_application_strategy, build_hiring_manager_lens
 except ImportError:
     from evidence_engine import professional_evidence_recommendations
     from load_data import load_yaml_file
     from role_lens import build_requirement_map, classify_role_lens
+    from role_interpreter import interpret_role
+    from application_strategy import build_application_strategy, build_hiring_manager_lens
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -634,6 +638,7 @@ def _shared_evidence(
     role_family: str,
     role_lens: Optional[Dict[str, Any]] = None,
     requirement_map: Optional[list[Dict[str, Any]]] = None,
+    role_interpretation: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     return professional_evidence_recommendations(
         {
@@ -645,6 +650,7 @@ def _shared_evidence(
             "primary_role_lens": (role_lens or {}).get("primary"),
             "role_lens": role_lens or {},
             "requirement_map": requirement_map or [],
+            "role_interpretation": role_interpretation or {},
             "keywords": [],
         }
     )
@@ -655,6 +661,8 @@ def build_dynamic_voice_profile(
     job_title: str = "",
     job_description: str = "",
     source_url: str = "",
+    role_interpretation_overrides: Optional[Dict[str, Any]] = None,
+    role_interpretation_result: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Build normalized local voice guidance for an unknown company."""
     context = infer_company_context(company_name, job_title, job_description, source_url)
@@ -674,6 +682,18 @@ def build_dynamic_voice_profile(
         },
         role_lens,
     )
+    role_interpretation = (
+        dict(role_interpretation_result)
+        if isinstance(role_interpretation_result, dict) and role_interpretation_result
+        else interpret_role(
+            {
+                "company": company_name,
+                "job_title": job_title,
+                "job_description": job_description,
+            },
+            role_interpretation_overrides,
+        )
+    )
     role_family = detect_role_family(job_title, job_description)
     category_guidance = CATEGORY_GUIDANCE[category]
     role_guidance = ROLE_GUIDANCE[role_family]
@@ -686,6 +706,13 @@ def build_dynamic_voice_profile(
         role_family,
         role_lens,
         requirement_map,
+        role_interpretation,
+    )
+    hiring_manager_lens = build_hiring_manager_lens(role_interpretation)
+    application_strategy = build_application_strategy(
+        role_interpretation,
+        hiring_manager_lens,
+        evidence_cards=evidence.get("cards", []),
     )
     is_music_operations = category == "music_entertainment_operations" and role_family in {
         "business_operations", "product_strategy_ops", "transformation_advisory", "generic_senior_operator"
@@ -698,6 +725,9 @@ def build_dynamic_voice_profile(
         "company_category": category,
         "role_family": role_family,
         "role_lens": role_lens,
+        "role_interpretation": role_interpretation,
+        "hiring_manager_lens": hiring_manager_lens,
+        "application_strategy": application_strategy,
         "requirement_map": requirement_map,
         "tone": _dedupe(
             role_guidance["tone"]
@@ -711,6 +741,8 @@ def build_dynamic_voice_profile(
         ),
         "proof_points_to_emphasize": evidence["proof_points"],
         "selected_evidence_ids": evidence["ids"],
+        "profile_evidence_to_emphasize": evidence.get("profile_evidence", []),
+        "selected_profile_evidence_ids": evidence.get("profile_ids", []),
         "selected_evidence_labels": evidence["labels"],
         "proof_points_to_avoid": proof_avoid,
         "avoid": _dedupe(category_guidance["avoid"]),
@@ -744,10 +776,17 @@ def get_effective_voice_profile(
     job_description: str = "",
     source_url: str = "",
     existing_profiles: Optional[Dict[str, Any]] = None,
+    role_interpretation_overrides: Optional[Dict[str, Any]] = None,
+    role_interpretation_result: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Return a normalized known or dynamically inferred voice profile."""
     dynamic = build_dynamic_voice_profile(
-        company_name, job_title, job_description, source_url
+        company_name,
+        job_title,
+        job_description,
+        source_url,
+        role_interpretation_overrides,
+        role_interpretation_result,
     )
     match = _known_profile_match(company_name, existing_profiles)
     if match is None:
@@ -767,6 +806,13 @@ def get_effective_voice_profile(
         role_family,
         role_lens,
         requirement_map,
+        dynamic.get("role_interpretation", {}),
+    )
+    hiring_manager_lens = build_hiring_manager_lens(dynamic["role_interpretation"])
+    application_strategy = build_application_strategy(
+        dynamic["role_interpretation"],
+        hiring_manager_lens,
+        evidence_cards=evidence.get("cards", []),
     )
     confidence = 0.99 if match_type == "exact" else 0.9
     article = "an" if match_type == "exact" else "a"
@@ -777,6 +823,9 @@ def get_effective_voice_profile(
         "company_category": category,
         "role_family": role_family,
         "role_lens": role_lens,
+        "role_interpretation": dynamic["role_interpretation"],
+        "hiring_manager_lens": hiring_manager_lens,
+        "application_strategy": application_strategy,
         "requirement_map": requirement_map,
         "tone": _dedupe(
             dynamic["tone"]
@@ -790,6 +839,8 @@ def get_effective_voice_profile(
         ),
         "proof_points_to_emphasize": evidence["proof_points"],
         "selected_evidence_ids": evidence["ids"],
+        "profile_evidence_to_emphasize": evidence.get("profile_evidence", []),
+        "selected_profile_evidence_ids": evidence.get("profile_ids", []),
         "selected_evidence_labels": evidence["labels"],
         "proof_points_to_avoid": proof_avoid,
         "avoid": _dedupe((*profile.get("avoid", []), *dynamic["avoid"])),

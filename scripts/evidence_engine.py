@@ -8,9 +8,13 @@ from typing import Any
 import yaml
 
 try:
+    from .application_strategy import evidence_priorities
+    from .evidence_profile import load_evidence_profile, select_profile_evidence
     from .human_positioning import evidence_capability_score
     from .role_editing import detect_role_editing_category
 except ImportError:
+    from application_strategy import evidence_priorities
+    from evidence_profile import load_evidence_profile, select_profile_evidence
     from human_positioning import evidence_capability_score
     from role_editing import detect_role_editing_category
 
@@ -117,6 +121,9 @@ def select_evidence_cards(
     cards = cards if cards is not None else load_evidence_cards()
     category = role_evidence_category(role)
     text = _role_text(role)
+    interpretation = role.get("role_interpretation") or {}
+    archetype = str(interpretation.get("primary_archetype") or "") if isinstance(interpretation, dict) else ""
+    interpreted_priorities = set(evidence_priorities(archetype)) if archetype else set()
     minimum = CONFIDENCE_ORDER[minimum_confidence]
     category_tags = {
         "people_operations": {"team_leadership", "team_enablement", "change_adoption", "employee_communication", "ownership_clarity", "usable_standards", "cross_functional_leadership"},
@@ -145,8 +152,25 @@ def select_evidence_cards(
             continue
         tags = set(card.get("tags", []))
         category_overlap = len(tags & category_tags)
+        interpretation_overlap = len(tags & interpreted_priorities)
+        interpretation_text_overlap = _signals(
+            " ".join(
+                [
+                    str(card.get("short_description") or ""),
+                    " ".join(str(value) for value in card.get("strongest_role_fits", [])),
+                    " ".join(str(value) for value in card.get("proof_points", [])),
+                ]
+            ).lower(),
+            tuple(interpreted_priorities),
+        )
         role_signal_score = _signals(text, tuple(str(tag).replace("_", " ") for tag in tags))
-        score = category_overlap * 3 + confidence + role_signal_score
+        score = (
+            category_overlap * 3
+            + interpretation_overlap * 5
+            + interpretation_text_overlap * 3
+            + confidence
+            + role_signal_score
+        )
         if category_overlap or role_signal_score:
             score += min(6, evidence_capability_score(card) // 3)
         if category == "builder_friendly" and card_id in BUILDER_IDS:
@@ -171,6 +195,17 @@ def select_evidence_cards(
             score -= 12
         if category == "product_ai_operations" and card_id == "campaignos":
             score += 6
+        if archetype in {
+            "Technical Solutions / Solutions Consulting",
+            "Advertising Technology / Ad Operations",
+            "Sales Engineering",
+        } and card_id == "martech_campaign_execution":
+            score += 12
+        if archetype in {
+            "Technical Solutions / Solutions Consulting",
+            "Advertising Technology / Ad Operations",
+        } and card_id == "governance_qa_delivery":
+            score += 5
         if score >= 5:
             selected.append((score, card))
     selected.sort(key=lambda item: (-item[0], item[1]["id"]))
@@ -183,6 +218,7 @@ def professional_evidence_recommendations(
     *,
     max_cards: int = DEFAULT_MAX_CARDS,
     include_personal_projects: bool = False,
+    project_root: str | Path | None = None,
 ) -> dict[str, Any]:
     """Return one shared, applicant-safe evidence recommendation payload."""
     selected = select_evidence_cards(
@@ -216,11 +252,21 @@ def professional_evidence_recommendations(
                 proof_points.append(safe_point)
             else:
                 proof_points.append(points[0])
+    profile = load_evidence_profile(project_root)
+    profile_evidence = select_profile_evidence(
+        role, profile, usage="application_strategy", max_items=max_cards
+    )
     return {
         "cards": selected,
         "ids": [str(card["id"]) for card in selected],
         "labels": [str(card["label"]) for card in selected],
         "proof_points": proof_points,
+        "profile_evidence": profile_evidence,
+        "profile_ids": [str(item.get("id")) for item in profile_evidence],
+        "profile_proof_points": [
+            str(item.get("description")) for item in profile_evidence
+            if str(item.get("description") or "").strip()
+        ],
     }
 
 

@@ -488,6 +488,7 @@ def create_job_markdown(job_data: Dict[str, Any]) -> str:
         ("Location", location),
         ("Work arrangement", work_arrangement),
         ("Salary range", job_data.get("salary_range")),
+        ("Salary source", job_data.get("salary_source")),
         ("Posting date", job_data.get("posting_date")),
         ("Official source", job_data.get("source")),
         ("Official URL", job_data.get("official_url") or job_data.get("source_url")),

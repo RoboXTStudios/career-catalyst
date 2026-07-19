@@ -1,0 +1,9 @@
+schema_version: 1
+graph_updated_at: '2026-07-18T00:00:00+00:00'
+alignment_weights:
+  Direct: 1.0
+  Strong Adjacent: 0.82
+  Transferable: 0.58
+  Weak: 0.25
+  Unsupported: 0.0
+capability_reviews: []

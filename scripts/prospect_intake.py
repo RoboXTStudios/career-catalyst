@@ -8,7 +8,8 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
 try:
-    from .application_tracker import add_prospect, make_tracker_id
+    from .application_strategy import build_application_strategy, build_hiring_manager_lens
+    from .application_tracker import add_prospect, load_application_tracker, make_tracker_id
     from .dynamic_role_intelligence import get_effective_voice_profile
     from .filename_utils import is_valid_role_title, safe_filename
     from .job_identity import infer_job_fields_from_url, preferred_role_title
@@ -23,9 +24,10 @@ try:
     from .job_source_registry import normalize_job_source
     from .parse_job import JobParseError, extract_metadata, parse_job_description
     from .package_context import prospect_context_fingerprint
-    from .score_match import persisted_match_fields, score_job_match
+    from .score_match import persisted_match_fields, score_job_data, score_job_match
 except ImportError:
-    from application_tracker import add_prospect, make_tracker_id
+    from application_strategy import build_application_strategy, build_hiring_manager_lens
+    from application_tracker import add_prospect, load_application_tracker, make_tracker_id
     from dynamic_role_intelligence import get_effective_voice_profile
     from filename_utils import is_valid_role_title, safe_filename
     from job_identity import infer_job_fields_from_url, preferred_role_title
@@ -40,7 +42,7 @@ except ImportError:
     from job_source_registry import normalize_job_source
     from parse_job import JobParseError, extract_metadata, parse_job_description
     from package_context import prospect_context_fingerprint
-    from score_match import persisted_match_fields, score_job_match
+    from score_match import persisted_match_fields, score_job_data, score_job_match
 
 
 PathInput = Union[str, Path]
@@ -186,14 +188,66 @@ def _source_adjusted_match_report(report: Dict[str, Any], verification: Dict[str
         and not canonical_url
     ):
         adjusted["recommended_action"] = "Review First"
-        gaps = list(adjusted.get("match_gaps") or [])
-        gaps.append("The original employer application path is unavailable.")
-        adjusted["match_gaps"] = list(dict.fromkeys(gaps))
+        notes = list(adjusted.get("verification_notes") or [])
+        notes.append("The original employer application path is unavailable.")
+        adjusted["verification_notes"] = list(dict.fromkeys(notes))
+        adjusted["match_verification_notes"] = adjusted["verification_notes"]
     elif _source_needs_verify_first(verification):
-        gaps = list(adjusted.get("match_gaps") or [])
-        gaps.append("The original posting should be confirmed before submitting.")
-        adjusted["match_gaps"] = list(dict.fromkeys(gaps))
+        notes = list(adjusted.get("verification_notes") or [])
+        notes.append("The original posting should be confirmed before submitting.")
+        adjusted["verification_notes"] = list(dict.fromkeys(notes))
+        adjusted["match_verification_notes"] = adjusted["verification_notes"]
     return adjusted
+
+
+def _interpretation_overrides(value: Any) -> Optional[Dict[str, Any]]:
+    if not isinstance(value, dict) or not value.get("user_reviewed"):
+        return None
+    overrides = dict(value.get("user_overrides") or {})
+    overrides["user_reviewed"] = True
+    if value.get("user_feedback"):
+        overrides["feedback"] = value["user_feedback"]
+    for field in (
+        "primary_archetype", "secondary_archetype", "plain_english_summary",
+        "technical_depth",
+        "people_management_expectation", "client_facing_expectation",
+        "strategic_vs_execution_balance",
+    ):
+        if value.get(field) not in (None, ""):
+            overrides[field] = value[field]
+    return overrides
+
+
+def _refresh_downstream_intelligence(
+    intelligence: Dict[str, Any], match_report: Dict[str, Any]
+) -> None:
+    interpretation = dict(
+        match_report.get("role_interpretation")
+        or intelligence.get("role_interpretation")
+        or {}
+    )
+    intelligence["role_interpretation"] = interpretation
+    intelligence["role_evidence_selection"] = dict(
+        match_report.get("role_evidence_selection") or {}
+    )
+    lens = build_hiring_manager_lens(
+        interpretation,
+        list((match_report.get("capability_graph") or {}).get("alignment_matrix") or []),
+        dict(match_report.get("evidence_gap_analysis") or {}),
+    )
+    proof_points = list(intelligence.get("proof_points_to_emphasize") or [])
+    ids = list(intelligence.get("selected_evidence_ids") or [])
+    cards = [
+        {
+            "id": evidence_id,
+            "proof_points": [proof_points[index]] if index < len(proof_points) else [],
+        }
+        for index, evidence_id in enumerate(ids)
+    ]
+    intelligence["hiring_manager_lens"] = lens
+    intelligence["application_strategy"] = build_application_strategy(
+        interpretation, lens, match_report, cards
+    )
 
 
 def _field_warnings(
@@ -264,6 +318,31 @@ def create_prospect(
         metadata = extract_metadata(description) if description else {}
     company, role = _clean_identity(company, role)
     role = preferred_role_title("", role, raw_url)
+    tracker_id = str(normalized_input.get("tracker_id") or make_tracker_id(company, role))
+    existing = next(
+        (
+            record
+            for record in load_application_tracker(root)
+            if str(record.get("id") or "") == tracker_id
+        ),
+        {},
+    )
+    for key in (
+        "location",
+        "work_arrangement",
+        "salary_range",
+        "salary_source",
+        "posting_date",
+        "source",
+        "official_url",
+        "job_id",
+    ):
+        current = str(normalized_input.get(key) or "").strip()
+        if current.lower() in {"", "unknown", "not disclosed", "not specified", "n/a"}:
+            stored = existing.get(key)
+            if stored not in (None, ""):
+                normalized_input[key] = stored
+    raw_url = str(normalized_input.get("official_url") or raw_url).strip()
     location = (
         str(normalized_input.get("location") or metadata.get("location") or "").strip()
         or "Not specified"
@@ -287,7 +366,6 @@ def create_prospect(
             "Paste the job description text before saving (at least 80 characters)."
         )
 
-    tracker_id = str(normalized_input.get("tracker_id") or make_tracker_id(company, role))
     normalized = dict(normalized_input)
     normalized.update(
         {
@@ -297,6 +375,7 @@ def create_prospect(
             "location": location,
             "work_arrangement": work_arrangement,
             "salary_range": salary_range,
+            "salary_source": str(normalized_input.get("salary_source") or "").strip(),
             "job_description": description,
             "official_url": official_url,
             "source_url": official_url,
@@ -333,11 +412,15 @@ def create_prospect(
         job_title=role,
         job_description=description,
         source_url=official_url,
+        role_interpretation_overrides=_interpretation_overrides(
+            normalized.get("role_interpretation")
+        ),
     )
     freshness = detect_job_freshness(markdown)
     match_report = _source_adjusted_match_report(
-        score_job_match(job_path, root), verification
+        score_job_data(normalized, root), verification
     )
+    _refresh_downstream_intelligence(intelligence, match_report)
     context_fingerprint = prospect_context_fingerprint(
         {
             "prospect_id": tracker_id,
@@ -345,6 +428,11 @@ def create_prospect(
             "job_title": role,
             "job_description": description,
             "source_url": official_url,
+            "location": location,
+            "work_arrangement": work_arrangement,
+            "salary_range": salary_range,
+            "salary_source": normalized.get("salary_source"),
+            "posting_date": normalized.get("posting_date"),
         },
         {**intelligence, "match_report": match_report},
     )
@@ -364,6 +452,7 @@ def create_prospect(
             "job_id": str(normalized.get("job_id") or ""),
             "location": location,
             "salary_range": salary_range,
+            "salary_source": str(normalized.get("salary_source") or ""),
             "work_arrangement": work_arrangement,
             "notes": str(job_data.get("notes") or "").strip(),
             "next_action": next_action,
@@ -376,6 +465,14 @@ def create_prospect(
             "secondary_role_lens": intelligence.get("role_lens", {}).get("secondary"),
             "role_lens_confidence": intelligence.get("role_lens", {}).get("confidence"),
             "requirement_map": intelligence.get("requirement_map", []),
+            "role_interpretation": match_report.get("role_interpretation")
+            or intelligence.get("role_interpretation", {}),
+            "hiring_manager_lens": intelligence.get("hiring_manager_lens", {}),
+            "application_strategy": intelligence.get("application_strategy", {}),
+            "role_evidence_selection": match_report.get("role_evidence_selection", {}),
+            "evidence_selection_overrides": dict(
+                normalized.get("evidence_selection_overrides") or {}
+            ),
             "company_voice_profile": intelligence["profile_name"],
             "company_voice_source": intelligence["source"],
             "company_voice_label": intelligence.get("company_voice_label", intelligence["profile_name"]),
@@ -444,6 +541,7 @@ def add_prospect_from_job_file(
     match_report = _source_adjusted_match_report(
         score_job_match(resolved, root), verification
     )
+    _refresh_downstream_intelligence(intelligence, match_report)
     context_fingerprint = prospect_context_fingerprint(
         {
             "prospect_id": tracker_id,
@@ -451,6 +549,11 @@ def add_prospect_from_job_file(
             "job_title": role,
             "raw_text": raw_text,
             "source_url": str(parsed.get("source_url") or ""),
+            "location": parsed.get("location"),
+            "work_arrangement": parsed.get("work_arrangement"),
+            "salary_range": parsed.get("salary_range"),
+            "salary_source": parsed.get("salary_source"),
+            "posting_date": parsed.get("posting_date"),
         },
         {**intelligence, "match_report": match_report},
     )
@@ -485,6 +588,12 @@ def add_prospect_from_job_file(
             "secondary_role_lens": intelligence.get("role_lens", {}).get("secondary"),
             "role_lens_confidence": intelligence.get("role_lens", {}).get("confidence"),
             "requirement_map": intelligence.get("requirement_map", []),
+            "role_interpretation": match_report.get("role_interpretation")
+            or intelligence.get("role_interpretation", {}),
+            "hiring_manager_lens": intelligence.get("hiring_manager_lens", {}),
+            "application_strategy": intelligence.get("application_strategy", {}),
+            "role_evidence_selection": match_report.get("role_evidence_selection", {}),
+            "evidence_selection_overrides": {},
             "company_voice_profile": intelligence["profile_name"],
             "company_voice_source": intelligence["source"],
             "company_voice_label": intelligence.get("company_voice_label", intelligence["profile_name"]),

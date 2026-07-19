@@ -49,8 +49,7 @@ def _profile_application_note(context: Dict[str, Any]) -> str:
             f"The {role} role at {company} stood out because it focuses on how people, process, "
             "communication, and business priorities work together. At "
             f"{OMG23_DISPLAY_NAME}, I led cross-functional teams and introduced clearer workflows, "
-            "responsibilities, standards, and communication practices. My background is in operations "
-            "rather than traditional HR, and I would bring that experience transparently to improving "
+            "responsibilities, standards, and communication practices. I would bring that experience to improving "
             "how teams adopt practical systems and work together."
         )
     notes = {
@@ -165,9 +164,10 @@ def _application_note_content(context: Dict[str, Any]) -> str:
 def generate_application_note(
     job_path: PathInput,
     project_root: Optional[PathInput] = None,
+    package_context: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Generate and save a short application portal note."""
-    context = load_generation_context(job_path, project_root)
+    context = load_generation_context(job_path, project_root, package_context)
     return save_material(
         context,
         "Application_Note",

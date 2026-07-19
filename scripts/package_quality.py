@@ -43,6 +43,10 @@ def calculate_package_quality(
     ats = _bounded(match_score + min(10, matched * 2) - min(15, missing))
     resume_score = _bounded((match_score * 0.8) + (ats * 0.2))
     cover_score = _bounded((cover_range_score * 0.55) + (voice_match * 0.45))
+    interpretation_quality = dict(cover_letter_result.get("interpretation_quality") or {})
+    role_specificity = int(interpretation_quality.get("role_specificity_score") or 0)
+    if interpretation_quality:
+        cover_score = min(cover_score, role_specificity)
     confidence_score = _bounded((resume_score + cover_score + ats + voice_match) / 4)
     confidence = "High" if confidence_score >= 80 else "Medium" if confidence_score >= 60 else "Low"
     return {
@@ -52,6 +56,16 @@ def calculate_package_quality(
         "voice_match": voice_match,
         "confidence_level": confidence,
         "confidence_score": confidence_score,
+        "role_specificity_score": role_specificity if interpretation_quality else None,
+        "interpretation_package_consistent": interpretation_quality.get(
+            "interpretation_package_consistent"
+        ) if interpretation_quality else None,
+        "generic_operations_fallback_warning": interpretation_quality.get(
+            "generic_operations_fallback_warning", False
+        ) if interpretation_quality else False,
+        "unsupported_claims_blocked": interpretation_quality.get(
+            "unsupported_claims_blocked", []
+        ) if interpretation_quality else [],
     }
 
 

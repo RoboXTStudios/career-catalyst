@@ -115,6 +115,12 @@ def prospect_context_fingerprint(
         if isinstance(values.get("match_report"), dict)
         else {}
     )
+    role_evidence_selection = dict(
+        intelligence.get("role_evidence_selection")
+        or match_report.get("role_evidence_selection")
+        or values.get("role_evidence_selection")
+        or {}
+    )
     payload = {
         "prospect_id": str(values.get("prospect_id") or values.get("id") or "").strip(),
         "company": _normalized_identity(values.get("company")),
@@ -126,6 +132,11 @@ def prospect_context_fingerprint(
             or values.get("original_source_url")
             or ""
         ).strip(),
+        "location": re.sub(r"\s+", " ", str(values.get("location") or "")).strip(),
+        "work_arrangement": str(values.get("work_arrangement") or "").strip(),
+        "salary_range": re.sub(r"\s+", " ", str(values.get("salary_range") or "")).strip(),
+        "salary_source": str(values.get("salary_source") or "").strip(),
+        "posting_date": str(values.get("posting_date") or "").strip(),
         "job_description": re.sub(r"\s+", " ", _description_text(values)).strip(),
         "company_category": str(intelligence.get("company_category") or ""),
         "role_family": str(intelligence.get("role_family") or ""),
@@ -158,6 +169,12 @@ def prospect_context_fingerprint(
             for value in intelligence.get("proof_points_to_emphasize", [])
             if str(value).strip()
         ],
+        "role_evidence_selection": {
+            "selected_evidence_ids": list(
+                role_evidence_selection.get("selected_evidence_ids") or []
+            ),
+            "overrides": dict(role_evidence_selection.get("overrides") or {}),
+        },
         "analysis": {
             "match_score": match_report.get("match_score"),
             "match_tier": str(match_report.get("match_tier") or ""),
@@ -178,8 +195,25 @@ def prospect_context_fingerprint(
                 match_report.get("recommended_action") or ""
             ),
             "confidence": str(match_report.get("confidence") or ""),
+            "data_confidence": str(match_report.get("data_confidence") or ""),
+            "verification_notes": [
+                re.sub(r"\s+", " ", str(value)).strip()
+                for value in (match_report.get("match_verification_notes") or [])
+                if str(value).strip()
+            ],
         },
     }
+    role_interpretation = intelligence.get("role_interpretation")
+    if isinstance(role_interpretation, dict) and role_interpretation:
+        payload["role_interpretation"] = {
+            field: role_interpretation.get(field)
+            for field in (
+                "primary_archetype", "secondary_archetype", "core_mission",
+                "true_must_haves", "technical_depth",
+                "people_management_expectation", "client_facing_expectation",
+                "strategic_vs_execution_balance", "success_metrics", "user_reviewed",
+            )
+        }
     encoded = json.dumps(payload, sort_keys=True, ensure_ascii=True).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
 

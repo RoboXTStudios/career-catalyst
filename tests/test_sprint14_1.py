@@ -176,7 +176,8 @@ class ExplicitFreshnessTests(unittest.TestCase):
             }
         )
         self.assertNotEqual(report["recommended_action"], "Generate Package")
-        self.assertTrue(any("stale" in gap.lower() for gap in report["match_gaps"]))
+        self.assertFalse(any("stale" in gap.lower() for gap in report["match_gaps"]))
+        self.assertTrue(any("stale" in note.lower() for note in report["verification_notes"]))
 
 
 class SalaryGuardrailTests(unittest.TestCase):

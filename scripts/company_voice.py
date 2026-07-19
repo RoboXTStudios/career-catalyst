@@ -74,14 +74,33 @@ def detect_role_family(parsed_job: Dict[str, Any]) -> str:
 def company_voice_context(
     parsed_job: Dict[str, Any],
     config: Dict[str, Any],
+    role_interpretation: Dict[str, Any] | None = None,
 ) -> Dict[str, Any]:
     """Return all reusable voice metadata for one parsed job."""
+    overrides = dict((role_interpretation or {}).get("user_overrides") or {})
+    if (role_interpretation or {}).get("user_reviewed"):
+        overrides["user_reviewed"] = True
+        if (role_interpretation or {}).get("user_feedback"):
+            overrides["feedback"] = role_interpretation["user_feedback"]
+        for field in (
+            "primary_archetype", "secondary_archetype", "plain_english_summary",
+            "technical_depth", "people_management_expectation",
+            "client_facing_expectation", "strategic_vs_execution_balance",
+        ):
+            if (role_interpretation or {}).get(field) not in (None, ""):
+                overrides[field] = role_interpretation[field]
     effective = get_effective_voice_profile(
         company_name=str(parsed_job.get("company") or ""),
         job_title=str(parsed_job.get("job_title") or ""),
         job_description=str(parsed_job.get("raw_text") or ""),
         source_url=str(parsed_job.get("source_url") or ""),
         existing_profiles=config,
+        role_interpretation_overrides=overrides or None,
+        role_interpretation_result=(
+            role_interpretation
+            if isinstance(role_interpretation, dict) and role_interpretation
+            else None
+        ),
     )
     profile_key = str(effective["profile_name"])
     role_family = str(effective["role_family"])
@@ -97,4 +116,7 @@ def company_voice_context(
         "role_family_label": ROLE_FAMILY_LABELS[role_family],
         "role_lens": effective.get("role_lens", {}),
         "requirement_map": effective.get("requirement_map", []),
+        "role_interpretation": effective.get("role_interpretation", {}),
+        "hiring_manager_lens": effective.get("hiring_manager_lens", {}),
+        "application_strategy": effective.get("application_strategy", {}),
     }

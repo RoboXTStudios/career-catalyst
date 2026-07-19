@@ -5,10 +5,13 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 try:
+    from .application_strategy import evidence_priorities
     from .employer_identity import normalize_applicant_employer_names
     from .filename_utils import build_upload_filename
     from .load_data import load_all_yaml
     from .evidence_engine import load_writing_voice_profile
+    from .evidence_profile import load_evidence_profile, select_profile_evidence
+    from .role_evidence_selection import selected_evidence
     from .human_positioning import (
         professional_summary,
         validate_applicant_evidence,
@@ -26,10 +29,13 @@ try:
     from .score_match import score_job_match
     from .text_cleanup import cleanup_repeated_words
 except ImportError:
+    from application_strategy import evidence_priorities
     from employer_identity import normalize_applicant_employer_names
     from filename_utils import build_upload_filename
     from load_data import load_all_yaml
     from evidence_engine import load_writing_voice_profile
+    from evidence_profile import load_evidence_profile, select_profile_evidence
+    from role_evidence_selection import selected_evidence
     from human_positioning import (
         professional_summary,
         validate_applicant_evidence,
@@ -295,7 +301,7 @@ def _profile_summary(
             "Operations leader known for improving how cross-functional teams communicate, "
             "understand ownership, and adopt practical ways of working. Builds clear workflows, "
             "usable standards, and dependable communication practices that reduce day-to-day "
-            "friction while helping teams execute business priorities with confidence."
+            "friction while helping teams execute business priorities with clarity."
         )
         validate_human_positioning(summary, "professional summary")
         return summary
@@ -381,6 +387,15 @@ def _select_experience_bullets(
     )
     keywords = [str(keyword) for keyword in parsed_job.get("keywords", [])]
     priorities = PROFILE_PRIORITIES[resume_profile] + sample_priorities
+    role_interpretation = parsed_job.get("role_interpretation") or {}
+    interpreted_archetype = (
+        str(role_interpretation.get("primary_archetype") or "")
+        if isinstance(role_interpretation, dict)
+        else ""
+    )
+    priorities += tuple(
+        value.replace("_", " ") for value in evidence_priorities(interpreted_archetype)
+    )
     if people_operations:
         priorities += (
             "60+",
@@ -634,6 +649,7 @@ def tailor_resume(
     resume_profile: str,
     job_path: PathInput,
     project_root: Optional[PathInput] = None,
+    package_context: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Generate and save a tailored Markdown resume."""
     if resume_profile not in VALID_RESUME_PROFILES:
@@ -643,10 +659,48 @@ def tailor_resume(
     root = Path(project_root) if project_root is not None else Path.cwd()
     career_data = load_all_yaml(root)
     parsed_job = parse_job_description(root / job_path)
-    match_report = score_job_match(job_path, root)
+    package_context = dict(package_context or {})
+    role_interpretation = dict(package_context.get("role_interpretation") or {})
+    evidence_selection_overrides = dict(
+        package_context.get("evidence_selection_overrides")
+        or (package_context.get("role_evidence_selection") or {}).get("overrides")
+        or {}
+    )
+    match_report = (
+        score_job_match(
+            job_path, root, role_interpretation, evidence_selection_overrides or None
+        )
+        if role_interpretation
+        else score_job_match(
+            job_path, root, evidence_selection_overrides=evidence_selection_overrides or None
+        )
+    )
+    parsed_job["role_interpretation"] = dict(
+        match_report.get("role_interpretation") or role_interpretation
+    )
     markdown = cleanup_repeated_words(
         _render_markdown(career_data, parsed_job, match_report, resume_profile)
     )
+    evidence_profile = load_evidence_profile(root)
+    role_selected = selected_evidence(match_report.get("role_evidence_selection") or {})
+    resume_recommendations = [
+        item for item in role_selected
+        if item.get("resume_visibility") != "Fully Represented"
+        and (item.get("recommended_usage") or {}).get("resume_recommendations", True)
+    ][:8]
+    if not resume_recommendations:
+        resume_recommendations = [
+            item for item in select_profile_evidence(
+                {
+                    **parsed_job,
+                    "primary_archetype": (parsed_job.get("role_interpretation") or {}).get("primary_archetype"),
+                },
+                evidence_profile,
+                usage="resume_recommendations",
+                max_items=8,
+            )
+            if item.get("resume_visibility") != "Fully Represented"
+        ]
     role_lens = classify_role_lens(parsed_job)
     markdown, role_lens_quality = enforce_role_lens_quality(
         markdown, role_lens, material_type="resume"
@@ -701,4 +755,11 @@ def tailor_resume(
         "banned_phrase_rewrites": rewrite_notes,
         "role_lens": role_lens,
         "role_lens_quality": role_lens_quality,
+        "role_interpretation": parsed_job.get("role_interpretation", {}),
+        "resume_emphasis": evidence_priorities(
+            (parsed_job.get("role_interpretation") or {}).get("primary_archetype")
+        ),
+        "evidence_profile_recommendations": resume_recommendations,
+        "evidence_gap_analysis": match_report.get("evidence_gap_analysis", {}),
+        "role_evidence_selection": match_report.get("role_evidence_selection", {}),
     }

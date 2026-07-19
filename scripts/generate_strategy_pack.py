@@ -601,9 +601,10 @@ def _validate_strategy_pack(context: Dict[str, Any], content: str) -> None:
 def generate_strategy_pack(
     job_path: PathInput,
     project_root: Optional[PathInput] = None,
+    package_context: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Generate and save a Markdown Standout Strategy Pack."""
-    context = load_generation_context(job_path, project_root)
+    context = load_generation_context(job_path, project_root, package_context)
     content = normalize_applicant_employer_names(
         cleanup_repeated_words(_render_strategy_pack(context))
     )
