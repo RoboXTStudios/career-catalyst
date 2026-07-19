@@ -10,6 +10,7 @@ from scripts.application_tracker import add_prospect, load_application_tracker
 from scripts.generate_cover_letter import generate_cover_letter
 from scripts.generate_dashboard import _asset_label, _attach_assets
 from scripts.job_source_registry import classify_source, normalize_job_source
+from scripts.materials_library import standardized_material_filename
 from scripts.package_materials import validate_package_outputs
 from scripts.package_generator import _safe_docx_export, generate_package
 from scripts.score_match import score_job_data
@@ -284,16 +285,24 @@ class Sprint16PackageMaterialTests(unittest.TestCase):
                         side_effect=(recruiter, manager),
                     )
                 )
-                result = generate_package(
-                    "aeg-tpm", root, generate_followups_too=False
-                )
+                result = generate_package("aeg-tpm", root)
 
             checklist = {
                 item["material_type"]: item for item in result["package_checklist"]
             }
             self.assertTrue(checklist["ATS Resume"]["exists"])
             ats_path = Path(checklist["ATS Resume"]["preferred_open_path"])
-            self.assertEqual(ats_path.name, "ats_resume.docx")
+            self.assertEqual(
+                ats_path.name,
+                standardized_material_filename(
+                    {
+                        "company": "AEG Worldwide / AXS",
+                        "role": "Sr. Technical Project Manager",
+                    },
+                    "ats_resume",
+                    "docx",
+                ),
+            )
             self.assertIn("exports/active/in_progress/aeg_tpm", ats_path.as_posix())
             tracker = load_application_tracker(root)[0]
             self.assertEqual(

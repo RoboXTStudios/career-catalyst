@@ -2276,7 +2276,6 @@ def _render_context_recovery_action(
     *,
     key: str,
     prospect_values: Optional[Dict[str, Any]] = None,
-    generate_followups_too: Optional[bool] = None,
     override_closed: bool = False,
 ) -> Optional[Dict[str, Any]]:
     recovery = st.session_state.get("package_context_recovery") or {}
@@ -2285,9 +2284,6 @@ def _render_context_recovery_action(
     st.warning(CONTEXT_MISMATCH_MESSAGE)
     if not st.button("Refresh Role Context & Try Again", key=key, type="primary"):
         return None
-    options: Dict[str, Any] = {"override_closed": override_closed}
-    if generate_followups_too is not None:
-        options["generate_followups_too"] = generate_followups_too
     try:
         with st.spinner("Refreshing the saved role context and trying once more…"):
             result = refresh_role_context_and_retry(
@@ -2295,7 +2291,7 @@ def _render_context_recovery_action(
                 tracker_id,
                 PROJECT_ROOT,
                 prospect_values=prospect_values,
-                **options,
+                override_closed=override_closed,
             )
     except (ProspectIntakeError, PackageGenerationError, TrackerValidationError) as error:
         is_context_mismatch = isinstance(
@@ -3644,11 +3640,6 @@ def _render_generate_package(st: Any) -> None:
     _render_intelligence_preview(
         st, voice_context, evidence_tracker_id=tracker_id
     )
-    generate_followups_too = st.checkbox(
-        "Generate follow-up materials after package generation",
-        value=get_record_status(application) == "Applied",
-        key=f"package_followups_{tracker_id}",
-    )
     public_transparency_requested = st.checkbox(
         "Include concise transparency language when a material limitation changes the hiring decision",
         value=False,
@@ -3667,7 +3658,6 @@ def _render_generate_package(st: Any) -> None:
         st,
         tracker_id,
         key=f"package_context_recovery_{tracker_id}",
-        generate_followups_too=generate_followups_too,
         override_closed=override_closed,
     )
     if st.button(
@@ -3685,7 +3675,6 @@ def _render_generate_package(st: Any) -> None:
                 result = generate_package(
                     tracker_id,
                     PROJECT_ROOT,
-                    generate_followups_too=generate_followups_too,
                     public_transparency_requested=public_transparency_requested,
                     override_closed=override_closed,
                 )

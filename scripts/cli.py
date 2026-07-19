@@ -414,14 +414,12 @@ def add_prospect_command(file_path: str) -> int:
 
 def generate_package_command(
     job_file_or_tracker_id: str,
-    generate_followups_too: Optional[bool] = None,
     override_closed: bool = False,
 ) -> int:
     try:
         result = generate_package(
             job_file_or_tracker_id,
             PROJECT_ROOT,
-            generate_followups_too=generate_followups_too,
             override_closed=override_closed,
         )
     except PackageGenerationError as error:
@@ -601,12 +599,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     package_parser.add_argument("job_file_or_tracker_id")
     package_parser.add_argument(
-        "--followups",
-        action="store_true",
-        default=None,
-        help="Generate follow-up materials after the package",
-    )
-    package_parser.add_argument(
         "--override-closed",
         action="store_true",
         help="Generate only after manually verifying a closed-signal posting is still open",
@@ -670,7 +662,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         return add_prospect_command(args.job_file_path)
     if args.command == "generate-package":
         return generate_package_command(
-            args.job_file_or_tracker_id, args.followups, args.override_closed
+            args.job_file_or_tracker_id, args.override_closed
         )
     if args.command == "detect-role":
         return detect_role_command(args.job_file_or_tracker_id)

@@ -231,7 +231,7 @@ def test_youtube_golden_fixture_has_four_distinct_paragraphs(golden_outputs):
 def test_package_generation_still_succeeds_for_golden_roles(tmp_path, key):
     root, job = _project_fixture(tmp_path / key, key)
 
-    result = generate_package(job, root, generate_followups_too=False)
+    result = generate_package(job, root)
 
     assert result["tracker_id"]
     assert Path(result["outputs"]["cover_letter"]).is_file()

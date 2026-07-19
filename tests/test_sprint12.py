@@ -144,7 +144,7 @@ class PackageReliabilityTests(unittest.TestCase):
             stack.enter_context(patch("scripts.package_generator.generate_strategy_pack", return_value=result_path("strategy.md")))
             stack.enter_context(patch("scripts.package_generator.generate_interview_prep", return_value=result_path("interview.md")))
             stack.enter_context(patch("scripts.package_generator.generate_dashboard", return_value=result_path("dashboard.html")))
-            return generate_package("nova_director_operations", self.root, generate_followups_too=False)
+            return generate_package("nova_director_operations", self.root)
 
     def test_closed_posting_blocks_generation(self):
         self._job(closed=True)

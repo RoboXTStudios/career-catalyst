@@ -19,11 +19,6 @@ MATERIAL_SPECS = (
     ("Strategy Pack", "Strategy/Prep", ("strategy_pack_text", "strategy_pack"), ("txt", "md")),
     ("Interview Prep", "Strategy/Prep", ("interview_prep_text", "interview_prep"), ("txt", "md")),
     ("Package Summary", "Strategy/Prep", ("package_summary_text", "package_summary"), ("txt", "md")),
-    ("Recruiter Follow-Up", "Follow-up", ("recruiter_followup_text", "recruiter_followup"), ("txt", "md")),
-    ("Hiring Manager Follow-Up", "Follow-up", ("hiring_manager_followup_text", "hiring_manager_followup"), ("txt", "md")),
-    ("Warm Contact Message", "Follow-up", ("warm_contact_message_text", "warm_contact_message"), ("txt", "md")),
-    ("Referral Ask", "Follow-up", ("referral_ask_text", "referral_ask"), ("txt", "md")),
-    ("Follow-Up Strategy", "Follow-up", ("followup_strategy_text", "followup_strategy"), ("txt", "md")),
     ("Job Description", "Source", ("job_file",), ("txt", "md")),
 )
 

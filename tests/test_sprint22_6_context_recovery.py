@@ -443,9 +443,7 @@ def test_automatic_refresh_recovers_once_from_stale_derived_context(tmp_path):
         return context
 
     with _package_generation_patches(context, [mismatch, {"output_path": "resume.md"}], refresh):
-        result = generate_package(
-            "youtube-role", tmp_path, generate_followups_too=False
-        )
+        result = generate_package("youtube-role", tmp_path)
 
     assert refresh_calls == ["refresh"]
     assert result["context_recovery"]["automatic_refresh_attempted"] is True
@@ -463,7 +461,7 @@ def test_confirmed_mismatch_retries_no_more_than_once_and_stays_blocked(tmp_path
 
     with _package_generation_patches(context, mismatch, refresh):
         with pytest.raises(PackageGenerationError) as captured:
-            generate_package("youtube-role", tmp_path, generate_followups_too=False)
+            generate_package("youtube-role", tmp_path)
 
     assert refresh_calls == ["refresh"]
     assert str(captured.value) == CONTEXT_MISMATCH_MESSAGE

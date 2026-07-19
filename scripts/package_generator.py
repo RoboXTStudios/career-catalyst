@@ -526,7 +526,6 @@ def _safe_docx_export(exporter: Any, source_path: Any, root: Path, label: str) -
 def generate_package(
     job_file_or_tracker_id: PathInput,
     project_root: Optional[PathInput] = None,
-    generate_followups_too: Optional[bool] = None,
     override_closed: bool = False,
     public_transparency_requested: bool = False,
     _context_refresh_attempted: bool = False,
@@ -595,11 +594,6 @@ def generate_package(
                 f"Package generation paused because this posting appears {freshness['posting_status'].lower()} "
                 f"('{reason}'). Verify the role and use the closed-posting override to continue."
             )
-        should_generate_followups = (
-            True
-            if generate_followups_too is None
-            else bool(generate_followups_too)
-        )
         opportunity = score_opportunity(parsed, score, intelligence, freshness)
         material_context = {
             "role_interpretation": intelligence.get("role_interpretation", {}),
@@ -664,20 +658,6 @@ def generate_package(
             },
             root,
         )
-        followup_outputs: Dict[str, str] = {}
-        followup_error = None
-        if should_generate_followups:
-            try:
-                if __package__:
-                    from .generate_followups import generate_followups
-                else:
-                    from generate_followups import generate_followups
-                followup_result = generate_followups(tracker_id, root)
-                followup_outputs = dict(followup_result.get("outputs", {}))
-            except Exception as error:
-                # The core package remains useful if optional networking materials fail.
-                followup_error = str(error)
-
         outputs = {
             "job_file": str(job_path),
             "resume_markdown": _output_path(resume),
@@ -696,18 +676,12 @@ def generate_package(
             "strategy_pack": _output_path(strategy_pack),
             "interview_prep": _output_path(interview_prep),
             "package_summary": _output_path(package_summary),
-            **followup_outputs,
         }
         for source_key, text_key in (
             ("resume_markdown", "resume_text"),
             ("strategy_pack", "strategy_pack_text"),
             ("interview_prep", "interview_prep_text"),
             ("package_summary", "package_summary_text"),
-            ("recruiter_followup", "recruiter_followup_text"),
-            ("hiring_manager_followup", "hiring_manager_followup_text"),
-            ("warm_contact_message", "warm_contact_message_text"),
-            ("referral_ask", "referral_ask_text"),
-            ("followup_strategy", "followup_strategy_text"),
         ):
             companion = create_text_companion(outputs.get(source_key))
             if companion:
@@ -772,7 +746,6 @@ def generate_package(
             recovered = generate_package(
                 job_file_or_tracker_id,
                 root,
-                generate_followups_too=generate_followups_too,
                 override_closed=override_closed,
                 _context_refresh_attempted=True,
             )
@@ -854,7 +827,6 @@ def generate_package(
         "opportunity": opportunity,
         "package_quality": quality,
         "role_lens_quality": role_lens_quality,
-        "followup_error": followup_error,
         "material_errors": material_errors,
         "outputs": outputs,
         "package_checklist": checklist,
