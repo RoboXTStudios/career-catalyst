@@ -38,6 +38,7 @@ try:
     from .prospect_intake import add_prospect_from_job_file
     from .score_match import persisted_match_fields, score_job_match
     from .tailor_resume import tailor_resume
+    from .evidence_engine import evidence_projects_for_role
 except ImportError:
     from application_tracker import (
         TrackerValidationError,
@@ -69,6 +70,7 @@ except ImportError:
     from prospect_intake import add_prospect_from_job_file
     from score_match import persisted_match_fields, score_job_match
     from tailor_resume import tailor_resume
+    from evidence_engine import evidence_projects_for_role
 
 
 PathInput = Union[str, Path]
@@ -229,6 +231,7 @@ def build_package_context(
         "role_intelligence": intelligence,
         "match_report": score_job_match(job_reference, root),
         "selected_package_paths": selected_package_paths,
+        "associated_evidence_projects": evidence_projects_for_role(application, root),
     }
 
 
@@ -357,14 +360,14 @@ def generate_package(
             else bool(generate_followups_too)
         )
         opportunity = score_opportunity(parsed, score, intelligence, freshness)
-        resume = tailor_resume("executive_operations", job_reference, root)
+        resume = tailor_resume("executive_operations", job_reference, root, context.get("associated_evidence_projects", []))
         styled = _safe_docx_export(
             export_styled_docx, resume["output_path"], root, "Styled resume DOCX"
         )
         ats = _safe_docx_export(
             export_ats_docx, resume["output_path"], root, "ATS resume DOCX"
         )
-        cover_letter = generate_cover_letter(job_reference, root)
+        cover_letter = generate_cover_letter(job_reference, root, context.get("associated_evidence_projects", []))
         recruiter = generate_message("recruiter", job_reference, root)
         hiring_manager = generate_message("hiring-manager", job_reference, root)
         application_note = generate_application_note(job_reference, root)
