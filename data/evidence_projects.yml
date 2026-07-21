@@ -1,0 +1,108 @@
+evidence_projects:
+- id: enterprise_media_operations_transformation
+  title: Enterprise Media Operations Transformation
+  employer: OMG23
+  client: The Walt Disney Company
+  business_unit: The Walt Disney Company
+  industry: Entertainment & Media
+  function: Operations
+  project_type: Operations Project Management
+  problem: A large enterprise media organization managed high-volume campaigns across theatrical releases, streaming, television, and corporate brands. As the business evolved, teams needed more consistent operational processes, stronger governance, clearer ownership, and scalable workflows to support increasingly complex marketing initiatives.
+  actions: Led cross-functional initiatives to improve media operations by redesigning workflows, establishing governance and quality-assurance standards, aligning stakeholders across media, marketing, analytics, and technology teams, and implementing scalable operational processes.
+  results: Established more consistent operational standards, improved cross-functional collaboration, increased visibility into complex initiatives, and created scalable processes that supported execution across multiple business units.
+  skills: []
+  technologies: []
+  tags:
+  - Media Operations
+  - Governance
+  - Quality Assurance
+  - Cross-Functional Leadership
+  - Process Improvement
+  - Program Management
+  - Business Transformation
+  supporting_evidence: []
+  links: []
+  notes: ''
+  status: Active
+- id: enterprise_collaboration_platform_adoption_stakeholder_enablement
+  title: Enterprise Collaboration Platform Adoption & Stakeholder Enablement
+  employer: OMG23
+  client: The Walt Disney Company
+  business_unit: The Walt Disney Company
+  industry: Entertainment & Media
+  function: Operations
+  project_type: Change Management
+  problem: A large entertainment organization was transitioning to Microsoft Teams and needed practical support to help stakeholders adopt the platform, navigate new collaboration tools, and establish consistent ways of working. Adoption depended on accessible guidance and trusted users who could support teams through the change.
+  actions: Served as a Microsoft Teams power user and stakeholder resource during the rollout. Held recurring office hours for Disney stakeholders, answered platform and workflow questions, helped users troubleshoot adoption challenges, and identified and coordinated a network of champions and power users who could provide peer support across teams.
+  results: Improved stakeholder readiness and supported broader adoption of Microsoft Teams through practical guidance and peer support. The champion network expanded internal expertise, helped resolve questions more efficiently, and created a sustainable support structure as teams adjusted to new collaboration practices.
+  skills: []
+  technologies:
+  - Microsoft Teams
+  tags:
+  - Change Management
+  - Technology Adoption
+  - Stakeholder Enablement
+  - Training
+  - Office Hours
+  - Champion Network
+  - Collaboration
+  supporting_evidence: []
+  links: []
+  notes: ''
+  status: Active
+- id: operational_workflow_design_airtable_implementation
+  title: Operational Workflow Design & Airtable Implementation
+  employer: OMG23
+  client: Disney Performance Marketing
+  business_unit: Disney Performance Marketing
+  industry: Entertainment & Media
+  function: Marketing Operations
+  project_type: Technology Implementation Project Management
+  problem: Disney Performance Marketing needed a centralized way to track multiple concurrent campaigns across its intellectual properties while reducing reliance on Google Sheets, Google Docs, and disconnected internal systems. Teams lacked a consistent source of truth for campaign status, documentation, and cross-functional reporting.
+  actions: Coordinated stakeholders across Disney Performance Marketing, OMG23 Marketing Science, business operations, and technical teams to support the Airtable implementation. Connected Disney and agency technology teams, tested workflows, trained users, and helped configure campaign tracking, status reporting, linked databases, a knowledge base, and automations. Established naming conventions, permissions, quality assurance, standardized workflows, and data-quality practices.
+  results: Created a centralized source of truth for campaign activity across teams, reducing duplicate work and the need for frequent status emails. The implementation improved visibility, strengthened data consistency, and provided a more structured and scalable way to manage campaign information before the platform was transitioned to the client.
+  skills: []
+  technologies:
+  - Airtable
+  - Google Sheets
+  - Google Docs
+  tags:
+  - Workflow Design
+  - Process Improvement
+  - Technology Implementation
+  - Campaign Tracking
+  - Status Reporting
+  - Data Governance
+  - Quality Assurance
+  - User Training
+  - Source of Truth
+  supporting_evidence: []
+  links: []
+  notes: ''
+  status: Active
+- id: enterprise_employee_engagement_community_fundraising_initiative
+  title: Enterprise Employee Engagement & Community Fundraising Initiative
+  employer: OMG23
+  industry: Entertainment & Media
+  function: Operations
+  project_type: Change Management
+  duration: Approximately three weeks
+  problem: During the Southern California wildfires, employee morale was affected as teams were asked to participate in a scheduled company engagement event while surrounding communities were experiencing significant loss. Leadership wanted to strengthen company culture, but employees also needed a meaningful way to support those affected.
+  actions: Proposed and led a company-wide fundraising initiative that transformed an employee event into a community-impact campaign. Secured more than $35,000 in partner pledges, coordinated executive stakeholders, managed communications and logistics, and organized a raffle-based donation program supporting World Central Kitchen, Pasadena Humane, Altadena Girls, and the Los Angeles Fire Relief Fund.
+  results: Achieved 100% employee participation and directed more than $35,000 in pledged donations to wildfire-relief organizations. The initiative transformed a routine engagement event into a meaningful community response, strengthened employee morale, and aligned company culture with the needs of the moment.
+  skills: []
+  technologies: []
+  tags:
+  - Employee Engagement
+  - Community Impact
+  - Fundraising
+  - Crisis Response
+  - Executive Stakeholder Management
+  - Internal Communications
+  - Event Operations
+  - Culture
+  - Leadership
+  supporting_evidence: []
+  links: []
+  notes: ''
+  status: Active

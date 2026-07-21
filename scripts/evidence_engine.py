@@ -168,3 +168,146 @@ def load_writing_voice_profile(project_root: str | Path | None = None, level: in
         "banned_phrases": list(loaded.get("banned_phrases", [])),
     })
     return profile
+
+
+EVIDENCE_PROJECTS_PATH = "data/evidence_projects.yml"
+EVIDENCE_PROJECT_STATUSES = ("Active", "Draft", "Archived")
+EVIDENCE_PROJECT_REQUIRED_FIELDS = ("title", "problem", "actions", "results")
+
+
+def _slug(value: Any) -> str:
+    import re
+    text = str(value or "").lower()
+    text = re.sub(r"[^a-z0-9]+", "_", text).strip("_")
+    return text or "evidence_project"
+
+
+def _evidence_project_path(project_root: str | Path | None = None) -> Path:
+    root = Path(project_root) if project_root is not None else Path.cwd()
+    return root / EVIDENCE_PROJECTS_PATH
+
+
+def normalize_multivalue(value: Any) -> list[str]:
+    """Normalize comma/newline/list evidence fields into stable, unique text values."""
+    if isinstance(value, list):
+        raw_values = value
+    else:
+        raw_values = str(value or "").replace("\n", ",").split(",")
+    values: list[str] = []
+    seen: set[str] = set()
+    for item in raw_values:
+        clean = str(item or "").strip()
+        key = clean.lower()
+        if clean and key not in seen:
+            values.append(clean)
+            seen.add(key)
+    return values
+
+
+def normalize_evidence_project(project: dict[str, Any]) -> dict[str, Any]:
+    """Return a storage-safe evidence project without discarding optional fields."""
+    normalized = dict(project)
+    title = str(normalized.get("title") or normalized.get("project_title") or "").strip()
+    normalized["title"] = title
+    normalized.setdefault("id", _slug(title))
+    normalized["id"] = _slug(normalized.get("id") or title)
+    for field in EVIDENCE_PROJECT_REQUIRED_FIELDS:
+        normalized[field] = str(normalized.get(field) or "").strip()
+    status = str(normalized.get("status") or "Active").strip().title()
+    normalized["status"] = status if status in EVIDENCE_PROJECT_STATUSES else "Active"
+    for field in ("skills", "technologies", "tags", "supporting_evidence", "links"):
+        normalized[field] = normalize_multivalue(normalized.get(field))
+    for field in (
+        "employer", "organization", "client", "business_unit", "timeframe", "start_date",
+        "end_date", "duration", "industry", "function", "project_type", "notes",
+    ):
+        if field in normalized:
+            normalized[field] = str(normalized.get(field) or "").strip()
+    return normalized
+
+
+def validate_evidence_project(project: dict[str, Any]) -> None:
+    """Validate required first-version evidence project fields."""
+    missing = [field for field in EVIDENCE_PROJECT_REQUIRED_FIELDS if not str(project.get(field) or "").strip()]
+    if missing:
+        raise EvidenceEngineError(f"Evidence project missing required fields: {', '.join(missing)}")
+
+
+def load_evidence_projects(project_root: str | Path | None = None) -> list[dict[str, Any]]:
+    """Load reusable project-based career evidence from YAML storage."""
+    path = _evidence_project_path(project_root)
+    if not path.exists():
+        return []
+    try:
+        loaded = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except yaml.YAMLError as error:
+        raise EvidenceEngineError(f"Malformed evidence project YAML: {error}") from error
+    projects = loaded.get("evidence_projects") if isinstance(loaded, dict) else None
+    if projects is None:
+        return []
+    if not isinstance(projects, list):
+        raise EvidenceEngineError("data/evidence_projects.yml must contain evidence_projects list")
+    return [normalize_evidence_project(project) for project in projects if isinstance(project, dict)]
+
+
+def save_evidence_projects(projects: list[dict[str, Any]], project_root: str | Path | None = None) -> Path:
+    """Persist evidence projects without introducing a new storage system."""
+    normalized = [normalize_evidence_project(project) for project in projects]
+    ids = [project["id"] for project in normalized]
+    if len(ids) != len(set(ids)):
+        raise EvidenceEngineError("Evidence project ids must be unique")
+    for project in normalized:
+        validate_evidence_project(project)
+    path = _evidence_project_path(project_root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(yaml.safe_dump({"evidence_projects": normalized}, sort_keys=False, allow_unicode=True, width=1000), encoding="utf-8")
+    return path
+
+
+def upsert_evidence_project(project: dict[str, Any], project_root: str | Path | None = None) -> dict[str, Any]:
+    """Create or update one evidence project by id."""
+    normalized = normalize_evidence_project(project)
+    validate_evidence_project(normalized)
+    projects = load_evidence_projects(project_root)
+    existing_index = next((i for i, item in enumerate(projects) if item.get("id") == normalized["id"]), None)
+    if existing_index is None:
+        projects.append(normalized)
+    else:
+        projects[existing_index] = {**projects[existing_index], **normalized}
+    save_evidence_projects(projects, project_root)
+    return normalized
+
+
+def archive_evidence_project(project_id: str, project_root: str | Path | None = None) -> dict[str, Any]:
+    """Archive one evidence project without deleting its record."""
+    projects = load_evidence_projects(project_root)
+    target_id = _slug(project_id)
+    for project in projects:
+        if project.get("id") == target_id:
+            project["status"] = "Archived"
+            save_evidence_projects(projects, project_root)
+            return project
+    raise EvidenceEngineError(f"Evidence project not found: {project_id}")
+
+
+def filter_evidence_projects(projects: list[dict[str, Any]], query: str = "", status: str = "All") -> list[dict[str, Any]]:
+    """Filter evidence by title, employer, skills, technologies, tags, and status."""
+    clean_query = str(query or "").strip().lower()
+    clean_status = str(status or "All").strip()
+    results = []
+    for project in projects:
+        if clean_status != "All" and project.get("status") != clean_status:
+            continue
+        haystack = " ".join(
+            str(value)
+            for value in (
+                project.get("title"), project.get("employer"), project.get("organization"),
+                project.get("client"), project.get("business_unit"), project.get("function"),
+                project.get("project_type"), project.get("status"), " ".join(project.get("skills", [])),
+                " ".join(project.get("technologies", [])), " ".join(project.get("tags", [])),
+            )
+        ).lower()
+        if clean_query and clean_query not in haystack:
+            continue
+        results.append(project)
+    return results
