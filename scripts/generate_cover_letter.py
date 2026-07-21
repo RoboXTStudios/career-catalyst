@@ -11,7 +11,7 @@ from docx.shared import Inches, Pt, RGBColor
 
 try:
     from .company_voice import company_voice_context
-    from .evidence_engine import load_evidence_cards, load_writing_voice_profile, select_evidence_cards
+    from .evidence_engine import evidence_generation_context, load_evidence_cards, load_writing_voice_profile, select_evidence_cards
     from .filename_utils import build_upload_filename, company_display_name
     from .load_data import load_all_yaml
     from .parse_job import parse_job_description
@@ -29,7 +29,7 @@ try:
     from .text_cleanup import cleanup_repeated_words
 except ImportError:
     from company_voice import company_voice_context
-    from evidence_engine import load_evidence_cards, load_writing_voice_profile, select_evidence_cards
+    from evidence_engine import evidence_generation_context, load_evidence_cards, load_writing_voice_profile, select_evidence_cards
     from filename_utils import build_upload_filename, company_display_name
     from load_data import load_all_yaml
     from parse_job import parse_job_description
@@ -54,6 +54,7 @@ class ApplicationMaterialError(Exception):
 def load_generation_context(
     job_path: PathInput,
     project_root: Optional[PathInput] = None,
+    associated_evidence_projects: Optional[List[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """Load career data, parsed job details, and the match report."""
     root = Path(project_root) if project_root is not None else Path.cwd()
@@ -73,6 +74,7 @@ def load_generation_context(
     evidence_cards = load_evidence_cards(root)
     writing_voice = load_writing_voice_profile(root)
     selected_evidence = select_evidence_cards(parsed_job, evidence_cards)
+    associated_evidence_projects = associated_evidence_projects or []
     editing_plan = material_editing_plan(parsed_job, root)
     return {
         "root": root,
@@ -81,6 +83,8 @@ def load_generation_context(
         "writing_voice": writing_voice,
         "evidence_cards": evidence_cards,
         "selected_evidence_cards": selected_evidence,
+        "associated_evidence_projects": associated_evidence_projects,
+        "associated_evidence_context": evidence_generation_context(associated_evidence_projects),
         "material_editing_plan": editing_plan,
         "parsed_job": parsed_job,
         "match_report": score_job_match(job_path, root),
@@ -1000,12 +1004,20 @@ def _dynamic_cover_letter_content(context: Dict[str, Any]) -> str:
         )
 
     selected_ids = {str(card.get("id")) for card in context.get("selected_evidence_cards", [])}
+    associated_context = str(context.get("associated_evidence_context") or "")
     if role_family in {"editorial_content_strategy", "community_growth"} and editorial_relevant:
         proof = (
             "Those editorial projects strengthened more than my writing. They required content planning, "
             "audience judgment, contributor management, repeatable workflows, and care for tone across different "
             "formats. They also reinforced a principle I bring to operational work: systems should make good "
             "creative decisions easier without flattening the human voice that gives the work meaning."
+        )
+    elif associated_context:
+        title = str((context.get("associated_evidence_projects") or [{}])[0].get("title") or "associated project evidence")
+        proof = (
+            f"For this role, I would also draw on verified project evidence such as {title}. "
+            "That record captures the underlying problem, the actions I took, and the stored results, "
+            "so I would use it as grounded support for relevant accomplishments without adding unsupported metrics or claims."
         )
     elif "campaignos" in selected_ids:
         proof = (
@@ -1079,9 +1091,10 @@ def _cover_letter_content(context: Dict[str, Any]) -> str:
 def generate_cover_letter(
     job_path: PathInput,
     project_root: Optional[PathInput] = None,
+    associated_evidence_projects: Optional[List[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """Generate and save a concise TXT cover letter with safe DOCX when available."""
-    context = load_generation_context(job_path, project_root)
+    context = load_generation_context(job_path, project_root, associated_evidence_projects)
     result = save_material(
         context,
         "Cover_Letter",
@@ -1106,6 +1119,9 @@ def generate_cover_letter(
         result["docx_error"] = f"DOCX missing / unsupported: {error}"
     else:
         result["docx_output_path"] = str(docx_path)
+    result["associated_evidence_project_titles"] = [
+        str(project.get("title")) for project in (associated_evidence_projects or [])
+    ]
     return result
 
 

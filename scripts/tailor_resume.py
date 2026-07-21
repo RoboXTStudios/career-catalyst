@@ -7,7 +7,7 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 try:
     from .filename_utils import build_upload_filename
     from .load_data import load_all_yaml
-    from .evidence_engine import load_writing_voice_profile
+    from .evidence_engine import evidence_generation_context, load_writing_voice_profile
     from .parse_job import parse_job_description
     from .package_context import validate_material_context
     from .role_context import is_google_youtube_role
@@ -21,7 +21,7 @@ try:
 except ImportError:
     from filename_utils import build_upload_filename
     from load_data import load_all_yaml
-    from evidence_engine import load_writing_voice_profile
+    from evidence_engine import evidence_generation_context, load_writing_voice_profile
     from parse_job import parse_job_description
     from package_context import validate_material_context
     from role_context import is_google_youtube_role
@@ -444,6 +444,7 @@ def _render_markdown(
     parsed_job: Dict[str, Any],
     match_report: Dict[str, Any],
     resume_profile: str,
+    associated_evidence_projects: Optional[List[Dict[str, Any]]] = None,
 ) -> str:
     personal_brand = career_data["data"]["personal_brand"]
     candidate = personal_brand["candidate"]
@@ -456,6 +457,8 @@ def _render_markdown(
     )
     experience_bullets = _select_experience_bullets(career_data, parsed_job, resume_profile)
     selected_projects = _selected_projects(career_data, parsed_job, resume_profile)
+    verified_evidence_context = evidence_generation_context(associated_evidence_projects or [])
+    associated_evidence_projects = associated_evidence_projects or []
     earlier_position = _earlier_career(career_data)
     development = _professional_development(career_data)
 
@@ -520,6 +523,19 @@ def _render_markdown(
         lines.extend(f"- {bullet}" for bullet in bullets)
         lines.append("")
 
+    for project in associated_evidence_projects:
+        context = " · ".join(
+            str(value)
+            for value in (project.get("employer"), project.get("client") or project.get("business_unit"), project.get("project_type"))
+            if value
+        )
+        lines.extend([f"### {project.get('title')}", "", context or "Verified role-associated evidence", ""])
+        if project.get("actions"):
+            lines.append(f"- {project.get('actions')}")
+        if project.get("results"):
+            lines.append(f"- {project.get('results')}")
+        lines.append("")
+
     if earlier_position:
         progression = ", ".join(earlier_position.get("progression", []))
         lines.extend(
@@ -555,6 +571,7 @@ def tailor_resume(
     resume_profile: str,
     job_path: PathInput,
     project_root: Optional[PathInput] = None,
+    associated_evidence_projects: Optional[List[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """Generate and save a tailored Markdown resume."""
     if resume_profile not in VALID_RESUME_PROFILES:
@@ -563,10 +580,12 @@ def tailor_resume(
 
     root = Path(project_root) if project_root is not None else Path.cwd()
     career_data = load_all_yaml(root)
+    associated_evidence_projects = associated_evidence_projects or []
+    verified_evidence_context = evidence_generation_context(associated_evidence_projects)
     parsed_job = parse_job_description(root / job_path)
     match_report = score_job_match(job_path, root)
     markdown = cleanup_repeated_words(
-        _render_markdown(career_data, parsed_job, match_report, resume_profile)
+        _render_markdown(career_data, parsed_job, match_report, resume_profile, associated_evidence_projects)
     )
     markdown, rewrite_notes = rewrite_banned_voice_phrases(markdown)
     banned_phrases = list(career_data["config"].get("voice", {}).get("avoid", []))
@@ -611,4 +630,8 @@ def tailor_resume(
             else []
         ),
         "banned_phrase_rewrites": rewrite_notes,
+        "associated_evidence_project_titles": [
+            str(project.get("title")) for project in (associated_evidence_projects or [])
+        ],
+        "associated_evidence_context": verified_evidence_context,
     }

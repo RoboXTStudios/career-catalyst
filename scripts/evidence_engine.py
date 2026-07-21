@@ -290,6 +290,144 @@ def archive_evidence_project(project_id: str, project_root: str | Path | None = 
     raise EvidenceEngineError(f"Evidence project not found: {project_id}")
 
 
+
+def _merge_unique(existing: Any, additions: Any) -> list[str]:
+    """Merge multivalue fields without dropping user-supplied values."""
+    return normalize_multivalue(list(normalize_multivalue(existing)) + list(normalize_multivalue(additions)))
+
+
+def _safe_seed_merge(existing: dict[str, Any], seed: dict[str, Any]) -> dict[str, Any]:
+    """Enrich an untouched seed record while preserving user edits and associations."""
+    merged = dict(existing)
+    for field, value in seed.items():
+        if field in {"skills", "technologies", "tags", "supporting_evidence", "links"}:
+            merged[field] = _merge_unique(existing.get(field), value)
+            continue
+        if field == "status" and existing.get("status"):
+            continue
+        if field == "id":
+            merged[field] = existing.get("id") or value
+            continue
+        current = str(existing.get(field) or "").strip()
+        if not current:
+            merged[field] = value
+    return merged
+
+
+SPRINT_26_5_SEEDED_PROJECTS: tuple[dict[str, Any], ...] = (
+    {
+        "id": "enterprise_media_operations_transformation",
+        "title": "Enterprise Media Operations Transformation",
+        "employer": "OMG23",
+        "client": "The Walt Disney Company",
+        "business_unit": "The Walt Disney Company",
+        "industry": "Entertainment & Media",
+        "function": "Operations",
+        "project_type": "Operations Project Management",
+        "status": "Active",
+        "problem": "A large enterprise media organization managed high-volume campaigns across theatrical releases, streaming, television, and corporate brands. As the business evolved, teams needed more consistent operational processes, stronger governance, clearer ownership, and scalable workflows to support increasingly complex marketing initiatives.",
+        "actions": "Led cross-functional initiatives to improve media operations by redesigning workflows, establishing governance and quality-assurance standards, aligning stakeholders across media, marketing, analytics, and technology teams, and implementing scalable operational processes.",
+        "results": "Established more consistent operational standards, improved cross-functional collaboration, increased visibility into complex initiatives, and created scalable processes that supported execution across multiple business units.",
+        "tags": ["Media Operations", "Governance", "Quality Assurance", "Cross-Functional Leadership", "Process Improvement", "Program Management", "Business Transformation"],
+    },
+    {
+        "id": "enterprise_collaboration_platform_adoption_stakeholder_enablement",
+        "title": "Enterprise Collaboration Platform Adoption & Stakeholder Enablement",
+        "employer": "OMG23",
+        "client": "The Walt Disney Company",
+        "business_unit": "The Walt Disney Company",
+        "industry": "Entertainment & Media",
+        "function": "Operations",
+        "project_type": "Change Management",
+        "status": "Active",
+        "problem": "A large entertainment organization was transitioning to Microsoft Teams and needed practical support to help stakeholders adopt the platform, navigate new collaboration tools, and establish consistent ways of working. Adoption depended on accessible guidance and trusted users who could support teams through the change.",
+        "actions": "Served as a Microsoft Teams power user and stakeholder resource during the rollout. Held recurring office hours for Disney stakeholders, answered platform and workflow questions, helped users troubleshoot adoption challenges, and identified and coordinated a network of champions and power users who could provide peer support across teams.",
+        "results": "Improved stakeholder readiness and supported broader adoption of Microsoft Teams through practical guidance and peer support. The champion network expanded internal expertise, helped resolve questions more efficiently, and created a sustainable support structure as teams adjusted to new collaboration practices.",
+        "technologies": ["Microsoft Teams"],
+        "tags": ["Change Management", "Technology Adoption", "Stakeholder Enablement", "Training", "Office Hours", "Champion Network", "Collaboration"],
+    },
+    {
+        "id": "operational_workflow_design_airtable_implementation",
+        "title": "Operational Workflow Design & Airtable Implementation",
+        "employer": "OMG23",
+        "client": "Disney Performance Marketing",
+        "business_unit": "Disney Performance Marketing",
+        "industry": "Entertainment & Media",
+        "function": "Marketing Operations",
+        "project_type": "Technology Implementation Project Management",
+        "status": "Active",
+        "problem": "Disney Performance Marketing needed a centralized way to track multiple concurrent campaigns across its intellectual properties while reducing reliance on Google Sheets, Google Docs, and disconnected internal systems. Teams lacked a consistent source of truth for campaign status, documentation, and cross-functional reporting.",
+        "actions": "Coordinated stakeholders across Disney Performance Marketing, OMG23 Marketing Science, business operations, and technical teams to support the Airtable implementation. Connected Disney and agency technology teams, tested workflows, trained users, and helped configure campaign tracking, status reporting, linked databases, a knowledge base, and automations. Established naming conventions, permissions, quality assurance, standardized workflows, and data-quality practices.",
+        "results": "Created a centralized source of truth for campaign activity across teams, reducing duplicate work and the need for frequent status emails. The implementation improved visibility, strengthened data consistency, and provided a more structured and scalable way to manage campaign information before the platform was transitioned to the client.",
+        "technologies": ["Airtable", "Google Sheets", "Google Docs"],
+        "tags": ["Workflow Design", "Process Improvement", "Technology Implementation", "Campaign Tracking", "Status Reporting", "Data Governance", "Quality Assurance", "User Training", "Source of Truth"],
+    },
+    {
+        "id": "enterprise_employee_engagement_community_fundraising_initiative",
+        "title": "Enterprise Employee Engagement & Community Fundraising Initiative",
+        "employer": "OMG23",
+        "industry": "Entertainment & Media",
+        "function": "Operations",
+        "project_type": "Change Management",
+        "duration": "Approximately three weeks",
+        "status": "Active",
+        "problem": "During the Southern California wildfires, employee morale was affected as teams were asked to participate in a scheduled company engagement event while surrounding communities were experiencing significant loss. Leadership wanted to strengthen company culture, but employees also needed a meaningful way to support those affected.",
+        "actions": "Proposed and led a company-wide fundraising initiative that transformed an employee event into a community-impact campaign. Secured more than $35,000 in partner pledges, coordinated executive stakeholders, managed communications and logistics, and organized a raffle-based donation program supporting World Central Kitchen, Pasadena Humane, Altadena Girls, and the Los Angeles Fire Relief Fund.",
+        "results": "Achieved 100% employee participation and directed more than $35,000 in pledged donations to wildfire-relief organizations. The initiative transformed a routine engagement event into a meaningful community response, strengthened employee morale, and aligned company culture with the needs of the moment.",
+        "tags": ["Employee Engagement", "Community Impact", "Fundraising", "Crisis Response", "Executive Stakeholder Management", "Internal Communications", "Event Operations", "Culture", "Leadership"],
+    },
+)
+
+
+def enrich_seed_evidence_projects(project_root: str | Path | None = None) -> list[dict[str, Any]]:
+    """Idempotently add missing Sprint 26.5 seed detail without overwriting edits."""
+    projects = load_evidence_projects(project_root)
+    by_id = {project.get("id"): index for index, project in enumerate(projects)}
+    for seed in SPRINT_26_5_SEEDED_PROJECTS:
+        normalized_seed = normalize_evidence_project(seed)
+        if normalized_seed["id"] in by_id:
+            index = by_id[normalized_seed["id"]]
+            projects[index] = normalize_evidence_project(_safe_seed_merge(projects[index], normalized_seed))
+        else:
+            projects.append(normalized_seed)
+            by_id[normalized_seed["id"]] = len(projects) - 1
+    save_evidence_projects(projects, project_root)
+    return load_evidence_projects(project_root)
+
+
+def evidence_projects_for_role(application: dict[str, Any], project_root: str | Path | None = None) -> list[dict[str, Any]]:
+    """Return manually associated evidence projects for a tracker role in saved order."""
+    requested = [str(project_id) for project_id in application.get("evidence_project_ids", []) if str(project_id).strip()]
+    if not requested:
+        return []
+    projects = {project["id"]: project for project in load_evidence_projects(project_root)}
+    return [projects[project_id] for project_id in requested if project_id in projects]
+
+
+def evidence_generation_context(projects: list[dict[str, Any]]) -> str:
+    """Format associated projects as concise verified generation context."""
+    if not projects:
+        return ""
+    lines = [
+        "Verified role-associated Evidence projects. Use these as supporting proof points where relevant; do not invent metrics, employers, dates, or responsibilities, and do not paste raw records verbatim."
+    ]
+    for project in projects:
+        context = ", ".join(
+            value for value in [project.get("employer"), project.get("client") or project.get("business_unit"), project.get("industry"), project.get("function"), project.get("project_type"), project.get("duration")] if value
+        )
+        lines.append(f"- {project.get('title')}")
+        if context:
+            lines.append(f"  Context: {context}")
+        for label, field in (("Problem", "problem"), ("Actions", "actions"), ("Results", "results")):
+            if project.get(field):
+                lines.append(f"  {label}: {project[field]}")
+        for label, field in (("Skills", "skills"), ("Technologies", "technologies"), ("Tags", "tags")):
+            values = project.get(field) or []
+            if values:
+                lines.append(f"  {label}: {', '.join(values)}")
+    return "\n".join(lines)
+
+
 def filter_evidence_projects(projects: list[dict[str, Any]], query: str = "", status: str = "All") -> list[dict[str, Any]]:
     """Filter evidence by title, employer, skills, technologies, tags, and status."""
     clean_query = str(query or "").strip().lower()

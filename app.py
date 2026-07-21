@@ -1189,8 +1189,13 @@ def _render_relevant_evidence_panel(
         default=current,
         format_func=lambda value: labels.get(str(value), str(value)),
         key=f"relevant_evidence_{tracker_id}",
-        help="Manual role association only. Removing a project here does not delete it.",
+        help="Manual role association only. These projects are supplied to ATS resume and cover-letter generation for this role. Removing a project here does not delete it.",
     )
+    included_titles = [labels.get(str(project_id), str(project_id)) for project_id in selected]
+    if included_titles:
+        st.caption("Evidence included in future generated materials: " + "; ".join(included_titles))
+    else:
+        st.caption("No Evidence projects will be supplied to future generated materials for this role.")
     if st.button(
         "Save Relevant Evidence",
         key=f"save_relevant_evidence_{tracker_id}",
@@ -1326,6 +1331,7 @@ def _render_role_card(
             with st.expander("Match details", expanded=False):
                 st.markdown(_match_score_html(application), unsafe_allow_html=True)
         with st.expander("Relevant Evidence", expanded=bool(application.get("evidence_project_ids"))):
+            st.caption("Choose projects here to prioritize specific accomplishments in generated resumes and cover letters; Career Intelligence filters do not control materials.")
             _render_relevant_evidence_panel(st, application, tracker_id)
 
         source_panel_open = str(
@@ -2731,6 +2737,12 @@ def _render_dashboard(st: Any) -> None:
         "when you want to update the separate static dashboard file. Restart the local "
         "app after code changes."
     )
+    st.info(
+        "Career Intelligence helps you explore patterns across experience, applications, strengths, and gaps. "
+        "Filters on this page only change what you see here; they do not control ATS resumes, cover letters, "
+        "match scores, or generated application materials. To prioritize specific accomplishments for a role, "
+        "associate projects through that role's Relevant Evidence section."
+    )
     if "dashboard_notice" in st.session_state:
         st.success(st.session_state.pop("dashboard_notice"))
 
@@ -2806,6 +2818,8 @@ def _render_dashboard(st: Any) -> None:
         st, records, "All Mode", packages, focus_records=all_records
     )
     st.caption(f"{len(records)} roles match the current filters.")
+    if not records:
+        st.info("Try clearing filters to inspect application patterns, source quality, match strengths, gaps, and next actions.")
     tracker_records = [
         record for record in records if str(record.get("id") or "") != focused_id
     ]
@@ -2888,8 +2902,8 @@ def _render_evidence_library(st: Any) -> None:
         st.error(str(error))
         return
     st.caption(
-        "Reusable career proof points that can support resumes, cover letters, "
-        "interview prep, follow-ups, and future scoring."
+        "Reusable career proof points that store projects, accomplishments, metrics, skills, technologies, and outcomes. "
+        "Attach them from a role's Relevant Evidence section to prioritize them in future resumes and cover letters."
     )
     metrics = st.columns(3)
     for column, status in zip(metrics, EVIDENCE_PROJECT_STATUSES):
