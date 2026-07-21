@@ -12,6 +12,7 @@ REQUIRED_DATA_FILES = (
     "data/skills.yml",
     "data/platforms.yml",
     "data/projects.yml",
+    "data/evidence_projects.yml",
     "data/certifications.yml",
     "data/personal_brand.yml",
 )

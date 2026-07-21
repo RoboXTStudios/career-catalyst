@@ -26,6 +26,16 @@ from scripts.application_tracker import (
     workflow_status_bucket,
 )
 from scripts.dynamic_role_intelligence import get_effective_voice_profile
+from scripts.evidence_engine import (
+    EVIDENCE_PROJECT_STATUSES,
+    EvidenceEngineError,
+    archive_evidence_project,
+    filter_evidence_projects,
+    load_evidence_projects,
+    normalize_evidence_project,
+    normalize_multivalue,
+    upsert_evidence_project,
+)
 from scripts.filename_utils import build_upload_filename, company_display_name
 from scripts.filename_utils import is_valid_role_title
 from scripts.generate_dashboard import (
@@ -592,6 +602,12 @@ def update_dashboard_role(
     ):
         if field in values:
             updates[field] = str(values.get(field) or "")
+    if "evidence_project_ids" in values:
+        updates["evidence_project_ids"] = [
+            str(project_id)
+            for project_id in values.get("evidence_project_ids", [])
+            if str(project_id).strip()
+        ]
     if "show_on_dashboard" in values:
         updates["show_on_dashboard"] = bool(values["show_on_dashboard"])
     if "source_verified" in values:
@@ -1137,6 +1153,61 @@ def _render_source_verification_panel(
         st.rerun()
 
 
+def _project_option_labels(projects: list[Dict[str, Any]]) -> Dict[str, str]:
+    """Return stable evidence project select labels keyed by project id."""
+    labels: Dict[str, str] = {}
+    for project in projects:
+        context = project.get("employer") or project.get("client") or project.get("industry")
+        suffix = f" · {context}" if context else ""
+        labels[str(project.get("id"))] = f"{project.get('title', 'Untitled evidence')}{suffix}"
+    return labels
+
+
+def _render_relevant_evidence_panel(
+    st: Any, application: Dict[str, Any], tracker_id: str
+) -> None:
+    """Attach evidence projects to a role without modifying the evidence records."""
+    try:
+        projects = load_evidence_projects(PROJECT_ROOT)
+    except EvidenceEngineError as error:
+        st.warning(f"Evidence projects could not be loaded: {error}")
+        return
+    active_projects = [project for project in projects if project.get("status") != "Archived"]
+    if not active_projects:
+        st.caption("No active evidence projects available yet.")
+        return
+    labels = _project_option_labels(active_projects)
+    options = list(labels)
+    current = [
+        str(project_id)
+        for project_id in application.get("evidence_project_ids", [])
+        if str(project_id) in labels
+    ]
+    selected = st.multiselect(
+        "Relevant Evidence",
+        options=options,
+        default=current,
+        format_func=lambda value: labels.get(str(value), str(value)),
+        key=f"relevant_evidence_{tracker_id}",
+        help="Manual role association only. Removing a project here does not delete it.",
+    )
+    if st.button(
+        "Save Relevant Evidence",
+        key=f"save_relevant_evidence_{tracker_id}",
+        use_container_width=True,
+    ):
+        update_dashboard_role(
+            tracker_id,
+            {
+                "status": get_record_status(application),
+                "evidence_project_ids": list(selected),
+            },
+            PROJECT_ROOT,
+        )
+        st.session_state["dashboard_notice"] = "Relevant evidence updated."
+        st.rerun()
+
+
 def _render_role_card(
     st: Any,
     application: Dict[str, Any],
@@ -1254,6 +1325,8 @@ def _render_role_card(
         if match_details:
             with st.expander("Match details", expanded=False):
                 st.markdown(_match_score_html(application), unsafe_allow_html=True)
+        with st.expander("Relevant Evidence", expanded=bool(application.get("evidence_project_ids"))):
+            _render_relevant_evidence_panel(st, application, tracker_id)
 
         source_panel_open = str(
             st.session_state.get("dashboard_source_verification_role_id") or ""
@@ -2803,6 +2876,139 @@ def _render_recent_outputs(st: Any) -> None:
         )
 
 
+def _render_evidence_library(st: Any) -> None:
+    """Render the reusable project-based career evidence library."""
+    st.markdown(
+        '<h2 class="cc-section-heading">Evidence Projects</h2>',
+        unsafe_allow_html=True,
+    )
+    try:
+        projects = load_evidence_projects(PROJECT_ROOT)
+    except EvidenceEngineError as error:
+        st.error(str(error))
+        return
+    st.caption(
+        "Reusable career proof points that can support resumes, cover letters, "
+        "interview prep, follow-ups, and future scoring."
+    )
+    metrics = st.columns(3)
+    for column, status in zip(metrics, EVIDENCE_PROJECT_STATUSES):
+        column.metric(status, sum(1 for project in projects if project.get("status") == status))
+
+    search_columns = st.columns((3, 1))
+    query = search_columns[0].text_input(
+        "Search title, employer, skill, technology, tag, or status",
+        key="evidence_search",
+    )
+    status = search_columns[1].selectbox(
+        "Status",
+        ("All",) + EVIDENCE_PROJECT_STATUSES,
+        key="evidence_status_filter",
+    )
+    filtered = filter_evidence_projects(projects, query=query, status=status)
+    st.caption(f"{len(filtered)} evidence project(s) match.")
+
+    with st.expander("Create or edit evidence project", expanded=False):
+        labels = _project_option_labels(projects)
+        edit_options = ["__new__"] + list(labels)
+        selected_id = st.selectbox(
+            "Project",
+            edit_options,
+            format_func=lambda value: "New project" if value == "__new__" else labels.get(value, value),
+            key="evidence_edit_project",
+        )
+        existing = next((project for project in projects if project.get("id") == selected_id), {})
+        title = st.text_input("Project title *", value=str(existing.get("title") or ""), key=f"evidence_title_{selected_id}")
+        context_cols = st.columns(3)
+        employer = context_cols[0].text_input("Employer or organization", value=str(existing.get("employer") or ""), key=f"evidence_employer_{selected_id}")
+        client = context_cols[1].text_input("Client or business unit", value=str(existing.get("client") or existing.get("business_unit") or ""), key=f"evidence_client_{selected_id}")
+        timeframe = context_cols[2].text_input("Start date/timeframe or duration", value=str(existing.get("timeframe") or existing.get("duration") or ""), key=f"evidence_timeframe_{selected_id}")
+        taxonomy_cols = st.columns(4)
+        industry = taxonomy_cols[0].text_input("Industry", value=str(existing.get("industry") or ""), key=f"evidence_industry_{selected_id}")
+        function = taxonomy_cols[1].text_input("Function", value=str(existing.get("function") or ""), key=f"evidence_function_{selected_id}")
+        project_type = taxonomy_cols[2].text_input("Project type", value=str(existing.get("project_type") or ""), key=f"evidence_type_{selected_id}")
+        current_status = str(existing.get("status") or "Active")
+        if current_status not in EVIDENCE_PROJECT_STATUSES:
+            current_status = "Active"
+        project_status = taxonomy_cols[3].selectbox(
+            "Status",
+            EVIDENCE_PROJECT_STATUSES,
+            index=EVIDENCE_PROJECT_STATUSES.index(current_status),
+            key=f"evidence_status_{selected_id}",
+        )
+        problem = st.text_area("Problem *", value=str(existing.get("problem") or ""), key=f"evidence_problem_{selected_id}", height=110)
+        actions = st.text_area("Actions *", value=str(existing.get("actions") or ""), key=f"evidence_actions_{selected_id}", height=110)
+        results = st.text_area("Results *", value=str(existing.get("results") or ""), key=f"evidence_results_{selected_id}", height=110)
+        list_cols = st.columns(3)
+        skills = list_cols[0].text_area("Skills (comma or newline separated)", value=", ".join(existing.get("skills", [])), key=f"evidence_skills_{selected_id}")
+        technologies = list_cols[1].text_area("Technologies/platforms", value=", ".join(existing.get("technologies", [])), key=f"evidence_tech_{selected_id}")
+        tags = list_cols[2].text_area("Tags", value=", ".join(existing.get("tags", [])), key=f"evidence_tags_{selected_id}")
+        links = st.text_area("Supporting evidence or links", value="\\n".join(existing.get("links") or existing.get("supporting_evidence") or []), key=f"evidence_links_{selected_id}")
+        notes = st.text_area("Notes", value=str(existing.get("notes") or ""), key=f"evidence_notes_{selected_id}")
+        required_missing = not (title.strip() and problem.strip() and actions.strip() and results.strip())
+        if st.button("Save evidence project", type="primary", disabled=required_missing, use_container_width=True):
+            payload = normalize_evidence_project(
+                {
+                    **existing,
+                    "title": title,
+                    "employer": employer,
+                    "client": client,
+                    "business_unit": client,
+                    "timeframe": timeframe,
+                    "industry": industry,
+                    "function": function,
+                    "project_type": project_type,
+                    "problem": problem,
+                    "actions": actions,
+                    "results": results,
+                    "skills": normalize_multivalue(skills),
+                    "technologies": normalize_multivalue(technologies),
+                    "tags": normalize_multivalue(tags),
+                    "links": normalize_multivalue(links),
+                    "supporting_evidence": normalize_multivalue(links),
+                    "notes": notes,
+                    "status": project_status,
+                }
+            )
+            try:
+                upsert_evidence_project(payload, PROJECT_ROOT)
+            except EvidenceEngineError as error:
+                st.error(str(error))
+            else:
+                st.success("Evidence project saved.")
+                st.rerun()
+        if required_missing:
+            st.caption("Required: Project title, Problem, Actions, and Results.")
+
+    for project in filtered:
+        with st.container(border=True):
+            heading, action = st.columns((5, 1))
+            heading.markdown(f"### {html.escape(str(project.get('title') or 'Untitled evidence'))}")
+            action.markdown(f"**{project.get('status', 'Active')}**")
+            context = " · ".join(
+                str(project.get(field))
+                for field in ("employer", "client", "industry", "function", "project_type")
+                if project.get(field)
+            )
+            if context:
+                st.caption(context)
+            st.markdown(f"**Problem**  \n{html.escape(str(project.get('problem') or ''))}")
+            st.markdown(f"**Actions**  \n{html.escape(str(project.get('actions') or ''))}")
+            st.markdown(f"**Results**  \n{html.escape(str(project.get('results') or ''))}")
+            for label, field in (("Skills", "skills"), ("Technologies", "technologies"), ("Tags", "tags"), ("Supporting links", "links")):
+                values = project.get(field) or []
+                if values:
+                    st.caption(f"{label}: {', '.join(str(value) for value in values)}")
+            if project.get("status") != "Archived" and st.button(
+                "Archive project",
+                key=f"archive_evidence_{project.get('id')}",
+                use_container_width=True,
+            ):
+                archive_evidence_project(str(project.get("id")), PROJECT_ROOT)
+                st.success("Evidence project archived.")
+                st.rerun()
+
+
 def main() -> None:
     """Render the local application; importing this module has no Streamlit side effects."""
     import streamlit as st
@@ -2818,9 +3024,10 @@ def main() -> None:
         f'<p class="cc-description">{html.escape(UI_DESCRIPTION)}</p>',
         unsafe_allow_html=True,
     )
-    dashboard_tab, add_tab, generate_tab, followup_tab, status_tab, outputs_tab = st.tabs(
+    dashboard_tab, evidence_tab, add_tab, generate_tab, followup_tab, status_tab, outputs_tab = st.tabs(
         (
             "Dashboard",
+            "Evidence",
             "Add Prospect",
             "Generate Package",
             "Follow-Up",
@@ -2830,6 +3037,8 @@ def main() -> None:
     )
     with dashboard_tab:
         _render_dashboard(st)
+    with evidence_tab:
+        _render_evidence_library(st)
     with add_tab:
         _render_add_prospect(st)
     with generate_tab:
