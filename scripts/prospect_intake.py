@@ -218,6 +218,8 @@ def _field_warnings(
 def create_prospect(
     job_data: Dict[str, Any],
     project_root: Optional[PathInput] = None,
+    *,
+    run_match_analysis: bool = True,
 ) -> Dict[str, Any]:
     """Create a clean job file and add or update its tracker entry."""
     root = Path(project_root) if project_root is not None else Path.cwd()
@@ -335,7 +337,11 @@ def create_prospect(
         source_url=official_url,
     )
     freshness = detect_job_freshness(markdown)
-    match_report = _source_adjusted_match_report(score_job_match(job_path, root), verification)
+    match_report = (
+        _source_adjusted_match_report(score_job_match(job_path, root), verification)
+        if run_match_analysis
+        else {}
+    )
     field_warnings = _field_warnings(normalized, verification, intelligence)
     next_action = _merge_next_action(job_data.get("next_action"), verification)
 

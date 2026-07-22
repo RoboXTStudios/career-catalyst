@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union, List
 
 try:
     from .application_tracker import (
@@ -158,6 +158,72 @@ def _selected_tracker_record(
         )
     return dict(matches[0])
 
+
+
+def preflight_package_generation(
+    prospect_id: str,
+    tracker: Any,
+    project_root: Optional[PathInput] = None,
+) -> Dict[str, Any]:
+    """Return deterministic material identity conflicts before expensive generation."""
+    application = _selected_tracker_record(prospect_id, tracker)
+    current_id = str(application.get("id") or prospect_id)
+    current_slug = str(application.get("stable_slug") or current_id)
+    paths = dict(application.get("material_paths") or {})
+    manifest = application.get("package_manifest")
+    if isinstance(manifest, dict):
+        manifest_prospect_id = str(manifest.get("prospect_id") or "")
+        if manifest_prospect_id and manifest_prospect_id != current_id:
+            return {
+                "status": "conflict",
+                "conflicts": [{
+                    "material_type": "Package manifest",
+                    "current_prospect_id": current_id,
+                    "conflicting_prospect_id": manifest_prospect_id,
+                    "conflicting_company": str(manifest.get("company") or ""),
+                    "conflicting_role": str(manifest.get("role") or ""),
+                    "path": str(manifest.get("manifest_path") or ""),
+                    "reason": "stored package manifest belongs to a different prospect",
+                }],
+            }
+        paths.update(dict(manifest.get("materials") or {}))
+    owners: Dict[str, Dict[str, Any]] = {}
+    for record in tracker or []:
+        rid = str(record.get("id") or "")
+        if not rid or rid == current_id:
+            continue
+        for value in dict(record.get("material_paths") or {}).values():
+            if value:
+                owners[str(Path(str(value)).expanduser())] = record
+    conflicts: List[Dict[str, Any]] = []
+    for label, value in paths.items():
+        if not value or str(label) == "Job Description":
+            continue
+        path_text = str(Path(str(value)).expanduser())
+        owner = owners.get(path_text)
+        if owner is not None:
+            conflicts.append({
+                "material_type": str(label),
+                "current_prospect_id": current_id,
+                "conflicting_prospect_id": str(owner.get("id") or ""),
+                "conflicting_company": str(owner.get("company") or ""),
+                "conflicting_role": str(owner.get("role") or ""),
+                "path": str(value),
+                "reason": "material path is already associated with a different prospect",
+            })
+            continue
+        normalized_path = path_text.replace("\\", "/")
+        if "/exports/" in normalized_path and current_slug not in normalized_path:
+            conflicts.append({
+                "material_type": str(label),
+                "current_prospect_id": current_id,
+                "conflicting_prospect_id": "",
+                "conflicting_company": "",
+                "conflicting_role": "",
+                "path": str(value),
+                "reason": "material path is outside the selected role package",
+            })
+    return {"status": "conflict", "conflicts": conflicts} if conflicts else {"status": "ok", "conflicts": []}
 
 def build_package_context(
     prospect_id: str,
@@ -314,13 +380,35 @@ def generate_package(
     project_root: Optional[PathInput] = None,
     generate_followups_too: Optional[bool] = None,
     override_closed: bool = False,
+    force_clean_draft: bool = False,
 ) -> Dict[str, Any]:
     """Generate all package materials and apply the safe Drafted-to-Reviewed transition."""
     root = Path(project_root) if project_root is not None else Path.cwd()
     try:
         resolved = resolve_job_reference(job_file_or_tracker_id, root)
         selected_id = str(resolved["application"].get("id") or "")
-        context = build_package_context(selected_id, load_application_tracker(root), root)
+        tracker = load_application_tracker(root)
+        if not force_clean_draft:
+            preflight = preflight_package_generation(selected_id, tracker, root)
+            if preflight.get("status") == "conflict":
+                conflict = (preflight.get("conflicts") or [{}])[0]
+                material_key = {
+                    "Tailored Resume": "resume_markdown",
+                    "ATS Resume": "ats_docx",
+                    "Cover Letter": "cover_letter",
+                    "Recruiter Message": "recruiter_message",
+                    "Hiring Manager Message": "hiring_manager_message",
+                    "Application Note": "application_note",
+                }.get(str(conflict.get("material_type") or ""), "resume_markdown")
+                checklist = validate_package_outputs({}, {material_key: "Blocked: package role mismatch"})
+                role = str(resolved["application"].get("role") or "this role")
+                company = company_display_name(resolved["application"].get("company"))
+                raise PackageGenerationError(
+                    f"Career Catalyst found a {str(conflict.get('material_type') or 'material').lower()} associated with a different opportunity. It was not reused. Generate a clean new draft for {role} at {company} or review the conflicting material.",
+                    checklist=checklist,
+                    details={"recovery": True, "conflicts": preflight.get("conflicts") or []},
+                )
+        context = build_package_context(selected_id, tracker, root)
         job_path = Path(context["job_path"])
         application = context["application"]
         job_reference = str(context["job_reference"])

@@ -86,6 +86,7 @@ except (AttributeError, ImportError):
 from scripts.package_generator import (
     PackageGenerationError,
     generate_package,
+    preflight_package_generation,
     resolve_job_reference,
 )
 from scripts.parse_job import extract_metadata, parse_job_description, salary_parsing_warning
@@ -2250,7 +2251,11 @@ def _render_add_prospect(st: Any) -> None:
 
     try:
         with st.spinner("Saving prospect…"):
-            intake = create_prospect(build_prospect_payload(values), PROJECT_ROOT)
+            intake = create_prospect(
+                build_prospect_payload(values),
+                PROJECT_ROOT,
+                run_match_analysis=generate_clicked,
+            )
             if generate_clicked:
                 package = generate_package(intake["tracker_id"], PROJECT_ROOT)
                 st.session_state["package_preview_prospect_id"] = intake["tracker_id"]
@@ -2259,10 +2264,8 @@ def _render_add_prospect(st: Any) -> None:
                 focus_dashboard_role(st.session_state, intake["tracker_id"])
                 st.session_state["dashboard_materials_role_id"] = intake["tracker_id"]
             else:
-                dashboard = generate_dashboard(PROJECT_ROOT)
                 st.session_state["last_package_outputs"] = {
                     "job_file": intake["job_file_path"],
-                    "dashboard": dashboard["output_path"],
                 }
     except (ProspectIntakeError, PackageGenerationError, TrackerValidationError) as error:
         st.error(str(error))
@@ -2342,6 +2345,66 @@ def detected_application_voice(
     return intelligence
 
 
+
+def _package_recovery_key(tracker_id: str) -> str:
+    return f"package_recovery_{tracker_id}"
+
+
+def _render_package_recovery(st: Any, tracker_id: str, application: Dict[str, Any]) -> None:
+    state = st.session_state.get(_package_recovery_key(tracker_id))
+    if not state:
+        return
+    conflicts = state.get("conflicts") or []
+    conflict = conflicts[0] if conflicts else {}
+    material_type = str(conflict.get("material_type") or "material")
+    current = f"{application.get('role')} at {application.get('company')}"
+    other = ""
+    if conflict.get("conflicting_role") or conflict.get("conflicting_company"):
+        other = (
+            f" Associated role: {conflict.get('conflicting_role') or 'unknown role'} "
+            f"at {conflict.get('conflicting_company') or 'unknown company'}."
+        )
+    st.warning(
+        f"Career Catalyst found a {material_type.lower()} associated with a different opportunity. "
+        f"It was not reused or changed. Generate a clean draft for {current} "
+        f"or review the conflicting material." + other
+    )
+    col1, col2, col3 = st.columns(3)
+    if col1.button("Generate a clean new draft", key=f"clean_draft_{tracker_id}"):
+        try:
+            with st.spinner("Generating a clean role-scoped package…"):
+                result = generate_package(
+                    tracker_id,
+                    PROJECT_ROOT,
+                    generate_followups_too=st.session_state.get(
+                        f"package_followups_{tracker_id}", False
+                    ),
+                    force_clean_draft=True,
+                )
+        except PackageGenerationError as error:
+            st.error(str(error))
+        else:
+            st.session_state.pop(_package_recovery_key(tracker_id), None)
+            st.session_state["last_package_outputs"] = result["outputs"]
+            st.session_state["last_package_result"] = result
+            st.session_state["package_preview_prospect_id"] = tracker_id
+            st.success(
+                f"Generated clean package for {result['job_title']} at {result['company']}."
+            )
+            _render_package_summary(st, result)
+    if col2.button("View conflicting material", key=f"view_conflict_{tracker_id}"):
+        path = conflict.get("path")
+        if path:
+            _show_open_button(
+                st, "Open conflicting material", Path(path), f"open_conflict_{tracker_id}"
+            )
+            st.caption(str(path))
+        else:
+            st.info("No material path is available for this conflict.")
+    if col3.button("Cancel", key=f"cancel_recovery_{tracker_id}"):
+        st.session_state.pop(_package_recovery_key(tracker_id), None)
+        st.info("Generation cancelled. No materials were changed.")
+
 def _render_generate_package(st: Any) -> None:
     st.markdown(
         '<h2 class="cc-section-heading">Generate Application Package</h2>',
@@ -2379,7 +2442,15 @@ def _render_generate_package(st: Any) -> None:
             value=False,
             key=f"package_closed_override_{tracker_id}",
         )
+    _render_package_recovery(st, tracker_id, application)
     if st.button("Generate Package", type="primary"):
+        preflight = preflight_package_generation(tracker_id, applications, PROJECT_ROOT)
+        if preflight.get("status") == "conflict":
+            st.session_state[_package_recovery_key(tracker_id)] = {
+                "conflicts": preflight.get("conflicts") or []
+            }
+            _render_package_recovery(st, tracker_id, application)
+            return
         try:
             with st.spinner("Generating resumes, messages, strategy pack, and dashboard…"):
                 result = generate_package(
@@ -2389,8 +2460,13 @@ def _render_generate_package(st: Any) -> None:
                     override_closed=override_closed,
                 )
         except PackageGenerationError as error:
+            if error.details and error.details.get("recovery"):
+                st.session_state[_package_recovery_key(tracker_id)] = {
+                    "conflicts": error.details.get("conflicts") or []
+                }
+                _render_package_recovery(st, tracker_id, application)
+                return
             st.error(str(error))
-            st.info("Safe recovery: generate a clean new draft for this role, view the conflicting material in the materials library, or cancel without changes. Career Catalyst will not overwrite the conflicting draft automatically.")
             if error.details:
                 st.caption("Conflict details: " + ", ".join(str(v) for v in error.details.get("violations", [])))
             if error.checklist:
