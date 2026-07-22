@@ -216,7 +216,7 @@ def build_package_context(
         selected_package_paths = dict(manifest.get("materials") or {})
     else:
         selected_package_paths = dict(application.get("material_paths") or {})
-    return {
+    context = {
         "prospect_id": str(application.get("id") or prospect_id),
         "slug": str(application.get("stable_slug") or application.get("id") or prospect_id),
         "application": application,
@@ -229,10 +229,13 @@ def build_package_context(
         "source_url": source_url,
         "job_description": job_description,
         "role_intelligence": intelligence,
-        "match_report": score_job_match(job_reference, root),
         "selected_package_paths": selected_package_paths,
         "associated_evidence_projects": evidence_projects_for_role(application, root),
     }
+    context["match_report"] = score_job_match(
+        job_reference, root, context["associated_evidence_projects"]
+    )
+    return context
 
 
 def resolve_job_reference(
@@ -497,8 +500,13 @@ def generate_package(
         }.get(error.material_type, "cover_letter")
         blocked_reason = "Blocked: package context mismatch"
         checklist = validate_package_outputs({}, {material_key: blocked_reason})
+        recovery_message = (
+            f"Career Catalyst found a {error.material_type.replace('_', ' ').lower()} associated with a different opportunity. "
+            f"It was not reused. Generate a clean new draft for {parsed.get('job_title') or application.get('role')} "
+            f"at {context['company']} or review the conflicting material."
+        )
         raise PackageGenerationError(
-            str(error),
+            recovery_message,
             checklist=checklist,
             details={
                 "material_type": error.material_type,
