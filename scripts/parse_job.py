@@ -133,7 +133,8 @@ QUALIFICATION_TERMS = (
 NON_SALARY_MONEY_TERMS = (
     "budget", "media spend", "ad spend", "managed spend", "spend", "revenue",
     "pipeline", "billings", "investment", "portfolio", "p&l", "profit", "loss",
-    "sales target", "quota",
+    "sales target", "quota", "equity value", "equity valued", "stock grant",
+    "bonus", "commission", "job id",
 )
 
 PathInput = Union[str, Path]
@@ -241,26 +242,164 @@ def _extract_labeled_value(text: str, labels: Iterable[str]) -> Optional[str]:
     return None
 
 
-def _extract_salary(text: str) -> Optional[str]:
-    labeled_salary = _extract_labeled_value(text, METADATA_LABELS["salary_range"])
-    if labeled_salary and not salary_parsing_warning(labeled_salary):
-        return labeled_salary
+_COMP_AMOUNT = r"(?P<{name}_currency>\$|USD\s*)?\s*(?P<{name}_number>\d{{1,3}}(?:,\d{{3}})*(?:\.\d+)?)\s*(?P<{name}_suffix>[kK]?)"
+_COMP_LABEL = r"(?:base\s+salary|annual\s+salary|salary\s+range|salary|base\s+pay|compensation(?:\s+range)?|pay\s+range)"
+_COMP_PERIOD = r"(?:per\s+(?:year|annum|hour)|annually|yearly|hourly|/\s*(?:year|yr|hour|hr)|an\s+hour)"
 
-    amount = r"\$\s*(?:\d{1,3}(?:,\d{3})+|\d{2,3}(?:\.\d+)?\s*[kK])"
-    trailing_range_amount = r"(?:\$\s*)?(?:\d{1,3}(?:,\d{3})+|\d{2,3}(?:\.\d+)?\s*[kK])"
-    patterns = (
-        rf"{amount}\s*(?:-|–|—|to)\s*{trailing_range_amount}(?:\s*(?:USD|per\s+year|annually|/year|a\s+year))?",
-        r"\$\s*\d{1,3}(?:\.\d+)?\s*(?:/\s*(?:hr|hour)|per\s+hour|hourly|an\s+hour)",
-        rf"{amount}\s*(?:USD|per\s+year|annually|/year|a\s+year)",
+
+def _comp_amount(match: re.Match[str], name: str) -> Optional[float]:
+    raw = match.group(f"{name}_number")
+    if not raw:
+        return None
+    value = float(raw.replace(",", ""))
+    if match.group(f"{name}_suffix"):
+        value *= 1000
+    return value
+
+
+def _comp_display_amount(value: Optional[float], period: str) -> str:
+    if value is None:
+        return ""
+    if period == "hour":
+        return f"${value:,.2f}"
+    return f"${value:,.0f}"
+
+
+def empty_compensation(raw: Any = "", source: str = "description", manual_override: bool = False) -> Dict[str, Any]:
+    """Return the stable empty compensation shape used throughout intake and scoring."""
+    return {
+        "minimum": None,
+        "maximum": None,
+        "currency": "USD" if "$" in str(raw or "") else None,
+        "period": None,
+        "raw": str(raw or "").strip(),
+        "display": str(raw or "").strip() if manual_override else "",
+        "source": source,
+        "manual_override": bool(manual_override),
+        "detected": bool(str(raw or "").strip()) if manual_override else False,
+        "needs_review": bool(str(raw or "").strip()) if manual_override else False,
+    }
+
+
+def normalize_compensation(
+    value: Any,
+    *,
+    source: str = "description",
+    manual_override: bool = False,
+) -> Dict[str, Any]:
+    """Parse one deterministic compensation result without AI or network work."""
+    if isinstance(value, dict):
+        raw_value = value.get("raw") or value.get("display") or ""
+        source = str(value.get("source") or source)
+        manual_override = bool(value.get("manual_override", manual_override))
+        if value.get("detected") and (value.get("minimum") is not None or value.get("maximum") is not None):
+            result = empty_compensation(raw_value, source, manual_override)
+            result.update(value)
+            return result
+        value = raw_value
+
+    text = re.sub(r"\s+", " ", str(value or "")).strip()
+    if not text:
+        return empty_compensation("", source, manual_override)
+
+    amount = _COMP_AMOUNT
+    range_pattern = re.compile(
+        rf"(?:(?P<label>{_COMP_LABEL})\s*[:\-]?\s*)?"
+        rf"{amount.format(name='min')}\s*(?:-|–|—|−|to)\s*"
+        rf"{amount.format(name='max')}(?:\s*(?P<period>{_COMP_PERIOD}|USD))?",
+        re.I,
     )
-    for pattern in patterns:
-        for match in re.finditer(pattern, text, flags=re.IGNORECASE):
-            start, end = match.span()
-            context = text[max(0, start - 60) : min(len(text), end + 60)]
-            if salary_parsing_warning(context):
+    bound_pattern = re.compile(
+        rf"(?P<bound>minimum|min(?:imum)?|starting(?:\s+salary)?|starts?\s+at|from|at\s+least|"
+        rf"maximum|max(?:imum)?|up\s+to|no\s+more\s+than)"
+        rf"(?:\s+(?:base\s+)?(?:salary|pay|compensation))?\s*(?:is|of)?\s*[:\-]?\s*"
+        rf"{amount.format(name='value')}(?:\s*(?P<period>{_COMP_PERIOD}))?",
+        re.I,
+    )
+    labeled_single_pattern = re.compile(
+        rf"(?P<label>{_COMP_LABEL})\s*[:\-]?\s*{amount.format(name='value')}"
+        rf"(?:\s*(?P<period>{_COMP_PERIOD}|USD))?",
+        re.I,
+    )
+    period_single_pattern = re.compile(
+        rf"{amount.format(name='value')}\s*(?P<period>{_COMP_PERIOD})",
+        re.I,
+    )
+
+    match: Optional[re.Match[str]] = None
+    kind = ""
+    for candidate_kind, pattern in (
+        ("range", range_pattern),
+        ("bound", bound_pattern),
+        ("single", labeled_single_pattern),
+        ("single", period_single_pattern),
+    ):
+        for candidate in pattern.finditer(text):
+            context = text[max(0, candidate.start() - 55) : min(len(text), candidate.end() + 55)]
+            has_salary_label = bool(re.search(_COMP_LABEL, context, re.I))
+            if salary_parsing_warning(context) and not has_salary_label:
                 continue
-            return match.group(0).strip()
-    return None
+            match, kind = candidate, candidate_kind
+            break
+        if match:
+            break
+
+    if not match:
+        return empty_compensation(text, "manual" if manual_override else source, manual_override)
+
+    if kind == "range":
+        minimum = _comp_amount(match, "min")
+        maximum = _comp_amount(match, "max")
+    else:
+        number = _comp_amount(match, "value")
+        bound = str(match.groupdict().get("bound") or "").lower()
+        minimum = None if bound.startswith(("max", "up to", "no more")) else number
+        maximum = number if bound.startswith(("max", "up to", "no more")) else None
+
+    period_text = str(match.groupdict().get("period") or "").lower()
+    period = "hour" if re.search(r"hour|hr", period_text) else "year"
+    values = [number for number in (minimum, maximum) if number is not None]
+    valid = bool(values) and all(
+        (10 <= number <= 1000) if period == "hour" else (20000 <= number <= 2_000_000)
+        for number in values
+    )
+    if not valid:
+        return empty_compensation(text, "manual" if manual_override else source, manual_override)
+
+    if minimum is not None and maximum is not None:
+        display = f"{_comp_display_amount(minimum, period)} – {_comp_display_amount(maximum, period)}"
+    elif minimum is not None:
+        display = f"From {_comp_display_amount(minimum, period)}"
+    else:
+        display = f"Up to {_comp_display_amount(maximum, period)}"
+    display += " per hour" if period == "hour" else " per year"
+    raw = match.group(0).strip()
+    return {
+        "minimum": minimum,
+        "maximum": maximum,
+        "currency": "USD",
+        "period": period,
+        "raw": raw,
+        "display": text if manual_override else display,
+        "source": "manual" if manual_override else source,
+        "manual_override": bool(manual_override),
+        "detected": True,
+        "needs_review": bool(manual_override and text != display),
+    }
+
+
+def _extract_compensation(text: str) -> Dict[str, Any]:
+    labeled_salary = _extract_labeled_value(text, METADATA_LABELS["salary_range"])
+    if labeled_salary:
+        labeled = normalize_compensation(labeled_salary, source="labeled_description")
+        if labeled["detected"]:
+            return labeled
+    return normalize_compensation(text, source="description")
+
+
+def _extract_salary(text: str) -> Optional[str]:
+    compensation = _extract_compensation(text)
+    return str(compensation.get("raw") or "") or None if compensation.get("detected") else None
 
 
 def salary_parsing_warning(text: Any) -> bool:
@@ -349,14 +488,16 @@ def _extract_job_title(text: str) -> Optional[str]:
     return None
 
 
-def extract_metadata(text: str) -> Dict[str, Optional[str]]:
+def extract_metadata(text: str) -> Dict[str, Any]:
     """Extract basic job metadata when available."""
+    compensation = _extract_compensation(text)
     metadata = {
         "job_title": _extract_job_title(text),
         "company": _extract_labeled_value(text, METADATA_LABELS["company"]),
         "location": _extract_location(text),
         "work_arrangement": _extract_work_arrangement(text),
-        "salary_range": _extract_salary(text),
+        "salary_range": (compensation.get("raw") or None) if compensation.get("detected") else None,
+        "compensation": compensation,
         "employment_type": _extract_employment_type(text),
         "source_url": _extract_source_url(text),
         "posting_date": _extract_labeled_value(text, METADATA_LABELS["posting_date"]),
@@ -481,6 +622,7 @@ def parse_job_description(file_path: PathInput) -> Dict[str, Any]:
         ),
         "location": metadata["location"],
         "salary_range": metadata["salary_range"],
+        "compensation": metadata["compensation"],
         "employment_type": metadata["employment_type"],
         "source_url": metadata["source_url"],
         "posting_date": metadata["posting_date"],

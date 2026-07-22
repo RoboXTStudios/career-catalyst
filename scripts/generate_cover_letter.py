@@ -13,7 +13,7 @@ try:
     from .company_voice import company_voice_context
     from .evidence_engine import evidence_generation_context, load_evidence_cards, load_writing_voice_profile, select_evidence_cards
     from .filename_utils import build_upload_filename, company_display_name
-    from .load_data import load_all_yaml
+    from .resume_foundation import load_resume_foundation
     from .parse_job import parse_job_description
     from .package_context import validate_material_context
     from .role_context import (
@@ -31,7 +31,7 @@ except ImportError:
     from company_voice import company_voice_context
     from evidence_engine import evidence_generation_context, load_evidence_cards, load_writing_voice_profile, select_evidence_cards
     from filename_utils import build_upload_filename, company_display_name
-    from load_data import load_all_yaml
+    from resume_foundation import load_resume_foundation
     from parse_job import parse_job_description
     from package_context import validate_material_context
     from role_context import google_claim_violations, is_google_youtube_role
@@ -62,7 +62,7 @@ def load_generation_context(
     if not resolved_job_path.is_absolute():
         resolved_job_path = root / resolved_job_path
 
-    career_data = load_all_yaml(root)
+    career_data = load_resume_foundation(root)
     parsed_job = parse_job_description(resolved_job_path)
     voice_context = company_voice_context(
         parsed_job,

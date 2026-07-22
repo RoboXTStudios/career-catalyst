@@ -6,7 +6,7 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 try:
     from .filename_utils import build_upload_filename
-    from .load_data import load_all_yaml
+    from .resume_foundation import load_resume_foundation
     from .evidence_engine import evidence_generation_context, load_writing_voice_profile
     from .parse_job import parse_job_description
     from .package_context import validate_material_context
@@ -20,7 +20,7 @@ try:
     from .text_cleanup import cleanup_repeated_words
 except ImportError:
     from filename_utils import build_upload_filename
-    from load_data import load_all_yaml
+    from resume_foundation import load_resume_foundation
     from evidence_engine import evidence_generation_context, load_writing_voice_profile
     from parse_job import parse_job_description
     from package_context import validate_material_context
@@ -579,7 +579,7 @@ def tailor_resume(
         raise ResumeTailoringError(f"Unknown resume profile '{resume_profile}'. Valid profiles: {valid}")
 
     root = Path(project_root) if project_root is not None else Path.cwd()
-    career_data = load_all_yaml(root)
+    career_data = load_resume_foundation(root)
     associated_evidence_projects = associated_evidence_projects or []
     verified_evidence_context = evidence_generation_context(associated_evidence_projects)
     parsed_job = parse_job_description(root / job_path)

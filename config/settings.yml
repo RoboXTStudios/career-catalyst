@@ -30,3 +30,18 @@ paths:
   jobs: jobs
   templates: templates
   exports: exports
+
+canonical_resume_foundation:
+  name: Career Catalyst structured career dataset
+  kind: structured_yaml
+  baseline_files:
+    - data/positions.yml
+    - data/achievements.yml
+    - data/skills.yml
+    - data/platforms.yml
+    - data/projects.yml
+    - data/certifications.yml
+    - data/personal_brand.yml
+  supplemental_evidence_source: data/evidence_projects.yml
+  last_updated: '2026-06-29'
+  last_verified: '2026-07-22'
