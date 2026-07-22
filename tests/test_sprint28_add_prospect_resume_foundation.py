@@ -291,4 +291,4 @@ def test_role_scoped_evidence_does_not_become_foundation():
         [],
     )
     assert "Unrelated Role Evidence" not in baseline
-    assert "CampaignOS" in baseline
+    assert "## Selected Projects" not in baseline

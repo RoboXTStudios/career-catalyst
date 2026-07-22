@@ -114,6 +114,7 @@ SOURCE_REGISTRY = (
     _source("ashby", "Ashby", ("ashbyhq.com",), "Employer ATS", 1, "Verified Company Source", False),
     _source("smartrecruiters", "SmartRecruiters", ("smartrecruiters.com",), "Employer ATS", 1, "Verified Company Source", False),
     _source("icims", "iCIMS", ("icims.com",), "Employer ATS", 1, "Verified Company Source", False),
+    _source("jobvite", "Jobvite", ("jobvite.com",), "Employer ATS", 1, "Verified Company Source", False),
     _source("oracle_taleo", "Oracle Cloud / Taleo", ("oraclecloud.com", "taleo.net"), "Employer ATS", 1, "Verified Company Source", False),
     _source(
         "digitalhire", "DigitalHire", ("digitalhire.com",), "Employer ATS", 2,
@@ -122,6 +123,7 @@ SOURCE_REGISTRY = (
     ),
     _source("careerhound", "CareerHound.io", ("careerhound.io",), "Direct Company Discovery", 2, "Verified Company Source", False),
     _source("getwork", "Getwork", ("getwork.com",), "Direct Company Discovery", 2, "Verified Company Source", False),
+    _source("linkedin", "LinkedIn", ("linkedin.com",), "Gated Source", 3, "Unknown Source", True, True, "Only publicly accessible job details can be imported; authentication and anti-bot controls are never bypassed."),
     _source("entertainment_careers", "EntertainmentCareers.net", ("entertainmentcareers.net", "entertainmentcareers.com"), "Entertainment Job Board", 2, "Industry Job Board", False),
     _source("showbizjobs", "ShowbizJobs", ("showbizjobs.com",), "Entertainment Job Board", 2, "Industry Job Board", False),
     _source("mbw_jobs", "Music Business Worldwide Jobs", ("musicbusinessworldwide.com",), "Music Industry Job Board", 2, "Industry Job Board", False),

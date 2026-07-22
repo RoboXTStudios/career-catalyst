@@ -30,6 +30,7 @@ paths:
   jobs: jobs
   templates: templates
   exports: exports
+  canonical_exports: repository_main/exports
 
 canonical_resume_foundation:
   name: Career Catalyst structured career dataset

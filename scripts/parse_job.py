@@ -242,7 +242,7 @@ def _extract_labeled_value(text: str, labels: Iterable[str]) -> Optional[str]:
     return None
 
 
-_COMP_AMOUNT = r"(?P<{name}_currency>\$|USD\s*)?\s*(?P<{name}_number>\d{{1,3}}(?:,\d{{3}})*(?:\.\d+)?)\s*(?P<{name}_suffix>[kK]?)"
+_COMP_AMOUNT = r"(?P<{name}_currency>(?:USD\s*)?\$|USD\s*)?\s*(?P<{name}_number>\d{{1,3}}(?:,\d{{3}})*(?:\.\d+)?)\s*(?P<{name}_suffix>[kK]?)"
 _COMP_LABEL = r"(?:base\s+salary|annual\s+salary|salary\s+range|salary|base\s+pay|compensation(?:\s+range)?|pay\s+range)"
 _COMP_PERIOD = r"(?:per\s+(?:year|annum|hour)|annually|yearly|hourly|/\s*(?:year|yr|hour|hr)|an\s+hour)"
 

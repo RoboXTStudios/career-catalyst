@@ -34,6 +34,7 @@ if __package__:
     )
     from .filename_utils import company_display_name, short_company_name, short_role_name
     from .career_signals import next_action_signal, select_todays_focus, status_date
+    from .next_steps import deterministic_next_steps, safe_user_next_action
     from .parse_job import JobParseError, parse_job_description
 else:
     from application_tracker import (
@@ -60,6 +61,7 @@ else:
     )
     from filename_utils import company_display_name, short_company_name, short_role_name
     from career_signals import next_action_signal, select_todays_focus, status_date
+    from next_steps import deterministic_next_steps, safe_user_next_action
     from parse_job import JobParseError, parse_job_description
 
 
@@ -494,7 +496,7 @@ def _record_label(record: Dict[str, Any]) -> str:
 def recommended_next_steps(
     records: Iterable[Dict[str, Any]], mode: str = "All Mode"
 ) -> List[str]:
-    """Return practical, mode-specific actions for the visible dashboard records."""
+    """Return state-safe actions; view mode may rank but cannot change eligibility."""
     values = sort_dashboard_records(records)
     empty = {
         "Apply Mode": "No strong unapplied matches found.",
@@ -505,142 +507,18 @@ def recommended_next_steps(
     }
     if not values:
         return [empty.get(mode, empty["All Mode"])]
-
-    if mode == "Apply Mode":
-        steps = []
-        ordered = sorted(
-            values,
-            key=lambda item: (
-                _verification_quality(item),
-                -(item.get("match_score") or 0),
-                -(item.get("opportunity_score") or 0),
-                normalize_tracker_value(item.get("company")),
-            ),
-        )
-        for item in ordered[:3]:
-            caution = source_verification_caution(item)
-            if item.get("verification_status") == "Aggregator Only":
-                steps.append(f"Verify on employer site before package generation: {_record_label(item)}.")
-                continue
-            if item.get("verification_status") == "Industry Board":
-                steps.append(f"Verify on employer site before generating package or applying: {_record_label(item)}.")
-                continue
-            if caution:
-                steps.append(f"{caution} {_record_label(item)}.")
-                continue
-            if not item.get("_has_package"):
-                action = "Generate package for"
-            elif get_record_status(item) == "Reviewed":
-                action = "Apply to"
-            else:
-                action = "Review and apply to"
-            steps.append(f"{action} {_record_label(item)} ({item.get('match_tier')}, {item.get('match_score', 'Not scored')}/100).")
-        return steps
-    if mode == "Follow-Up Mode":
-        priority = {"Overdue": 0, "Due now": 1, "Due soon": 2}
-        ordered = sorted(values, key=lambda item: (priority.get(str(item.get("follow_up_status")), 9), _date_ordinal(item, "follow_up") or 9999999))
-        steps = []
-        for item in ordered[:5]:
-            follow_up_state = str(item.get("follow_up_status") or "Not due yet")
-            if follow_up_state == "Follow-up sent":
-                steps.append(
-                    f"Follow-up sent: {_record_label(item)}. Monitor for a response."
-                )
-                continue
-            materials = item.get("_follow_up_materials_status")
-            material_action = (
-                "Use existing follow-up materials."
-                if materials == "Available"
-                else "Generate follow-up materials."
-                if materials == "Missing"
-                else "Follow-up materials not verified."
-            )
-            has_contact = any(
-                item.get(key)
-                for key in (
-                    "recruiter_name", "recruiter_contact", "recruiter_email",
-                    "hiring_manager_name", "hiring_manager_contact", "hiring_manager_email",
-                )
-            )
-            contact_action = (
-                "Send the recruiter or hiring manager follow-up."
-                if has_contact
-                else "Manually verify a recruiter or hiring manager contact."
-            )
-            source_action = (
-                " Verify the employer record before follow-up."
-                if item.get("verification_status") == "Aggregator Only"
-                else ""
-            )
-            steps.append(
-                f"{follow_up_state}: {_record_label(item)}. "
-                f"{material_action} {contact_action}{source_action}"
-            )
-        return steps
-    if mode == "Review Mode":
-        steps = []
-        for item in values[:5]:
-            reason = str(
-                (item.get("match_gaps") or [item.get("match_summary") or "Human judgment is needed."])[0]
-            )
-            upside = str(
-                (item.get("match_strengths") or ["Company, industry, and strategic-doorway value may justify the stretch."])[0]
-            )
-            source_context = (
-                " Direct or industry source supports review."
-                if item.get("source_trust_label") in {"Direct Employer", "Verified Company Source", "Industry Job Board"}
-                else " Verify the source before pursuing this stretch role."
-            )
-            steps.append(f"Review {_record_label(item)}: {reason} Weigh against: {upside}{source_context}")
-        return steps
-    if mode == "Cleanup Mode":
-        steps = []
-        for item in values[:5]:
-            status = get_record_status(item)
-            if status == "Pass":
-                action = "Already passed; no action needed unless you want to reopen"
-            elif _is_invalid_hidden(item):
-                action = "Hidden from active workflow"
-            elif status == "Paused":
-                action = "Review later or mark pass"
-            elif item.get("verification_status") == "Stale / Closed Risk":
-                action = "Pass unless manually verified active"
-            elif item.get("verification_status") in {"Aggregator Only", "Cannot Verify", "Not Verified"} or item.get("source_trust_label") == "Unknown Source":
-                action = "Verify manually, then hide or pass if unresolved"
-            elif item.get("match_tier") == "Pass":
-                action = "Review the pass recommendation or keep active"
-            elif str(item.get("freshness") or "").lower() in {"stale", "unknown freshness"}:
-                action = "Verify posting freshness"
-            elif not item.get("salary_range") or not item.get("source"):
-                action = "Verify missing salary/source fields"
-            else:
-                action = "Pause or manually verify"
-            steps.append(f"{action}: {_record_label(item)}.")
-        return steps
-
-    unapplied = next(
-        (
-            item
-            for item in values
-            if workflow_status_bucket(item) in {"Active", "Reviewed"}
-        ),
-        None,
-    )
-    urgent = next((item for item in values if item.get("follow_up_status") in {"Overdue", "Due now", "Due soon"}), None)
-    if urgent:
-        steps = [f"Act first on {_record_label(urgent)}; its follow-up is {urgent.get('follow_up_status').lower()}." ]
-    elif unapplied:
-        steps = [f"Act first on {_record_label(unapplied)}, the highest match not yet applied."]
-    else:
-        steps = [f"Act first on {_record_label(values[0])}, the highest-priority visible role."]
-    if unapplied:
-        steps.append(f"Highest match not yet applied: {_record_label(unapplied)} ({unapplied.get('match_score', 'Not scored')}/100).")
-    if urgent:
-        steps.append(f"Most urgent follow-up: {_record_label(urgent)} — {urgent.get('follow_up_status')}.")
-    cleanup = next((item for item in values if _needs_cleanup(item)), None)
-    if cleanup:
-        steps.append(f"Verify cleanup item: {_record_label(cleanup)}.")
-    return steps
+    steps: list[str] = []
+    for item in values[:5]:
+        actions = deterministic_next_steps(item)
+        if not actions:
+            continue
+        action = actions[0]
+        override = safe_user_next_action(item)
+        label = override or action["label"]
+        caution = source_verification_caution(item)
+        suffix = f" {caution}" if caution and action["category"] in {"complete_import", "review_fit", "generate_materials", "apply_or_archive"} else ""
+        steps.append(f"{_record_label(item)}: {label}. {action['reason']}{suffix}")
+    return steps or ["No saved role state requires action in this view."]
 
 
 def record_posting_url(record: Dict[str, Any]) -> Optional[str]:
@@ -755,33 +633,15 @@ def structured_recommended_next_steps(
     values = sort_dashboard_records(records)
     steps: List[Dict[str, Any]] = []
     for priority, record in enumerate(values[:5], start=1):
-        bucket = workflow_status_bucket(record)
-        if record.get("match_score") is None and str(
-            record.get("recommended_action") or ""
-        ).startswith("Complete Import"):
-            action_type = "complete_import"
-        elif bucket == "Pass":
-            action_type = "passed"
-        elif bucket == "Hidden / Invalid":
-            action_type = "hidden"
-        elif bucket == "Paused":
-            action_type = "review_later"
-        elif mode == "Follow-Up Mode":
-            action_type = "follow_up"
-        elif mode == "Apply Mode" and not record.get("_has_package"):
-            action_type = "generate_package"
-        elif mode == "Cleanup Mode":
-            action_type = "verify"
-        else:
-            action_type = "review"
-        recommendation = (
-            str(
-                record.get("next_action")
-                or "Paste the job description and re-score before generating package."
-            )
-            if action_type == "complete_import"
-            else recommended_next_steps([record], mode)[0]
-        )
+        allowed = deterministic_next_steps(record)
+        primary = allowed[0] if allowed else {
+            "category": "none",
+            "label": "No action today",
+            "reason": "No saved state requires action.",
+        }
+        action_type = primary["category"]
+        override = safe_user_next_action(record)
+        recommendation = f"{override or primary['label']}. {primary['reason']}"
         steps.append(
             {
                 "tracker_id": record_dashboard_reference(record),

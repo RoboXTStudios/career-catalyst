@@ -711,9 +711,9 @@ def _bandsintown_cover_letter_content(context: Dict[str, Any]) -> str:
     proof = (
         "I have also built editorial projects from scratch. As creator and managing editor of "
         "Multiverse, I developed an internal publication around creativity, culture, music, and "
-        "innovation, built a contributor framework, and reached an audience of 400+ employees. More "
-        "recently, through my Substack, I have been writing about creativity, technology, AI, music, "
-        "grief, and life after corporate leadership in a voice that is personal without losing structure. "
+        "innovation, built a contributor framework, and reached an audience of 400+ employees. Through "
+        "RoboXT Studios, I have continued developing creative, photography, editorial, and web-publishing "
+        "systems in a voice that is personal without losing structure. "
         "Those projects have strengthened my ability to write with voice, edit with care, and turn "
         "creative ideas into repeatable content systems without sanding away what makes them human."
     )
@@ -914,7 +914,7 @@ def _fieldai_cover_letter_content(context: Dict[str, Any]) -> str:
     )
     closing = (
         f"I would welcome the chance to learn where {company} sees the greatest friction across its "
-        "matrix today. I would bring a builder's mindset, comfort with ambiguity, and a practical "
+        "matrix today. I would bring a hands-on systems perspective, comfort with ambiguity, and a practical "
         "approach to organizational efficiency that connects operating cadences, data, automation, and "
         "accountable execution. I also understand that systems earn trust through use. The measures, "
         "dashboards, and routines have to help technical and business teams make faster decisions, "
@@ -983,8 +983,8 @@ def _dynamic_cover_letter_content(context: Dict[str, Any]) -> str:
             "My experience combines large-scale entertainment marketing with editorial and community "
             "work. I created and managed Multiverse, an internal publication focused on creativity, "
             "culture, innovation, music, and employee storytelling, and built a contributor framework "
-            "that reached 400+ employees. Through my Substack, I continue to develop a personal voice "
-            "across creativity, technology, AI, music, grief, and life after corporate leadership."
+            "that reached 400+ employees. Through RoboXT Studios, I continue to develop creative, "
+            "photography, editorial, and web-publishing systems with an independent builder perspective."
         )
     elif role_family in {"product_strategy_ops", "gtm_product_activation"}:
         experience = (
@@ -1018,6 +1018,19 @@ def _dynamic_cover_letter_content(context: Dict[str, Any]) -> str:
             f"For this role, I would also draw on verified project evidence such as {title}. "
             "That record captures the underlying problem, the actions I took, and the stored results, "
             "so I would use it as grounded support for relevant accomplishments without adding unsupported metrics or claims."
+        )
+    elif "career_catalyst" in selected_ids:
+        proof = (
+            "Career Catalyst is a relevant builder proof point for this work. I built the role-aware system "
+            "to translate structured requirements and career evidence into ingestion, validation, scoring, "
+            "recovery, and quality-governance workflows. I use it as evidence of iterative product operations "
+            "and practical AI-system design, without claiming scale or results beyond the working system."
+        )
+    elif "roboxt_studios" in selected_ids:
+        proof = (
+            "RoboXT Studios is a relevant independent-building proof point. I am developing the creative and "
+            "operating systems behind photography, editorial work, web publishing, and thoughtful AI-assisted "
+            "production. I describe it as an early-stage practice, not as a launched agency or scaled studio."
         )
     elif "campaignos" in selected_ids:
         proof = (

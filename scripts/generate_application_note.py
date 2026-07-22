@@ -76,8 +76,8 @@ def _profile_application_note(context: Dict[str, Any]) -> str:
             f"The {role} role at {company} stood out because it connects music, audience understanding, "
             "editorial voice, and content systems. Alongside leading entertainment marketing work, I created "
             "and managed Multiverse, an editorial publication centered on creativity, culture, music, and "
-            "innovation. Through my Substack, I continue developing a personal voice across music, creativity, "
-            "technology, and AI. I bring both creative instinct and operational discipline."
+            "innovation. Through RoboXT Studios, I continue developing creative and publishing systems across "
+            "photography, editorial work, technology, and AI. I bring both creative instinct and operational discipline."
         ),
         "crunchyroll": (
             f"The {role} role at {company} caught my attention because it connects streaming, fandom, "
@@ -130,7 +130,7 @@ def _application_note_content(context: Dict[str, Any]) -> str:
             "community_growth",
         }:
             proof = (
-                "I created and managed Multiverse, continue developing my writing through Substack, "
+                "I created and managed Multiverse, continue developing creative publishing systems through RoboXT Studios, "
                 "and bring large-scale entertainment marketing experience."
             )
         else:

@@ -93,6 +93,7 @@ from scripts.parse_job import extract_metadata, normalize_compensation, parse_jo
 from scripts.prospect_intake import ProspectIntakeError, create_prospect
 from scripts.resume_foundation import canonical_resume_foundation_info
 from scripts.score_match import score_job_data, score_job_match
+from scripts.storage_paths import canonical_export_root
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -812,18 +813,25 @@ def recent_output_files(
         "exports/followups",
         "exports/dashboard",
     ):
-        directory = project_root / relative_directory
+        directory = (
+            canonical_export_root(project_root) / relative_directory.removeprefix("exports/")
+        )
         if directory.is_dir():
             candidates.extend(path for path in directory.iterdir() if path.is_file())
     return sorted(candidates, key=lambda path: path.stat().st_mtime, reverse=True)[:limit]
 
 
 def open_local_path(path: Path, project_root: Path = PROJECT_ROOT) -> tuple[bool, str]:
-    """Open a safe project-local path through macOS Finder/default application."""
+    """Open a safe project or canonical-library path through macOS."""
     resolved = path.resolve()
     root = project_root.resolve()
-    if resolved != root and root not in resolved.parents:
-        return False, "Career Catalyst only opens paths inside this project."
+    library_root = canonical_export_root(project_root)
+    allowed = any(
+        resolved == allowed_root or allowed_root in resolved.parents
+        for allowed_root in (root, library_root)
+    )
+    if not allowed:
+        return False, "Career Catalyst only opens project files or canonical materials."
     if not resolved.exists():
         return False, f"Path does not exist: {resolved}"
     if sys.platform != "darwin":
@@ -1791,6 +1799,7 @@ def _initialize_intake_state(st: Any) -> None:
         "prospect_context_url": "",
         "prospect_original_source_url": "",
         "prospect_canonical_url": "",
+        "prospect_application_url": "",
         "prospect_job_id": "",
         "prospect_company": "",
         "prospect_role": "",
@@ -2019,19 +2028,28 @@ def apply_prospect_url_import_state(
         session_state["prospect_posting_date_manual_override"] = False
     if imported.get("source_name") or imported.get("source"):
         session_state["prospect_source"] = imported.get("source_name") or imported.get("source")
+    application_url = str(
+        imported.get("application_url") or imported.get("canonical_apply_url") or ""
+    ).strip()
+    if application_url:
+        session_state["prospect_application_url"] = application_url
+        session_state["prospect_canonical_url"] = application_url
     incomplete = bool(
         not session_state.get("prospect_company")
         or not session_state.get("prospect_role")
         or len(str(session_state.get("prospect_description") or "").strip())
         < MINIMUM_DESCRIPTION_LENGTH
     )
+    import_warnings = list(imported.get("import_warnings") or [])
     message = (
         "Imported title looked like job description text. Please confirm the role title before saving."
         if title_rejected
-        else "Import partially failed. Paste the job description below, then re-parse and re-score."
+        else "Partial import saved the available fields. Review or complete the missing details."
         if incomplete
         else "Imported the role details. Review them before saving."
     )
+    if import_warnings:
+        message = f"{message} {import_warnings[0]}"
     session_state["prospect_import_result"] = (
         "error" if title_rejected or incomplete else "success",
         message,
@@ -2221,6 +2239,11 @@ def _render_add_prospect(st: Any) -> None:
             key="prospect_priority",
         )
         st.text_input("Application/status portal URL", key="prospect_application_portal_url")
+        st.text_input(
+            "Application URL",
+            key="prospect_application_url",
+            help="The public apply destination is kept separate from the posting and status portal URLs.",
+        )
         st.selectbox("Status", VALID_STATUSES, key="prospect_status")
         st.selectbox(
             "Work arrangement",
@@ -2284,7 +2307,11 @@ def _render_add_prospect(st: Any) -> None:
         "official_url": st.session_state["prospect_url_value"],
         "source_url": st.session_state["prospect_url_value"],
         "original_source_url": st.session_state["prospect_original_source_url"],
-        "canonical_apply_url": st.session_state["prospect_canonical_url"],
+        "canonical_apply_url": (
+            st.session_state.get("prospect_application_url")
+            or st.session_state["prospect_canonical_url"]
+        ),
+        "application_url": st.session_state.get("prospect_application_url", ""),
         "job_id": st.session_state["prospect_job_id"],
         "company": st.session_state["prospect_company"],
         "job_title": st.session_state["prospect_role"],
@@ -2519,6 +2546,7 @@ def _render_generate_package(st: Any) -> None:
         '<h2 class="cc-section-heading">Generate Application Package</h2>',
         unsafe_allow_html=True,
     )
+    st.caption(f"Canonical materials location: {canonical_export_root(PROJECT_ROOT)}")
     applications = _load_applications(st)
     if not applications:
         st.info("Add a prospect first.")
@@ -2609,6 +2637,8 @@ def _render_generate_package(st: Any) -> None:
             st.success(
                 f"Generated {result['job_title']} at {result['company']} — status: {result['status']}."
             )
+            if result.get("saved_package_location"):
+                st.info(f"Saved package: {result['saved_package_location']}")
             st.metric("Match score", result.get("match_score") or "—")
             st.session_state["last_package_outputs"] = result["outputs"]
             st.session_state["last_package_result"] = result

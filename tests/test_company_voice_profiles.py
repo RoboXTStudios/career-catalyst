@@ -149,7 +149,7 @@ class CompanyVoiceProfileTests(unittest.TestCase):
         lowered = content.lower()
         self.assertIn("music", lowered)
         self.assertIn("audience connection", lowered)
-        self.assertIn("Substack", content)
+        self.assertIn("RoboXT Studios", content)
         self.assertIn("Multiverse", content)
         self.assertIn("artists, industry partners, and fans", lowered)
         self.assertNotIn("generic marketing operations", lowered)
@@ -182,7 +182,7 @@ class CompanyVoiceProfileTests(unittest.TestCase):
         ]
         for content in materials:
             self.assertIn("music", content.lower())
-            self.assertTrue("Substack" in content or "Multiverse" in content)
+            self.assertTrue("RoboXT Studios" in content or "Multiverse" in content)
 
     def test_generation_results_expose_detected_context(self):
         for profile_key, result in self.results.items():

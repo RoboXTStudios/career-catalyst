@@ -7,13 +7,22 @@ projects:
     highlights:
       - "Built schema-driven workflows, validation frameworks, and operational reporting that reduce manual effort while improving consistency, visibility, and decision-making."
       - "Applied nearly two decades of enterprise entertainment operations experience to solve recurring organizational challenges through AI, automation, and product thinking."
-  - name: Substack Writer
-    role: Writer
+  - name: Career Catalyst
+    role: Builder & Product Lead
     timeframe: 2026-Present
-    category: Editorial project
-    summary: "Publishes essays exploring creativity, technology, music, AI, grief, and life after corporate leadership through an editorial lens."
+    category: AI-enabled product operations system
+    summary: "Built a role-aware career operations system that turns structured career evidence and job requirements into traceable workflows, fit analysis, and application materials."
     highlights:
-      - "Develops personal voice and public thought leadership."
+      - "Translated evolving workflow requirements into deterministic ingestion, validation, recovery, and quality-governance controls."
+      - "Used iterative development and QA to improve a practical AI-enabled system without replacing its structured source of truth."
+  - name: RoboXT Studios
+    role: Founder & Creative Systems Builder
+    timeframe: 2026-Present
+    category: Independent creative and publishing studio
+    summary: "Developing an independent creative studio practice spanning photography, editorial systems, web publishing, and thoughtful AI-assisted production workflows."
+    highlights:
+      - "Builds the operating and audience experience behind cross-disciplinary creative work."
+      - "Represents an early-stage independent practice, not a launched agency or scaled commercial studio."
   - name: OMG23 Multiverse Newsletter
     role: Creator & Managing Editor
     timeframe: 2023-2026

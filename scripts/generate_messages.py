@@ -49,9 +49,9 @@ DYNAMIC_MESSAGE_FOCUS = {
 }
 
 DYNAMIC_MESSAGE_PROOF = {
-    "music_content_strategy": "I created Multiverse and continue developing my writing through Substack alongside entertainment marketing leadership.",
-    "editorial_content_strategy": "I created Multiverse, write through Substack, and have built the operating systems that keep high-volume work moving.",
-    "community_growth": "Multiverse, Substack, and large-scale audience campaign work give me both community and operating proof points.",
+    "music_content_strategy": "I created Multiverse and develop creative publishing systems through RoboXT Studios alongside entertainment marketing leadership.",
+    "editorial_content_strategy": "I created Multiverse, build through RoboXT Studios, and have developed the operating systems that keep high-volume work moving.",
+    "community_growth": "Multiverse, RoboXT Studios, and large-scale audience campaign work provide both community and operating proof points.",
     "gtm_product_activation": "My background includes platform activation, measurement readiness, large advertiser execution, and CampaignOS product thinking.",
     "product_strategy_ops": "I have aligned business, analytics, and technology partners and built CampaignOS as a current product and systems proof point.",
     "transformation_advisory": "My experience spans senior stakeholder alignment, operating-model design, and CampaignOS as strategy translated into a working system.",
@@ -97,7 +97,7 @@ def _profile_recruiter_content(context: Dict[str, Any]) -> str:
         ),
         "bandsintown": (
             "music, audience connection, editorial voice, and content systems",
-            "Alongside entertainment marketing leadership, I created Multiverse and now write through my Substack, giving me both editorial and operational proof points.",
+            "Alongside entertainment marketing leadership, I created Multiverse and now develop creative publishing systems through RoboXT Studios, giving me both editorial and operational proof points.",
         ),
         "crunchyroll": (
             "streaming, fandom, franchise/IP, and enterprise strategy",
@@ -150,7 +150,7 @@ def _profile_hiring_manager_content(context: Dict[str, Any]) -> str:
         "bandsintown": (
             "writing with a distinct voice for artists, industry partners, and fans while building the content systems that keep quality consistent",
             "I have led entertainment marketing work and created Multiverse, an editorial publication centered on creativity, culture, music, innovation, and employee storytelling.",
-            "My Substack has given me another place to develop a personal voice across music, creativity, technology, AI, and life after corporate leadership.",
+            "RoboXT Studios gives me an independent place to develop creative, photography, editorial, and publishing systems with a distinct human voice.",
         ),
         "crunchyroll": (
             "turning streaming, fandom, and franchise priorities into an enterprise strategy teams can execute",

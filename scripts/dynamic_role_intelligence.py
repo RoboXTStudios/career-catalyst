@@ -143,7 +143,7 @@ CATEGORY_GUIDANCE = {
         ],
         "proof_points": [
             "Multiverse editorial leadership",
-            "Substack writing and personal voice",
+            "RoboXT Studios creative and publishing systems",
             "entertainment marketing and campaign operations",
         ],
         "avoid": [
@@ -277,12 +277,12 @@ ROLE_GUIDANCE = {
     "music_content_strategy": {
         "tone": ["editorial", "music-aware", "human"],
         "angle": "connect music culture and audience understanding with voice, content strategy, and repeatable editorial systems",
-        "proof_points": ["Multiverse", "Substack", "entertainment marketing experience"],
+        "proof_points": ["Multiverse", "RoboXT Studios", "entertainment marketing experience"],
     },
     "editorial_content_strategy": {
         "tone": ["editorial", "clear", "audience-aware"],
         "angle": "connect writing and editorial judgment with content planning, voice systems, and cross-functional delivery",
-        "proof_points": ["Multiverse", "Substack", "content and campaign systems"],
+        "proof_points": ["Multiverse", "RoboXT Studios", "content and campaign systems"],
     },
     "transformation_advisory": {
         "tone": ["advisory", "structured", "stakeholder-aware"],
@@ -322,7 +322,7 @@ ROLE_GUIDANCE = {
     "community_growth": {
         "tone": ["community-minded", "human", "growth-aware"],
         "angle": "connect audience insight and community trust with clear programs, content, measurement, and sustainable growth",
-        "proof_points": ["Multiverse community storytelling", "Substack voice", "audience campaign experience"],
+        "proof_points": ["Multiverse community storytelling", "RoboXT Studios creative systems", "audience campaign experience"],
     },
     "generic_senior_operator": {
         "tone": ["warm", "senior", "specific"],

@@ -94,6 +94,19 @@ GOOGLE_YOUTUBE_COMPETENCIES = (
 )
 
 PROJECT_RELEVANCE_TERMS = {
+    "Career Catalyst": (
+        "product operations", "workflow", "ai", "automation", "requirements",
+        "governance", "quality", "qa", "product thinking", "operational systems",
+        "roadmap", "backlog", "iterate", "iteration",
+    ),
+    "RoboXT Studios": (
+        "creative operations", "creative production", "content", "editorial",
+        "photography", "publishing", "audience", "brand", "creator", "programming",
+    ),
+    "CampaignOS": (
+        "campaign operations", "marketing technology", "martech", "measurement",
+        "workflow", "governance", "automation", "quality assurance", "qa",
+    ),
     "OMG23 Multiverse Newsletter": (
         "creative",
         "culture",
@@ -102,15 +115,6 @@ PROJECT_RELEVANCE_TERMS = {
         "editorial",
         "innovation",
         "emerging media",
-    ),
-    "Substack Writer": (
-        "storytelling",
-        "content",
-        "creative",
-        "music",
-        "editorial",
-        "writer",
-        "publishing",
     ),
 }
 
@@ -372,14 +376,15 @@ def _campaignos_bullets(career_data: Dict[str, Any]) -> List[str]:
     return _dedupe(bullets)[:3]
 
 
-def _project_is_relevant(project_name: str, parsed_job: Dict[str, Any], resume_profile: str) -> bool:
-    if project_name == "CampaignOS":
-        return True
-
-    text = " ".join(_flatten_strings(parsed_job.get("keywords", [])))
+def _project_relevance_score(project_name: str, parsed_job: Dict[str, Any]) -> int:
+    text = " ".join(
+        _flatten_strings(
+            [parsed_job.get("job_title"), parsed_job.get("raw_text"), parsed_job.get("job_description"), parsed_job.get("keywords", [])]
+        )
+    )
     project_terms = PROJECT_RELEVANCE_TERMS.get(project_name, ())
     normalized = _normalize_text(text)
-    return any(_normalize_text(term) in normalized for term in project_terms)
+    return sum(1 for term in project_terms if _normalize_text(term) in normalized)
 
 
 def _selected_projects(
@@ -388,34 +393,57 @@ def _selected_projects(
     resume_profile: str,
 ) -> List[Tuple[Dict[str, Any], List[str]]]:
     projects = career_data["data"]["projects"].get("projects", [])
-    selected = []
+    ranked: List[Tuple[int, Dict[str, Any], List[str]]] = []
     plan = material_editing_plan(parsed_job)
     category = plan.get("role_category")
     section_rules = plan.get("resume_section_rules", {})
     creative_rule = section_rules.get("creative_editorial_projects")
     campaignos_rule = section_rules.get("campaignos")
 
-    campaignos = next((project for project in projects if project.get("name") == "CampaignOS"), None)
-    if campaignos:
-        bullets = _campaignos_bullets(career_data)
-        if campaignos_rule == "supporting":
-            bullets = bullets[:1]
-        selected.append((campaignos, bullets))
-
     for project in projects:
-        name = project.get("name")
-        if name == "CampaignOS" or not _project_is_relevant(str(name), parsed_job, resume_profile):
+        name = str(project.get("name") or "")
+        score = _project_relevance_score(name, parsed_job)
+        if score < 2:
             continue
-        if creative_rule == "omit" and name in {"Substack Writer", "OMG23 Multiverse Newsletter"}:
+        if creative_rule == "omit" and name in {"OMG23 Multiverse Newsletter", "RoboXT Studios"}:
             continue
-        if category in {"chief_of_staff_business_operations", "traditional_pmo_governance"} and name in {"Substack Writer", "OMG23 Multiverse Newsletter"}:
+        if category in {"chief_of_staff_business_operations", "traditional_pmo_governance"} and name in {"OMG23 Multiverse Newsletter", "RoboXT Studios"}:
             continue
-        bullets = [project.get("summary", "")]
-        limit = 1 if creative_rule == "minimize" else 3
-        bullets.extend(project.get("highlights", [])[:limit])
-        selected.append((project, _dedupe([str(bullet) for bullet in bullets if bullet])))
+        if name == "CampaignOS":
+            bullets = _campaignos_bullets(career_data)
+            if campaignos_rule == "supporting":
+                bullets = bullets[:1]
+        else:
+            bullets = [project.get("summary", "")]
+            limit = 1 if creative_rule == "minimize" else 2
+            bullets.extend(project.get("highlights", [])[:limit])
+            bullets = _dedupe([str(bullet) for bullet in bullets if bullet])
+        if name == "Career Catalyst" and "product operations" in _normalize_text(str(parsed_job.get("raw_text") or "")):
+            score += 4
+        ranked.append((score, project, bullets))
+    ranked.sort(key=lambda item: (-item[0], str(item[1].get("name") or "")))
+    return [(project, bullets) for _score, project, bullets in ranked[:2]]
 
-    return selected
+
+def _relevant_associated_evidence(
+    projects: List[Dict[str, Any]], parsed_job: Dict[str, Any]
+) -> List[Dict[str, Any]]:
+    """Keep prospect-scoped Evidence only when its stored language overlaps the role."""
+    role_text = _normalize_text(
+        " ".join(_flatten_strings([parsed_job.get("job_title"), parsed_job.get("raw_text"), parsed_job.get("keywords", [])]))
+    )
+    role_terms = set(role_text.split()) - {"and", "the", "for", "with", "from", "role"}
+    ranked = []
+    for project in projects:
+        terms = _flatten_strings(
+            [project.get("title"), project.get("function"), project.get("project_type"), project.get("actions"), project.get("results"), project.get("skills", []), project.get("technologies", []), project.get("tags", [])]
+        )
+        evidence_terms = set(_normalize_text(" ".join(terms)).split()) - {"and", "the", "for", "with", "from", "role", "built"}
+        score = len(role_terms & evidence_terms)
+        if score:
+            ranked.append((score, project))
+    ranked.sort(key=lambda item: (-item[0], str(item[1].get("id") or "")))
+    return [project for _score, project in ranked[:2]]
 
 
 def _earlier_career(career_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -457,8 +485,9 @@ def _render_markdown(
     )
     experience_bullets = _select_experience_bullets(career_data, parsed_job, resume_profile)
     selected_projects = _selected_projects(career_data, parsed_job, resume_profile)
-    verified_evidence_context = evidence_generation_context(associated_evidence_projects or [])
-    associated_evidence_projects = associated_evidence_projects or []
+    associated_evidence_projects = _relevant_associated_evidence(
+        associated_evidence_projects or [], parsed_job
+    )
     earlier_position = _earlier_career(career_data)
     development = _professional_development(career_data)
 
@@ -510,7 +539,8 @@ def _render_markdown(
         lines.extend(f"- {bullet}" for bullet in experience_bullets)
         lines.append("")
 
-    lines.extend(["## Selected Projects", ""])
+    if selected_projects or associated_evidence_projects:
+        lines.extend(["## Relevant Projects & Impact", ""])
     for project, bullets in selected_projects:
         lines.extend(
             [
