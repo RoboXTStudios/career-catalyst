@@ -10,7 +10,7 @@ from typing import Any, Dict, Optional, Union
 try:
     from .application_tracker import add_prospect, make_tracker_id
     from .dynamic_role_intelligence import get_effective_voice_profile
-    from .filename_utils import is_valid_role_title, safe_filename
+    from .filename_utils import canonical_employer_name, is_valid_role_title, safe_filename
     from .job_identity import infer_job_fields_from_url, preferred_role_title
     from .job_importer import (
         MINIMUM_DESCRIPTION_LENGTH,
@@ -26,7 +26,7 @@ try:
 except ImportError:
     from application_tracker import add_prospect, make_tracker_id
     from dynamic_role_intelligence import get_effective_voice_profile
-    from filename_utils import is_valid_role_title, safe_filename
+    from filename_utils import canonical_employer_name, is_valid_role_title, safe_filename
     from job_identity import infer_job_fields_from_url, preferred_role_title
     from job_importer import (
         MINIMUM_DESCRIPTION_LENGTH,
@@ -225,6 +225,7 @@ def create_prospect(
     root = Path(project_root) if project_root is not None else Path.cwd()
     normalized_input = dict(job_data)
     company = str(normalized_input.get("company") or "").strip()
+    supplied_company = company
     role = str(normalized_input.get("role") or normalized_input.get("job_title") or "").strip()
     description = str(normalized_input.get("job_description") or "").strip()
     raw_url = str(normalized_input.get("official_url") or "").strip()
@@ -265,6 +266,14 @@ def create_prospect(
     else:
         metadata = extract_metadata(description) if description else {}
     company, role = _clean_identity(company, role)
+    company = canonical_employer_name(company)
+    company_aliases = list(normalized_input.get("company_aliases") or [])
+    if (
+        supplied_company
+        and supplied_company.casefold() != company.casefold()
+        and supplied_company not in company_aliases
+    ):
+        company_aliases.append(supplied_company)
     role = preferred_role_title("", role, raw_url)
     location = (
         str(normalized_input.get("location") or metadata.get("location") or "").strip()
@@ -295,6 +304,7 @@ def create_prospect(
         {
             "tracker_id": tracker_id,
             "company": company,
+            "company_aliases": company_aliases,
             "job_title": role,
             "location": location,
             "work_arrangement": work_arrangement,
@@ -349,6 +359,7 @@ def create_prospect(
         {
             "id": tracker_id,
             "company": company,
+            "company_aliases": company_aliases,
             "role": role,
             "status": str(job_data.get("status") or "Drafted"),
             "priority": str(job_data.get("priority") or "Medium"),

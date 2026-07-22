@@ -6,9 +6,9 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 try:
-    from .filename_utils import is_valid_role_title
+    from .filename_utils import canonical_employer_name, is_valid_role_title
 except ImportError:
-    from filename_utils import is_valid_role_title
+    from filename_utils import canonical_employer_name, is_valid_role_title
 
 
 IMPORTANT_PHRASES = (
@@ -162,6 +162,30 @@ def load_job_description(file_path: PathInput) -> str:
         return path.read_text(encoding="utf-8")
     except OSError as error:
         raise JobParseError(f"Unable to read job description file {file_path}: {error}") from error
+
+
+def _analysis_text(text: str) -> str:
+    """Strip stored ATS markup before parsing without rewriting the source file."""
+    if not re.search(
+        r"</?[a-z][^>]*>|&(?:amp;)*(?:lt|gt);",
+        str(text or ""),
+        flags=re.IGNORECASE,
+    ):
+        return text
+    # Imported lazily because job_importer also uses extract_metadata from this
+    # module. At analysis time both modules are fully initialized.
+    try:
+        from .job_importer import _plain_html_text
+    except ImportError:
+        from job_importer import _plain_html_text
+    description_heading = re.search(
+        r"^##\s+Job Description\s*$", text, flags=re.IGNORECASE | re.MULTILINE
+    )
+    if description_heading:
+        prefix = text[: description_heading.end()].rstrip()
+        description = text[description_heading.end() :]
+        return prefix + "\n\n" + _plain_html_text(description) + "\n"
+    return _plain_html_text(text)
 
 
 def _normalize_heading(line: str) -> str:
@@ -444,13 +468,17 @@ def _summary(parsed: Dict[str, Any]) -> str:
 
 def parse_job_description(file_path: PathInput) -> Dict[str, Any]:
     """Parse a local job description file into a structured dictionary."""
-    text = load_job_description(file_path)
+    text = _analysis_text(load_job_description(file_path))
     metadata = extract_metadata(text)
     parsed = {
         "source_path": str(file_path),
         "raw_text": text,
         "job_title": metadata["job_title"],
-        "company": metadata["company"],
+        "company": (
+            canonical_employer_name(metadata["company"])
+            if metadata["company"]
+            else None
+        ),
         "location": metadata["location"],
         "salary_range": metadata["salary_range"],
         "employment_type": metadata["employment_type"],

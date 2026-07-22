@@ -12,12 +12,12 @@ from urllib.parse import quote, urlparse, urlunparse
 from urllib.request import Request, urlopen
 
 try:
-    from .filename_utils import is_valid_role_title
+    from .filename_utils import canonical_employer_name, is_valid_role_title
     from .job_identity import infer_job_fields_from_url, preferred_role_title
     from .job_source_registry import classify_source, normalize_job_source
     from .parse_job import extract_metadata
 except ImportError:
-    from filename_utils import is_valid_role_title
+    from filename_utils import canonical_employer_name, is_valid_role_title
     from job_identity import infer_job_fields_from_url, preferred_role_title
     from job_source_registry import classify_source, normalize_job_source
     from parse_job import extract_metadata
@@ -135,7 +135,8 @@ def _greenhouse_company_from_url(url: str) -> str:
     token = identity.get("board_token", "")
     if not token:
         return ""
-    return re.sub(r"[-_]+", " ", token).strip().title()
+    board_label = re.sub(r"[-_]+", " ", token).strip().title()
+    return canonical_employer_name(board_label)
 
 
 def _greenhouse_location(value: Any) -> str:
@@ -283,9 +284,19 @@ def _job_posting(html: str) -> Optional[Dict[str, Any]]:
 
 
 def _plain_html_text(value: Any) -> str:
-    parser = _VisibleTextParser()
-    parser.feed(str(value or ""))
-    return "\n".join(parser.text_parts).strip()
+    text = str(value or "")
+    # Greenhouse sometimes returns HTML whose tags are themselves entity-escaped.
+    # Decode before parsing and repeat a bounded number of times so neither raw tags
+    # nor &lt;...&gt; fragments enter scoring, role analysis, or saved job files.
+    for _ in range(3):
+        decoded = unescape(text)
+        parser = _VisibleTextParser()
+        parser.feed(decoded)
+        cleaned = "\n".join(parser.text_parts).strip()
+        text = cleaned
+        if not re.search(r"&(?:lt|gt|amp|quot|#\d+|#x[0-9a-f]+);|</?[a-z][^>]*>", text, re.I):
+            break
+    return text
 
 
 def _structured_location(posting: Dict[str, Any]) -> str:

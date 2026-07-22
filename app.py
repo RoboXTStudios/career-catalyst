@@ -2350,14 +2350,29 @@ def _package_recovery_key(tracker_id: str) -> str:
     return f"package_recovery_{tracker_id}"
 
 
-def _render_package_recovery(st: Any, tracker_id: str, application: Dict[str, Any]) -> None:
-    state = st.session_state.get(_package_recovery_key(tracker_id))
+def _package_recovery_action_key(tracker_id: str, action: str) -> str:
+    return f"{_package_recovery_key(tracker_id)}_{action}"
+
+
+def _render_package_recovery(
+    st: Any,
+    tracker_id: str,
+    application: Dict[str, Any],
+    *,
+    override_closed: bool = False,
+) -> None:
+    recovery_key = _package_recovery_key(tracker_id)
+    state = st.session_state.get(recovery_key)
     if not state:
         return
     conflicts = state.get("conflicts") or []
     conflict = conflicts[0] if conflicts else {}
     material_type = str(conflict.get("material_type") or "material")
-    current = f"{application.get('role')} at {application.get('company')}"
+    article = "an" if material_type[:1].lower() in "aeiou" else "a"
+    current = (
+        f"{application.get('role')} at "
+        f"{company_display_name(application.get('company'))}"
+    )
     other = ""
     if conflict.get("conflicting_role") or conflict.get("conflicting_company"):
         other = (
@@ -2365,12 +2380,15 @@ def _render_package_recovery(st: Any, tracker_id: str, application: Dict[str, An
             f"at {conflict.get('conflicting_company') or 'unknown company'}."
         )
     st.warning(
-        f"Career Catalyst found a {material_type.lower()} associated with a different opportunity. "
+        f"Career Catalyst found {article} {material_type.lower()} associated with a different opportunity. "
         f"It was not reused or changed. Generate a clean draft for {current} "
         f"or review the conflicting material." + other
     )
     col1, col2, col3 = st.columns(3)
-    if col1.button("Generate a clean new draft", key=f"clean_draft_{tracker_id}"):
+    if col1.button(
+        "Generate a clean new draft",
+        key=_package_recovery_action_key(tracker_id, "clean"),
+    ):
         try:
             with st.spinner("Generating a clean role-scoped package…"):
                 result = generate_package(
@@ -2379,12 +2397,13 @@ def _render_package_recovery(st: Any, tracker_id: str, application: Dict[str, An
                     generate_followups_too=st.session_state.get(
                         f"package_followups_{tracker_id}", False
                     ),
+                    override_closed=override_closed,
                     force_clean_draft=True,
                 )
         except PackageGenerationError as error:
             st.error(str(error))
         else:
-            st.session_state.pop(_package_recovery_key(tracker_id), None)
+            st.session_state.pop(recovery_key, None)
             st.session_state["last_package_outputs"] = result["outputs"]
             st.session_state["last_package_result"] = result
             st.session_state["package_preview_prospect_id"] = tracker_id
@@ -2392,17 +2411,27 @@ def _render_package_recovery(st: Any, tracker_id: str, application: Dict[str, An
                 f"Generated clean package for {result['job_title']} at {result['company']}."
             )
             _render_package_summary(st, result)
-    if col2.button("View conflicting material", key=f"view_conflict_{tracker_id}"):
+    if col2.button(
+        "View conflicting material",
+        key=_package_recovery_action_key(tracker_id, "view"),
+    ):
         path = conflict.get("path")
         if path:
-            _show_open_button(
-                st, "Open conflicting material", Path(path), f"open_conflict_{tracker_id}"
-            )
-            st.caption(str(path))
+            opened, message = open_local_path(Path(path))
+            if opened:
+                state["viewed_conflict_path"] = str(path)
+                st.success(message)
+            else:
+                st.warning(message)
         else:
             st.info("No material path is available for this conflict.")
-    if col3.button("Cancel", key=f"cancel_recovery_{tracker_id}"):
-        st.session_state.pop(_package_recovery_key(tracker_id), None)
+    viewed_path = state.get("viewed_conflict_path")
+    if viewed_path:
+        st.caption(str(viewed_path))
+    if col3.button(
+        "Cancel", key=_package_recovery_action_key(tracker_id, "cancel")
+    ):
+        st.session_state.pop(recovery_key, None)
         st.info("Generation cancelled. No materials were changed.")
 
 def _render_generate_package(st: Any) -> None:
@@ -2422,18 +2451,28 @@ def _render_generate_package(st: Any) -> None:
         key="package_tracker_id",
     )
     reset_package_preview_for_selection(st.session_state, tracker_id)
-    try:
-        voice_context = detected_application_voice(tracker_id, PROJECT_ROOT)
-    except Exception as error:
-        st.caption(f"Company voice detection unavailable: {error}")
-    else:
-        _render_intelligence_preview(st, voice_context)
     application = by_id[tracker_id]
     generate_followups_too = st.checkbox(
         "Generate follow-up materials after package generation",
         value=get_record_status(application) == "Applied",
         key=f"package_followups_{tracker_id}",
     )
+    recovery_key = _package_recovery_key(tracker_id)
+    if not st.session_state.get(recovery_key):
+        preflight = preflight_package_generation(tracker_id, applications, PROJECT_ROOT)
+        if preflight.get("status") == "conflict":
+            st.session_state[recovery_key] = {
+                "conflicts": preflight.get("conflicts") or []
+            }
+    if st.session_state.get(recovery_key):
+        _render_package_recovery(st, tracker_id, application)
+        return
+    try:
+        voice_context = detected_application_voice(tracker_id, PROJECT_ROOT)
+    except Exception as error:
+        st.caption(f"Company voice detection unavailable: {error}")
+    else:
+        _render_intelligence_preview(st, voice_context)
     freshness = voice_context.get("freshness", {}) if "voice_context" in locals() else {}
     override_closed = False
     if freshness.get("is_closed"):
@@ -2442,14 +2481,22 @@ def _render_generate_package(st: Any) -> None:
             value=False,
             key=f"package_closed_override_{tracker_id}",
         )
-    _render_package_recovery(st, tracker_id, application)
-    if st.button("Generate Package", type="primary"):
+    if st.button(
+        "Generate Package",
+        type="primary",
+        key=_package_recovery_action_key(tracker_id, "generate"),
+    ):
         preflight = preflight_package_generation(tracker_id, applications, PROJECT_ROOT)
         if preflight.get("status") == "conflict":
-            st.session_state[_package_recovery_key(tracker_id)] = {
+            st.session_state[recovery_key] = {
                 "conflicts": preflight.get("conflicts") or []
             }
-            _render_package_recovery(st, tracker_id, application)
+            _render_package_recovery(
+                st,
+                tracker_id,
+                application,
+                override_closed=override_closed,
+            )
             return
         try:
             with st.spinner("Generating resumes, messages, strategy pack, and dashboard…"):
@@ -2461,10 +2508,15 @@ def _render_generate_package(st: Any) -> None:
                 )
         except PackageGenerationError as error:
             if error.details and error.details.get("recovery"):
-                st.session_state[_package_recovery_key(tracker_id)] = {
+                st.session_state[recovery_key] = {
                     "conflicts": error.details.get("conflicts") or []
                 }
-                _render_package_recovery(st, tracker_id, application)
+                _render_package_recovery(
+                    st,
+                    tracker_id,
+                    application,
+                    override_closed=override_closed,
+                )
                 return
             st.error(str(error))
             if error.details:

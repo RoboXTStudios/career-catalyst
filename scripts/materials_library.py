@@ -216,6 +216,7 @@ def write_role_manifest(
     archived: bool,
     archive_reason: str = "",
     legacy_files_moved: Iterable[str] = (),
+    preserve_existing: bool = False,
 ) -> Dict[str, Any]:
     """Write one exact role manifest and return its payload."""
     folder.mkdir(parents=True, exist_ok=True)
@@ -246,6 +247,8 @@ def write_role_manifest(
         "legacy_files_moved": list(legacy_files_moved),
     }
     manifest_path = folder / "manifest.json"
+    if preserve_existing:
+        manifest_path = _unique_destination(manifest_path)
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     manifest["manifest_path"] = str(manifest_path.resolve())
     return manifest
@@ -255,6 +258,8 @@ def organize_package_outputs(
     project_root: Path,
     application: Dict[str, Any],
     outputs: Dict[str, Any],
+    *,
+    preserve_existing: bool = False,
 ) -> Dict[str, Any]:
     """Move exact package outputs to one role folder and archive transient Markdown."""
     root = Path(project_root).resolve()
@@ -304,6 +309,7 @@ def organize_package_outputs(
             f"Status: {application.get('status')}" if routing["archived"] else ""
         ),
         legacy_files_moved=legacy_moved,
+        preserve_existing=preserve_existing,
     )
     return {"outputs": updated, "manifest": manifest, "warnings": []}
 

@@ -8,6 +8,11 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import yaml
 
+try:
+    from .filename_utils import canonical_employer_name
+except ImportError:
+    from filename_utils import canonical_employer_name
+
 
 PathInput = Union[str, Path]
 TRACKER_PATH = "data/application_tracker.yml"
@@ -492,7 +497,9 @@ def follow_up_eligibility(record: Dict[str, Any], today: Optional[date] = None) 
 
 def make_tracker_id(company: Any, role: Any) -> str:
     """Build a stable, readable tracker id from company and role."""
-    normalized = normalize_tracker_value(f"{company} {role}").replace(" ", "_")
+    normalized = normalize_tracker_value(
+        f"{canonical_employer_name(company)} {role}"
+    ).replace(" ", "_")
     if not normalized:
         raise TrackerUpdateError("A tracker id requires a company and role title.")
     return normalized
@@ -600,7 +607,8 @@ def add_prospect(
     project_root: Optional[PathInput] = None,
 ) -> Dict[str, Any]:
     """Add a prospect or safely enrich its existing tracker record."""
-    company = str(prospect.get("company") or "").strip()
+    raw_company = str(prospect.get("company") or "").strip()
+    company = canonical_employer_name(raw_company)
     role = str(prospect.get("role") or prospect.get("job_title") or "").strip()
     if not company or not role:
         raise TrackerUpdateError("A prospect requires both company and role title.")
@@ -621,6 +629,9 @@ def add_prospect(
     existing = next(
         (application for application in applications if application.get("id") == tracker_id),
         None,
+    )
+    previous_company_aliases = (
+        list(existing.get("company_aliases") or []) if existing else []
     )
     created = existing is None
     if existing is None:
@@ -651,6 +662,14 @@ def add_prospect(
         entry.setdefault("company_aliases", [])
         entry.setdefault("role_aliases", [])
         entry.setdefault("show_on_dashboard", True)
+
+    aliases = list(
+        dict.fromkeys(previous_company_aliases + list(entry.get("company_aliases") or []))
+    )
+    if raw_company and normalize_tracker_value(raw_company) != normalize_tracker_value(company):
+        if raw_company not in aliases:
+            aliases.append(raw_company)
+    entry["company_aliases"] = aliases
 
     save_application_tracker(applications, project_root)
     return {"tracker_id": tracker_id, "application": dict(entry), "created": created}
