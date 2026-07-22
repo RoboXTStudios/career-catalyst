@@ -89,8 +89,9 @@ from scripts.package_generator import (
     preflight_package_generation,
     resolve_job_reference,
 )
-from scripts.parse_job import extract_metadata, parse_job_description, salary_parsing_warning
+from scripts.parse_job import extract_metadata, normalize_compensation, parse_job_description
 from scripts.prospect_intake import ProspectIntakeError, create_prospect
+from scripts.resume_foundation import canonical_resume_foundation_info
 from scripts.score_match import score_job_data, score_job_match
 
 
@@ -780,6 +781,12 @@ def build_prospect_payload(values: Dict[str, Any]) -> Dict[str, Any]:
         "job_title": str(values.get("job_title") or "").strip(),
         "location": str(values.get("location") or "").strip(),
         "salary_range": str(values.get("salary_range") or "").strip(),
+        "compensation": values.get("compensation") or normalize_compensation(
+            values.get("salary_range"),
+            source="manual" if values.get("compensation_manual_override") else "saved",
+            manual_override=bool(values.get("compensation_manual_override")),
+        ),
+        "compensation_manual_override": bool(values.get("compensation_manual_override")),
         "posting_date": str(values.get("posting_date") or "").strip(),
         "source": str(values.get("source") or "Official career page").strip(),
         "priority": str(values.get("priority") or "Medium"),
@@ -1789,7 +1796,11 @@ def _initialize_intake_state(st: Any) -> None:
         "prospect_role": "",
         "prospect_location": "",
         "prospect_salary": "",
+        "prospect_salary_auto_value": "",
+        "prospect_salary_manual_override": False,
         "prospect_posting_date": "",
+        "prospect_posting_date_auto_value": "",
+        "prospect_posting_date_manual_override": False,
         "prospect_source": "Official career page",
         "prospect_priority": "Medium",
         "prospect_status": "Drafted",
@@ -1801,6 +1812,37 @@ def _initialize_intake_state(st: Any) -> None:
     }
     for key, value in defaults.items():
         st.session_state.setdefault(key, value)
+
+
+def apply_detected_intake_metadata(session_state: Any) -> Dict[str, Any]:
+    """Locally parse editable description facts without network or AI work."""
+    metadata = extract_metadata(str(session_state.get("prospect_description") or ""))
+    if not session_state.get("prospect_salary_manual_override") and metadata.get("salary_range"):
+        session_state["prospect_salary"] = metadata["salary_range"]
+        session_state["prospect_salary_auto_value"] = metadata["salary_range"]
+    if not session_state.get("prospect_posting_date_manual_override") and metadata.get("posting_date"):
+        session_state["prospect_posting_date"] = metadata["posting_date"]
+        session_state["prospect_posting_date_auto_value"] = metadata["posting_date"]
+    mark_prospect_intelligence_stale(session_state)
+    return metadata
+
+
+def mark_compensation_manual_override(session_state: Any) -> None:
+    """Remember that the editable compensation value now belongs to the user."""
+    session_state["prospect_salary_manual_override"] = (
+        str(session_state.get("prospect_salary") or "").strip()
+        != str(session_state.get("prospect_salary_auto_value") or "").strip()
+    )
+    mark_prospect_intelligence_stale(session_state)
+
+
+def mark_posting_date_manual_override(session_state: Any) -> None:
+    """Remember a user-entered posting date across unrelated reruns and saves."""
+    session_state["prospect_posting_date_manual_override"] = (
+        str(session_state.get("prospect_posting_date") or "").strip()
+        != str(session_state.get("prospect_posting_date_auto_value") or "").strip()
+    )
+    mark_prospect_intelligence_stale(session_state)
 
 
 def detect_prospect_intelligence(values: Dict[str, Any]) -> Dict[str, Any]:
@@ -1815,10 +1857,10 @@ def detect_prospect_intelligence(values: Dict[str, Any]) -> Dict[str, Any]:
         f"Posting date: {values.get('posting_date') or ''}\n{values.get('job_description') or ''}"
     )
     intelligence["source_verification"] = normalize_job_source(values)
-    salary_value = str(values.get("salary_range") or "").strip()
-    intelligence["salary_parsing_warning"] = bool(
-        salary_parsing_warning(values.get("job_description"))
-        and (not salary_value or re.fullmatch(r"\$\s*\d{1,2}", salary_value))
+    intelligence["compensation"] = values.get("compensation") or normalize_compensation(
+        values.get("salary_range") or values.get("job_description"),
+        source="manual" if values.get("compensation_manual_override") else "description",
+        manual_override=bool(values.get("compensation_manual_override")),
     )
     intelligence["match_report"] = score_job_data(values, PROJECT_ROOT)
     intelligence["job_description"] = str(values.get("job_description") or "")
@@ -1849,6 +1891,9 @@ def reparse_prospect_fields(values: Dict[str, Any]) -> Dict[str, Any]:
         if not refreshed.get(key) and fallback.get(key):
             refreshed[key] = fallback[key]
     refreshed["match_report"] = score_job_data(refreshed, PROJECT_ROOT)
+    refreshed["compensation"] = metadata.get("compensation") or normalize_compensation(
+        refreshed.get("salary_range"), source="description"
+    )
     refreshed["source_verification"] = normalize_job_source(refreshed)
     return refreshed
 
@@ -1906,6 +1951,10 @@ def apply_prospect_url_import_state(
             "prospect_job_id",
         ):
             session_state[key] = ""
+        session_state["prospect_salary_auto_value"] = ""
+        session_state["prospect_salary_manual_override"] = False
+        session_state["prospect_posting_date_auto_value"] = ""
+        session_state["prospect_posting_date_manual_override"] = False
         mark_prospect_intelligence_stale(session_state)
     session_state["prospect_context_url"] = url
     session_state["prospect_url_value"] = url
@@ -1962,6 +2011,12 @@ def apply_prospect_url_import_state(
     ):
         if imported.get(imported_key):
             session_state[state_key] = imported[imported_key]
+    if imported.get("salary_range"):
+        session_state["prospect_salary_auto_value"] = imported["salary_range"]
+        session_state["prospect_salary_manual_override"] = False
+    if imported.get("posting_date"):
+        session_state["prospect_posting_date_auto_value"] = imported["posting_date"]
+        session_state["prospect_posting_date_manual_override"] = False
     if imported.get("source_name") or imported.get("source"):
         session_state["prospect_source"] = imported.get("source_name") or imported.get("source")
     incomplete = bool(
@@ -2007,8 +2062,11 @@ def prospect_warning_messages(intelligence: Dict[str, Any]) -> list[str]:
             "Posting appears stale or older than 30 days. Verify the role is still active "
             "before generating a package."
         )
-    if intelligence.get("salary_parsing_warning"):
-        messages.append("Compensation not detected. Budget or spend figures were ignored.")
+    compensation = intelligence.get("compensation") or {}
+    if not compensation.get("detected") and re.search(r"\$\s*\d", description):
+        messages.append(
+            "Compensation could not be confirmed. Unrelated budget or spend figures were ignored; review the editable field."
+        )
     if source_type in {
         "Industry Job Board",
         "Gaming Industry Job Board",
@@ -2111,6 +2169,15 @@ def _render_add_prospect(st: Any) -> None:
     def mark_intelligence_stale() -> None:
         mark_prospect_intelligence_stale(st.session_state)
 
+    def detect_description_facts() -> None:
+        apply_detected_intake_metadata(st.session_state)
+
+    def mark_salary_manual() -> None:
+        mark_compensation_manual_override(st.session_state)
+
+    def mark_posting_date_manual() -> None:
+        mark_posting_date_manual_override(st.session_state)
+
     if not st.session_state.get("prospect_url_input"):
         st.session_state["prospect_url_input"] = st.session_state.get("prospect_url_value", "")
 
@@ -2133,7 +2200,19 @@ def _render_add_prospect(st: Any) -> None:
             "Role title", key="prospect_role", on_change=mark_intelligence_stale
         )
         st.text_input("Location", key="prospect_location")
-        st.text_input("Salary range", key="prospect_salary")
+        st.text_input(
+            "Compensation",
+            key="prospect_salary",
+            on_change=mark_salary_manual,
+            help="Detected base compensation is prefilled. You can replace it with a verified manual value.",
+        )
+        st.text_input(
+            "Posting Date",
+            key="prospect_posting_date",
+            on_change=mark_posting_date_manual,
+            placeholder="YYYY-MM-DD",
+            help="Optional. Imported when the source provides a reliable date; otherwise enter it manually.",
+        )
         st.text_input("Source", key="prospect_source")
     with right:
         st.selectbox(
@@ -2156,7 +2235,7 @@ def _render_add_prospect(st: Any) -> None:
         key="prospect_description",
         height=360,
         help="Manual paste is always supported and is required when a career page blocks import.",
-        on_change=mark_intelligence_stale,
+        on_change=detect_description_facts,
     )
 
     def reparse_current_fields() -> None:
@@ -2176,12 +2255,16 @@ def _render_add_prospect(st: Any) -> None:
             ("prospect_company", "company"),
             ("prospect_role", "job_title"),
             ("prospect_location", "location"),
-            ("prospect_salary", "salary_range"),
-            ("prospect_posting_date", "posting_date"),
             ("prospect_work_arrangement", "work_arrangement"),
         ):
             if refreshed.get(value_key):
                 st.session_state[state_key] = refreshed[value_key]
+        if refreshed.get("salary_range") and not st.session_state.get("prospect_salary_manual_override"):
+            st.session_state["prospect_salary"] = refreshed["salary_range"]
+            st.session_state["prospect_salary_auto_value"] = refreshed["salary_range"]
+        if refreshed.get("posting_date") and not st.session_state.get("prospect_posting_date_manual_override"):
+            st.session_state["prospect_posting_date"] = refreshed["posting_date"]
+            st.session_state["prospect_posting_date_auto_value"] = refreshed["posting_date"]
         report = refreshed["match_report"]
         st.session_state["prospect_import_result"] = (
             "success" if report.get("match_score") is not None else "error",
@@ -2207,6 +2290,12 @@ def _render_add_prospect(st: Any) -> None:
         "job_title": st.session_state["prospect_role"],
         "location": st.session_state["prospect_location"],
         "salary_range": st.session_state["prospect_salary"],
+        "compensation": normalize_compensation(
+            st.session_state["prospect_salary"],
+            source="manual" if st.session_state.get("prospect_salary_manual_override") else "saved",
+            manual_override=bool(st.session_state.get("prospect_salary_manual_override")),
+        ),
+        "compensation_manual_override": bool(st.session_state.get("prospect_salary_manual_override")),
         "posting_date": st.session_state["prospect_posting_date"],
         "source": st.session_state["prospect_source"],
         "priority": st.session_state["prospect_priority"],
@@ -2224,6 +2313,15 @@ def _render_add_prospect(st: Any) -> None:
         intelligence = detect_prospect_intelligence(values)
         match_report = intelligence.get("match_report")
         _render_intelligence_preview(st, intelligence)
+        compensation = intelligence.get("compensation") or {}
+        if compensation.get("detected"):
+            with st.expander("Advanced Details", expanded=False):
+                st.caption(
+                    "Compensation source: "
+                    f"{compensation.get('source') or 'unknown'} | "
+                    f"Period: {compensation.get('period') or 'unknown'} | "
+                    f"Raw match: {compensation.get('raw') or 'not available'}"
+                )
     title_is_valid = is_valid_role_title(values["job_title"])
     if values["job_title"] and not title_is_valid:
         st.warning("Please confirm the role title before saving.")
@@ -2232,21 +2330,19 @@ def _render_add_prospect(st: Any) -> None:
         and title_is_valid
         and len(values["job_description"].strip()) < MINIMUM_DESCRIPTION_LENGTH
     ):
-        st.warning("Paste the job description before generating a package.")
+        st.warning("Paste the job description before adding this prospect.")
     complete_for_save = bool(
         values["company"]
         and title_is_valid
         and len(values["job_description"].strip()) >= MINIMUM_DESCRIPTION_LENGTH
     )
-    save_column, generate_column = st.columns(2)
-    save_clicked = save_column.button(
-        "Save Prospect", use_container_width=True, disabled=not complete_for_save
+    save_clicked = st.button(
+        "Add Prospect",
+        use_container_width=True,
+        type="primary",
+        disabled=not complete_for_save,
     )
-    generate_clicked = generate_column.button(
-        "Save Prospect + Generate Package", use_container_width=True, type="primary",
-        disabled=not complete_for_save or bool(match_report and match_report.get("match_score") is None),
-    )
-    if not (save_clicked or generate_clicked):
+    if not save_clicked:
         return
 
     try:
@@ -2254,30 +2350,14 @@ def _render_add_prospect(st: Any) -> None:
             intake = create_prospect(
                 build_prospect_payload(values),
                 PROJECT_ROOT,
-                run_match_analysis=generate_clicked,
+                run_match_analysis=False,
             )
-            if generate_clicked:
-                package = generate_package(intake["tracker_id"], PROJECT_ROOT)
-                st.session_state["package_preview_prospect_id"] = intake["tracker_id"]
-                st.session_state["last_package_outputs"] = package["outputs"]
-                st.session_state["last_package_result"] = package
-                focus_dashboard_role(st.session_state, intake["tracker_id"])
-                st.session_state["dashboard_materials_role_id"] = intake["tracker_id"]
-            else:
-                st.session_state["last_package_outputs"] = {
-                    "job_file": intake["job_file_path"],
-                }
-    except (ProspectIntakeError, PackageGenerationError, TrackerValidationError) as error:
+    except (ProspectIntakeError, TrackerValidationError) as error:
         st.error(str(error))
         return
 
-    st.success(
-        f"Saved {intake['tracker_id']}"
-        + (" and generated the full package." if generate_clicked else ".")
-    )
-    if generate_clicked:
-        _render_package_summary(st, package)
-    _show_output_paths(st, st.session_state["last_package_outputs"], "intake_output")
+    st.success(f"Added {intake['tracker_id']} without generating materials.")
+    st.info("Review the prospect on Dashboard. Use Generate Package only when you are ready to create materials.")
 
 
 def _load_applications(st: Any) -> list[Dict[str, Any]]:
@@ -3029,6 +3109,12 @@ def _render_evidence_library(st: Any) -> None:
         '<h2 class="cc-section-heading">Evidence Projects</h2>',
         unsafe_allow_html=True,
     )
+    foundation = canonical_resume_foundation_info(PROJECT_ROOT)
+    st.caption(
+        f"Résumé foundation: {foundation['name']} | "
+        f"Last updated: {foundation['last_updated']} | "
+        f"Last verified: {foundation['last_verified']}"
+    )
     try:
         projects = load_evidence_projects(PROJECT_ROOT)
     except EvidenceEngineError as error:
@@ -3037,6 +3123,10 @@ def _render_evidence_library(st: Any) -> None:
     st.caption(
         "Reusable career proof points that store projects, accomplishments, metrics, skills, technologies, and outcomes. "
         "Attach them from a role's Relevant Evidence section to prioritize them in future resumes and cover letters."
+    )
+    st.caption(
+        "Add Evidence when a concrete project, accomplishment, result, or responsibility is missing or underrepresented "
+        "in your résumé. Skills already supported by your résumé do not need duplicate Evidence records."
     )
     metrics = st.columns(3)
     for column, status in zip(metrics, EVIDENCE_PROJECT_STATUSES):
