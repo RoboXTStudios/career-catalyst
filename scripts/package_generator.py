@@ -31,7 +31,7 @@ try:
         preferred_material_paths,
         validate_package_outputs,
     )
-    from .package_context import PackageContextMismatchError
+    from .package_context import PackageContextMismatchError, validate_material_context
     from .materials_library import organize_package_outputs
     from .filename_utils import company_display_name
     from .parse_job import JobParseError, parse_job_description
@@ -63,7 +63,7 @@ except ImportError:
         preferred_material_paths,
         validate_package_outputs,
     )
-    from package_context import PackageContextMismatchError
+    from package_context import PackageContextMismatchError, validate_material_context
     from materials_library import organize_package_outputs
     from filename_utils import company_display_name
     from parse_job import JobParseError, parse_job_description
@@ -159,6 +159,75 @@ def _selected_tracker_record(
     return dict(matches[0])
 
 
+def _tracker_records(tracker: Any) -> List[Dict[str, Any]]:
+    records = tracker.get("applications", []) if isinstance(tracker, dict) else tracker
+    if not isinstance(records, list):
+        raise PackageGenerationError("Application tracker data is not a record list.")
+    return [record for record in records if isinstance(record, dict)]
+
+
+def _posting_identity(record: Dict[str, Any]) -> str:
+    """Return a deterministic external posting id without fetching any source."""
+    for key in ("external_job_id", "job_id", "greenhouse_job_id"):
+        value = str(record.get(key) or "").strip()
+        if value:
+            return value
+    for key in (
+        "canonical_apply_url",
+        "official_url",
+        "source_url",
+        "original_source_url",
+    ):
+        match = re.search(r"/(?:jobs/)?(\d{5,})(?:[/?#]|$)", str(record.get(key) or ""))
+        if match:
+            return match.group(1)
+    return ""
+
+
+def _first_material_path(record: Dict[str, Any]) -> str:
+    paths = dict(record.get("material_paths") or {})
+    manifest = record.get("package_manifest")
+    manifest_path = ""
+    if isinstance(manifest, dict):
+        paths.update(dict(manifest.get("materials") or {}))
+        manifest_path = str(manifest.get("manifest_path") or "").strip()
+    return next((str(value) for value in paths.values() if value), manifest_path)
+
+
+def _duplicate_posting_conflicts(
+    application: Dict[str, Any], records: List[Dict[str, Any]]
+) -> List[Dict[str, Any]]:
+    current_id = str(application.get("id") or "")
+    current_company = normalize_tracker_value(company_display_name(application.get("company")))
+    current_role = normalize_tracker_value(application.get("role") or application.get("job_title"))
+    current_posting = _posting_identity(application)
+    if not current_company or not current_role or not current_posting:
+        return []
+    conflicts = []
+    for record in records:
+        record_id = str(record.get("id") or "")
+        if not record_id or record_id == current_id:
+            continue
+        if _posting_identity(record) != current_posting:
+            continue
+        if normalize_tracker_value(company_display_name(record.get("company"))) != current_company:
+            continue
+        if normalize_tracker_value(record.get("role") or record.get("job_title")) != current_role:
+            continue
+        conflicts.append(
+            {
+                "material_type": "Existing role package",
+                "current_prospect_id": current_id,
+                "conflicting_prospect_id": record_id,
+                "conflicting_company": company_display_name(record.get("company")),
+                "conflicting_role": str(record.get("role") or record.get("job_title") or ""),
+                "path": _first_material_path(record),
+                "reason": "duplicate tracker records identify the same posting",
+            }
+        )
+    return conflicts
+
+
 
 def preflight_package_generation(
     prospect_id: str,
@@ -167,8 +236,12 @@ def preflight_package_generation(
 ) -> Dict[str, Any]:
     """Return deterministic material identity conflicts before expensive generation."""
     application = _selected_tracker_record(prospect_id, tracker)
+    records = _tracker_records(tracker)
     current_id = str(application.get("id") or prospect_id)
     current_slug = str(application.get("stable_slug") or current_id)
+    duplicate_conflicts = _duplicate_posting_conflicts(application, records)
+    if duplicate_conflicts:
+        return {"status": "conflict", "conflicts": duplicate_conflicts}
     paths = dict(application.get("material_paths") or {})
     manifest = application.get("package_manifest")
     if isinstance(manifest, dict):
@@ -188,11 +261,15 @@ def preflight_package_generation(
             }
         paths.update(dict(manifest.get("materials") or {}))
     owners: Dict[str, Dict[str, Any]] = {}
-    for record in tracker or []:
+    for record in records:
         rid = str(record.get("id") or "")
         if not rid or rid == current_id:
             continue
-        for value in dict(record.get("material_paths") or {}).values():
+        owner_paths = dict(record.get("material_paths") or {})
+        owner_manifest = record.get("package_manifest")
+        if isinstance(owner_manifest, dict):
+            owner_paths.update(dict(owner_manifest.get("materials") or {}))
+        for value in owner_paths.values():
             if value:
                 owners[str(Path(str(value)).expanduser())] = record
     conflicts: List[Dict[str, Any]] = []
@@ -223,6 +300,41 @@ def preflight_package_generation(
                 "path": str(value),
                 "reason": "material path is outside the selected role package",
             })
+    # Run the same stale-context guard used by generators against existing text
+    # materials before any scoring, tailoring, exports, or other expensive work.
+    job_path = _matching_job_file(application, Path(project_root or Path.cwd()))
+    if job_path is not None:
+        try:
+            parsed_job = parse_job_description(job_path)
+        except JobParseError:
+            parsed_job = None
+        if parsed_job:
+            for label, value in paths.items():
+                if not value or str(label) == "Job Description":
+                    continue
+                material_path = Path(str(value)).expanduser()
+                if material_path.suffix.lower() not in {".md", ".txt"} or not material_path.is_file():
+                    continue
+                try:
+                    content = material_path.read_text(encoding="utf-8", errors="replace")
+                    validate_material_context(
+                        content,
+                        parsed_job,
+                        str(label).replace(" ", "_"),
+                    )
+                except PackageContextMismatchError as error:
+                    conflicts.append(
+                        {
+                            "material_type": str(label),
+                            "current_prospect_id": current_id,
+                            "conflicting_prospect_id": "",
+                            "conflicting_company": "",
+                            "conflicting_role": "",
+                            "path": str(value),
+                            "reason": "existing material content belongs to a different role context",
+                            "violations": list(error.violations),
+                        }
+                    )
     return {"status": "conflict", "conflicts": conflicts} if conflicts else {"status": "ok", "conflicts": []}
 
 def build_package_context(
@@ -533,7 +645,12 @@ def generate_package(
             if companion:
                 outputs[text_key] = companion
         outputs = {key: value for key, value in outputs.items() if value}
-        organized = organize_package_outputs(root, application, outputs)
+        organized = organize_package_outputs(
+            root,
+            application,
+            outputs,
+            preserve_existing=force_clean_draft,
+        )
         outputs = dict(organized["outputs"])
         material_errors = {
             key: value
@@ -588,6 +705,15 @@ def generate_package(
         }.get(error.material_type, "cover_letter")
         blocked_reason = "Blocked: package context mismatch"
         checklist = validate_package_outputs({}, {material_key: blocked_reason})
+        material_label = error.material_type.replace("_", " ").title()
+        existing_paths = dict(
+            (locals().get("application") or {}).get("material_paths") or {}
+        )
+        existing_path = str(
+            existing_paths.get(material_label)
+            or existing_paths.get(error.material_type)
+            or ""
+        )
         recovery_message = (
             f"Career Catalyst found a {error.material_type.replace('_', ' ').lower()} associated with a different opportunity. "
             f"It was not reused. Generate a clean new draft for {parsed.get('job_title') or application.get('role')} "
@@ -597,8 +723,21 @@ def generate_package(
             recovery_message,
             checklist=checklist,
             details={
+                "recovery": True,
                 "material_type": error.material_type,
                 "violations": list(error.violations),
+                "conflicts": [
+                    {
+                        "material_type": material_label,
+                        "current_prospect_id": locals().get("selected_id", ""),
+                        "conflicting_prospect_id": "",
+                        "conflicting_company": "",
+                        "conflicting_role": "",
+                        "path": existing_path,
+                        "reason": "generated content failed role-context validation",
+                        "violations": list(error.violations),
+                    }
+                ],
             },
         ) from error
     except (OSError, TrackerValidationError, ValueError) as error:

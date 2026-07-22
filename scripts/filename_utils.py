@@ -20,6 +20,18 @@ COMPANY_SHORT_NAMES: Dict[str, str] = {
     "warner music group": "WMG",
     "warner chappell music": "WMG",
     "warner chappell music inc": "WMG",
+    "beast industries": "Beast Industries",
+}
+
+# Exact employer identities shared by import, tracker, package, and filename flows.
+# ATS board tokens are aliases, not employer names, so keep their normalization here
+# instead of adding role-specific exceptions to scoring or generation.
+CANONICAL_EMPLOYER_NAMES: Dict[str, str] = {
+    "beast industries": "Beast Industries",
+    "mrbeast": "Beast Industries",
+    "mr beast": "Beast Industries",
+    "mrbeastyoutube": "Beast Industries",
+    "mr beast youtube": "Beast Industries",
 }
 
 ROLE_SHORT_NAMES: Dict[str, str] = {
@@ -156,12 +168,24 @@ def compact_candidate_name(candidate_name: str) -> str:
     return _pascal_case(_tokens(candidate_name)) or "Candidate"
 
 
-def company_display_name(company: Any) -> str:
-    """Return the familiar public company name for human-facing materials."""
+def canonical_employer_name(company: Any) -> str:
+    """Normalize exact employer aliases without changing unrelated brand names."""
     raw = re.sub(r"\s+", " ", str(company or "").strip())
     key = _key(raw)
     if not raw:
+        return ""
+    return CANONICAL_EMPLOYER_NAMES.get(key, raw)
+
+
+def company_display_name(company: Any) -> str:
+    """Return the familiar public company name for human-facing materials."""
+    original = re.sub(r"\s+", " ", str(company or "").strip())
+    raw = canonical_employer_name(original)
+    key = _key(raw)
+    if not raw:
         return "Company"
+    if raw != original:
+        return raw
     if "umg recordings" in key or "universal music group" in key:
         return "Universal Music Group"
     if "paramount" in key:
