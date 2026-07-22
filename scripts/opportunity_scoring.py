@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-import re
 from typing import Any, Dict, Optional
 
 try:
     from .job_freshness import detect_job_freshness
+    from .parse_job import normalize_compensation
 except ImportError:
     from job_freshness import detect_job_freshness
+    from parse_job import normalize_compensation
 
 
 WEIGHTS = {
@@ -28,13 +29,14 @@ def _bounded(value: float) -> int:
 
 
 def _salary_score(value: Any) -> int:
-    text = str(value or "")
-    amounts = []
-    for raw in re.findall(r"\$?\s*(\d{2,3}(?:,\d{3})+|\d{2,3})\s*[kK]?", text):
-        number = int(raw.replace(",", ""))
-        if number < 1000:
-            number *= 1000
-        amounts.append(number)
+    compensation = normalize_compensation(value, source="saved")
+    amounts = [
+        float(amount)
+        for amount in (compensation.get("minimum"), compensation.get("maximum"))
+        if amount is not None
+    ]
+    if compensation.get("period") == "hour":
+        amounts = [amount * 2080 for amount in amounts]
     if not amounts:
         return 55
     maximum = max(amounts)
@@ -123,7 +125,10 @@ def score_opportunity(
         + 10 * sum(term in lowered for term in priority_terms)
         + (10 if role_family in {"business_operations", "ai_operations_systems", "creative_marketing_ops", "product_strategy_ops"} else 0)
     )
-    salary = _salary_score(parsed_job.get("salary_range"))
+    compensation = parsed_job.get("compensation") or normalize_compensation(
+        parsed_job.get("salary_range"), source="saved"
+    )
+    salary = _salary_score(compensation)
     interview = _bounded((resume_fit * 0.5) + (industry * 0.2) + (role_level * 0.2) + (mission * 0.1))
     dimensions = {
         "Resume Fit": resume_fit,
@@ -150,6 +155,5 @@ def score_opportunity(
         "overall_score": overall,
         "apply_recommendation": recommendation,
         "dimensions": dimensions,
-        "salary_disclosed": bool(parsed_job.get("salary_range")),
+        "salary_disclosed": bool(compensation.get("detected")),
     }
-

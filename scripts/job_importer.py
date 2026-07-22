@@ -152,6 +152,7 @@ def _extract_greenhouse_job(url: str, timeout: int = 12) -> Optional[Dict[str, A
     identity = _greenhouse_identity(url)
     payload = _fetch_json(api_url, timeout)
     description = _plain_html_text(payload.get("content"))
+    metadata = extract_metadata(description)
     company = _greenhouse_company_from_url(url)
     canonical_url = str(payload.get("absolute_url") or identity.get("canonical_url") or url).strip()
     parsed = {
@@ -169,6 +170,9 @@ def _extract_greenhouse_job(url: str, timeout: int = 12) -> Optional[Dict[str, A
         "original_source_url": url,
         "canonical_apply_url": canonical_url,
         "job_description": description,
+        "salary_range": metadata.get("salary_range") or "",
+        "compensation": metadata.get("compensation"),
+        "posting_date": metadata.get("posting_date") or "",
     }
     _validate_greenhouse_payload(parsed, identity)
     parsed.update(normalize_job_source(parsed))
@@ -503,6 +507,7 @@ def parse_imported_job(raw_text: str, url: str) -> Dict[str, Any]:
         "location": location,
         "work_arrangement": work_arrangement or "Not specified",
         "salary_range": metadata.get("salary_range") or "",
+        "compensation": metadata.get("compensation"),
         "posting_date": metadata.get("posting_date") or "",
         "job_id": fallback.get("job_id") or "",
         "source": _source_name(url),

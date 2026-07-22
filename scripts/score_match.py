@@ -5,23 +5,27 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Union
 
 try:
-    from .load_data import DataLoadError, load_all_yaml
+    from .load_data import DataLoadError
+    from .resume_foundation import load_resume_foundation
     from .job_freshness import detect_job_freshness
     from .parse_job import (
         extract_keywords,
         extract_qualifications,
         extract_preferred_qualifications,
         extract_responsibilities,
+        normalize_compensation,
         parse_job_description,
     )
 except ImportError:
-    from load_data import DataLoadError, load_all_yaml
+    from load_data import DataLoadError
+    from resume_foundation import load_resume_foundation
     from job_freshness import detect_job_freshness
     from parse_job import (
         extract_keywords,
         extract_qualifications,
         extract_preferred_qualifications,
         extract_responsibilities,
+        normalize_compensation,
         parse_job_description,
     )
 
@@ -559,27 +563,24 @@ def _industry_fit(text: str, company: Any = "") -> Tuple[int, Optional[str], boo
 
 
 def _salary_amounts(salary_value: Any, raw_text: str) -> List[int]:
-    salary_text = str(salary_value or "")
-    candidates = [salary_text]
-    candidates.extend(
-        match.group(0)
-        for match in re.finditer(
-            r"\$\s*\d{2,3}(?:,\d{3})*(?:\.\d+)?\s*[kK]?",
-            raw_text,
-        )
+    compensation = normalize_compensation(
+        salary_value if salary_value else raw_text,
+        source="saved" if salary_value else "description",
     )
-    amounts: List[int] = []
-    for candidate in candidates:
-        for raw_number, suffix in re.findall(
-            r"\$?\s*(\d{2,3}(?:,\d{3})*(?:\.\d+)?)\s*([kK]?)",
-            candidate,
-        ):
-            number = float(raw_number.replace(",", ""))
-            if suffix or number < 1000:
-                number *= 1000
-            if 30000 <= number <= 1000000:
-                amounts.append(int(number))
-    return sorted(set(amounts))
+    if compensation.get("period") == "hour":
+        annualized = [
+            float(value) * 2080
+            for value in (compensation.get("minimum"), compensation.get("maximum"))
+            if value is not None
+        ]
+        return sorted({int(value) for value in annualized})
+    return sorted(
+        {
+            int(value)
+            for value in (compensation.get("minimum"), compensation.get("maximum"))
+            if value is not None
+        }
+    )
 
 
 def _salary_fit(salary_value: Any, raw_text: str) -> Tuple[int, str, Optional[str]]:
@@ -591,7 +592,8 @@ def _salary_fit(salary_value: Any, raw_text: str) -> Tuple[int, str, Optional[st
     if not amounts:
         return 55, "Not disclosed", "Compensation is not disclosed; verify the range before investing in a package."
     minimum, maximum = min(amounts), max(amounts)
-    display = str(salary_value).strip()
+    normalized = normalize_compensation(salary_value, source="saved")
+    display = str(normalized.get("display") or salary_value).strip()
     if minimum >= 150000:
         return 100, display, None
     if maximum >= 150000:
@@ -676,7 +678,9 @@ def _decision_match_report(parsed_job: Dict[str, Any], legacy_report: Dict[str, 
     industry_score, industry_signal, pure_agency = _industry_fit(
         combined, parsed_job.get("company")
     )
-    salary_score, salary_display, salary_gap = _salary_fit(parsed_job.get("salary_range"), raw_text)
+    salary_score, salary_display, salary_gap = _salary_fit(
+        parsed_job.get("compensation") or parsed_job.get("salary_range"), raw_text
+    )
     work_score, work_label, work_gap = _work_arrangement(parsed_job)
     freshness = detect_job_freshness(raw_text)
     non_fit_signals = [signal for signal in OBVIOUS_NON_FIT_SIGNALS if signal in combined.lower()]
@@ -786,7 +790,7 @@ def _decision_match_report(parsed_job: Dict[str, Any], legacy_report: Dict[str, 
 
 def _score_parsed_job(parsed_job: Dict[str, Any], root: Path, associated_evidence_projects: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
     try:
-        career_data = load_all_yaml(root)
+        career_data = load_resume_foundation(root)
     except DataLoadError:
         career_data = _empty_career_data()
     keywords = _important_keywords(parsed_job)
@@ -865,6 +869,10 @@ def score_job_data(job_data: Dict[str, Any], project_root: Optional[PathInput] =
         "company": job_data.get("company"),
         "location": job_data.get("location"),
         "salary_range": job_data.get("salary_range"),
+        "compensation": job_data.get("compensation") or normalize_compensation(
+            job_data.get("salary_range") or raw_text,
+            source="saved" if job_data.get("salary_range") else "description",
+        ),
         "posting_date": job_data.get("posting_date"),
         "keywords": extract_keywords(canonical_text),
         "responsibilities": extract_responsibilities(canonical_text),

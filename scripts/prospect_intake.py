@@ -21,7 +21,7 @@ try:
     )
     from .job_freshness import detect_job_freshness
     from .job_source_registry import normalize_job_source
-    from .parse_job import JobParseError, extract_metadata, parse_job_description
+    from .parse_job import JobParseError, extract_metadata, normalize_compensation, parse_job_description
     from .score_match import persisted_match_fields, score_job_match
 except ImportError:
     from application_tracker import add_prospect, make_tracker_id
@@ -37,7 +37,7 @@ except ImportError:
     )
     from job_freshness import detect_job_freshness
     from job_source_registry import normalize_job_source
-    from parse_job import JobParseError, extract_metadata, parse_job_description
+    from parse_job import JobParseError, extract_metadata, normalize_compensation, parse_job_description
     from score_match import persisted_match_fields, score_job_match
 
 
@@ -204,10 +204,11 @@ def _field_warnings(
         warnings.append("Location was not detected. Review before saving.")
     if not str(normalized.get("work_arrangement") or "").strip() or str(normalized.get("work_arrangement")).strip() == "Not specified":
         warnings.append("Work arrangement was not detected. Review before saving.")
-    if str(normalized.get("salary_range") or "").strip() in {"", "Not disclosed"}:
+    compensation = normalized.get("compensation") or {}
+    if not compensation.get("detected"):
         warnings.append("Salary was not disclosed. Continue with review if the role is otherwise strong.")
-    elif normalized.get("salary_range"):
-        warnings.append("Salary detected from job text. Review before applying.")
+    elif compensation.get("needs_review"):
+        warnings.append("Compensation was saved from a manual value. Review before applying.")
     if _source_needs_verify_first(verification):
         warnings.append(VERIFY_FIRST_MESSAGE)
     if intelligence and intelligence.get("source") == "dynamic_inference":
@@ -284,7 +285,13 @@ def create_prospect(
         or _work_arrangement(location, description)
         or "Not specified"
     )
-    salary_range = str(normalized_input.get("salary_range") or metadata.get("salary_range") or "Not disclosed").strip()
+    salary_value = str(normalized_input.get("salary_range") or metadata.get("salary_range") or "").strip()
+    compensation = normalize_compensation(
+        normalized_input.get("compensation") or salary_value,
+        source="manual" if normalized_input.get("compensation_manual_override") else "description",
+        manual_override=bool(normalized_input.get("compensation_manual_override")),
+    )
+    salary_range = str(compensation.get("display") or salary_value or "Not disclosed").strip()
     try:
         official_url = validate_official_url(raw_url) if raw_url else ""
     except JobImportError as error:
@@ -309,6 +316,7 @@ def create_prospect(
             "location": location,
             "work_arrangement": work_arrangement,
             "salary_range": salary_range,
+            "compensation": compensation,
             "job_description": description,
             "official_url": official_url,
             "source_url": official_url,
@@ -369,6 +377,13 @@ def create_prospect(
             "job_id": str(normalized.get("job_id") or ""),
             "location": location,
             "salary_range": salary_range,
+            "compensation_minimum": compensation.get("minimum"),
+            "compensation_maximum": compensation.get("maximum"),
+            "compensation_currency": compensation.get("currency"),
+            "compensation_period": compensation.get("period"),
+            "compensation_raw": compensation.get("raw"),
+            "compensation_source": compensation.get("source"),
+            "compensation_manual_override": compensation.get("manual_override", False),
             "work_arrangement": work_arrangement,
             "notes": str(job_data.get("notes") or "").strip(),
             "next_action": next_action,
