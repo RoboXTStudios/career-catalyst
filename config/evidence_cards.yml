@@ -43,8 +43,8 @@ evidence_cards:
     strongest_role_fits: [human agency builder role, startup operations, creative AI role]
     when_to_use: Use only for entrepreneurial, builder-friendly, or creative AI roles.
     when_to_avoid: Avoid for traditional PMO, governance, entertainment marketing operations, or conservative enterprise roles.
-    confidence_level: low
-    source: early-stage concept notes
+    confidence_level: medium
+    source: data/projects.yml:RoboXT Studios
   - id: governance_qa_delivery
     label: Governance, QA, and delivery leadership
     short_description: Practical operating discipline across workflows, quality standards, risk visibility, and dependable delivery.

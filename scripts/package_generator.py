@@ -33,6 +33,7 @@ try:
     )
     from .package_context import PackageContextMismatchError, validate_material_context
     from .materials_library import organize_package_outputs
+    from .storage_paths import canonical_export_root, legacy_material_paths
     from .filename_utils import company_display_name
     from .parse_job import JobParseError, parse_job_description
     from .prospect_intake import add_prospect_from_job_file
@@ -65,6 +66,7 @@ except ImportError:
     )
     from package_context import PackageContextMismatchError, validate_material_context
     from materials_library import organize_package_outputs
+    from storage_paths import canonical_export_root, legacy_material_paths
     from filename_utils import company_display_name
     from parse_job import JobParseError, parse_job_description
     from prospect_intake import add_prospect_from_job_file
@@ -233,12 +235,15 @@ def preflight_package_generation(
     prospect_id: str,
     tracker: Any,
     project_root: Optional[PathInput] = None,
+    export_root: Optional[PathInput] = None,
 ) -> Dict[str, Any]:
     """Return deterministic material identity conflicts before expensive generation."""
     application = _selected_tracker_record(prospect_id, tracker)
     records = _tracker_records(tracker)
     current_id = str(application.get("id") or prospect_id)
     current_slug = str(application.get("stable_slug") or current_id)
+    root = Path(project_root or Path.cwd())
+    library_root = canonical_export_root(root, injected_root=export_root)
     duplicate_conflicts = _duplicate_posting_conflicts(application, records)
     if duplicate_conflicts:
         return {"status": "conflict", "conflicts": duplicate_conflicts}
@@ -273,6 +278,16 @@ def preflight_package_generation(
             if value:
                 owners[str(Path(str(value)).expanduser())] = record
     conflicts: List[Dict[str, Any]] = []
+    for stranded_path in legacy_material_paths(application, library_root):
+        conflicts.append({
+            "material_type": "Legacy package path",
+            "current_prospect_id": current_id,
+            "conflicting_prospect_id": "",
+            "conflicting_company": "",
+            "conflicting_role": "",
+            "path": stranded_path,
+            "reason": "existing material is outside the canonical export root",
+        })
     for label, value in paths.items():
         if not value or str(label) == "Job Description":
             continue
@@ -493,6 +508,7 @@ def generate_package(
     generate_followups_too: Optional[bool] = None,
     override_closed: bool = False,
     force_clean_draft: bool = False,
+    export_root: Optional[PathInput] = None,
 ) -> Dict[str, Any]:
     """Generate all package materials and apply the safe Drafted-to-Reviewed transition."""
     root = Path(project_root) if project_root is not None else Path.cwd()
@@ -501,7 +517,9 @@ def generate_package(
         selected_id = str(resolved["application"].get("id") or "")
         tracker = load_application_tracker(root)
         if not force_clean_draft:
-            preflight = preflight_package_generation(selected_id, tracker, root)
+            preflight = preflight_package_generation(
+                selected_id, tracker, root, export_root=export_root
+            )
             if preflight.get("status") == "conflict":
                 conflict = (preflight.get("conflicts") or [{}])[0]
                 material_key = {
@@ -650,6 +668,7 @@ def generate_package(
             application,
             outputs,
             preserve_existing=force_clean_draft,
+            export_root=Path(export_root) if export_root is not None else None,
         )
         outputs = dict(organized["outputs"])
         material_errors = {
@@ -751,6 +770,12 @@ def generate_package(
         "status": application.get("status"),
         "job_title": parsed.get("job_title"),
         "company": context["company"],
+        "canonical_export_root": str(
+            canonical_export_root(root, injected_root=export_root)
+        ),
+        "saved_package_location": str(
+            Path(str((manifest or {}).get("manifest_path") or "")).parent
+        ) if manifest else "",
         "match_score": score.get("match_score"),
         "match_band": score.get("match_band"),
         "match_tier": score.get("match_tier"),

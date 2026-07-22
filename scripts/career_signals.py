@@ -13,8 +13,10 @@ from typing import Any, Dict, Iterable, Mapping, Optional
 
 try:
     from .application_tracker import follow_up_action_state, get_record_status
+    from .next_steps import deterministic_next_steps, safe_user_next_action
 except ImportError:
     from application_tracker import follow_up_action_state, get_record_status
+    from next_steps import deterministic_next_steps, safe_user_next_action
 
 
 IN_FLIGHT_STATUSES = frozenset(
@@ -53,88 +55,21 @@ def next_action_signal(
     """Return exactly one calm, contextual recommendation for a role."""
     values = dict(record)
     status = get_record_status(values)
-    follow_up_action = follow_up_action_state(values, today)
-    eligible = bool(follow_up_action["eligible"])
-    follow_up_reason = str(follow_up_action["reason"])
-
-    if eligible:
-        return {
-            "kind": "follow_up",
-            "label": str(follow_up_action["label"]),
-            "reason": follow_up_reason,
-            "action": str(values.get("next_action") or follow_up_action["label"]),
-            "action_key": "view_role",
-            "needs_action": True,
-            "rank": 0 if status == "Interviewing" else 1,
-        }
-    if status == "Interviewing":
-        return {
-            "kind": "interview",
-            "label": "Interview Preparation",
-            "reason": "Interview preparation is the highest-leverage action today.",
-            "action": str(values.get("next_action") or "Prepare for the next interview stage."),
-            "action_key": "view_role",
-            "needs_action": True,
-            "rank": 0,
-        }
-    if status == "Drafted":
-        return {
-            "kind": "drafted",
-            "label": "Drafted",
-            "reason": "This is the highest-fit unfinished application currently in the pipeline.",
-            "action": str(values.get("next_action") or "Complete and review the application."),
-            "action_key": "view_role",
-            "needs_action": True,
-            "rank": 3,
-        }
-    if status == "Offer":
-        return {
-            "kind": "offer",
-            "label": "Offer",
-            "reason": "An offer is the highest-leverage career decision in the pipeline.",
-            "action": str(values.get("next_action") or "Review the offer and decision timeline."),
-            "action_key": "view_role",
-            "needs_action": True,
-            "rank": 0,
-        }
-    if _missing_portal(values):
-        return {
-            "kind": "portal_correction",
-            "label": "Application Link Needed",
-            "reason": "The application portal URL is missing and needs a manual correction.",
-            "action": "Add the employer application portal URL in Advanced Details.",
-            "action_key": "view_role",
-            "needs_action": True,
-            "rank": 4,
-        }
-    if status in {"Rejected", "Withdrawn / Closed"}:
-        return {
-            "kind": "closed",
-            "label": "No Action Today",
-            "reason": "This application is closed.",
-            "action": "No action needed.",
-            "action_key": "",
-            "needs_action": False,
-            "rank": 99,
-        }
-    if follow_up_action["key"] == "check_application_status":
-        return {
-            "kind": "check_application_status",
-            "label": str(follow_up_action["label"]),
-            "reason": follow_up_reason,
-            "action": "Check the employer application portal.",
-            "action_key": "check_portal",
-            "needs_action": True,
-            "rank": 4,
-        }
+    steps = deterministic_next_steps(values, today)
+    primary = steps[0] if steps else {
+        "category": "waiting", "label": "No Action Today",
+        "reason": "No saved state requires action today.",
+    }
+    override = safe_user_next_action(values)
+    rank = 99 if status in {"Rejected", "Withdrawn / Closed"} else 0 if status in {"Interviewing", "Offer"} else 3
     return {
-        "kind": "waiting",
-        "label": str(follow_up_action["label"]),
-        "reason": follow_up_reason,
-        "action": "No follow-up action is needed today.",
-        "action_key": "",
-        "needs_action": False,
-        "rank": 50,
+        "kind": primary["category"],
+        "label": primary["label"],
+        "reason": primary["reason"],
+        "action": override or primary["label"],
+        "action_key": "" if primary["category"] == "archive_learning" else "view_role",
+        "needs_action": primary["category"] != "archive_learning",
+        "rank": rank,
     }
 
 

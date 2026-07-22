@@ -11,8 +11,14 @@ from typing import Any, Dict, Iterable
 
 try:
     from .filename_utils import build_upload_filename
+    from .storage_paths import (
+        canonical_export_root,
+        legacy_material_paths,
+        require_beneath_export_root,
+    )
 except ImportError:  # pragma: no cover - direct script imports
     from filename_utils import build_upload_filename
+    from storage_paths import canonical_export_root, legacy_material_paths, require_beneath_export_root
 
 
 ACTIVE_ROUTES = {
@@ -20,6 +26,8 @@ ACTIVE_ROUTES = {
     "follow-up": "active/applied_followup",
     "follow up": "active/applied_followup",
     "interviewing": "active/applied_followup",
+    "under consideration": "active/applied_followup",
+    "offer": "active/applied_followup",
     "ready to apply": "active/ready_to_apply",
     "active": "active/ready_to_apply",
     "drafted": "active/in_progress",
@@ -37,6 +45,7 @@ ARCHIVE_ROUTES = {
     "no longer pursuing": "archive/no_longer_pursuing",
     "closed": "archive/inactive",
     "withdrawn": "archive/no_longer_pursuing",
+    "withdrawn / closed": "archive/no_longer_pursuing",
 }
 
 OUTPUT_FILENAMES = {
@@ -260,9 +269,11 @@ def organize_package_outputs(
     outputs: Dict[str, Any],
     *,
     preserve_existing: bool = False,
+    export_root: Path | None = None,
 ) -> Dict[str, Any]:
     """Move exact package outputs to one role folder and archive transient Markdown."""
     root = Path(project_root).resolve()
+    library_root = canonical_export_root(root, injected_root=export_root)
     routing = material_route(application.get("status"))
     if routing["needs_review"]:
         return {
@@ -271,8 +282,12 @@ def organize_package_outputs(
             "warnings": ["Ambiguous status; materials left in place."],
         }
     slug = role_slug(application)
-    package_folder = root / "exports" / str(routing["route"]) / slug
-    markdown_folder = root / "exports" / "archive" / "old_generated_materials" / slug
+    package_folder = require_beneath_export_root(
+        library_root / str(routing["route"]) / slug, library_root
+    )
+    markdown_folder = require_beneath_export_root(
+        library_root / "archive" / "old_generated_materials" / slug, library_root
+    )
     updated = dict(outputs)
     files: Dict[str, str] = {}
     moved_sources: Dict[Path, Path] = {}
@@ -311,14 +326,20 @@ def organize_package_outputs(
         legacy_files_moved=legacy_moved,
         preserve_existing=preserve_existing,
     )
-    return {"outputs": updated, "manifest": manifest, "warnings": []}
+    return {
+        "outputs": updated,
+        "manifest": manifest,
+        "warnings": [],
+        "canonical_export_root": str(library_root),
+    }
 
 
 def organize_exact_material_paths(
-    project_root: Path, application: Dict[str, Any]
+    project_root: Path, application: Dict[str, Any], *, export_root: Path | None = None
 ) -> Dict[str, Any]:
     """Move an existing tracker-owned material map into one exact role folder."""
     root = Path(project_root).resolve()
+    library_root = canonical_export_root(root, injected_root=export_root)
     routing = material_route(application.get("status"))
     if routing["needs_review"]:
         return {
@@ -326,9 +347,11 @@ def organize_exact_material_paths(
             "manifest": None,
             "warnings": ["Ambiguous status; materials left in place."],
         }
-    folder = root / "exports" / str(routing["route"]) / role_slug(application)
+    folder = require_beneath_export_root(
+        library_root / str(routing["route"]) / role_slug(application), library_root
+    )
     markdown_folder = (
-        root / "exports/archive/old_generated_materials" / role_slug(application)
+        library_root / "archive/old_generated_materials" / role_slug(application)
     )
     materials: Dict[str, str] = {}
     legacy_moved = []
@@ -377,13 +400,14 @@ def organize_exact_material_paths(
 
 
 def find_exact_role_package(
-    project_root: Path, application: Dict[str, Any]
+    project_root: Path, application: Dict[str, Any], *, export_root: Path | None = None
 ) -> Dict[str, Any]:
     """Find one package by stable role slug, preferring its manifest over legacy paths."""
     root = Path(project_root).resolve()
+    library_root = canonical_export_root(root, injected_root=export_root)
     slug = role_slug(application)
-    manifests = sorted((root / "exports").glob(f"active/*/{slug}/manifest.json"))
-    manifests += sorted((root / "exports").glob(f"archive/*/{slug}/manifest.json"))
+    manifests = sorted(library_root.glob(f"active/*/{slug}/manifest.json"))
+    manifests += sorted(library_root.glob(f"archive/*/{slug}/manifest.json"))
     if manifests:
         manifest_path = manifests[0]
         payload = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -404,7 +428,14 @@ def find_exact_role_package(
         for label, value in dict(application.get("material_paths") or {}).items()
         if Path(str(value)).is_file()
     }
-    return {"files": legacy, "folder": None, "manifest": None, "archived": False}
+    return {
+        "files": legacy,
+        "folder": None,
+        "manifest": None,
+        "archived": False,
+        "legacy_paths": legacy_material_paths(application, library_root),
+        "canonical_export_root": str(library_root),
+    }
 
 
 def move_role_package(
@@ -412,9 +443,10 @@ def move_role_package(
     application: Dict[str, Any],
     *,
     archive: bool,
+    export_root: Path | None = None,
 ) -> Dict[str, Any]:
     """Archive or restore an exact package folder without changing role status."""
-    found = find_exact_role_package(project_root, application)
+    found = find_exact_role_package(project_root, application, export_root=export_root)
     folder = found.get("folder")
     if not folder:
         return {"moved": False, "reason": "No exact package materials yet"}
@@ -424,8 +456,9 @@ def move_role_package(
         if archive
         else ACTIVE_ROUTES.get(_key(application.get("status")), "active/in_progress")
     )
-    destination = (
-        Path(project_root).resolve() / "exports" / route / role_slug(application)
+    library_root = canonical_export_root(project_root, injected_root=export_root)
+    destination = require_beneath_export_root(
+        library_root / route / role_slug(application), library_root
     )
     target = _move_file(Path(folder), destination) if Path(folder).is_file() else None
     if target is None:

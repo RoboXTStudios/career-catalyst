@@ -45,11 +45,11 @@ class TailorResumeTests(unittest.TestCase):
 
         self.assertIn("## Core Competencies", content)
 
-    def test_generated_resume_contains_campaignos(self):
+    def test_generated_resume_does_not_force_a_project_section(self):
         result = tailor_resume("executive_operations", SAMPLE_JOB, PROJECT_ROOT)
         content = Path(result["output_path"]).read_text(encoding="utf-8")
 
-        self.assertIn("CampaignOS", content)
+        self.assertNotIn("## Selected Projects", content)
 
     def test_generated_resume_preserves_canonical_platform_language(self):
         result = tailor_resume("executive_operations", SAMPLE_JOB, PROJECT_ROOT)
@@ -79,7 +79,7 @@ def _project_names_and_bullet_counts(parsed_job, resume_profile="executive_opera
     return {project["name"]: len(bullets) for project, bullets in projects}
 
 
-def test_azira_style_resume_omits_editorial_projects_and_keeps_campaignos_brief():
+def test_azira_style_resume_omits_unrelated_projects():
     parsed_job = {
         "job_title": "Director, Chief of Staff & Business Operations",
         "company": "Azira",
@@ -87,9 +87,8 @@ def test_azira_style_resume_omits_editorial_projects_and_keeps_campaignos_brief(
         "keywords": ["chief of staff", "business operations", "operating cadence"],
     }
     projects = _project_names_and_bullet_counts(parsed_job)
-    assert "Substack Writer" not in projects
+    assert "RoboXT Studios" not in projects
     assert "OMG23 Multiverse Newsletter" not in projects
-    assert projects["CampaignOS"] == 1
 
 
 def test_product_ai_resume_allows_campaignos_more_prominently():
@@ -111,9 +110,8 @@ def test_traditional_pmo_resume_omits_creative_editorial_projects():
         "keywords": ["PMO", "governance", "delivery", "content", "editorial"],
     }
     projects = _project_names_and_bullet_counts(parsed_job)
-    assert "Substack Writer" not in projects
+    assert "RoboXT Studios" not in projects
     assert "OMG23 Multiverse Newsletter" not in projects
-    assert projects["CampaignOS"] == 1
 
 
 if __name__ == "__main__":

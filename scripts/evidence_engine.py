@@ -130,7 +130,9 @@ def select_evidence_cards(
             continue
         if category in {"traditional_pmo", "chief_of_staff_business_operations"} and card_id in {"roboxt_studios", "photography_creative_voice", "career_catalyst"}:
             continue
-        if category not in {"builder_friendly", "martech_crm", "product_ai_operations", "chief_of_staff_business_operations"} and card_id in {"campaignos", "career_catalyst", "roboxt_studios"}:
+        if category not in {"builder_friendly", "martech_crm", "product_ai_operations", "chief_of_staff_business_operations", "creative_operations"} and card_id in {"campaignos", "career_catalyst", "roboxt_studios"}:
+            continue
+        if category == "creative_operations" and card_id in {"campaignos", "career_catalyst"}:
             continue
         if category == "chief_of_staff_business_operations" and card_id == "campaignos" and "campaignos" not in text and _signals(text, ("ai", "automation", "product", "systems")) == 0:
             continue
@@ -147,6 +149,10 @@ def select_evidence_cards(
             score += 5
         if category == "product_ai_operations" and card_id == "campaignos":
             score += 6
+        if category == "product_ai_operations" and card_id == "career_catalyst":
+            score += 8
+        if category == "creative_operations" and card_id == "roboxt_studios":
+            score += 7
         if score >= 5:
             selected.append((score, card))
     selected.sort(key=lambda item: (-item[0], item[1]["id"]))
@@ -396,12 +402,23 @@ def enrich_seed_evidence_projects(project_root: str | Path | None = None) -> lis
 
 
 def evidence_projects_for_role(application: dict[str, Any], project_root: str | Path | None = None) -> list[dict[str, Any]]:
-    """Return manually associated evidence projects for a tracker role in saved order."""
+    """Return prospect-scoped, externally usable Evidence in saved order."""
     requested = [str(project_id) for project_id in application.get("evidence_project_ids", []) if str(project_id).strip()]
     if not requested:
         return []
     projects = {project["id"]: project for project in load_evidence_projects(project_root)}
-    return [projects[project_id] for project_id in requested if project_id in projects]
+    selected = [projects[project_id] for project_id in requested if project_id in projects]
+    return [project for project in selected if evidence_is_externally_usable(project)]
+
+
+def evidence_is_externally_usable(project: dict[str, Any]) -> bool:
+    """Honor Evidence status and explicit privacy/usage controls."""
+    if str(project.get("status") or "Active") != "Active":
+        return False
+    if project.get("external_use") is False or project.get("private") is True:
+        return False
+    usage = str(project.get("usage") or project.get("usage_control") or "").lower()
+    return usage not in {"private", "internal only", "do not use externally", "exclude"}
 
 
 def evidence_generation_context(projects: list[dict[str, Any]]) -> str:

@@ -51,6 +51,5 @@ skill_groups:
     publishing:
       - WordPress
       - Mailchimp
-      - Substack
     technical:
       - Python working knowledge
