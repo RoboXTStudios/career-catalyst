@@ -10,6 +10,7 @@ try:
     from .parse_job import (
         extract_keywords,
         extract_qualifications,
+        extract_preferred_qualifications,
         extract_responsibilities,
         parse_job_description,
     )
@@ -19,6 +20,7 @@ except ImportError:
     from parse_job import (
         extract_keywords,
         extract_qualifications,
+        extract_preferred_qualifications,
         extract_responsibilities,
         parse_job_description,
     )
@@ -252,6 +254,7 @@ def _job_terms(parsed_job: Dict[str, Any]) -> List[str]:
     values.extend(parsed_job.get("keywords", []))
     values.extend(_flatten_strings(parsed_job.get("responsibilities", [])))
     values.extend(_flatten_strings(parsed_job.get("qualifications", [])))
+    values.extend(_flatten_strings(parsed_job.get("preferred_qualifications", [])))
     return _dedupe([value for value in values if isinstance(value, str)])
 
 
@@ -265,7 +268,10 @@ def _skills_from_data(career_data: Dict[str, Any]) -> List[str]:
     return _dedupe(_flatten_strings(skill_groups))
 
 
-def _candidate_text(career_data: Dict[str, Any]) -> str:
+def _evidence_text(projects: Optional[List[Dict[str, Any]]] = None) -> str:
+    return "\n".join(_flatten_strings(projects or []))
+
+def _candidate_text(career_data: Dict[str, Any], associated_evidence_projects: Optional[List[Dict[str, Any]]] = None) -> str:
     sections = [
         career_data["data"].get("skills", {}),
         career_data["data"].get("achievements", {}),
@@ -273,6 +279,7 @@ def _candidate_text(career_data: Dict[str, Any]) -> str:
         career_data["data"].get("projects", {}),
         career_data["data"].get("personal_brand", {}),
         career_data["config"].get("role_profiles", {}),
+        associated_evidence_projects or [],
     ]
     return "\n".join(_flatten_strings(sections))
 
@@ -777,23 +784,26 @@ def _decision_match_report(parsed_job: Dict[str, Any], legacy_report: Dict[str, 
     return legacy_report
 
 
-def _score_parsed_job(parsed_job: Dict[str, Any], root: Path) -> Dict[str, Any]:
+def _score_parsed_job(parsed_job: Dict[str, Any], root: Path, associated_evidence_projects: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
     try:
         career_data = load_all_yaml(root)
     except DataLoadError:
         career_data = _empty_career_data()
     keywords = _important_keywords(parsed_job)
-    candidate_text = _candidate_text(career_data)
+    associated_evidence_projects = associated_evidence_projects or []
+    candidate_text = _candidate_text(career_data, associated_evidence_projects)
 
     top_skills = _top_matching_skills(career_data, parsed_job)
     top_projects = _top_matching_projects(career_data, keywords)
     top_experience = _top_matching_experience(career_data, keywords)
+    evidence_matches = _matched_keywords_for_text(keywords, _evidence_text(associated_evidence_projects))
     missing_keywords = _missing_keywords(keywords, candidate_text)
 
     skill_score = _score_from_count(len(top_skills), 6)
     experience_matched_keywords = set()
     for item in top_experience:
         experience_matched_keywords.update(item["matched_keywords"])
+    experience_matched_keywords.update(evidence_matches)
     experience_score = _score_from_count(len(experience_matched_keywords), 8)
     project_score = _score_from_count(len(top_projects), 2)
     alignment_score = _alignment_score(career_data, parsed_job)
@@ -815,6 +825,9 @@ def _score_parsed_job(parsed_job: Dict[str, Any], root: Path) -> Dict[str, Any]:
         "top_matching_skills": top_skills,
         "top_matching_projects": top_projects,
         "top_matching_experience": top_experience,
+        "associated_evidence_count": len(associated_evidence_projects),
+        "associated_evidence_project_titles": [str(p.get("title")) for p in associated_evidence_projects if p.get("title")],
+        "associated_evidence_matches": evidence_matches[:8],
         "missing_keywords": missing_keywords,
         "recommended_resume_profile": _recommended_resume_profile(parsed_job),
         "tailoring_notes": [],
@@ -826,7 +839,7 @@ def _score_parsed_job(parsed_job: Dict[str, Any], root: Path) -> Dict[str, Any]:
     return report
 
 
-def score_job_data(job_data: Dict[str, Any], project_root: Optional[PathInput] = None) -> Dict[str, Any]:
+def score_job_data(job_data: Dict[str, Any], project_root: Optional[PathInput] = None, associated_evidence_projects: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
     """Score unsaved intake data so the UI can show the gate before generation."""
     incomplete = incomplete_match_report(job_data)
     if incomplete:
@@ -856,11 +869,12 @@ def score_job_data(job_data: Dict[str, Any], project_root: Optional[PathInput] =
         "keywords": extract_keywords(canonical_text),
         "responsibilities": extract_responsibilities(canonical_text),
         "qualifications": extract_qualifications(canonical_text),
+        "preferred_qualifications": extract_preferred_qualifications(canonical_text),
     }
-    return _score_parsed_job(parsed_job, root)
+    return _score_parsed_job(parsed_job, root, associated_evidence_projects)
 
 
-def score_job_match(job_path: PathInput, project_root: Optional[PathInput] = None) -> Dict[str, Any]:
+def score_job_match(job_path: PathInput, project_root: Optional[PathInput] = None, associated_evidence_projects: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
     """Return the legacy tailoring report plus the Sprint 13 decision gate."""
     root = Path(project_root) if project_root is not None else Path.cwd()
     parsed_job = parse_job_description(root / job_path)
@@ -878,4 +892,4 @@ def score_job_match(job_path: PathInput, project_root: Optional[PathInput] = Non
     )
     if incomplete:
         return incomplete
-    return _score_parsed_job(parsed_job, root)
+    return _score_parsed_job(parsed_job, root, associated_evidence_projects)

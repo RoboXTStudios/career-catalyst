@@ -8,7 +8,7 @@ from html import unescape
 from html.parser import HTMLParser
 from typing import Any, Dict, Iterable, Optional
 from urllib.error import HTTPError, URLError
-from urllib.parse import quote, urlparse
+from urllib.parse import quote, urlparse, urlunparse
 from urllib.request import Request, urlopen
 
 try:
@@ -80,17 +80,26 @@ class _VisibleTextParser(HTMLParser):
 
 
 
-def _greenhouse_board_job_api_url(url: str) -> str:
-    """Return the Greenhouse Boards API URL for job-board posting URLs."""
+def _greenhouse_identity(url: str) -> Dict[str, str]:
+    """Return stable Greenhouse board/job identity for supported posting URLs."""
     parsed = urlparse(url)
     host = (parsed.hostname or "").lower()
     segments = [segment for segment in parsed.path.split("/") if segment]
-    if host != "job-boards.greenhouse.io" or len(segments) < 3:
+    if host not in {"job-boards.greenhouse.io", "boards.greenhouse.io"} or len(segments) < 3:
+        return {}
+    if segments[1].lower() != "jobs" or not segments[2].isdigit():
+        return {}
+    canonical = urlunparse((parsed.scheme, parsed.netloc, f"/{segments[0]}/jobs/{segments[2]}", "", "", ""))
+    return {"board_token": segments[0], "job_id": segments[2], "canonical_url": canonical}
+
+
+def _greenhouse_board_job_api_url(url: str) -> str:
+    """Return the Greenhouse Boards API URL for supported job posting URLs."""
+    identity = _greenhouse_identity(url)
+    if not identity:
         return ""
-    if segments[1] != "jobs" or not segments[2].isdigit():
-        return ""
-    board_token = quote(segments[0], safe="")
-    job_id = quote(segments[2], safe="")
+    board_token = quote(identity["board_token"], safe="")
+    job_id = quote(identity["job_id"], safe="")
     return f"https://boards-api.greenhouse.io/v1/boards/{board_token}/jobs/{job_id}"
 
 
@@ -122,10 +131,11 @@ def _fetch_json(url: str, timeout: int = 12) -> Dict[str, Any]:
 
 
 def _greenhouse_company_from_url(url: str) -> str:
-    segments = [segment for segment in urlparse(url).path.split("/") if segment]
-    if not segments:
+    identity = _greenhouse_identity(url)
+    token = identity.get("board_token", "")
+    if not token:
         return ""
-    return re.sub(r"[-_]+", " ", segments[0]).strip().title()
+    return re.sub(r"[-_]+", " ", token).strip().title()
 
 
 def _greenhouse_location(value: Any) -> str:
@@ -138,30 +148,56 @@ def _extract_greenhouse_job(url: str, timeout: int = 12) -> Optional[Dict[str, A
     api_url = _greenhouse_board_job_api_url(url)
     if not api_url:
         return None
+    identity = _greenhouse_identity(url)
     payload = _fetch_json(api_url, timeout)
     description = _plain_html_text(payload.get("content"))
     company = _greenhouse_company_from_url(url)
-    canonical_url = str(payload.get("absolute_url") or url).strip()
+    canonical_url = str(payload.get("absolute_url") or identity.get("canonical_url") or url).strip()
     parsed = {
         "job_title": payload.get("title") or "",
         "company": company,
         "location": _greenhouse_location(payload.get("location")) or "Not specified",
         "work_arrangement": _work_arrangement(_greenhouse_location(payload.get("location")), description),
         "job_id": str(payload.get("id") or "").strip(),
+        "external_job_id": str(payload.get("id") or "").strip(),
+        "source_platform": "Greenhouse",
+        "description_status": "Verified",
         "source": _source_name(url),
-        "source_url": url,
-        "official_url": url,
+        "source_url": identity.get("canonical_url") or url,
+        "official_url": identity.get("canonical_url") or url,
         "original_source_url": url,
         "canonical_apply_url": canonical_url,
         "job_description": description,
     }
+    _validate_greenhouse_payload(parsed, identity)
     parsed.update(normalize_job_source(parsed))
-    parsed["source_url"] = url
-    parsed["official_url"] = url
+    parsed["source_url"] = identity.get("canonical_url") or url
+    parsed["official_url"] = identity.get("canonical_url") or url
     parsed["original_source_url"] = url
     parsed["canonical_apply_url"] = canonical_url or parsed.get("canonical_apply_url") or url
     create_job_markdown(parsed)
     return parsed
+
+
+def _validate_greenhouse_payload(parsed: Dict[str, Any], identity: Dict[str, str]) -> None:
+    """Block Greenhouse imports whose structured record does not match the requested job."""
+    requested_id = str(identity.get("job_id") or "").strip()
+    payload_id = str(parsed.get("job_id") or "").strip()
+    description = str(parsed.get("job_description") or "").strip()
+    title = str(parsed.get("job_title") or "").strip()
+    if requested_id and payload_id and requested_id != payload_id:
+        raise _manual_fallback("Career Catalyst could not verify the Greenhouse job id for this URL.")
+    if not title or len(description) < MINIMUM_DESCRIPTION_LENGTH:
+        raise _manual_fallback("Career Catalyst could not verify the complete job description from this URL.")
+    lowered = description.lower()
+    nav_terms = sum(1 for term in ("view all jobs", "job openings", "department", "apply for this job") if term in lowered)
+    role_terms = sum(1 for term in _terms_for_integrity(title) if term in lowered)
+    if nav_terms >= 2 and role_terms == 0:
+        raise _manual_fallback("Career Catalyst could not verify role-specific Greenhouse content from this URL.")
+
+
+def _terms_for_integrity(value: str) -> list[str]:
+    return [term for term in re.findall(r"[a-z0-9]+", value.lower()) if len(term) > 3]
 
 def _manual_fallback(message: str) -> JobImportError:
     return JobImportError(

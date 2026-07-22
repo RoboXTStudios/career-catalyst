@@ -2390,6 +2390,9 @@ def _render_generate_package(st: Any) -> None:
                 )
         except PackageGenerationError as error:
             st.error(str(error))
+            st.info("Safe recovery: generate a clean new draft for this role, view the conflicting material in the materials library, or cancel without changes. Career Catalyst will not overwrite the conflicting draft automatically.")
+            if error.details:
+                st.caption("Conflict details: " + ", ".join(str(v) for v in error.details.get("violations", [])))
             if error.checklist:
                 _render_package_summary(
                     st, {"package_checklist": error.checklist}
@@ -2738,10 +2741,12 @@ def _render_dashboard(st: Any) -> None:
         "app after code changes."
     )
     st.info(
-        "Career Intelligence helps you explore patterns across experience, applications, strengths, and gaps. "
+        "Career Intelligence helps you explore patterns across experience, applications, strengths, and gaps. Career Intelligence is an explanatory view of current role, capability, Evidence, and application data—not a separate source of truth. "
         "Filters on this page only change what you see here; they do not control ATS resumes, cover letters, "
         "match scores, or generated application materials. To prioritize specific accomplishments for a role, "
-        "associate projects through that role's Relevant Evidence section."
+        "associate projects through that role's Relevant Evidence section. "
+        "Not represented in source résumé means stored Evidence records are not currently represented in the source résumé; "
+        "they are not disqualified from future materials. One Evidence record may support multiple direct, inferred, or adjacent capabilities."
     )
     if "dashboard_notice" in st.session_state:
         st.success(st.session_state.pop("dashboard_notice"))

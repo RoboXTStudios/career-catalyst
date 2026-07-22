@@ -85,9 +85,23 @@ RESPONSIBILITY_HEADINGS = (
 QUALIFICATION_HEADINGS = (
     "qualifications",
     "requirements",
+    "required qualifications",
     "what you bring",
     "you have",
+)
+
+PREFERRED_QUALIFICATION_HEADINGS = (
     "preferred qualifications",
+    "nice to have",
+    "bonus points",
+)
+
+BOILERPLATE_HEADINGS = (
+    "about us",
+    "company overview",
+    "benefits",
+    "equal employment opportunity",
+    "eeo",
 )
 
 RESPONSIBILITY_TERMS = (
@@ -335,7 +349,7 @@ def _section_matches(line: str, headings: Tuple[str, ...]) -> bool:
     return any(normalized == heading or heading in normalized for heading in headings)
 
 
-def _extract_section_items(text: str, headings: Tuple[str, ...]) -> List[str]:
+def _extract_section_items(text: str, headings: Tuple[str, ...], stop_headings: Tuple[str, ...] = ()) -> List[str]:
     items = []
     active = False
 
@@ -345,7 +359,10 @@ def _extract_section_items(text: str, headings: Tuple[str, ...]) -> List[str]:
             continue
 
         if _is_heading(stripped):
-            active = _section_matches(stripped, headings)
+            if stop_headings and _section_matches(stripped, stop_headings):
+                active = False
+            else:
+                active = _section_matches(stripped, headings)
             continue
 
         if not active:
@@ -377,12 +394,22 @@ def extract_responsibilities(text: str) -> List[str]:
 
 
 def extract_qualifications(text: str) -> List[str]:
-    """Extract likely qualifications from headings or qualification-like bullets."""
-    items = _extract_section_items(text, QUALIFICATION_HEADINGS)
+    """Extract likely required qualifications without merging preferred-only sections."""
+    items = _extract_section_items(text, QUALIFICATION_HEADINGS, PREFERRED_QUALIFICATION_HEADINGS)
     if items:
         return items
 
     return [line for line in _extract_bullet_lines(text) if _contains_any(line, QUALIFICATION_TERMS)]
+
+
+def extract_preferred_qualifications(text: str) -> List[str]:
+    """Extract preferred qualifications separately from requirements."""
+    return _extract_section_items(text, PREFERRED_QUALIFICATION_HEADINGS)
+
+
+def extract_boilerplate(text: str) -> List[str]:
+    """Retain company/benefits/EEO text for inspection while excluding it from scoring requirements."""
+    return _extract_section_items(text, BOILERPLATE_HEADINGS)
 
 
 def extract_keywords(text: str, limit: int = 12) -> List[str]:
@@ -433,6 +460,8 @@ def parse_job_description(file_path: PathInput) -> Dict[str, Any]:
         "keywords": extract_keywords(text),
         "responsibilities": extract_responsibilities(text),
         "qualifications": extract_qualifications(text),
+        "preferred_qualifications": extract_preferred_qualifications(text),
+        "boilerplate_sections": extract_boilerplate(text),
     }
     parsed["summary"] = _summary(parsed)
     return parsed
