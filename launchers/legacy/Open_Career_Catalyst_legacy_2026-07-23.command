@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Legacy pre-Sprint 29.5 launcher preserved on 2026-07-23. Do not use for the current runtime.
+
 set -u
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
