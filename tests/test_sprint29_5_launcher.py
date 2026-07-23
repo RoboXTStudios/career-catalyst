@@ -8,6 +8,9 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 LAUNCHER = PROJECT_ROOT / "launchers" / "launch_career_catalyst.sh"
 ENTRYPOINT = PROJECT_ROOT / "launchers" / "career_catalyst_entrypoint.py"
 APP_ROOT = PROJECT_ROOT / "launchers" / "Career Catalyst.app"
+COMMAND_LAUNCHER = (
+    APP_ROOT / "Contents" / "Resources" / "launch_career_catalyst.command"
+)
 
 
 def _source_and_run(script: str, tmp_path: Path) -> subprocess.CompletedProcess:
@@ -31,10 +34,15 @@ def _source_and_run(script: str, tmp_path: Path) -> subprocess.CompletedProcess:
 
 def test_launcher_shell_and_app_bundle_are_valid():
     subprocess.run(["/bin/bash", "-n", str(LAUNCHER)], check=True)
+    subprocess.run(["/bin/bash", "-n", str(COMMAND_LAUNCHER)], check=True)
+    bundle_executable = APP_ROOT / "Contents" / "MacOS" / "Career Catalyst"
     subprocess.run(
-        ["/bin/bash", "-n", str(APP_ROOT / "Contents" / "MacOS" / "Career Catalyst")],
+        ["/bin/bash", "-n", str(bundle_executable)],
         check=True,
     )
+    bundle_text = bundle_executable.read_text(encoding="utf-8")
+    assert '/usr/bin/open -a Terminal "$COMMAND_PATH"' in bundle_text
+    assert "Apple Events automation access" in bundle_text
     with (APP_ROOT / "Contents" / "Info.plist").open("rb") as handle:
         plist = plistlib.load(handle)
     assert plist["CFBundleIdentifier"] == "com.roboxtstudios.careercatalyst"

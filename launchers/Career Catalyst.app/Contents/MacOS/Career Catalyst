@@ -22,4 +22,17 @@ if [ -z "$LAUNCHER_PATH" ] || [ ! -f "$LAUNCHER_PATH" ]; then
   exit 1
 fi
 
-CAREER_CATALYST_CONFIG_FILE="$CONFIG_FILE" exec /bin/bash "$LAUNCHER_PATH"
+APP_CONTENTS="$(cd "$(dirname "$0")/.." && pwd)"
+COMMAND_PATH="$APP_CONTENTS/Resources/launch_career_catalyst.command"
+if [ ! -x "$COMMAND_PATH" ]; then
+  show_error "The durable Career Catalyst command is unavailable: $COMMAND_PATH"
+  exit 1
+fi
+
+# Finder-launched app bundles do not inherit Terminal's approved access to the
+# user's Documents folder. A .command file uses Terminal as the launch host
+# without requesting Apple Events automation access.
+if ! /usr/bin/open -a Terminal "$COMMAND_PATH"; then
+  show_error "The macOS Terminal launch service was unavailable."
+  exit 1
+fi
