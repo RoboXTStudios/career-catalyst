@@ -271,42 +271,29 @@ The local UI mirrors the Career Catalyst dashboard and provides an interactive c
 
 Recommended:
 
-Double-click:
+Double-click the installed macOS app:
 
 ```text
-launchers/Open_Career_Catalyst.command
+~/Applications/Career Catalyst.app
 ```
 
-First time only:
+The app invokes the repository-owned launcher:
 
-```bash
-chmod +x launchers/Open_Career_Catalyst.command
+```text
+launchers/launch_career_catalyst.sh
 ```
 
-Manual fallback:
+Its local configuration is stored outside Git at:
 
-```bash
-python3 -m streamlit run app.py
+```text
+~/Library/Application Support/Career Catalyst/launcher.conf
 ```
 
-To stop:
+Startup logs are stored outside Git at:
 
-Close the Terminal window or press Control+C.
-
-### Optional: Create a Dock App
-
-Option A:
-
-- Double-click `launchers/Open_Career_Catalyst.command` in Finder.
-
-Option B:
-
-1. Open Automator.
-2. Choose **Application**.
-3. Add **Run Shell Script**.
-4. Call the launcher with `open "/full/path/to/career-catalyst/launchers/Open_Career_Catalyst.command"`, replacing the example path with the launcher path shown in Finder.
-5. Save as `Career Catalyst.app`.
-6. Drag `Career Catalyst.app` to the Dock.
+```text
+~/Library/Logs/Career Catalyst/
+```
 
 Launcher details are also available from:
 
