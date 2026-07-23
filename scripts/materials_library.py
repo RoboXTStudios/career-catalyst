@@ -5,9 +5,11 @@ from __future__ import annotations
 import json
 import re
 import shutil
+import time
+from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterable
+from typing import Any, Dict, Iterable, Tuple
 
 try:
     from .filename_utils import build_upload_filename
@@ -47,6 +49,14 @@ ARCHIVE_ROUTES = {
     "withdrawn": "archive/no_longer_pursuing",
     "withdrawn / closed": "archive/no_longer_pursuing",
 }
+_MANIFEST_INDEX_CACHE: Dict[
+    Path, Tuple[Tuple[Tuple[str, int, int], ...], Dict[str, Tuple[Path, ...]]]
+] = {}
+_MANIFEST_PAYLOAD_CACHE: Dict[
+    Path, Tuple[Tuple[int, int, int], Dict[str, Any]]
+] = {}
+_MANIFEST_INDEX_VALIDATED_AT: Dict[Path, float] = {}
+_MANIFEST_INDEX_RECHECK_SECONDS = 0.25
 
 OUTPUT_FILENAMES = {
     "styled_docx": "styled_resume.docx",
@@ -217,6 +227,77 @@ def _plain_text(markdown: str) -> str:
     return text.replace("**", "").rstrip() + "\n"
 
 
+def _manifest_directory_signature(
+    library_root: Path,
+) -> Tuple[Tuple[str, int, int], ...]:
+    """Track category changes without rescanning every role package."""
+    signature = []
+    for route_root in (library_root / "active", library_root / "archive"):
+        if not route_root.is_dir():
+            continue
+        category_directories = sorted(
+            path for path in route_root.iterdir() if path.is_dir()
+        )
+        for directory in (route_root, *category_directories):
+            try:
+                stat = directory.stat()
+            except OSError:
+                continue
+            signature.append(
+                (
+                    str(directory.relative_to(library_root)),
+                    stat.st_mtime_ns,
+                    stat.st_ctime_ns,
+                )
+            )
+    return tuple(signature)
+
+
+def _manifest_index(library_root: Path) -> Dict[str, Tuple[Path, ...]]:
+    cached = _MANIFEST_INDEX_CACHE.get(library_root)
+    now = time.monotonic()
+    if (
+        cached
+        and now - _MANIFEST_INDEX_VALIDATED_AT.get(library_root, 0)
+        < _MANIFEST_INDEX_RECHECK_SECONDS
+    ):
+        return cached[1]
+
+    signature = _manifest_directory_signature(library_root)
+    if cached and cached[0] == signature:
+        _MANIFEST_INDEX_VALIDATED_AT[library_root] = now
+        return cached[1]
+
+    index: Dict[str, list[Path]] = {}
+    for route in ("active", "archive"):
+        for manifest_path in sorted(
+            (library_root / route).glob("*/*/manifest.json")
+        ):
+            index.setdefault(manifest_path.parent.name, []).append(manifest_path)
+    frozen = {slug: tuple(paths) for slug, paths in index.items()}
+    _MANIFEST_INDEX_CACHE[library_root] = (signature, frozen)
+    _MANIFEST_INDEX_VALIDATED_AT[library_root] = now
+    return frozen
+
+
+def _load_manifest(manifest_path: Path) -> Dict[str, Any]:
+    stat = manifest_path.stat()
+    signature = (stat.st_mtime_ns, stat.st_ctime_ns, stat.st_size)
+    cached = _MANIFEST_PAYLOAD_CACHE.get(manifest_path)
+    if cached and cached[0] == signature:
+        return deepcopy(cached[1])
+    payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    _MANIFEST_PAYLOAD_CACHE[manifest_path] = (signature, deepcopy(payload))
+    return payload
+
+
+def invalidate_material_package_cache() -> None:
+    """Forget package indexes after an in-process manifest write or move."""
+    _MANIFEST_INDEX_CACHE.clear()
+    _MANIFEST_PAYLOAD_CACHE.clear()
+    _MANIFEST_INDEX_VALIDATED_AT.clear()
+
+
 def write_role_manifest(
     folder: Path,
     application: Dict[str, Any],
@@ -259,6 +340,7 @@ def write_role_manifest(
     if preserve_existing:
         manifest_path = _unique_destination(manifest_path)
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    invalidate_material_package_cache()
     manifest["manifest_path"] = str(manifest_path.resolve())
     return manifest
 
@@ -406,11 +488,10 @@ def find_exact_role_package(
     root = Path(project_root).resolve()
     library_root = canonical_export_root(root, injected_root=export_root)
     slug = role_slug(application)
-    manifests = sorted(library_root.glob(f"active/*/{slug}/manifest.json"))
-    manifests += sorted(library_root.glob(f"archive/*/{slug}/manifest.json"))
+    manifests = list(_manifest_index(library_root).get(slug, ()))
     if manifests:
         manifest_path = manifests[0]
-        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+        payload = _load_manifest(manifest_path)
         if str(payload.get("prospect_id") or "") == str(application.get("id") or ""):
             files = {
                 key: Path(value)
@@ -483,6 +564,7 @@ def move_role_package(
         if (target / Path(value).name).is_file()
     }
     manifest_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    invalidate_material_package_cache()
     payload["manifest_path"] = str(manifest_path.resolve())
     return {"moved": True, "folder": target, "manifest": payload, "route": status_route}
 
