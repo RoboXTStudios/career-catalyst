@@ -4,6 +4,7 @@ import html
 import json
 import os
 import re
+from copy import deepcopy
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
@@ -74,6 +75,9 @@ ASSET_DIRECTORIES = (
     "exports/followups",
     "exports/pdf",
 )
+_PACKAGE_READ_CACHE: Dict[
+    Path, Tuple[Tuple[Tuple[str, int, int, int], ...], Dict[str, Any]]
+] = {}
 LINK_ORDER = (
     "Job Description",
     "Tailored Markdown Resume",
@@ -676,6 +680,37 @@ def _scan_files(root: Path, relative_directory: str, suffixes: Iterable[str]) ->
         for path in directory.iterdir()
         if path.is_file() and path.suffix.lower() in allowed_suffixes
     )
+
+
+def _package_input_signature(root: Path) -> Tuple[Tuple[str, int, int, int], ...]:
+    """Describe only files that contribute to the dashboard package map."""
+    paths = [root / "data" / "application_tracker.yml"]
+    paths.extend(_scan_files(root, "jobs", (".md", ".txt")))
+    for relative_directory in ASSET_DIRECTORIES:
+        paths.extend(
+            _scan_files(
+                root, relative_directory, (".md", ".docx", ".txt", ".pdf")
+            )
+        )
+    archive_root = root / "exports" / "archive"
+    if archive_root.is_dir():
+        paths.extend(sorted(archive_root.glob("*/archive_manifest.json")))
+
+    signature = []
+    for path in paths:
+        try:
+            stat = path.stat()
+        except OSError:
+            continue
+        signature.append(
+            (
+                str(path.relative_to(root)),
+                stat.st_mtime_ns,
+                stat.st_ctime_ns,
+                stat.st_size,
+            )
+        )
+    return tuple(signature)
 
 
 def _load_jobs(root: Path) -> List[Dict[str, Any]]:
@@ -2001,6 +2036,11 @@ def _render_html(
 def load_application_packages(project_root: PathInput = Path.cwd()) -> Dict[str, Any]:
     """Load tracker-backed application packages for local dashboard surfaces."""
     root = Path(project_root).resolve()
+    signature = _package_input_signature(root)
+    cached = _PACKAGE_READ_CACHE.get(root)
+    if cached and cached[0] == signature:
+        return deepcopy(cached[1])
+
     packages = _load_jobs(root)
     tracker = validate_application_tracker(root)["applications"]
     _merge_tracker(packages, tracker, root)
@@ -2017,11 +2057,13 @@ def load_application_packages(project_root: PathInput = Path.cwd()) -> Dict[str,
             _slug(item["role"]),
         )
     )
-    return {
+    result = {
         "packages": packages,
         "unassigned": unassigned,
         "groups": _partition_packages(packages),
     }
+    _PACKAGE_READ_CACHE[root] = (signature, deepcopy(result))
+    return deepcopy(result)
 
 
 def generate_dashboard(project_root: PathInput = Path.cwd()) -> Dict[str, Any]:

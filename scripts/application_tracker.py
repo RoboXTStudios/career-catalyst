@@ -3,6 +3,7 @@
 from datetime import date, datetime
 import re
 from collections import Counter
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -16,6 +17,10 @@ except ImportError:
 
 PathInput = Union[str, Path]
 TRACKER_PATH = "data/application_tracker.yml"
+_SAFE_YAML_LOADER = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
+_TRACKER_READ_CACHE: Dict[
+    Path, Tuple[Tuple[int, int, int], List[Dict[str, Any]]]
+] = {}
 REQUIRED_FIELDS = (
     "id",
     "company",
@@ -524,12 +529,21 @@ def tracker_role_keys(application: Dict[str, Any]) -> set[str]:
 def load_application_tracker(project_root: Optional[PathInput] = None) -> List[Dict[str, Any]]:
     """Load the normalized tracker schema from the project data directory."""
     root = Path(project_root) if project_root is not None else Path.cwd()
-    tracker_path = root / TRACKER_PATH
+    tracker_path = (root / TRACKER_PATH).resolve()
     if not tracker_path.is_file():
         raise TrackerValidationError(f"Application tracker file not found: {TRACKER_PATH}")
 
+    stat = tracker_path.stat()
+    signature = (stat.st_mtime_ns, stat.st_ctime_ns, stat.st_size)
+    cached = _TRACKER_READ_CACHE.get(tracker_path)
+    if cached and cached[0] == signature:
+        return deepcopy(cached[1])
+
     try:
-        loaded = yaml.safe_load(tracker_path.read_text(encoding="utf-8"))
+        loaded = yaml.load(
+            tracker_path.read_text(encoding="utf-8"),
+            Loader=_SAFE_YAML_LOADER,
+        )
     except yaml.YAMLError as error:
         raise TrackerValidationError(
             f"Malformed YAML in {TRACKER_PATH}: {error}"
@@ -543,7 +557,20 @@ def load_application_tracker(project_root: Optional[PathInput] = None) -> List[D
         raise TrackerValidationError(
             f"Application tracker must contain a top-level applications list: {TRACKER_PATH}"
         )
-    return loaded["applications"]
+    applications = loaded["applications"]
+    _TRACKER_READ_CACHE[tracker_path] = (signature, deepcopy(applications))
+    return deepcopy(applications)
+
+
+def invalidate_application_tracker_cache(
+    project_root: Optional[PathInput] = None,
+) -> None:
+    """Forget cached tracker data after an in-process write."""
+    if project_root is None:
+        _TRACKER_READ_CACHE.clear()
+        return
+    tracker_path = (Path(project_root) / TRACKER_PATH).resolve()
+    _TRACKER_READ_CACHE.pop(tracker_path, None)
 
 
 def load_tracker(project_root: Optional[PathInput] = None) -> List[Dict[str, Any]]:
@@ -577,6 +604,7 @@ def save_application_tracker(
         raise TrackerUpdateError(
             f"Unable to save application tracker {TRACKER_PATH}: {error}"
         ) from error
+    invalidate_application_tracker_cache(root)
     return tracker_path
 
 
