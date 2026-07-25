@@ -58,8 +58,8 @@ class TailorResumeTests(unittest.TestCase):
         self.assertIn("AI Workflow Design", content)
         self.assertIn("Process Automation", content)
         self.assertIn("Python (Working Knowledge)", content)
-        self.assertIn("Newsletter Development", content)
-        self.assertIn("Editorial Production", content)
+        self.assertNotIn("Newsletter Development", content)
+        self.assertNotIn("Editorial Production", content)
 
     def test_generated_resume_does_not_contain_placeholder_text(self):
         result = tailor_resume("executive_operations", SAMPLE_JOB, PROJECT_ROOT)
@@ -99,7 +99,7 @@ def test_product_ai_resume_allows_campaignos_more_prominently():
         "keywords": ["AI product", "workflow automation", "internal tools", "systems design"],
     }
     projects = _project_names_and_bullet_counts(parsed_job, "product_ai")
-    assert projects["CampaignOS"] >= 3
+    assert 1 <= projects["CampaignOS"] <= 2
 
 
 def test_traditional_pmo_resume_omits_creative_editorial_projects():

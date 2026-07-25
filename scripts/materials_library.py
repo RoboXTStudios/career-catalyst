@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import re
 import shutil
 import time
+import zipfile
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
@@ -221,6 +223,54 @@ def _move_file(source: Path, destination: Path) -> Path:
     return target.resolve()
 
 
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _content_digest(path: Path) -> str:
+    """Hash meaningful package content while ignoring DOCX package metadata."""
+    if path.suffix.lower() != ".docx":
+        return _sha256(path)
+    digest = hashlib.sha256()
+    try:
+        with zipfile.ZipFile(path) as archive:
+            members = sorted(
+                name
+                for name in archive.namelist()
+                if not name.startswith("docProps/")
+            )
+            for name in members:
+                digest.update(name.encode("utf-8"))
+                digest.update(b"\0")
+                digest.update(archive.read(name))
+                digest.update(b"\0")
+    except (OSError, zipfile.BadZipFile):
+        return _sha256(path)
+    return digest.hexdigest()
+
+
+def _install_current_file(source: Path, destination: Path, version_root: Path) -> Path:
+    """Install one prospect-owned current file without filename suffix churn."""
+    source = source.resolve()
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination = destination.resolve()
+    if source == destination:
+        return destination
+    if destination.is_file():
+        if _content_digest(source) == _content_digest(destination):
+            source.unlink()
+            return destination
+        version_root.mkdir(parents=True, exist_ok=True)
+        archived = _unique_destination(version_root / destination.name)
+        shutil.move(str(destination), str(archived))
+    shutil.move(str(source), str(destination))
+    return destination
+
+
 def _plain_text(markdown: str) -> str:
     text = re.sub(r"^#{1,6}\s+", "", markdown, flags=re.MULTILINE)
     text = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", text)
@@ -337,8 +387,6 @@ def write_role_manifest(
         "legacy_files_moved": list(legacy_files_moved),
     }
     manifest_path = folder / "manifest.json"
-    if preserve_existing:
-        manifest_path = _unique_destination(manifest_path)
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     invalidate_material_package_cache()
     manifest["manifest_path"] = str(manifest_path.resolve())
@@ -367,6 +415,21 @@ def organize_package_outputs(
     package_folder = require_beneath_export_root(
         library_root / str(routing["route"]) / slug, library_root
     )
+    existing_manifest = package_folder / "manifest.json"
+    if existing_manifest.is_file():
+        try:
+            existing_owner = str(
+                json.loads(existing_manifest.read_text(encoding="utf-8")).get("prospect_id")
+                or ""
+            )
+        except (OSError, ValueError, TypeError):
+            existing_owner = ""
+        current_owner = str(application.get("id") or application.get("prospect_id") or "")
+        if existing_owner and existing_owner != current_owner:
+            raise ValueError(
+                f"Package folder '{package_folder}' belongs to prospect '{existing_owner}', "
+                f"not '{current_owner}'."
+            )
     markdown_folder = require_beneath_export_root(
         library_root / "archive" / "old_generated_materials" / slug, library_root
     )
@@ -374,6 +437,9 @@ def organize_package_outputs(
     files: Dict[str, str] = {}
     moved_sources: Dict[Path, Path] = {}
     legacy_moved = []
+    version_root = package_folder / "versions" / datetime.now(timezone.utc).strftime(
+        "%Y%m%dT%H%M%SZ"
+    )
     for key, value in list(outputs.items()):
         source = Path(str(value))
         if not source.is_file() or key in {"job_file", "dashboard"}:
@@ -385,7 +451,11 @@ def organize_package_outputs(
                 files[key] = str(moved_sources[source_resolved])
             continue
         if source.suffix.lower() == ".md":
-            target = _move_file(source, markdown_folder / source.name)
+            target = _install_current_file(
+                source,
+                markdown_folder / source.name,
+                markdown_folder / "versions" / version_root.name,
+            )
             moved_sources[source_resolved] = target
             updated[key] = str(target)
             legacy_moved.append(str(target))
@@ -393,7 +463,7 @@ def organize_package_outputs(
         filename = _output_filename(application, key, source)
         if not filename:
             continue
-        target = _move_file(source, package_folder / filename)
+        target = _install_current_file(source, package_folder / filename, version_root)
         moved_sources[source_resolved] = target
         updated[key] = str(target)
         files[key] = str(target)

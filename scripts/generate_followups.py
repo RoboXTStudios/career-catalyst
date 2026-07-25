@@ -171,7 +171,7 @@ def _intelligent_role_angle(
         role_family, family_copy["generic_senior_operator"]
     )
     fallback_experience = (
-        "I led cross-functional teams of 60+ and built clearer workflows and execution standards."
+        "I led 10 direct reports, provided strategic and operational leadership across an integrated 64-person organization, and built clearer workflows and execution standards."
     )
     experience = _achievement_statement(
         career_data, achievement_id, fallback_experience
@@ -265,7 +265,7 @@ def _role_angle(
             experience=_achievement_statement(
                 career_data,
                 "cross_functional_leadership",
-                "I led cross-functional teams of 60+ across creative, marketing, technology, and operations.",
+                "I led 10 direct reports and provided strategic and operational leadership across an integrated 64-person organization.",
             ),
             core_value=(
                 "I bring operational structure to creative and product work while protecting the "
@@ -423,7 +423,7 @@ def _role_angle(
         experience=_achievement_statement(
             career_data,
             "cross_functional_leadership",
-            "I led cross-functional teams of 60+ across creative, marketing, technology, and operations.",
+            "I led 10 direct reports and provided strategic and operational leadership across an integrated 64-person organization.",
         ),
         core_value=(
             "I help complex teams create the operating clarity needed to move from strategy to execution."

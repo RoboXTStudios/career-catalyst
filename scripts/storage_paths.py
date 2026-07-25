@@ -86,11 +86,19 @@ def require_beneath_export_root(path: PathInput, export_root: PathInput) -> Path
 
 def legacy_material_paths(application: dict, export_root: PathInput) -> list[str]:
     """Report stored material/manifest paths outside the canonical root read-only."""
-    values = list(dict(application.get("material_paths") or {}).values())
+    def generated_values(mapping: dict) -> list[object]:
+        excluded = {"job description", "job file", "source", "source file", "dashboard"}
+        return [
+            value
+            for label, value in dict(mapping or {}).items()
+            if str(label).strip().lower().replace("_", " ") not in excluded
+        ]
+
+    values = generated_values(application.get("material_paths") or {})
     manifest = application.get("package_manifest")
     if isinstance(manifest, dict):
-        values.extend(dict(manifest.get("materials") or {}).values())
-        values.extend(dict(manifest.get("files") or {}).values())
+        values.extend(generated_values(manifest.get("materials") or {}))
+        values.extend(generated_values(manifest.get("files") or {}))
         values.append(manifest.get("manifest_path"))
     root = Path(export_root).expanduser().resolve()
     stranded = []

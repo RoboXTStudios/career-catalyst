@@ -10,6 +10,13 @@ from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
 
 try:
+    from .career_claims import (
+        PublicCareerClaimError,
+        is_ai_transformation_role,
+        leadership_claim,
+        public_omg23_name,
+        validate_public_career_claims,
+    )
     from .company_voice import company_voice_context
     from .evidence_engine import evidence_generation_context, load_evidence_cards, load_writing_voice_profile, select_evidence_cards
     from .filename_utils import build_upload_filename, company_display_name
@@ -32,6 +39,13 @@ try:
     from .score_match import score_job_match
     from .text_cleanup import cleanup_repeated_words
 except ImportError:
+    from career_claims import (
+        PublicCareerClaimError,
+        is_ai_transformation_role,
+        leadership_claim,
+        public_omg23_name,
+        validate_public_career_claims,
+    )
     from company_voice import company_voice_context
     from evidence_engine import evidence_generation_context, load_evidence_cards, load_writing_voice_profile, select_evidence_cards
     from filename_utils import build_upload_filename, company_display_name
@@ -153,7 +167,8 @@ def save_material(
         )
     try:
         validate_candidate_language(content, context=f"Generated {suffix}")
-    except CandidateLanguageError as error:
+        validate_public_career_claims(content)
+    except (CandidateLanguageError, PublicCareerClaimError) as error:
         raise ApplicationMaterialError(str(error)) from error
 
     if not minimum_words <= word_count <= maximum_words:
@@ -381,7 +396,7 @@ def _entertainment_scope(career_data: Dict[str, Any]) -> str:
 
 def _employer_names(position: Dict[str, Any]) -> tuple[str, str]:
     """Return the full employer name and a safe shorthand for later mentions."""
-    full_name = str(position.get("company") or "OMG23 / OMD Entertainment")
+    full_name = str(position.get("company") or "OMG23 (Omnicom Media Group)")
     shorthand = "OMG23" if "OMG23" in full_name else full_name
     return full_name, shorthand
 
@@ -483,9 +498,8 @@ def _technical_operations_cover_letter_content(context: Dict[str, Any]) -> str:
         "what is needed next without turning the process into extra noise."
     )
     experience = (
-        "At OMG23 / OMD Entertainment, I progressed to Group Director and led cross-functional teams of "
-        "more than 60 people across creative, marketing, media, analytics, technology, and "
-        "operations. Supporting Disney theatrical and streaming campaigns required turning business "
+        f"At {public_omg23_name(context.get('career_data', {}))}, I progressed to Group Director. I "
+        f"{leadership_claim(context.get('career_data', {}))}. Supporting Disney theatrical and streaming campaigns required turning business "
         "requirements into executable plans, coordinating internal teams and external partners, managing "
         "dependencies, and giving senior stakeholders clear visibility into milestones, risks, and decisions. "
         "The pace was fast, but the processes still had to be practical enough for teams to trust and use."
@@ -527,8 +541,8 @@ def _role_sensitive_cover_letter_content(context: Dict[str, Any]) -> str:
             "The role reads like one where planning rhythms, ownership clarity, stakeholder alignment, risk surfacing, and consistent follow-through matter more than adding process for its own sake."
         )
         experience = (
-            "At OMG23 / OMD Entertainment, Omnicom Media Group, I progressed to Group Director while leading "
-            "cross-functional teams of 60+ across creative, marketing, media, analytics, technology, and operations. "
+            f"At {public_omg23_name(context.get('career_data', {}))}, I progressed to Group Director. I "
+            f"{leadership_claim(context.get('career_data', {}))}. "
             "Supporting Disney Studios Theatrical and Disney Streaming/DSS work required executive visibility, "
             "senior stakeholder support, decision tracking, quality standards, and communication routines that helped "
             "leaders understand what needed attention."
@@ -569,6 +583,70 @@ def _role_sensitive_cover_letter_content(context: Dict[str, Any]) -> str:
         return _signed_content(opening, experience, proof, closing)
 
     return ""
+
+
+def _evidence_project(context: Dict[str, Any], project_id: str) -> Dict[str, Any]:
+    projects = context["career_data"]["data"].get("evidence_projects", {}).get(
+        "evidence_projects", []
+    )
+    return next((item for item in projects if item.get("id") == project_id), {})
+
+
+def _ai_transformation_cover_letter_content(context: Dict[str, Any]) -> str:
+    """Ground AI-transformation positioning in adoption and operating evidence."""
+    parsed_job = context["parsed_job"]
+    company = str(parsed_job.get("company") or "the organization")
+    role = str(parsed_job.get("job_title") or "AI transformation role")
+    career_data = context["career_data"]
+    catalyst = _project(career_data, "Career Catalyst")
+    campaignos = _project(career_data, "CampaignOS")
+    airtable = _evidence_project(context, "operational_workflow_design_airtable_implementation")
+    teams = _evidence_project(
+        context, "enterprise_collaboration_platform_adoption_stakeholder_enablement"
+    )
+
+    opening = (
+        f"The {role} role at {company} fits work I am already doing: transforming Marketing "
+        "operations and building AI-enabled operating systems that move from a clear hypothesis "
+        "through working workflows, governance, adoption, and iteration. I would bring business "
+        "context and hands-on building judgment while partnering closely with technical specialists "
+        "on production architecture and scale."
+    )
+    catalyst_proof = (
+        f"Career Catalyst is the clearest current example. As {catalyst.get('role') or 'Creator and Product Lead'}, "
+        "I designed, built, and actively use a role-aware platform for opportunity intake, evidence "
+        "management, fit analysis, material generation, status tracking, recovery controls, and "
+        "quality governance. I turn recurring user problems into structured requirements, schemas, "
+        "validation rules, and tested workflows, then refine the system through real use."
+    )
+    enterprise_proof = (
+        f"At {public_omg23_name(career_data)}, I progressed through five roles to Group Director. I "
+        f"{leadership_claim(career_data)}. That scale required more than process design. "
+        + (
+            "I coordinated an Airtable implementation that created a shared source of truth, with "
+            "linked workflows, naming standards, permissions, QA, training, and adoption support. "
+            if airtable else ""
+        )
+        + (
+            "I also supported Microsoft Teams adoption through recurring office hours and a peer "
+            "champion network."
+            if teams else ""
+        )
+    )
+    adoption_proof = (
+        "I also served on the cross-functional task force that operationalized the Disney+ launch, "
+        "connecting governance, taxonomies, validation, QA, measurement readiness, training, and "
+        "change management under a fixed timeline. That experience taught me to define the outcome, "
+        "map work and data flows, prototype the right intervention, and build the feedback channels "
+        "that make a new way of working stick."
+    )
+    closing = (
+        f"I would welcome the opportunity to bring that combination of Marketing operations depth, "
+        f"AI workflow building, and adoption leadership to {company}. "
+        f"{campaignos.get('name') or 'CampaignOS'} remains a working prototype and a useful supporting "
+        "example, while Career Catalyst demonstrates the active operating system I build and improve today."
+    )
+    return _signed_content(opening, catalyst_proof, enterprise_proof, adoption_proof, closing)
 
 
 def _campaignos_is_relevant(context: Dict[str, Any]) -> bool:
@@ -834,8 +912,7 @@ def _paramount_cover_letter_content(context: Dict[str, Any]) -> str:
         "people-centered systems work, and it is where I have spent much of my career."
     )
     experience = (
-        f"At {position_company}, I progressed to Group Director while leading cross-functional teams "
-        "of 60+ across creative management, marketing, media, analytics, technology, and operations. "
+        f"At {position_company}, I progressed to Group Director. I {leadership_claim(career_data)}. "
         "My primary work supported Disney Studios Theatrical and Disney Streaming/DSS campaigns, where "
         "I built workflows, milestones, quality practices, partner coordination, and execution standards "
         "for a demanding slate of theatrical releases, streaming launches, and franchise/IP priorities."
@@ -910,7 +987,7 @@ def _fieldai_cover_letter_content(context: Dict[str, Any]) -> str:
         "I know well."
     )
     experience = (
-        "I have led cross-functional teams of 60+ and designed operating practices across marketing, "
+        f"I {leadership_claim(context.get('career_data', {}))} and designed operating practices across marketing, "
         "creative, analytics, technology, and delivery functions. My work has included capacity and "
         "workflow planning, governance, quality systems, dashboards, partner coordination, and executive "
         "visibility. Although much of that experience was built in entertainment, the transferable "
@@ -1000,7 +1077,7 @@ def _dynamic_cover_letter_content(context: Dict[str, Any]) -> str:
         )
     elif role_family in {"product_strategy_ops", "gtm_product_activation"}:
         experience = (
-            "At OMG23 / OMD Entertainment, Omnicom Media Group, I worked across business priorities, "
+            f"At {public_omg23_name(context.get('career_data', {}))}, I worked across business priorities, "
             "platform activation, analytics, technology, measurement, and delivery for large entertainment "
             "campaigns. I learned to translate broad goals into practical plans, surface dependencies, "
             "create feedback loops, and give senior stakeholders enough visibility to make sound decisions. "
@@ -1008,9 +1085,8 @@ def _dynamic_cover_letter_content(context: Dict[str, Any]) -> str:
         )
     else:
         experience = (
-            "At OMG23 / OMD Entertainment, Omnicom Media Group, I progressed to Group Director while "
-            "leading cross-functional teams of 60+ across creative, marketing, media, analytics, technology, "
-            "and operations. I built workflows, governance practices, quality standards, and executive "
+            f"At {public_omg23_name(context.get('career_data', {}))}, I progressed to Group Director. I "
+            f"{leadership_claim(context.get('career_data', {}))}. I built workflows, governance practices, quality standards, and executive "
             "visibility for demanding entertainment work. The industry context was specific, but the operating "
             "challenge was broadly transferable: create clarity and consistency without slowing the team down."
         )
@@ -1084,6 +1160,8 @@ def _cover_letter_content(context: Dict[str, Any]) -> str:
         context = dict(context)
         context["material_editing_plan"] = material_editing_plan(context["parsed_job"], context.get("root"))
     role_category = context["material_editing_plan"].get("role_category")
+    if is_ai_transformation_role(context["parsed_job"]):
+        return _ai_transformation_cover_letter_content(context)
     if role_category in {"chief_of_staff_business_operations", "product_ai_operations"}:
         return _role_sensitive_cover_letter_content(context)
     if role_family == "music_content_strategy":

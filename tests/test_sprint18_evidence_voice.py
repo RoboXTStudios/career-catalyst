@@ -138,7 +138,7 @@ def test_ea_marketing_operations_cover_letter_uses_grounded_calm_voice():
     ):
         assert phrase not in lowered
 
-    assert content.index("OMG23 / OMD Entertainment") < content.index("CampaignOS")
+    assert content.index("OMG23 (Omnicom Media Group)") < content.index("CampaignOS")
     assert content.index("Disney") < content.index("CampaignOS")
     assert lowered.count("campaignos") == 1
     assert "supporting proof point" in lowered

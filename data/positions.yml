@@ -1,5 +1,9 @@
 positions:
-  - company: OMG23 / OMD Entertainment (Omnicom Media Group)
+  - company: OMG23 (Omnicom Media Group)
+    internal_aliases:
+      - OMD Entertainment
+      - OMG23 / OMD Entertainment
+      - Omnicom Media Group
     location: Burbank, CA
     timeframe: 2016-2026
     progression:

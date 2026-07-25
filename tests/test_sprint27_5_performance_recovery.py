@@ -421,7 +421,7 @@ def test_clean_draft_action_preserves_conflicting_material_and_clears_only_role_
     assert conflict_path.read_text(encoding="utf-8") == "original material"
 
 
-def test_force_clean_organization_preserves_existing_material_and_manifest(tmp_path):
+def test_force_clean_organization_archives_prior_content_and_keeps_one_current_file(tmp_path):
     application = {
         "id": "beast_industries_head_of_programming",
         "company": "Beast Industries",
@@ -452,11 +452,15 @@ def test_force_clean_organization_preserves_existing_material_and_manifest(tmp_p
     )
 
     new_material = Path(result["outputs"]["resume_text"])
-    assert new_material != old_material
+    assert new_material == old_material
     assert new_material.read_text(encoding="utf-8") == "new clean Beast resume"
-    assert old_material.read_text(encoding="utf-8") == "original Beast resume"
-    assert Path(result["manifest"]["manifest_path"]) != old_manifest
-    assert old_manifest.read_text(encoding="utf-8") == '{"original": true}\n'
+    versions = list((package_folder / "versions").glob("*/*.txt"))
+    assert len(versions) == 1
+    assert versions[0].read_text(encoding="utf-8") == "original Beast resume"
+    assert Path(result["manifest"]["manifest_path"]) == old_manifest
+    assert '"prospect_id": "beast_industries_head_of_programming"' in old_manifest.read_text(
+        encoding="utf-8"
+    )
 
 
 def test_cancel_clears_only_selected_prospect_recovery_state():
