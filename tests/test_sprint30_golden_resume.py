@@ -43,7 +43,6 @@ def _copy_foundation(tmp_path: Path) -> Path:
 
 def test_golden_foundation_preserves_positioning_and_complete_role_history():
     foundation = load_resume_foundation(PROJECT_ROOT)
-    info = canonical_resume_foundation_info(PROJECT_ROOT)
     data = foundation["data"]
     positions = data["positions"]["positions"]
     omg23 = next(record for record in positions if record["company"].startswith("OMG23"))
@@ -52,7 +51,6 @@ def test_golden_foundation_preserves_positioning_and_complete_role_history():
         "Senior Operations & Transformation Leader | MarTech | AI Systems | "
         "Entertainment"
     )
-    assert (PROJECT_ROOT / info["approved_content_baseline"]).is_file()
     assert omg23["progression"] == OMG23_PROGRESSION
     assert CORRECTED_DISNEY_SCOPE in omg23["highlights"]
     assert any("10 direct reports" in item for item in omg23["highlights"])

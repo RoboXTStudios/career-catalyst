@@ -162,7 +162,7 @@ def _foundation_info(root: Path, loaded: dict[str, Any]) -> dict[str, Any]:
         "kind": str(configured.get("kind") or "structured_yaml"),
         "approved_content_baseline": str(
             configured.get("approved_content_baseline")
-            or "data/canonical_resume/Trisha_Lynch_Golden_Resume_2026.docx"
+            or "Trisha_Lynch_Golden_Resume_2026.docx"
         ),
         "baseline_files": files,
         "supplemental_evidence_source": str(

@@ -35,7 +35,7 @@ paths:
 canonical_resume_foundation:
   name: Career Catalyst structured career dataset
   kind: structured_yaml
-  approved_content_baseline: data/canonical_resume/Trisha_Lynch_Golden_Resume_2026.docx
+  approved_content_baseline: Trisha_Lynch_Golden_Resume_2026.docx
   source_note: "Approved Golden Master content and positioning are reconciled into structured YAML; the DOCX is a content reference, not a parallel operational source of truth."
   claim_constraints:
     unsupported_brand_claims:
