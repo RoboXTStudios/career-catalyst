@@ -13,7 +13,11 @@ try:
     from .company_voice import company_voice_context
     from .evidence_engine import evidence_generation_context, load_evidence_cards, load_writing_voice_profile, select_evidence_cards
     from .filename_utils import build_upload_filename, company_display_name
-    from .resume_foundation import load_resume_foundation
+    from .resume_foundation import (
+        CandidateLanguageError,
+        load_resume_foundation,
+        validate_candidate_language,
+    )
     from .parse_job import parse_job_description
     from .package_context import validate_material_context
     from .role_context import (
@@ -31,7 +35,11 @@ except ImportError:
     from company_voice import company_voice_context
     from evidence_engine import evidence_generation_context, load_evidence_cards, load_writing_voice_profile, select_evidence_cards
     from filename_utils import build_upload_filename, company_display_name
-    from resume_foundation import load_resume_foundation
+    from resume_foundation import (
+        CandidateLanguageError,
+        load_resume_foundation,
+        validate_candidate_language,
+    )
     from parse_job import parse_job_description
     from package_context import validate_material_context
     from role_context import google_claim_violations, is_google_youtube_role
@@ -143,6 +151,10 @@ def save_material(
         raise ApplicationMaterialError(
             f"Generated application materials contain banned voice phrase: {remaining_banned[0]}"
         )
+    try:
+        validate_candidate_language(content, context=f"Generated {suffix}")
+    except CandidateLanguageError as error:
+        raise ApplicationMaterialError(str(error)) from error
 
     if not minimum_words <= word_count <= maximum_words:
         raise ApplicationMaterialError(

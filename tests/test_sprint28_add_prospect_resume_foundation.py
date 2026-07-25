@@ -274,7 +274,8 @@ def test_resume_and_cover_letter_share_explicit_immutable_foundation():
         "executive_operations",
         evidence,
     )
-    assert "Led cross-functional teams of 60+" in resume
+    assert "Advanced through five roles" in resume
+    assert "Senior Operations & Transformation Leader" in resume
     assert "Role Proof" in resume
     assert "quantum teleportation" not in resume.lower()
     assert evidence == original_evidence

@@ -1,35 +1,31 @@
 projects:
   - name: CampaignOS
-    role: Founder & Product Lead
-    timeframe: 2026-Present
-    category: AI operations platform
-    summary: "Designed and developed an AI-powered operations platform that standardizes workflow governance, automates quality assurance, reduces operational risk, and enables cross-functional teams to execute consistently at scale."
+    role: Creator & Product Lead
+    timeframe: Working Prototype
+    category: AI campaign operations prototype
+    summary: "Designed an AI-powered campaign operations concept focused on readiness, workflow governance, quality assurance, validation, reporting, and operational risk detection."
     highlights:
-      - "Built schema-driven workflows, validation frameworks, and operational reporting that reduce manual effort while improving consistency, visibility, and decision-making."
-      - "Applied nearly two decades of enterprise entertainment operations experience to solve recurring organizational challenges through AI, automation, and product thinking."
+      - "Built schema-driven workflows and product logic grounded in recurring enterprise entertainment operations challenges."
+      - "Further development depends on representative campaign data and practical testing environments."
   - name: Career Catalyst
-    role: Builder & Product Lead
+    role: Creator & Product Lead
     timeframe: 2026-Present
-    category: AI-enabled product operations system
-    summary: "Built a role-aware career operations system that turns structured career evidence and job requirements into traceable workflows, fit analysis, and application materials."
+    category: AI-enabled career intelligence and job-search operations platform
+    summary: "Designed, built, and actively uses an AI-enabled career intelligence and job-search operations platform."
     highlights:
-      - "Translated evolving workflow requirements into deterministic ingestion, validation, recovery, and quality-governance controls."
-      - "Used iterative development and QA to improve a practical AI-enabled system without replacing its structured source of truth."
+      - "Developed structured workflows for opportunity intake, role-fit analysis, Evidence management, tailored application materials, status tracking, and follow-up."
+      - "Continuously improves the platform through real-world use, iterative development, workflow testing, recovery controls, information architecture, and quality governance."
   - name: RoboXT Studios
-    role: Founder & Creative Systems Builder
+    role: Founder & Creative Director
     timeframe: 2026-Present
-    category: Independent creative and publishing studio
-    summary: "Developing an independent creative studio practice spanning photography, editorial systems, web publishing, and thoughtful AI-assisted production workflows."
+    category: Public creative platform
+    summary: "Founded and launched a publicly accessible creative platform combining editorial work, photography, digital projects, creative direction, and technology-enabled experimentation."
     highlights:
-      - "Builds the operating and audience experience behind cross-disciplinary creative work."
-      - "Represents an early-stage independent practice, not a launched agency or scaled commercial studio."
+      - "Leads site strategy, information architecture, WordPress development, visual direction, content production, brand development, and ongoing platform evolution."
   - name: OMG23 Multiverse Newsletter
     role: Creator & Managing Editor
     timeframe: 2023-2026
     category: Internal editorial publication
-    summary: "Internal culture publication spanning creativity, innovation, music, and emerging media."
+    summary: "Created and served as Managing Editor of Multiverse, an internal editorial publication reaching more than 400 employees."
     highlights:
-      - "Developed editorial voice."
-      - "Built recurring content strategy."
-      - "Created contributor framework."
-      - "Reached 400+ employees."
+      - "Highlighted creativity, innovation, culture, music, emerging media, and employee storytelling."

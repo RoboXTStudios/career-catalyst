@@ -6,7 +6,11 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 try:
     from .filename_utils import build_upload_filename
-    from .resume_foundation import load_resume_foundation
+    from .resume_foundation import (
+        CandidateLanguageError,
+        load_resume_foundation,
+        validate_candidate_language,
+    )
     from .evidence_engine import evidence_generation_context, load_writing_voice_profile
     from .parse_job import parse_job_description
     from .package_context import validate_material_context
@@ -20,7 +24,11 @@ try:
     from .text_cleanup import cleanup_repeated_words
 except ImportError:
     from filename_utils import build_upload_filename
-    from resume_foundation import load_resume_foundation
+    from resume_foundation import (
+        CandidateLanguageError,
+        load_resume_foundation,
+        validate_candidate_language,
+    )
     from evidence_engine import evidence_generation_context, load_writing_voice_profile
     from parse_job import parse_job_description
     from package_context import validate_material_context
@@ -391,8 +399,26 @@ def _selected_projects(
     career_data: Dict[str, Any],
     parsed_job: Dict[str, Any],
     resume_profile: str,
+    complete_foundation: bool = False,
 ) -> List[Tuple[Dict[str, Any], List[str]]]:
     projects = career_data["data"]["projects"].get("projects", [])
+    if complete_foundation:
+        return [
+            (
+                project,
+                _dedupe(
+                    [
+                        str(project.get("summary") or ""),
+                        *[
+                            str(highlight)
+                            for highlight in project.get("highlights", [])
+                        ],
+                    ]
+                ),
+            )
+            for project in projects
+        ]
+
     ranked: List[Tuple[int, Dict[str, Any], List[str]]] = []
     plan = material_editing_plan(parsed_job)
     category = plan.get("role_category")
@@ -446,12 +472,13 @@ def _relevant_associated_evidence(
     return [project for _score, project in ranked[:2]]
 
 
-def _earlier_career(career_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def _earlier_career_positions(career_data: Dict[str, Any]) -> List[Dict[str, Any]]:
     positions = career_data["data"]["positions"].get("positions", [])
-    for position in positions:
-        if "Intermedia" in position.get("company", ""):
-            return position
-    return None
+    return [
+        position
+        for position in positions
+        if "OMG23" not in str(position.get("company") or "")
+    ]
 
 
 def _professional_development(career_data: Dict[str, Any]) -> List[str]:
@@ -473,22 +500,41 @@ def _render_markdown(
     match_report: Dict[str, Any],
     resume_profile: str,
     associated_evidence_projects: Optional[List[Dict[str, Any]]] = None,
+    complete_foundation: bool = False,
 ) -> str:
     personal_brand = career_data["data"]["personal_brand"]
     candidate = personal_brand["candidate"]
-    competencies = _select_core_competencies(career_data, parsed_job, match_report, resume_profile)
+    competencies = (
+        _all_skills(career_data)
+        if complete_foundation
+        else _select_core_competencies(
+            career_data,
+            parsed_job,
+            match_report,
+            resume_profile,
+        )
+    )
     platforms = _platform_categories(career_data)
     positions = career_data["data"]["positions"].get("positions", [])
     omg_position = next(
         (position for position in positions if "OMG23" in position.get("company", "")),
         positions[0] if positions else {},
     )
-    experience_bullets = _select_experience_bullets(career_data, parsed_job, resume_profile)
-    selected_projects = _selected_projects(career_data, parsed_job, resume_profile)
+    experience_bullets = (
+        _dedupe([str(value) for value in omg_position.get("highlights", [])])
+        if complete_foundation
+        else _select_experience_bullets(career_data, parsed_job, resume_profile)
+    )
+    selected_projects = _selected_projects(
+        career_data,
+        parsed_job,
+        resume_profile,
+        complete_foundation=complete_foundation,
+    )
     associated_evidence_projects = _relevant_associated_evidence(
         associated_evidence_projects or [], parsed_job
     )
-    earlier_position = _earlier_career(career_data)
+    earlier_positions = _earlier_career_positions(career_data)
     development = _professional_development(career_data)
 
     lines = [
@@ -523,7 +569,7 @@ def _render_markdown(
             lines.extend([f"### {group_name}", "", ", ".join(tools), ""])
 
     if omg_position:
-        progression = " to ".join(omg_position.get("progression", []))
+        progression = " | ".join(omg_position.get("progression", []))
         lines.extend(
             [
                 "## Professional Experience",
@@ -540,7 +586,12 @@ def _render_markdown(
         lines.append("")
 
     if selected_projects or associated_evidence_projects:
-        lines.extend(["## Relevant Projects & Impact", ""])
+        project_heading = (
+            "Selected Products & Independent Work"
+            if complete_foundation
+            else "Relevant Projects & Impact"
+        )
+        lines.extend([f"## {project_heading}", ""])
     for project, bullets in selected_projects:
         lines.extend(
             [
@@ -566,17 +617,25 @@ def _render_markdown(
             lines.append(f"- {project.get('results')}")
         lines.append("")
 
-    if earlier_position:
-        progression = ", ".join(earlier_position.get("progression", []))
+    if earlier_positions:
+        lines.extend(["## Earlier Career", ""])
+    for earlier_position in earlier_positions:
+        progression = " | ".join(earlier_position.get("progression", []))
+        metadata = " | ".join(
+            str(value)
+            for value in (
+                earlier_position.get("location"),
+                earlier_position.get("timeframe"),
+            )
+            if value
+        )
         lines.extend(
             [
-                "## Earlier Career",
-                "",
                 f"### {earlier_position.get('company')}",
                 "",
-                f"{earlier_position.get('location')} | {earlier_position.get('timeframe')}",
+                metadata,
                 "",
-                f"{progression}: {earlier_position.get('summary')}",
+                progression,
                 "",
             ]
         )
@@ -595,6 +654,40 @@ def _render_markdown(
     lines.append("")
 
     return "\n".join(line for line in lines if line is not None)
+
+
+def render_base_resume(project_root: Optional[PathInput] = None) -> str:
+    """Render the complete Golden Master-aligned foundation without writing files."""
+    root = Path(project_root) if project_root is not None else Path.cwd()
+    career_data = load_resume_foundation(root)
+    parsed_job = {
+        "company": "Career Catalyst",
+        "job_title": "Golden Master Resume",
+        "raw_text": "operations transformation media operations martech AI systems entertainment",
+        "keywords": [
+            "operations transformation",
+            "media operations",
+            "martech",
+            "AI systems",
+            "entertainment",
+        ],
+    }
+    markdown = cleanup_repeated_words(
+        _render_markdown(
+            career_data,
+            parsed_job,
+            {"keyword_matches": [], "transferable_strengths": []},
+            "executive_operations",
+            [],
+            complete_foundation=True,
+        )
+    )
+    markdown, _rewrite_notes = rewrite_banned_voice_phrases(markdown)
+    try:
+        validate_candidate_language(markdown, context="Generated base resume")
+    except CandidateLanguageError as error:
+        raise ResumeTailoringError(str(error)) from error
+    return markdown
 
 
 def tailor_resume(
@@ -626,6 +719,10 @@ def tailor_resume(
         raise ResumeTailoringError(
             f"Generated tailored resume contains banned voice phrase: {remaining_banned[0]}"
         )
+    try:
+        validate_candidate_language(markdown, context="Generated tailored resume")
+    except CandidateLanguageError as error:
+        raise ResumeTailoringError(str(error)) from error
     validate_material_context(markdown, parsed_job, "Tailored_Resume")
 
     export_dir = root / "exports" / "internal" / "resumes"

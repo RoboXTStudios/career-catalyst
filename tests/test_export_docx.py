@@ -79,19 +79,23 @@ class ExportDocxTests(unittest.TestCase):
 
         self.assertGreater(len(document.paragraphs), 0)
 
-    def test_styled_output_has_four_column_platforms_table(self):
+    def test_styled_output_uses_all_canonical_platform_categories(self):
         result = export_styled_docx(MARKDOWN_RESUME, PROJECT_ROOT)
         document = Document(result["output_path"])
 
         self.assertGreaterEqual(len(document.tables), 1)
         platform_table = document.tables[0]
-        self.assertEqual(len(platform_table.columns), 4)
-        table_text = "\n".join(cell.text for cell in platform_table.rows[0].cells)
+        self.assertEqual(len(platform_table.columns), 3)
+        self.assertEqual(len(platform_table.rows), 2)
+        table_text = "\n".join(
+            cell.text for row in platform_table.rows for cell in row.cells
+        )
         for heading in (
-            "AdTech & Measurement",
-            "AI, Automation & Operational Systems",
-            "Workflow & Collaboration",
-            "Publishing & Content",
+            "Marketing Technology & Measurement",
+            "Business Productivity & Collaboration",
+            "Operations & Program Management",
+            "AI, Automation & Product Development",
+            "Publishing & Creative",
         ):
             self.assertIn(heading, table_text)
 

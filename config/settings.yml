@@ -6,8 +6,8 @@ project:
   status: foundational_documentation
 
 positioning:
-  headline: "Marketing & Business Operations Leader | AI Systems | Process Excellence | Cross-Functional Strategy"
-  summary: "Structured source of truth for career materials, target roles, target companies, and future application assets."
+  headline: "Senior Operations & Transformation Leader | MarTech | AI Systems | Entertainment"
+  summary: "Golden Master-aligned structured source of truth for future candidate materials, fit analysis, and Evidence selection."
 
 scope:
   included_now:
@@ -35,6 +35,28 @@ paths:
 canonical_resume_foundation:
   name: Career Catalyst structured career dataset
   kind: structured_yaml
+  approved_content_baseline: data/canonical_resume/Trisha_Lynch_Golden_Resume_2026.docx
+  source_note: "Approved Golden Master content and positioning are reconciled into structured YAML; the DOCX is a content reference, not a parallel operational source of truth."
+  claim_constraints:
+    unsupported_brand_claims:
+      - FX
+      - Disney Branded Television
+      - National Geographic
+    age_signaling_exclusions:
+      - 20+ years
+      - two decades
+      - nearly two decades
+      - seasoned
+      - veteran
+      - decades of experience
+    education_claim_exclusions:
+      - Bachelor's degree
+      - Bachelor degree
+      - Master's degree
+      - Master degree
+      - MBA
+      - doctorate
+      - PhD
   baseline_files:
     - data/positions.yml
     - data/achievements.yml
@@ -44,5 +66,5 @@ canonical_resume_foundation:
     - data/certifications.yml
     - data/personal_brand.yml
   supplemental_evidence_source: data/evidence_projects.yml
-  last_updated: '2026-06-29'
-  last_verified: '2026-07-22'
+  last_updated: '2026-07-25'
+  last_verified: '2026-07-25'

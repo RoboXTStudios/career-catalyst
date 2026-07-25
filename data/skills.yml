@@ -1,31 +1,44 @@
 skill_groups:
   business_and_operations:
+    - Operations Transformation
     - Business Operations
     - Marketing Operations
-    - Program Leadership
+    - Media Operations
+    - MarTech Strategy
+    - Operating Model Design
+    - Program & Portfolio Leadership
+    - Product Operations
     - Process Excellence
     - Workflow Governance
-    - Operational Strategy
     - Change Management
-    - Stakeholder Management
+    - Vendor Integration
+    - Measurement & Data Governance
+    - Quality Assurance
+    - Risk Management
   leadership_and_strategy:
     - Cross-Functional Leadership
-    - Team Leadership
+    - Executive Stakeholder Management
+    - Team Development
     - Creative Operations
-    - Measurement & Analytics
     - Entertainment Marketing
     - Emerging Media
   ai_and_systems:
     - AI Workflow Design
-    - Operational Automation
-    - Product Development
+    - Prompt and Schema Development
+    - Process Automation
+    - Product Prototyping
     - Organizational Systems
-    - Schema-Driven Workflows
     - Validation Frameworks
   platforms_and_tools:
     ad_tech:
+      - Google Marketing Platform
       - CM360
       - DV360
+      - Google Ads
+      - YouTube
+      - GA4
+      - Meta Ads Manager
+      - TikTok Ads
       - The Trade Desk
       - Innovid
       - DoubleVerify
@@ -33,23 +46,35 @@ skill_groups:
       - LiveRamp
       - VideoAmp
       - TransUnion
-      - Meta Ads
-      - Google Marketing Platform
     ai_tools:
       - ChatGPT
       - Claude
       - Codex
       - Perplexity
     productivity:
-      - Airtable
-      - Notion
-      - Microsoft Office
-      - Google Workspace
+      - Microsoft 365
       - Excel
       - PowerPoint
       - Word
+      - Outlook
+      - Microsoft Teams
+      - Google Workspace
+      - Google Sheets
+      - Google Slides
+      - Google Docs
+      - Google Drive
+      - Airtable
+      - Box
+      - Trello
+      - Notion
     publishing:
       - WordPress
       - Mailchimp
+      - Editorial Production
+      - Newsletter Development
+      - Content Strategy
+      - Photography
+      - Video Production
+      - Post-Production Workflows
     technical:
       - Python working knowledge
