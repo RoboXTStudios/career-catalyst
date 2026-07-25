@@ -201,7 +201,7 @@ CATEGORY_GUIDANCE = {
         ],
         "proof_points": [
             "premium entertainment and franchise/IP campaign execution",
-            "leadership of cross-functional teams of 60+",
+            "leadership of 10 direct reports across an integrated 64-person organization",
             "workflow governance, milestones, and quality standards",
         ],
         "avoid": ["unsupported gaming studio or game development experience"],
@@ -265,7 +265,7 @@ CATEGORY_GUIDANCE = {
             "lead with the strongest job-description themes rather than unsupported company assumptions",
         ],
         "proof_points": [
-            "leadership of cross-functional teams of 60+",
+            "leadership of 10 direct reports across an integrated 64-person organization",
             "workflow governance and execution standards",
             "CampaignOS systems thinking and operational visibility",
         ],

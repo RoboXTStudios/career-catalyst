@@ -647,6 +647,29 @@ def _skip_platform_blocks(blocks: List[Dict[str, str]], start_index: int) -> int
     return index
 
 
+def _platform_categories_from_blocks(
+    blocks: List[Dict[str, str]], fallback: List[Dict[str, Any]]
+) -> List[Dict[str, Any]]:
+    """Use the tailored Markdown selection; canonical YAML is only a legacy fallback."""
+    in_platforms = False
+    categories: List[Dict[str, Any]] = []
+    for index, block in enumerate(blocks):
+        if block["type"] == "h2":
+            if in_platforms:
+                break
+            in_platforms = _is_section(block["text"], "Platforms & Technologies")
+            continue
+        if not in_platforms or block["type"] != "h3":
+            continue
+        next_block = blocks[index + 1] if index + 1 < len(blocks) else None
+        if not next_block or next_block["type"] != "paragraph":
+            continue
+        items = [item.strip() for item in next_block["text"].split(",") if item.strip()]
+        if items:
+            categories.append({"name": block["text"], "items": items})
+    return categories or fallback
+
+
 def _add_styled_platforms_table(
     document: DocumentObject,
     platform_categories: List[Dict[str, Any]],
@@ -825,7 +848,10 @@ def _export_docx(
 
     document_info = _load_document(root, mode)
     document = document_info["document"]
-    platform_categories = _load_platform_categories(root)
+    blocks = _parse_markdown(markdown)
+    platform_categories = _platform_categories_from_blocks(
+        blocks, _load_platform_categories(root)
+    )
     _configure_page(document, mode)
     style_config = (
         _configure_styled_styles(document)
@@ -840,7 +866,7 @@ def _export_docx(
     )
     _add_markdown_content(
         document,
-        _parse_markdown(markdown),
+        blocks,
         bullet_num_id,
         style_config["competency_separator"],
         mode,

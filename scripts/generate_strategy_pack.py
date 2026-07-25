@@ -164,7 +164,7 @@ def _role_opportunity_brief(context: Dict[str, Any]) -> str:
 def _why_trisha(context: Dict[str, Any]) -> str:
     career_data = context["career_data"]
     position = _position(career_data, "OMG23")
-    position_company = position.get("company") or "OMG23 / OMD Entertainment"
+    position_company = position.get("company") or "OMG23 (Omnicom Media Group)"
     entertainment_scope = _entertainment_scope(career_data)
     leadership = _achievement(career_data, "cross_functional_leadership")
     disney_plus = _achievement(career_data, "disney_plus_launch_support")
@@ -182,9 +182,9 @@ def _why_trisha(context: Dict[str, Any]) -> str:
             f"{_as_third_person(google_familiarity)} Her background includes translating Google and "
             "YouTube platform capabilities into campaign execution, measurement readiness, and "
             "operational workflows, connecting brand objectives with practical activation at scale.\n\n"
-            f"At {position_company}, she progressed from Campaign Manager to Group Director and led "
-            "cross-functional teams of 60+ across creative management, marketing operations, media, "
-            "analytics, technology, and campaign operations. Disney Studios Theatrical and Disney "
+            f"At {position_company}, she progressed from Campaign Manager to Group Director, led 10 direct "
+            "reports, and provided strategic and operational leadership across an integrated 64-person "
+            "organization. Disney Studios Theatrical and Disney "
             "Streaming/DSS campaigns provide evidence of her ability to operate across premium "
             "advertiser complexity, align senior stakeholders, and turn platform capabilities into "
             "consistent execution. Her experience with workflow governance, measurement readiness, "
@@ -406,7 +406,7 @@ def _interview_talking_points(context: Dict[str, Any]) -> List[Tuple[str, str]]:
         ),
         (
             "Leading through cross-functional complexity",
-            "I led teams of 60+ across creative management, marketing operations, media, analytics, technology, and campaign operations, with internal and external partners to align.",
+            "I led 10 direct reports and provided strategic and operational leadership across an integrated 64-person organization, aligning internal and external partners.",
         ),
         (
             "Turning recurring friction into systems",

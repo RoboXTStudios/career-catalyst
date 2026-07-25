@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
 try:
+    from .career_claims import leadership_claim, public_omg23_name
     from .generate_cover_letter import (
         _position,
         load_generation_context,
@@ -11,6 +12,7 @@ try:
     )
     from .role_context import is_google_youtube_role
 except ImportError:
+    from career_claims import leadership_claim, public_omg23_name
     from generate_cover_letter import (
         _position,
         load_generation_context,
@@ -52,8 +54,8 @@ def _profile_application_note(context: Dict[str, Any]) -> str:
         ),
         "paramount": (
             f"The {role} role at {company} stood out because marketing operations is the connective "
-            "layer between strategy, creative capacity, and delivery. I have led teams of 60+ across "
-            "entertainment marketing functions and built workflows, standards, dashboards, and AI-enabled "
+            f"layer between strategy, creative capacity, and delivery. I {leadership_claim(context['career_data'])} "
+            "and built workflows, standards, dashboards, and AI-enabled "
             "quality systems. CampaignOS is a current example of how I turn recurring delivery friction "
             "into clearer operations and better decision support."
         ),
@@ -67,8 +69,8 @@ def _profile_application_note(context: Dict[str, Any]) -> str:
         ),
         "fieldai": (
             f"The {role} role at {company} caught my attention because it centers on matrix operations, "
-            "organizational efficiency, capacity visibility, and operating cadences. I have led teams of "
-            "60+ and built governance, dashboards, automation, and quality systems across several functions. "
+            f"organizational efficiency, capacity visibility, and operating cadences. I {leadership_claim(context['career_data'])} "
+            "and built governance, dashboards, automation, and quality systems across several functions. "
             "CampaignOS reflects my AI-forward approach to making workflows, risk, and decisions clearer "
             "at scale without adding unnecessary process."
         ),
@@ -97,7 +99,7 @@ def _application_note_content(context: Dict[str, Any]) -> str:
     role = parsed_job.get("job_title")
     role_reference = f"The {role} role" if role else "This opportunity"
     position = _position(career_data, "OMG23")
-    position_company = str(position.get("company") or "OMG23 / OMD Entertainment").split(",")[0]
+    position_company = public_omg23_name(career_data)
 
     if is_google_youtube_role(parsed_job):
         return (
@@ -135,7 +137,7 @@ def _application_note_content(context: Dict[str, Any]) -> str:
             )
         else:
             proof = (
-                "I have led cross-functional teams of 60+ and built workflow governance, execution "
+                f"I {leadership_claim(career_data)} and built workflow governance, execution "
                 "standards, dashboards, and CampaignOS systems at scale."
             )
         return (

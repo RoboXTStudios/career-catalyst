@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
 try:
+    from .career_claims import leadership_claim, public_omg23_name
     from .generate_cover_letter import (
         ApplicationMaterialError,
         _as_first_person,
@@ -17,6 +18,7 @@ try:
     )
     from .role_context import is_google_youtube_role
 except ImportError:
+    from career_claims import leadership_claim, public_omg23_name
     from generate_cover_letter import (
         ApplicationMaterialError,
         _as_first_person,
@@ -55,11 +57,11 @@ DYNAMIC_MESSAGE_PROOF = {
     "gtm_product_activation": "My background includes platform activation, measurement readiness, large advertiser execution, and CampaignOS product thinking.",
     "product_strategy_ops": "I have aligned business, analytics, and technology partners and built CampaignOS as a current product and systems proof point.",
     "transformation_advisory": "My experience spans senior stakeholder alignment, operating-model design, and CampaignOS as strategy translated into a working system.",
-    "ai_operations_systems": "I have led teams of 60+ and built CampaignOS around automation, governance, validation, dashboards, and better decisions.",
+    "ai_operations_systems": "I {leadership} and built CampaignOS around automation, governance, validation, dashboards, and better decisions.",
     "streaming_strategy": "I have led theatrical and streaming entertainment work and built systems that turn cross-functional priorities into execution.",
-    "business_operations": "I have led teams of 60+ and built workflow governance, execution standards, dashboards, and operational reporting.",
+    "business_operations": "I {leadership} and built workflow governance, execution standards, dashboards, and operational reporting.",
     "creative_marketing_ops": "I have led large-scale entertainment marketing work and built creative workflows, quality standards, and CampaignOS.",
-    "generic_senior_operator": "I have led teams of 60+ and built workflow governance, execution standards, and CampaignOS systems at scale.",
+    "generic_senior_operator": "I {leadership} and built workflow governance, execution standards, and CampaignOS systems at scale.",
 }
 
 
@@ -68,7 +70,9 @@ def _dynamic_message_copy(context: Dict[str, Any]) -> tuple[str, str]:
     role_family = str(effective.get("role_family") or "generic_senior_operator")
     return (
         DYNAMIC_MESSAGE_FOCUS.get(role_family, DYNAMIC_MESSAGE_FOCUS["generic_senior_operator"]),
-        DYNAMIC_MESSAGE_PROOF.get(role_family, DYNAMIC_MESSAGE_PROOF["generic_senior_operator"]),
+        DYNAMIC_MESSAGE_PROOF.get(role_family, DYNAMIC_MESSAGE_PROOF["generic_senior_operator"]).format(
+            leadership=leadership_claim(context["career_data"])
+        ),
     )
 
 
@@ -93,7 +97,7 @@ def _profile_recruiter_content(context: Dict[str, Any]) -> str:
         ),
         "fieldai": (
             "matrix operations, organizational efficiency, capacity visibility, and AI workflow systems",
-            "I have led teams of 60+ and built CampaignOS around automation, governance, dashboards, and better operational decisions.",
+            f"I {leadership_claim(context['career_data'])} and built CampaignOS around automation, governance, dashboards, and better operational decisions.",
         ),
         "bandsintown": (
             "music, audience connection, editorial voice, and content systems",
@@ -134,7 +138,7 @@ def _profile_hiring_manager_content(context: Dict[str, Any]) -> str:
         ),
         "paramount": (
             "making marketing operations a practical connective layer between strategy, creative capacity, and delivery",
-            "I have led teams of 60+ across creative, marketing, media, analytics, technology, and operations for high-volume entertainment campaigns.",
+            f"I {leadership_claim(context['career_data'])} while directing high-volume entertainment campaign operations.",
             "CampaignOS reflects how I use AI enablement, dashboards, and workflow systems to improve visibility without adding process for its own sake.",
         ),
         "uta": (
@@ -144,7 +148,7 @@ def _profile_hiring_manager_content(context: Dict[str, Any]) -> str:
         ),
         "fieldai": (
             "creating capacity visibility, decision paths, and shared operating cadences across a fast-moving matrix",
-            "I have led cross-functional teams of 60+ and designed governance, dashboards, quality systems, and execution standards across several functions.",
+            f"I {leadership_claim(context['career_data'])} and designed governance, dashboards, quality systems, and execution standards across several functions.",
             "CampaignOS is direct evidence of my AI-forward systems work, including automation, validation frameworks, and operational reporting.",
         ),
         "bandsintown": (
@@ -166,7 +170,7 @@ def _profile_hiring_manager_content(context: Dict[str, Any]) -> str:
         focus, proof = _dynamic_message_copy(context)
         copy = (
             f"turning {focus} into an operating approach teams can understand and use",
-            "I have led cross-functional teams of 60+ and learned to move between senior stakeholder context and delivery detail.",
+            f"I {leadership_claim(context['career_data'])} and learned to move between senior stakeholder context and delivery detail.",
             proof,
         )
     challenge, experience, proof = copy
@@ -191,7 +195,7 @@ def _recruiter_content(context: Dict[str, Any]) -> str:
     role = parsed_job.get("job_title")
     role_reference = f"the {role} role" if role else "this opportunity"
     position = _position(career_data, "OMG23")
-    position_company = str(position.get("company") or "OMG23 / OMD Entertainment").split(",")[0]
+    position_company = public_omg23_name(career_data)
     entertainment_scope = _entertainment_scope(career_data)
     campaignos = _project(career_data, "CampaignOS")
 
@@ -218,7 +222,7 @@ def _recruiter_content(context: Dict[str, Any]) -> str:
     message = (
         f"I'm reaching out about {role_reference} at {company}. It stands out because it "
         f"connects {_job_focus(parsed_job)} around entertainment IP. At {position_company}, "
-        f"{_as_first_person(entertainment_scope)} I led cross-functional teams of 60+ and built "
+        f"{_as_first_person(entertainment_scope)} I {leadership_claim(career_data)} and built "
         "workflows, quality practices, and operating standards for entertainment campaigns."
     )
     if _campaignos_is_relevant(context) and campaignos:
@@ -237,7 +241,7 @@ def _hiring_manager_content(context: Dict[str, Any]) -> str:
     role = parsed_job.get("job_title")
     role_reference = f"The {role} role" if role else "This opportunity"
     position = _position(career_data, "OMG23")
-    position_company = str(position.get("company") or "OMG23 / OMD Entertainment").split(",")[0]
+    position_company = public_omg23_name(career_data)
 
     campaignos = _project(career_data, "CampaignOS")
     entertainment_scope = _entertainment_scope(career_data)

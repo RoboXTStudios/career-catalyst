@@ -123,7 +123,7 @@ class MaterialRoutingTests(unittest.TestCase):
             self.assertIsNone(result["manifest"])
             self.assertTrue(result["warnings"])
 
-    def test_existing_destination_gets_safe_suffix(self):
+    def test_existing_destination_is_archived_before_current_file_is_replaced(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             folder = (
@@ -144,15 +144,11 @@ class MaterialRoutingTests(unittest.TestCase):
                     folder
                     / "netflix_program_manager_design_trisha_lynch_recruiter_message.txt"
                 ).read_text(encoding="utf-8"),
-                "old",
-            )
-            self.assertEqual(
-                (
-                    folder
-                    / "netflix_program_manager_design_trisha_lynch_recruiter_message_2.txt"
-                ).read_text(encoding="utf-8"),
                 "new",
             )
+            versions = list((folder / "versions").glob("*/*.txt"))
+            self.assertEqual(len(versions), 1)
+            self.assertEqual(versions[0].read_text(encoding="utf-8"), "old")
 
 
 class ManifestAndArchiveTests(unittest.TestCase):
