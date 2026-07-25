@@ -28,7 +28,6 @@ PathInput = Union[str, Path]
 STYLED_MODE = "styled"
 ATS_MODE = "ats"
 SUPPORTED_MODES = (STYLED_MODE, ATS_MODE)
-STYLED_PLATFORM_COLUMN_WEIGHTS = (2406, 2266, 1932, 2116)
 STYLED_TABLE_INDENT_DXA = 60
 STYLED_TABLE_CELL_MARGINS_DXA = {"top": 40, "bottom": 40, "start": 60, "end": 60}
 
@@ -129,8 +128,10 @@ def _load_platform_categories(project_root: Path) -> List[Dict[str, Any]]:
         raise DocxExportError(f"Could not load canonical platforms data: {error}") from error
 
     categories = platforms.get("platform_categories")
-    if not isinstance(categories, list) or len(categories) != 4:
-        raise DocxExportError("Canonical platforms data must contain exactly four categories.")
+    if not isinstance(categories, list) or not categories:
+        raise DocxExportError(
+            "Canonical platforms data must contain at least one category."
+        )
 
     for category in categories:
         if not isinstance(category, dict) or not isinstance(category.get("name"), str):
@@ -249,7 +250,7 @@ def _configure_styled_styles(document: DocumentObject) -> Dict[str, Any]:
 
     bullet_style = _get_or_create_paragraph_style(document, "Resume Bullet")
     _set_style_font(bullet_style, body_font, 9.5, color=body_color)
-    _set_paragraph_format(bullet_style, before=0, after=1, line_spacing=1.02)
+    _set_paragraph_format(bullet_style, before=0, after=0.5, line_spacing=1.02)
 
     competency_style = _get_or_create_paragraph_style(document, "Resume Competencies")
     _set_style_font(competency_style, body_font, 9.2, color=body_color)
@@ -324,8 +325,8 @@ def _configure_page(document: DocumentObject, mode: str) -> None:
         section.page_width = Inches(8.5)
         section.page_height = Inches(11)
         if mode == STYLED_MODE:
-            section.top_margin = Inches(0.55)
-            section.bottom_margin = Inches(0.55)
+            section.top_margin = Inches(0.45)
+            section.bottom_margin = Inches(0.45)
             section.left_margin = Inches(0.6)
             section.right_margin = Inches(0.6)
             section.header_distance = Inches(0.25)
@@ -650,11 +651,14 @@ def _add_styled_platforms_table(
     document: DocumentObject,
     platform_categories: List[Dict[str, Any]],
 ) -> None:
-    table = document.add_table(rows=1, cols=len(platform_categories))
+    column_count = min(3, len(platform_categories))
+    row_count = (len(platform_categories) + column_count - 1) // column_count
+    table = document.add_table(rows=row_count, cols=column_count)
     table.style = "Normal Table"
     _set_table_borders_none(table)
 
-    for cell, category in zip(table.rows[0].cells, platform_categories):
+    cells = [cell for row in table.rows for cell in row.cells]
+    for cell, category in zip(cells, platform_categories):
         paragraph = cell.paragraphs[0]
         paragraph.paragraph_format.space_before = Pt(0)
         paragraph.paragraph_format.space_after = Pt(0)
@@ -670,7 +674,7 @@ def _add_styled_platforms_table(
         _format_run(tools_run, "Aptos", 7.5)
 
     column_widths = _column_widths_from_weights(
-        list(STYLED_PLATFORM_COLUMN_WEIGHTS),
+        [1] * column_count,
         _styled_table_width_dxa(document),
     )
     _apply_table_geometry(table, column_widths)

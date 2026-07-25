@@ -4,7 +4,7 @@ evidence_cards:
     short_description: Large-scale entertainment campaign operations leadership across Disney theatrical and streaming work.
     proof_points:
       - Advanced from Campaign Manager to Group Director while leading Disney Studios Theatrical and Disney Streaming/DSS campaign operations.
-      - Led cross-functional teams of 60+ across creative, marketing, media, analytics, technology, and operations.
+      - Led 10 direct reports and provided strategic and operational leadership across an integrated 64-person organization spanning Ad Operations, Creative Management, and Marketing Science and Analytics.
     tags: [entertainment_marketing_operations, creative_operations, operations_leadership, executive_communication]
     strongest_role_fits: [entertainment marketing operations, creative operations, media operations]
     when_to_use: Use when a role needs entertainment marketing, campaign operations, stakeholder coordination, or senior delivery leadership.
@@ -13,10 +13,10 @@ evidence_cards:
     source: data/achievements.yml:omg23_advancement,cross_functional_leadership
   - id: campaignos
     label: CampaignOS
-    short_description: AI-enabled operations platform focused on workflow governance, QA, validation, and reporting.
+    short_description: Working prototype for AI-powered campaign operations focused on workflow governance, QA, validation, and reporting.
     proof_points:
-      - Designed and developed an AI-powered operations platform around schema-driven workflows, validation frameworks, and operational reporting.
-      - Built from recurring enterprise entertainment operations problems, not positioned as a launched enterprise SaaS company.
+      - Designed an AI-powered campaign operations concept around schema-driven workflows, validation frameworks, and operational reporting.
+      - Built from recurring enterprise entertainment operations problems and retained as a working prototype pending representative campaign data and practical testing.
     tags: [ai_workflows, product_thinking, martech, governance, qa, builder]
     strongest_role_fits: [builder role, martech operations, product operations, AI operations]
     when_to_use: Use when AI workflows, automation, workflow systems, product thinking, martech, or builder orientation are directly relevant.
@@ -36,9 +36,9 @@ evidence_cards:
     source: repository behavior and project scope
   - id: roboxt_studios
     label: RoboXT Studios
-    short_description: Early-stage creative and AI studio concept; useful only where entrepreneurial creative systems are relevant.
+    short_description: Launched public creative platform combining editorial work, photography, digital projects, creative direction, and technology-enabled experimentation.
     proof_points:
-      - Represents creative operating point of view and experimentation, not a launched agency.
+      - Demonstrates public creative-platform strategy, information architecture, WordPress development, visual direction, content production, and brand development.
     tags: [builder, creative_work, ai_workflows, entrepreneurship]
     strongest_role_fits: [human agency builder role, startup operations, creative AI role]
     when_to_use: Use only for entrepreneurial, builder-friendly, or creative AI roles.

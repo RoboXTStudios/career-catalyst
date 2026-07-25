@@ -1,15 +1,15 @@
 achievements:
   - id: omg23_advancement
     theme: Career progression
-    statement: "Advanced from Campaign Manager to Group Director while leading campaign operations across Disney Studios Theatrical and Disney Streaming/DSS."
+    statement: "Advanced through five roles from Campaign Manager to Group Director while leading enterprise operations and transformation work across Disney Studios, Disney+, Searchlight Pictures, Corporate Brand Management, and related theatrical, streaming, and franchise priorities."
     evidence:
-      - "Primary work focused on theatrical and streaming film campaign operations across Disney's Studios, franchise/IP, and streaming ecosystem."
-      - "Supported Pixar, Lucasfilm, Marvel, 20th Century Studios, Searchlight Pictures, Disney+, and franchise/IP and brand management priorities."
+      - "Progressed through Campaign Manager, Supervisor, Associate Director, Director, and Group Director roles between 2016 and 2026."
+      - "Supported Disney Studios, Disney+, Searchlight Pictures, Corporate Brand Management, and related theatrical, streaming, and franchise priorities."
   - id: cross_functional_leadership
     theme: Cross-functional leadership
-    statement: "Led cross-functional teams of 60+ across creative management, marketing operations, media, analytics, technology, and campaign operations."
+    statement: "Led 10 direct reports and provided strategic and operational leadership across an integrated 64-person organization spanning Ad Operations, Creative Management, and Marketing Science and Analytics."
     evidence:
-      - "Aligned creative, marketing, media, analytics, technology, and operations teams supporting theatrical and streaming entertainment campaigns."
+      - "Partnered across creative, marketing, media planning, analytics, engineering, technology, programmatic, search, social, vendors, and client leadership."
   - id: enterprise_campaign_delivery
     theme: Campaign operations
     statement: "Directed operational execution for multimillion-dollar premium entertainment campaigns across theatrical releases, streaming launches, and franchise/IP priorities."
@@ -22,7 +22,7 @@ achievements:
       - "Connected campaign operations, platform readiness, and quality assurance."
   - id: google_youtube_platform_familiarity
     theme: Google and YouTube platform activation
-    statement: "Built long-term hands-on experience with Google advertising products, including YouTube, dating back to the early 2000s."
+    statement: "Built hands-on experience activating Google advertising products, including YouTube, through enterprise campaign operations."
     evidence:
       - "Translated Google and YouTube platform capabilities into campaign execution, measurement readiness, and operational workflows."
       - "Connected brand objectives, campaign operations, measurement, and platform activation across large entertainment advertisers."
@@ -39,7 +39,7 @@ achievements:
       - "Spotlighted creativity, innovation, culture, and employee storytelling."
   - id: campaignos_ai_operations
     theme: AI operations
-    statement: "Designed and developed an AI-powered operations platform that standardizes workflow governance, automates quality assurance, reduces operational risk, and enables cross-functional teams to execute consistently at scale."
+    statement: "Designed CampaignOS as a working prototype for AI-powered campaign operations focused on readiness, workflow governance, quality assurance, validation, reporting, and operational risk detection."
     evidence:
-      - "Built schema-driven workflows, validation frameworks, and operational reporting that reduce manual effort while improving consistency, visibility, and decision-making."
-      - "Applied nearly two decades of enterprise entertainment operations experience to solve recurring organizational challenges through AI, automation, and product thinking."
+      - "Built schema-driven workflows and product logic grounded in recurring enterprise entertainment operations challenges."
+      - "Further development depends on representative campaign data and practical testing environments."
