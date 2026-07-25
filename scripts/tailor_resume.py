@@ -23,6 +23,7 @@ try:
     )
     from .score_match import score_job_match
     from .text_cleanup import cleanup_repeated_words
+    from .role_intent import build_role_intent
 except ImportError:
     from career_claims import is_ai_transformation_role, validate_public_career_claims
     from filename_utils import build_upload_filename
@@ -42,6 +43,7 @@ except ImportError:
     )
     from score_match import score_job_match
     from text_cleanup import cleanup_repeated_words
+    from role_intent import build_role_intent
 
 
 VALID_RESUME_PROFILES = (
@@ -232,10 +234,14 @@ def _select_core_competencies(
     parsed_job: Dict[str, Any],
     match_report: Dict[str, Any],
     resume_profile: str,
+    role_intent: Optional[Dict[str, Any]] = None,
 ) -> List[str]:
     skills = _all_skills(career_data)
     job_keywords = [str(keyword) for keyword in parsed_job.get("keywords", [])]
-    priorities = PROFILE_PRIORITIES[resume_profile]
+    intent_priorities = list(
+        (role_intent or {}).get("resume", {}).get("competency_priorities", [])
+    )
+    priorities = tuple(intent_priorities) + PROFILE_PRIORITIES[resume_profile]
     top_matching = match_report.get("top_matching_skills", [])
 
     ranked = []
@@ -245,7 +251,10 @@ def _select_core_competencies(
             score += 8
         ranked.append((score, -index, skill))
 
-    selected = [skill for _score, _index, skill in sorted(ranked, reverse=True) if _score > 0]
+    selected = [skill for skill in intent_priorities if skill in skills]
+    selected.extend(
+        skill for _score, _index, skill in sorted(ranked, reverse=True) if _score > 0
+    )
     if is_google_youtube_role(parsed_job):
         selected = list(GOOGLE_YOUTUBE_COMPETENCIES) + selected
     if len(selected) < 8:
@@ -266,9 +275,21 @@ def _selected_platform_categories(
     career_data: Dict[str, Any],
     parsed_job: Dict[str, Any],
     resume_profile: str,
+    role_intent: Optional[Dict[str, Any]] = None,
 ) -> List[Tuple[str, List[str]]]:
     """Return a compact role-relevant tool set instead of the full foundation."""
     categories = _platform_categories(career_data)
+    configured = (role_intent or {}).get("resume", {}).get("tools") or {}
+    if configured:
+        available = {name: items for name, items in categories}
+        return [
+            (
+                str(name),
+                [item for item in requested if item in available.get(str(name), [])],
+            )
+            for name, requested in configured.items()
+            if any(item in available.get(str(name), []) for item in requested)
+        ]
     role_text = _normalize_text(
         " ".join(
             _flatten_strings(
@@ -331,7 +352,13 @@ def _profile_summary(
     competencies: Sequence[str],
     resume_profile: str,
     parsed_job: Dict[str, Any],
+    role_intent: Optional[Dict[str, Any]] = None,
 ) -> str:
+    intent_summary = str(
+        (role_intent or {}).get("resume", {}).get("summary_profile") or ""
+    ).strip()
+    if intent_summary:
+        return intent_summary
     personal_brand = career_data["data"]["personal_brand"]
     career_profile = personal_brand["career_profile"]
     profile_key = "google_youtube_operations" if is_google_youtube_role(parsed_job) else resume_profile
@@ -420,18 +447,64 @@ def _ai_transformation_experience_bullets(
     )[:6]
 
 
+def _marketing_integration_experience_bullets(
+    career_data: Dict[str, Any], omg_position: Dict[str, Any]
+) -> List[str]:
+    airtable = _foundation_evidence_project(
+        career_data, "operational_workflow_design_airtable_implementation"
+    )
+    return _dedupe(
+        [
+            _achievement_statement(career_data, "cross_functional_leadership"),
+            (
+                "Coordinated an Airtable implementation as a shared source of truth across "
+                "linked workflows, naming conventions, permissions, automations, QA, training, "
+                "and platform adoption."
+                if airtable
+                else ""
+            ),
+            _achievement_statement(career_data, "workflow_governance"),
+            _achievement_statement(career_data, "enterprise_campaign_delivery"),
+            next(
+                (
+                    str(item)
+                    for item in omg_position.get("highlights", [])
+                    if "vendor" in str(item).lower()
+                    or "technology" in str(item).lower()
+                ),
+                "",
+            ),
+            next(
+                (
+                    str(item)
+                    for item in omg_position.get("highlights", [])
+                    if "creative management" in str(item).lower()
+                    and "marketing science" in str(item).lower()
+                ),
+                "",
+            ),
+        ]
+    )[:6]
+
+
 def _select_experience_bullets(
     career_data: Dict[str, Any],
     parsed_job: Dict[str, Any],
     resume_profile: str,
+    role_intent: Optional[Dict[str, Any]] = None,
 ) -> List[str]:
     positions = career_data["data"]["positions"].get("positions", [])
     omg_position = next(
         (position for position in positions if "OMG23" in position.get("company", "")),
         positions[0] if positions else {},
     )
-    if is_ai_transformation_role(parsed_job):
+    archetype = str((role_intent or {}).get("primary_archetype") or "")
+    if archetype == "ai_transformation" or (
+        not role_intent and is_ai_transformation_role(parsed_job)
+    ):
         return _ai_transformation_experience_bullets(career_data, omg_position)
+    if archetype == "marketing_operations_integration":
+        return _marketing_integration_experience_bullets(career_data, omg_position)
 
     candidate_bullets = []
     candidate_bullets.extend(omg_position.get("highlights", []))
@@ -488,7 +561,8 @@ def _select_experience_bullets(
         if _is_near_duplicate(bullet, selected):
             continue
         selected.append(bullet)
-        if len(selected) == 6:
+        limit = int((role_intent or {}).get("resume", {}).get("omg23_bullet_limit") or 6)
+        if len(selected) == limit:
             break
     return selected
 
@@ -531,6 +605,7 @@ def _selected_projects(
     parsed_job: Dict[str, Any],
     resume_profile: str,
     complete_foundation: bool = False,
+    role_intent: Optional[Dict[str, Any]] = None,
 ) -> List[Tuple[Dict[str, Any], List[str]]]:
     projects = career_data["data"]["projects"].get("projects", [])
     if complete_foundation:
@@ -550,8 +625,44 @@ def _selected_projects(
             for project in projects
         ]
 
+    intent_resume = (role_intent or {}).get("resume") or {}
+    if role_intent:
+        limit = int(intent_resume.get("selected_project_limit") or 0)
+        if limit <= 0:
+            return []
+        selected_ids = list(intent_resume.get("selected_project_ids") or [])[:limit]
+        selected: List[Tuple[Dict[str, Any], List[str]]] = []
+        for project_name in selected_ids:
+            project = next(
+                (item for item in projects if str(item.get("name")) == str(project_name)),
+                None,
+            )
+            if not project:
+                continue
+            summary = str(project.get("summary") or "")
+            if project_name == "Career Catalyst":
+                summary = summary.replace("actively uses", "actively operates")
+                summary = summary.replace("Evidence management", "evidence management")
+            if project_name == "CampaignOS" and "working prototype" not in summary.lower():
+                focus = summary.partition("focused on")[2].strip()
+                summary = (
+                    f"Built CampaignOS as a working prototype focused on {focus}"
+                    if focus
+                    else f"Built CampaignOS as a working prototype. {summary}"
+                )
+            bullets = _dedupe([summary, *map(str, project.get("highlights", [])[:1])])
+            if project_name == "Career Catalyst":
+                bullets = [
+                    bullet.replace("actively uses", "actively operates").replace(
+                        "Evidence management", "evidence management"
+                    )
+                    for bullet in bullets
+                ]
+            selected.append((project, bullets[:2]))
+        return selected
+
     ranked: List[Tuple[int, Dict[str, Any], List[str]]] = []
-    plan = material_editing_plan(parsed_job)
+    plan = material_editing_plan(parsed_job, role_intent=role_intent)
     category = plan.get("role_category")
     section_rules = plan.get("resume_section_rules", {})
     creative_rule = section_rules.get("creative_editorial_projects")
@@ -604,7 +715,11 @@ def _relevant_associated_evidence(
 
 
 def _earlier_career_positions(
-    career_data: Dict[str, Any], parsed_job: Dict[str, Any], *, complete_foundation: bool
+    career_data: Dict[str, Any],
+    parsed_job: Dict[str, Any],
+    *,
+    complete_foundation: bool,
+    role_intent: Optional[Dict[str, Any]] = None,
 ) -> List[Dict[str, Any]]:
     positions = career_data["data"]["positions"].get("positions", [])
     earlier = [
@@ -614,6 +729,16 @@ def _earlier_career_positions(
     ]
     if complete_foundation:
         return earlier
+    policy = str((role_intent or {}).get("resume", {}).get("earlier_career_policy") or "")
+    if policy == "omit":
+        return []
+    if policy == "compact_agency_only":
+        return [
+            position
+            for position in earlier
+            if str(position.get("company"))
+            in {"Intermedia Advertising", "US International Media"}
+        ]
     if is_ai_transformation_role(parsed_job):
         return []
     role_text = _normalize_text(
@@ -674,6 +799,7 @@ def _render_markdown(
     resume_profile: str,
     associated_evidence_projects: Optional[List[Dict[str, Any]]] = None,
     complete_foundation: bool = False,
+    role_intent: Optional[Dict[str, Any]] = None,
 ) -> str:
     personal_brand = career_data["data"]["personal_brand"]
     candidate = personal_brand["candidate"]
@@ -685,12 +811,15 @@ def _render_markdown(
             parsed_job,
             match_report,
             resume_profile,
+            role_intent,
         )
     )
     platforms = (
         _platform_categories(career_data)
         if complete_foundation
-        else _selected_platform_categories(career_data, parsed_job, resume_profile)
+        else _selected_platform_categories(
+            career_data, parsed_job, resume_profile, role_intent
+        )
     )
     positions = career_data["data"]["positions"].get("positions", [])
     omg_position = next(
@@ -700,19 +829,25 @@ def _render_markdown(
     experience_bullets = (
         _dedupe([str(value) for value in omg_position.get("highlights", [])])
         if complete_foundation
-        else _select_experience_bullets(career_data, parsed_job, resume_profile)
+        else _select_experience_bullets(
+            career_data, parsed_job, resume_profile, role_intent
+        )
     )
     selected_projects = _selected_projects(
         career_data,
         parsed_job,
         resume_profile,
         complete_foundation=complete_foundation,
+        role_intent=role_intent,
     )
     associated_evidence_projects = _relevant_associated_evidence(
         associated_evidence_projects or [], parsed_job
     )
     earlier_positions = _earlier_career_positions(
-        career_data, parsed_job, complete_foundation=complete_foundation
+        career_data,
+        parsed_job,
+        complete_foundation=complete_foundation,
+        role_intent=role_intent,
     )
     development = (
         _professional_development(career_data)
@@ -726,7 +861,12 @@ def _render_markdown(
         "",
         f"# {candidate.get('name', 'Trisha Lynch')}",
         "",
-        candidate.get("headline", ""),
+        (
+            str((role_intent or {}).get("resume", {}).get("headline_profile") or "")
+            if not complete_foundation
+            else ""
+        )
+        or candidate.get("headline", ""),
         "",
         _contact_line(personal_brand),
         "",
@@ -738,6 +878,7 @@ def _render_markdown(
             competencies,
             resume_profile,
             parsed_job,
+            role_intent,
         ),
         "",
         "## Core Competencies",
@@ -884,6 +1025,7 @@ def tailor_resume(
     job_path: PathInput,
     project_root: Optional[PathInput] = None,
     associated_evidence_projects: Optional[List[Dict[str, Any]]] = None,
+    role_intent: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Generate and save a tailored Markdown resume."""
     if resume_profile not in VALID_RESUME_PROFILES:
@@ -895,15 +1037,25 @@ def tailor_resume(
     associated_evidence_projects = associated_evidence_projects or []
     verified_evidence_context = evidence_generation_context(associated_evidence_projects)
     parsed_job = parse_job_description(root / job_path)
+    shared_role_intent = role_intent or build_role_intent(parsed_job, root)
     match_report = score_job_match(job_path, root)
     markdown = cleanup_repeated_words(
-        _render_markdown(career_data, parsed_job, match_report, resume_profile, associated_evidence_projects)
+        _render_markdown(
+            career_data,
+            parsed_job,
+            match_report,
+            resume_profile,
+            associated_evidence_projects,
+            role_intent=shared_role_intent,
+        )
     )
     markdown, rewrite_notes = rewrite_banned_voice_phrases(markdown)
     validate_public_career_claims(markdown)
     banned_phrases = list(career_data["config"].get("voice", {}).get("avoid", []))
     banned_phrases.extend(load_writing_voice_profile(root).get("banned_phrases", []))
-    banned_phrases.extend(material_editing_plan(parsed_job, root).get("banned_phrases", []))
+    banned_phrases.extend(
+        material_editing_plan(parsed_job, root, shared_role_intent).get("banned_phrases", [])
+    )
     remaining_banned = remaining_banned_voice_phrases(markdown, banned_phrases)
     if remaining_banned:
         raise ResumeTailoringError(
@@ -950,5 +1102,6 @@ def tailor_resume(
         "associated_evidence_project_titles": [
             str(project.get("title")) for project in (associated_evidence_projects or [])
         ],
+        "role_intent": shared_role_intent,
         "associated_evidence_context": verified_evidence_context,
     }

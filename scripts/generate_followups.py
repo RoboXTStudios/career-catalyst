@@ -685,6 +685,7 @@ def _write_output(
 def generate_followups(
     tracker_id: str,
     project_root: Optional[PathInput] = None,
+    role_intent: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Generate five follow-up or pre-application networking files for one tracker role."""
     root = Path(project_root) if project_root is not None else Path.cwd()
@@ -712,7 +713,7 @@ def generate_followups(
             job_path = None
 
         if job_path is not None:
-            context = load_generation_context(job_path, root)
+            context = load_generation_context(job_path, root, role_intent=role_intent)
             parsed_job = context["parsed_job"]
             career_data = context["career_data"]
         else:
@@ -728,6 +729,7 @@ def generate_followups(
                 "career_data": career_data,
                 "voice": career_data["config"].get("voice", {}),
                 "parsed_job": parsed_job,
+                "role_intent": role_intent,
             }
         raw_company = _clean(application.get("company") or parsed_job.get("company"))
         company = company_display_name(raw_company)

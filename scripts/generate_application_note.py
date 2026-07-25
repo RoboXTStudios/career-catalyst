@@ -160,9 +160,10 @@ def _application_note_content(context: Dict[str, Any]) -> str:
 def generate_application_note(
     job_path: PathInput,
     project_root: Optional[PathInput] = None,
+    role_intent: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Generate and save a short application portal note."""
-    context = load_generation_context(job_path, project_root)
+    context = load_generation_context(job_path, project_root, role_intent=role_intent)
     return save_material(
         context,
         "Application_Note",

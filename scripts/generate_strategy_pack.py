@@ -518,9 +518,10 @@ def _validate_strategy_pack(context: Dict[str, Any], content: str) -> None:
 def generate_strategy_pack(
     job_path: PathInput,
     project_root: Optional[PathInput] = None,
+    role_intent: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Generate and save a Markdown Standout Strategy Pack."""
-    context = load_generation_context(job_path, project_root)
+    context = load_generation_context(job_path, project_root, role_intent=role_intent)
     content = cleanup_repeated_words(_render_strategy_pack(context))
     _validate_strategy_pack(context, content)
     validate_material_context(content, context["parsed_job"], "Strategy_Pack")

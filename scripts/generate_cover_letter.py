@@ -38,6 +38,7 @@ try:
     )
     from .score_match import score_job_match
     from .text_cleanup import cleanup_repeated_words
+    from .role_intent import build_role_intent
 except ImportError:
     from career_claims import (
         PublicCareerClaimError,
@@ -64,6 +65,7 @@ except ImportError:
     )
     from score_match import score_job_match
     from text_cleanup import cleanup_repeated_words
+    from role_intent import build_role_intent
 
 
 PathInput = Union[str, Path]
@@ -77,6 +79,7 @@ def load_generation_context(
     job_path: PathInput,
     project_root: Optional[PathInput] = None,
     associated_evidence_projects: Optional[List[Dict[str, Any]]] = None,
+    role_intent: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Load career data, parsed job details, and the match report."""
     root = Path(project_root) if project_root is not None else Path.cwd()
@@ -97,7 +100,8 @@ def load_generation_context(
     writing_voice = load_writing_voice_profile(root)
     selected_evidence = select_evidence_cards(parsed_job, evidence_cards)
     associated_evidence_projects = associated_evidence_projects or []
-    editing_plan = material_editing_plan(parsed_job, root)
+    shared_role_intent = role_intent or build_role_intent(parsed_job, root)
+    editing_plan = material_editing_plan(parsed_job, root, shared_role_intent)
     return {
         "root": root,
         "career_data": career_data,
@@ -108,6 +112,7 @@ def load_generation_context(
         "associated_evidence_projects": associated_evidence_projects,
         "associated_evidence_context": evidence_generation_context(associated_evidence_projects),
         "material_editing_plan": editing_plan,
+        "role_intent": shared_role_intent,
         "parsed_job": parsed_job,
         "match_report": score_job_match(job_path, root),
         **voice_context,
@@ -236,7 +241,7 @@ def _cover_letter_value_sentences(context: Dict[str, Any]) -> List[str]:
     return [
         role_sentence,
         f"That is the perspective I would bring to {company}, along with calm stakeholder leadership and a habit of turning recurring friction into a clearer, more dependable way of working.",
-        "The through line in my experience is simple: I care about the work itself, the people doing it, and the operating conditions that allow both to be at their best.",
+        "The through line in my experience is building operating conditions that help people make sound decisions, protect quality, and deliver dependable work.",
         "Across entertainment campaigns and internal transformation work, I have learned to ask direct questions, make tradeoffs visible, and keep the solution proportionate to the problem.",
         "I am equally comfortable shaping the plan, working through the details with a team, and giving leaders a concise view of what needs a decision.",
         "That combination of strategic range and hands-on follow-through has helped me earn trust across creative, marketing, analytics, technology, and operations partners.",
@@ -775,6 +780,144 @@ def _signed_content(*paragraphs: str) -> str:
     return content
 
 
+def _dynamic_greeting(context: Dict[str, Any]) -> str:
+    return str(
+        (context.get("role_intent") or {}).get("cover_letter", {}).get("greeting")
+        or "Dear Hiring Team,"
+    )
+
+
+def _replace_greeting(content: str, context: Dict[str, Any]) -> str:
+    greeting = _dynamic_greeting(context)
+    paragraphs = str(content or "").split("\n\n")
+    if paragraphs:
+        paragraphs[0] = greeting
+    return "\n\n".join(paragraphs)
+
+
+def _marketing_integration_cover_letter_content(context: Dict[str, Any]) -> str:
+    parsed_job = context["parsed_job"]
+    company = str(parsed_job.get("company") or "the organization")
+    role = str(parsed_job.get("job_title") or "marketing operations role")
+    career_data = context["career_data"]
+    opening = (
+        f"The {role} role at {company} calls for more than process ownership. It requires someone "
+        "who can connect brands, shared services, platforms, vendors, and resource decisions through "
+        "an operating model people can use. My experience is strongest where fragmented marketing "
+        "work needs clearer intake, standards, visibility, and sustained adoption."
+    )
+    airtable = (
+        "At OMG23 (Omnicom Media Group), I coordinated an Airtable implementation that created a "
+        "shared source of truth across linked workflows. The work included naming conventions, "
+        "permissions, automations, quality checks, documentation, training, and adoption support. "
+        "It required translating different team needs into one maintainable structure while keeping "
+        "ownership and handoffs clear."
+    )
+    enterprise = (
+        f"That implementation sat within broader enterprise operating work. I {leadership_claim(career_data)}. "
+        "Across Ad Operations, Creative Management, and Marketing Science and Analytics, I built "
+        "workflow governance, delivery standards, vendor coordination, and reporting visibility for "
+        "high-volume entertainment portfolios. I also worked with tools including Box and Trello, "
+        "using each platform as part of an operating system rather than treating technology as the solution by itself."
+    )
+    closing = (
+        f"For {company}, I would bring a practical integration approach: map the current work, define "
+        "intake and prioritization, clarify shared-service ownership, rationalize vendors and repositories, "
+        "then pair implementation with training, feedback, and measurable adoption. The result should be "
+        "better portfolio visibility, more dependable throughput, and faster time to market without flattening individual brand needs."
+    )
+    return "\n\n".join((_dynamic_greeting(context), opening, airtable, enterprise, closing, "Best,\n\nTrisha Lynch"))
+
+
+def _general_role_intent_cover_letter_content(context: Dict[str, Any]) -> str:
+    parsed_job = context["parsed_job"]
+    intent = context["role_intent"]
+    company = str(parsed_job.get("company") or "the organization")
+    role = str(parsed_job.get("job_title") or "senior operations role")
+    need = str(intent.get("primary_hiring_need") or "bring clarity and dependable execution to complex work")
+    motions = [str(value).replace("_", " ") for value in intent.get("work_motions", [])[:4]]
+    outcomes = [str(value).replace("_", " ") for value in intent.get("required_outcomes", [])[:3]]
+    signals = [str(value) for value in intent.get("reasoning_signals", [])[:4]]
+    archetype = str(intent.get("primary_archetype") or "general_operations")
+    opening = (
+        f"The {role} role at {company} is fundamentally about this operating need: {need} "
+        "That is the kind of work I have handled throughout my career, especially when multiple "
+        "functions need shared priorities, clear ownership, and useful visibility without unnecessary process."
+    )
+    leadership = (
+        f"At {public_omg23_name(context['career_data'])}, I progressed through five roles to Group Director. "
+        f"I {leadership_claim(context['career_data'])}. I established workflows, governance, quality standards, "
+        "decision paths, and stakeholder reporting across demanding theatrical and streaming campaign work. "
+        "The scale required me to distinguish direct team leadership from broader cross-functional influence "
+        "and to make decisions clear enough for specialists and senior leaders to act."
+    )
+    execution = (
+        "My approach is grounded in the work motions named in the role: "
+        + ", ".join(motions or ["planning", "stakeholder alignment", "workflow governance"])
+        + ". The strongest role signals are "
+        + ", ".join(signals or ["cross-functional execution", "governance", "operating visibility"])
+        + ". I use practical tools and operating routines to surface risks early, connect dependencies, "
+        "document decisions, and create feedback loops that teams can sustain."
+    )
+    proof_by_archetype = {
+        "product_operations": (
+            "Career Catalyst actively operates as a requirements, schema, validation, and feedback system, "
+            "while CampaignOS is a working prototype for governed campaign operations. Together they show "
+            "how I translate user needs into product and technology strategy, operating rhythms, quality "
+            "controls, and measurable adoption. My enterprise context includes Disney "
+            "Studios Theatrical and the operating realities of a large entertainment enterprise."
+        ),
+        "shared_services_operations": (
+            "CampaignOS is a working prototype of that systems approach. It connects matrix operations, "
+            "organizational efficiency, capacity visibility, and automation with governance that keeps "
+            "human judgment visible instead of hiding it behind a tool."
+        ),
+        "business_operations_chief_of_staff": (
+            "My client-facing transformation work has required an advisory stance: understand the problem, "
+            "form a grounded hypothesis, recommend an operating model, and stay accountable through implementation."
+        ),
+        "creative_operations": (
+            "CampaignOS is a working prototype built around marketing operations, creative capacity, intake, "
+            "workflow governance, quality assurance, and delivery visibility. It reflects my belief that useful "
+            "systems protect creative judgment while making priorities and handoffs easier to manage."
+        ),
+        "editorial_content_operations": (
+            "Through Multiverse and RoboXT Studios, I have built editorial and publishing systems that connect "
+            "music, audience connection, and human storytelling with contributor coordination and consistent "
+            "production. That work keeps artists, industry partners, and fans in view without inventing music-industry claims."
+        ),
+    }
+    proof = proof_by_archetype.get(
+        archetype,
+        (
+            "A practical proof point is the operating governance I built for high-volume entertainment work: "
+            "clear intake, documented standards, visible decisions, quality checks, and escalation paths. "
+            "Those systems supported delivery under pressure while keeping accountability with the people closest to the work."
+        ),
+    )
+    role_text = " ".join(
+        str(parsed_job.get(key) or "") for key in ("job_title", "raw_text", "summary")
+    ).lower()
+    if archetype == "product_operations" and "youtube" in role_text:
+        proof = (
+            "Career Catalyst actively operates as a requirements, schema, validation, and feedback system, "
+            "while CampaignOS is a working prototype for governed campaign operations. Together they show "
+            "how I translate user needs into YouTube product activation, GTM operations, seller enablement, "
+            "feedback loops, quality controls, and measurable adoption without overstating platform-side experience."
+        )
+    close = (
+        f"For {company}, I would focus on "
+        + ", ".join(outcomes or ["clear priorities", "reliable execution", "operating visibility"])
+        + ". I would bring calm senior judgment, factual communication, and systems that make the role's "
+        "intended outcomes easier to deliver and measure."
+    )
+    paragraphs = [_dynamic_greeting(context), opening, leadership, execution]
+    if proof:
+        paragraphs.append(proof)
+    paragraphs.extend((close, "Best,\n\nTrisha Lynch"))
+    return "\n\n".join(paragraphs)
+
+
 def _bandsintown_cover_letter_content(context: Dict[str, Any]) -> str:
     career_data = context["career_data"]
     parsed_job = context["parsed_job"]
@@ -1145,6 +1288,21 @@ def _dynamic_cover_letter_content(context: Dict[str, Any]) -> str:
 
 
 def _cover_letter_content(context: Dict[str, Any]) -> str:
+    if context.get("career_data"):
+        role_intent = context.get("role_intent") or build_role_intent(
+            context["parsed_job"], context.get("root")
+        )
+        context = {**context, "role_intent": role_intent}
+        archetype = str(role_intent.get("primary_archetype") or "general_operations")
+        if archetype == "ai_transformation":
+            return _replace_greeting(
+                _ai_transformation_cover_letter_content(context), context
+            )
+        if archetype == "marketing_operations_integration":
+            return _marketing_integration_cover_letter_content(context)
+        return _general_role_intent_cover_letter_content(context)
+
+    # Preserve legacy direct-builder callers that provide only voice context.
     profile_key = context.get("profile_key", "default")
     role_family = context.get("role_family")
     builders = {
@@ -1195,15 +1353,18 @@ def generate_cover_letter(
     job_path: PathInput,
     project_root: Optional[PathInput] = None,
     associated_evidence_projects: Optional[List[Dict[str, Any]]] = None,
+    role_intent: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Generate and save a concise TXT cover letter with safe DOCX when available."""
-    context = load_generation_context(job_path, project_root, associated_evidence_projects)
+    context = load_generation_context(
+        job_path, project_root, associated_evidence_projects, role_intent
+    )
     result = save_material(
         context,
         "Cover_Letter",
         _cover_letter_content(context),
         minimum_words=250,
-        maximum_words=400,
+        maximum_words=325,
         repair_content=repair_cover_letter_content,
         repair_attempts=3,
     )
@@ -1222,6 +1383,7 @@ def generate_cover_letter(
         result["docx_error"] = f"DOCX missing / unsupported: {error}"
     else:
         result["docx_output_path"] = str(docx_path)
+    result["role_intent"] = context["role_intent"]
     result["associated_evidence_project_titles"] = [
         str(project.get("title")) for project in (associated_evidence_projects or [])
     ]

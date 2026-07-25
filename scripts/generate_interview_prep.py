@@ -19,10 +19,12 @@ PathInput = Union[str, Path]
 
 
 def generate_interview_prep(
-    job_path: PathInput, project_root: Optional[PathInput] = None
+    job_path: PathInput,
+    project_root: Optional[PathInput] = None,
+    role_intent: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Create a grounded interview-prep file from dynamic role intelligence."""
-    context = load_generation_context(job_path, project_root)
+    context = load_generation_context(job_path, project_root, role_intent=role_intent)
     parsed = context["parsed_job"]
     intelligence = context.get("effective_voice_profile", {})
     company = str(parsed.get("company") or "the company")
