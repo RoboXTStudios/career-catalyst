@@ -55,9 +55,10 @@ class TailorResumeTests(unittest.TestCase):
         result = tailor_resume("executive_operations", SAMPLE_JOB, PROJECT_ROOT)
         content = Path(result["output_path"]).read_text(encoding="utf-8")
 
-        self.assertIn("AI Workflow Design", content)
-        self.assertIn("Process Automation", content)
-        self.assertIn("Python (Working Knowledge)", content)
+        self.assertIn("Workflow Design", content)
+        self.assertIn("Reporting Workflows", content)
+        self.assertNotIn("AI Workflow Design", content)
+        self.assertNotIn("Python (Working Knowledge)", content)
         self.assertNotIn("Newsletter Development", content)
         self.assertNotIn("Editorial Production", content)
 

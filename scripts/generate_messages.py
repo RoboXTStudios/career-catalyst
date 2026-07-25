@@ -310,6 +310,7 @@ def generate_message(
     message_type: str,
     job_path: PathInput,
     project_root: Optional[PathInput] = None,
+    role_intent: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Generate and save a recruiter or hiring manager message."""
     normalized_type = message_type.replace("-", "_").lower()
@@ -317,7 +318,7 @@ def generate_message(
         valid = ", ".join(message_type.replace("_", "-") for message_type in MESSAGE_TYPES)
         raise ApplicationMaterialError(f"Unknown message type '{message_type}'. Valid types: {valid}")
 
-    context = load_generation_context(job_path, project_root)
+    context = load_generation_context(job_path, project_root, role_intent=role_intent)
     if normalized_type == "recruiter":
         return save_material(
             context,
@@ -339,12 +340,14 @@ def generate_message(
 def generate_recruiter_message(
     job_path: PathInput,
     project_root: Optional[PathInput] = None,
+    role_intent: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
-    return generate_message("recruiter", job_path, project_root)
+    return generate_message("recruiter", job_path, project_root, role_intent)
 
 
 def generate_hiring_manager_message(
     job_path: PathInput,
     project_root: Optional[PathInput] = None,
+    role_intent: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
-    return generate_message("hiring_manager", job_path, project_root)
+    return generate_message("hiring_manager", job_path, project_root, role_intent)

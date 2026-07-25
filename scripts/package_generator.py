@@ -40,6 +40,7 @@ try:
     from .score_match import persisted_match_fields, score_job_match
     from .tailor_resume import tailor_resume
     from .evidence_engine import evidence_projects_for_role
+    from .role_intent import build_role_intent, role_intent_snapshot
 except ImportError:
     from application_tracker import (
         TrackerValidationError,
@@ -73,6 +74,7 @@ except ImportError:
     from score_match import persisted_match_fields, score_job_match
     from tailor_resume import tailor_resume
     from evidence_engine import evidence_projects_for_role
+    from role_intent import build_role_intent, role_intent_snapshot
 
 
 PathInput = Union[str, Path]
@@ -424,6 +426,9 @@ def build_package_context(
         "role_intelligence": intelligence,
         "selected_package_paths": selected_package_paths,
         "associated_evidence_projects": evidence_projects_for_role(application, root),
+        "role_intent": build_role_intent(
+            {**parsed, "company": company_display_name(raw_company)}, root
+        ),
     }
     context["match_report"] = score_job_match(
         job_reference, root, context["associated_evidence_projects"]
@@ -581,20 +586,42 @@ def generate_package(
             else bool(generate_followups_too)
         )
         opportunity = score_opportunity(parsed, score, intelligence, freshness)
-        resume = tailor_resume("executive_operations", job_reference, root, context.get("associated_evidence_projects", []))
+        shared_role_intent = context["role_intent"]
+        resume = tailor_resume(
+            "executive_operations",
+            job_reference,
+            root,
+            context.get("associated_evidence_projects", []),
+            shared_role_intent,
+        )
         styled = _safe_docx_export(
             export_styled_docx, resume["output_path"], root, "Styled resume DOCX"
         )
         ats = _safe_docx_export(
             export_ats_docx, resume["output_path"], root, "ATS resume DOCX"
         )
-        cover_letter = generate_cover_letter(job_reference, root, context.get("associated_evidence_projects", []))
-        recruiter = generate_message("recruiter", job_reference, root)
-        hiring_manager = generate_message("hiring-manager", job_reference, root)
-        application_note = generate_application_note(job_reference, root)
-        strategy_pack = generate_strategy_pack(job_reference, root)
+        cover_letter = generate_cover_letter(
+            job_reference,
+            root,
+            context.get("associated_evidence_projects", []),
+            shared_role_intent,
+        )
+        recruiter = generate_message(
+            "recruiter", job_reference, root, shared_role_intent
+        )
+        hiring_manager = generate_message(
+            "hiring-manager", job_reference, root, shared_role_intent
+        )
+        application_note = generate_application_note(
+            job_reference, root, shared_role_intent
+        )
+        strategy_pack = generate_strategy_pack(
+            job_reference, root, shared_role_intent
+        )
         try:
-            interview_prep = generate_interview_prep(job_reference, root)
+            interview_prep = generate_interview_prep(
+                job_reference, root, shared_role_intent
+            )
         except Exception:
             interview_prep = {}
 
@@ -622,7 +649,9 @@ def generate_package(
                     from .generate_followups import generate_followups
                 else:
                     from generate_followups import generate_followups
-                followup_result = generate_followups(tracker_id, root)
+                followup_result = generate_followups(
+                    tracker_id, root, shared_role_intent
+                )
                 followup_outputs = dict(followup_result.get("outputs", {}))
             except Exception as error:
                 # The core package remains useful if optional networking materials fail.
@@ -669,6 +698,7 @@ def generate_package(
             outputs,
             preserve_existing=force_clean_draft,
             export_root=Path(export_root) if export_root is not None else None,
+            role_intent=role_intent_snapshot(shared_role_intent),
         )
         outputs = dict(organized["outputs"])
         material_errors = {
@@ -685,6 +715,7 @@ def generate_package(
         manifest = organized.get("manifest")
         if manifest:
             manifest["materials"] = preferred_paths
+            manifest["role_intent"] = role_intent_snapshot(shared_role_intent)
             manifest_path = Path(str(manifest["manifest_path"]))
             manifest_path.write_text(
                 json.dumps(

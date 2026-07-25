@@ -9,6 +9,11 @@ import re
 
 import yaml
 
+try:
+    from .role_intent import build_role_intent
+except ImportError:
+    from role_intent import build_role_intent
+
 
 DEFAULT_CATEGORY = "general_operations"
 
@@ -87,18 +92,53 @@ def detect_role_editing_category(role: dict[str, Any], rules: dict[str, Any] | N
     return best if scores.get(best, 0) > 0 else DEFAULT_CATEGORY
 
 
-def material_editing_plan(role: dict[str, Any], project_root: str | Path | None = None) -> dict[str, Any]:
+def material_editing_plan(
+    role: dict[str, Any],
+    project_root: str | Path | None = None,
+    role_intent: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Return reusable lead/support/omit/vocabulary/section guidance for a role."""
     rules = load_role_editing_rules(project_root)
-    category = detect_role_editing_category(role, rules)
+    intent = role_intent or build_role_intent(role, project_root)
+    intent_category = str(intent.get("primary_archetype") or DEFAULT_CATEGORY)
+    category = {
+        "business_operations_chief_of_staff": "chief_of_staff_business_operations",
+        "ai_transformation": "product_ai_operations",
+        "product_operations": "product_ai_operations",
+        "marketing_operations_integration": "marketing_operations_entertainment",
+        "martech_governance_adoption": "marketing_operations_entertainment",
+        "creative_operations": "marketing_operations_entertainment",
+        "entertainment_campaign_operations": "marketing_operations_entertainment",
+        "pmo_program_delivery": "traditional_pmo_governance",
+        "shared_services_operations": "traditional_pmo_governance",
+    }.get(intent_category, detect_role_editing_category(role, rules))
     rule = dict(rules.get(category, {}))
+    resume = intent.get("resume") or {}
     return {
         "role_category": category,
-        "lead_evidence": list(rule.get("lead_evidence", [])),
-        "supporting_evidence": list(rule.get("supporting_evidence", [])),
-        "omitted_evidence": list(rule.get("omitted_evidence", [])),
+        "lead_evidence": list(
+            dict.fromkeys([*intent.get("lead_evidence", []), *rule.get("lead_evidence", [])])
+        ),
+        "supporting_evidence": list(
+            dict.fromkeys(
+                [*intent.get("supporting_evidence", []), *rule.get("supporting_evidence", [])]
+            )
+        ),
+        "omitted_evidence": list(
+            dict.fromkeys(
+                [*intent.get("suppressed_evidence", []), *rule.get("omitted_evidence", [])]
+            )
+        ),
         "preferred_terms": list(rule.get("preferred_terms", [])),
         "banned_phrases": list(rule.get("banned_phrases", [])),
-        "preferred_cover_letter_framing": rule.get("preferred_cover_letter_framing"),
-        "resume_section_rules": dict(rule.get("resume_section_rules", {})),
+        "preferred_cover_letter_framing": (
+            (intent.get("cover_letter") or {}).get("framing")
+            or rule.get("preferred_cover_letter_framing")
+        ),
+        "resume_section_rules": {
+            **dict(rule.get("resume_section_rules", {})),
+            "selected_project_limit": resume.get("selected_project_limit"),
+            "earlier_career_policy": resume.get("earlier_career_policy"),
+        },
+        "role_intent": intent,
     }

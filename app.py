@@ -85,10 +85,12 @@ except (AttributeError, ImportError):
     CANONICAL_VERIFICATION_STATUSES = ()
 from scripts.package_generator import (
     PackageGenerationError,
+    build_package_context,
     generate_package,
     preflight_package_generation,
     resolve_job_reference,
 )
+from scripts.role_intent import tailoring_plan
 from scripts.parse_job import extract_metadata, normalize_compensation, parse_job_description
 from scripts.prospect_intake import ProspectIntakeError, create_prospect
 from scripts.resume_foundation import canonical_resume_foundation_info
@@ -2171,6 +2173,27 @@ def _render_intelligence_preview(st: Any, intelligence: Dict[str, Any]) -> None:
             st.markdown(_match_score_html(match_report), unsafe_allow_html=True)
 
 
+def _render_tailoring_plan(st: Any, role_intent: Dict[str, Any]) -> None:
+    """Show the exact deterministic Role Intent decision used by generators."""
+    plan = tailoring_plan(role_intent)
+    with st.container(border=True):
+        st.markdown("### Tailoring Plan")
+        rows = (
+            ("Detected role", plan["detected_role"]),
+            ("Primary hiring need", plan["primary_hiring_need"]),
+            ("Leading with", ", ".join(plan["leading_with"]) or "Verified operating evidence"),
+            ("Supporting with", ", ".join(plan["supporting_with"]) or "None"),
+            ("De-emphasizing", ", ".join(plan["de_emphasizing"]) or "None"),
+            ("Earlier career", str(plan["earlier_career"]).replace("_", " ").title()),
+            ("Selected projects", ", ".join(plan["selected_projects"]) or "None"),
+            ("Target résumé length", plan["target_resume_length"]),
+            ("Confidence", plan["confidence"]),
+            ("Matched signals", ", ".join(plan["matched_signals"]) or "Conservative fallback"),
+        )
+        for label, value in rows:
+            st.markdown(f"**{label}:** {value}")
+
+
 def _render_add_prospect(st: Any) -> None:
     st.markdown(
         '<h2 class="cc-section-heading">Add Prospect</h2>',
@@ -2581,6 +2604,12 @@ def _render_generate_package(st: Any) -> None:
         st.caption(f"Company voice detection unavailable: {error}")
     else:
         _render_intelligence_preview(st, voice_context)
+    try:
+        package_context = build_package_context(tracker_id, applications, PROJECT_ROOT)
+    except Exception as error:
+        st.caption(f"Tailoring Plan unavailable: {error}")
+    else:
+        _render_tailoring_plan(st, package_context["role_intent"])
     freshness = voice_context.get("freshness", {}) if "voice_context" in locals() else {}
     override_closed = False
     if freshness.get("is_closed"):

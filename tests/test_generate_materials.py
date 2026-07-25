@@ -90,8 +90,8 @@ class GenerateMaterialsTests(unittest.TestCase):
     def test_cover_letter_uses_calibrated_voice(self):
         content = self.contents["cover_letter"]
 
-        self.assertIn("What caught my attention", content)
-        self.assertIn("creative and marketing teams", content)
+        self.assertIn("milestones, dependencies, risks", content)
+        self.assertIn("shared priorities, clear ownership", content)
 
     def test_messages_and_note_contain_company(self):
         for name in ("recruiter", "hiring_manager", "application_note"):
@@ -113,11 +113,11 @@ class GenerateMaterialsTests(unittest.TestCase):
 
         self.assertNotIn("I am writing to express my interest", content)
         self.assertNotIn("Dear Hiring Manager", content)
-        self.assertTrue(content.startswith("Hello,"))
+        self.assertTrue(content.startswith("Dear Crunchyroll Hiring Team,"))
 
     def test_materials_stay_within_word_limits(self):
         limits = {
-            "cover_letter": (250, 400),
+            "cover_letter": (250, 325),
             "recruiter": (80, 130),
             "hiring_manager": (120, 180),
             "application_note": (60, 100),

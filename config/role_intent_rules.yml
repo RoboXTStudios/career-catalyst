@@ -1,0 +1,345 @@
+role_intent:
+  score_weights:
+    action_outcome: 6
+    supporting: 3
+    generic: 1
+  specialized_threshold: 9
+  secondary_threshold: 6
+  archetypes:
+    ai_transformation:
+      signals:
+        action_outcome:
+          - AI transformation
+          - AI operating model
+          - AI agents
+          - agent configuration
+          - prompt engineering
+          - schemas
+          - validation rules
+          - evaluations
+          - human in the loop
+          - workflow mapping
+          - experimentation
+          - prototyping
+          - champion network
+          - office hours
+          - AI adoption
+          - production architecture
+          - feedback loops
+          - data flows
+          - model governance
+        supporting:
+          - artificial intelligence
+          - automation
+          - change management
+        generic:
+          - transformation
+          - systems
+      primary_hiring_need: Build and operationalize trustworthy AI-enabled workflows that people can adopt and improve.
+      required_outcomes: [translate_user_problems, build_tested_workflows, establish_ai_governance, drive_ai_adoption]
+      work_motions: [problem_discovery, requirements_translation, prototyping, validation, enablement, feedback_loops]
+      lead_evidence: [career_catalyst, ai_workflow_design, structured_requirements, schemas_validation, tested_workflows]
+      supporting_evidence: [operational_workflow_design_airtable_implementation, enterprise_collaboration_platform_adoption_stakeholder_enablement, disney_plus_launch_support, campaignos_working_prototype]
+      suppressed_evidence: [additional_early_experience, photography, broad_adtech_inventory, unrelated_editorial_evidence]
+      resume:
+        headline: Senior Operations & Transformation Leader | MarTech | AI Systems | Entertainment
+        summary: Operations and transformation leader who translates user problems into governed AI-enabled workflows, structured requirements, validation rules, and adoption systems grounded in active real-world use.
+        competency_priorities: [AI Workflow Design, Prompt and Schema Development, Validation Frameworks, Product Operations, Workflow Governance, Change Management, Cross-Functional Leadership, Quality Assurance]
+        tools:
+          Business Productivity & Collaboration: [Microsoft Teams, Airtable, Microsoft 365]
+          Operations & Program Management: [Workflow Design, Requirements Development, Platform Governance, Quality-Assurance Frameworks, Training, Adoption]
+          AI, Automation & Product Development: [ChatGPT, Codex, AI Workflow Design, Prompt and Schema Development, Process Automation, Product Prototyping]
+        omg23_bullet_limit: 6
+        selected_project_limit: 2
+        selected_project_ids: [Career Catalyst, CampaignOS]
+        earlier_career_policy: omit
+        target_max_pages: 2
+        section_order: [profile, competencies, platforms, experience, projects]
+      cover_letter:
+        primary_story: career_catalyst
+        secondary_story: enterprise_adoption
+        framing: Connect active AI workflow building with governance, adoption, and enterprise operationalization.
+
+    marketing_operations_integration:
+      signals:
+        action_outcome:
+          - integrate brands
+          - multi-brand portfolio
+          - shared services
+          - centralized services
+          - centralized creative resources
+          - centralized digital resources
+          - centralized technology resources
+          - standardize workflows
+          - standard operating procedures
+          - SOPs
+          - intake and prioritization
+          - resource prioritization
+          - resource allocation
+          - cross-brand playbooks
+          - onboarding and integration
+          - brand onboarding
+          - centralized repository
+          - centralized repositories
+          - digital asset management
+          - digital asset workflows
+          - marketing technology implementation
+          - vendor consolidation
+          - vendor rationalization
+          - vendor efficiencies
+          - portfolio visibility
+          - throughput
+          - time to market
+        supporting:
+          - platform adoption
+          - change management
+          - marketing operations integration
+          - cross-brand
+        generic:
+          - marketing
+          - operations
+          - integration
+      primary_hiring_need: Standardize and connect multi-brand marketing workflows through centralized shared services.
+      required_outcomes: [standardize_workflows, improve_intake_and_prioritization, integrate_marketing_systems, drive_platform_adoption, improve_vendor_efficiency, increase_portfolio_visibility]
+      work_motions: [intake_design, resource_prioritization, workflow_standardization, platform_implementation, vendor_integration, training_and_adoption]
+      lead_evidence: [operational_workflow_design_airtable_implementation, workflow_governance, operating_standards, platform_implementation, vendor_integration]
+      supporting_evidence: [cross_functional_leadership, enterprise_campaign_delivery, intermedia_advertising, us_international_media, enterprise_collaboration_platform_adoption_stakeholder_enablement]
+      suppressed_evidence: [campaignos, career_catalyst, roboxt_studios, multiverse, photography, additional_early_experience, ai_prototyping_tools, publishing_tools]
+      resume:
+        headline: Senior Marketing Operations & Transformation Leader | MarTech | Workflow Integration | Shared Services
+        summary: Marketing operations and transformation leader who standardizes multi-brand workflows, connects shared services, implements platforms, and builds the governance, training, and adoption practices required for sustained execution.
+        competency_priorities: [Marketing Operations, Workflow Governance, Vendor Integration, Operating Model Design, Change Management, Cross-Functional Leadership, Process Excellence, Quality Assurance, MarTech Strategy]
+        tools:
+          Business Productivity & Collaboration: [Airtable, Box, Trello, Microsoft Teams, Microsoft 365]
+          Operations & Program Management: [Workflow Design, Operating Models, Process Documentation, Platform Governance, Vendor Integration, Training, Adoption, Cross-Functional Implementation]
+        omg23_bullet_limit: 6
+        selected_project_limit: 0
+        selected_project_ids: []
+        earlier_career_policy: compact_agency_only
+        target_max_pages: 2
+        section_order: [profile, competencies, platforms, experience, earlier_career]
+      cover_letter:
+        primary_story: operational_workflow_design_airtable_implementation
+        secondary_story: enterprise_workflow_governance
+        framing: Connect shared-service integration needs to Airtable implementation, workflow governance, vendor coordination, training, and adoption.
+
+    shared_services_operations:
+      signals:
+        action_outcome: [centralized shared services, shared service model, service delivery model, consolidate operations, resource pooling, service catalog, service level agreement, matrix operations, organizational efficiency, capacity visibility]
+        supporting: [centralized services, operating model, resource planning, automation]
+        generic: [operations, delivery]
+      primary_hiring_need: Build a reliable shared-services operating model with clear ownership, capacity, and service delivery.
+      required_outcomes: [centralize_services, clarify_ownership, improve_capacity_visibility, standardize_service_delivery]
+      work_motions: [operating_model_design, intake, capacity_planning, governance, service_measurement]
+      lead_evidence: [workflow_governance, operating_standards, cross_functional_leadership]
+      supporting_evidence: [operational_workflow_design_airtable_implementation, enterprise_campaign_delivery]
+      suppressed_evidence: [photography, multiverse, unrelated_ai_projects]
+      resume: &shared_services_resume
+        headline: Senior Operations & Integration Leader | Shared Services | Transformation | Cross-Functional Delivery
+        summary: Operations and integration leader who builds shared-service models, clarifies ownership, improves capacity visibility, and creates practical operating standards across complex functions.
+        competency_priorities: [Operating Model Design, Operations Transformation, Workflow Governance, Program & Portfolio Leadership, Cross-Functional Leadership, Process Excellence]
+        tools:
+          Business Productivity & Collaboration: [Airtable, Microsoft Teams, Microsoft 365, Box]
+          Operations & Program Management: [Operating Models, Workflow Design, Process Documentation, Reporting Workflows, Training, Adoption]
+        omg23_bullet_limit: 6
+        selected_project_limit: 0
+        selected_project_ids: []
+        earlier_career_policy: compact_relevant_only
+        target_max_pages: 2
+        section_order: [profile, competencies, platforms, experience, earlier_career]
+      cover_letter:
+        primary_story: integrated_operating_model
+        secondary_story: workflow_governance
+        framing: Show how matrix operations, organizational efficiency, capacity visibility, automation, and shared operating standards improve service delivery.
+
+    martech_governance_adoption:
+      signals:
+        action_outcome: [martech stack, platform implementation, campaign taxonomy, taxonomies, tagging, tracking, measurement readiness, data governance, vendor integration, platform adoption, naming standards, quality assurance, system administration, operational enablement]
+        supporting: [permissions, training, data flows, pixel strategy]
+        generic: [governance, platform, systems]
+      primary_hiring_need: Govern and operationalize marketing technology so platforms, data, measurement, and teams work consistently.
+      required_outcomes: [standardize_taxonomy, improve_measurement_readiness, integrate_vendors, strengthen_quality, drive_platform_adoption]
+      work_motions: [taxonomy_design, tagging_and_tracking, vendor_implementation, qa, documentation, permissions, training]
+      lead_evidence: [workflow_governance, martech_campaign_execution, platform_implementation, measurement_readiness]
+      supporting_evidence: [operational_workflow_design_airtable_implementation, enterprise_collaboration_platform_adoption_stakeholder_enablement]
+      suppressed_evidence: [photography, unrelated_editorial_evidence, unrelated_ai_projects]
+      resume:
+        <<: *shared_services_resume
+        headline: Senior MarTech & Operations Leader | Platform Governance | Adoption | Transformation
+        summary: MarTech and operations leader who turns platform, taxonomy, measurement, vendor, and data requirements into governed workflows that teams can adopt and sustain.
+        competency_priorities: [MarTech Strategy, Measurement & Data Governance, Workflow Governance, Vendor Integration, Quality Assurance, Change Management, Cross-Functional Leadership]
+        tools:
+          Marketing Technology & Measurement: [Google Marketing Platform, CM360, DV360, GA4, YouTube, Innovid, DoubleVerify, IAS]
+          Business Productivity & Collaboration: [Airtable, Microsoft Teams, Microsoft 365]
+          Operations & Program Management: [Campaign Taxonomy, Platform Governance, Pixel and Tagging Strategy, Measurement Readiness, Vendor Integration, Quality-Assurance Frameworks, Training, Adoption]
+      cover_letter:
+        primary_story: martech_governance
+        secondary_story: platform_adoption
+        framing: Lead with taxonomy, tagging, measurement, vendor implementation, QA, training, and adoption.
+
+    business_operations_chief_of_staff:
+      signals:
+        action_outcome: [operating cadence, executive decision support, leadership priorities, annual planning, strategic initiatives, organizational rhythm, executive communications, business reviews, decision clarity, leadership team, transformation advisory, operating model recommendations, hypothesis-driven problem solving, client discovery, practical recommendations, client relationships]
+        supporting: [cross-functional alignment, executive visibility, escalation management, advisory, transformation hypothesis, client-facing]
+        generic: [business operations, strategy, governance]
+      primary_hiring_need: Turn leadership priorities into clear decisions, operating cadence, accountability, and follow-through.
+      required_outcomes: [improve_decision_clarity, establish_operating_cadence, align_leadership_priorities, surface_risks]
+      work_motions: [annual_planning, business_reviews, executive_communications, decision_tracking, escalation_management]
+      lead_evidence: [cross_functional_leadership, workflow_governance, executive_visibility]
+      supporting_evidence: [enterprise_campaign_delivery, operational_workflow_design_airtable_implementation]
+      suppressed_evidence: [multiverse, photography, unrelated_product_projects]
+      resume:
+        <<: *shared_services_resume
+        headline: Senior Business Operations & Transformation Leader | Strategy | Governance | Executive Operations
+        summary: Business operations and transformation leader who converts executive priorities into clear decisions, operating cadence, governance, accountability, and sustained cross-functional follow-through.
+        competency_priorities: [Business Operations, Executive Stakeholder Management, Cross-Functional Leadership, Operating Model Design, Risk Management, Workflow Governance, Program & Portfolio Leadership]
+      cover_letter:
+        primary_story: integrated_leadership
+        secondary_story: executive_operating_cadence
+        framing: Connect transformation advisory and complex-function leadership with operating models, decision visibility, escalation management, and follow-through.
+
+    pmo_program_delivery:
+      signals:
+        action_outcome: [roadmap, milestones, dependencies, risk management, delivery governance, portfolio planning, resource planning, status reporting, decision tracking, cross-functional program, execution cadence, fixed launch timeline]
+        supporting: [stakeholder reporting, launch readiness, program management]
+        generic: [program, delivery, governance]
+      primary_hiring_need: Deliver complex cross-functional programs through visible milestones, dependencies, risks, decisions, and accountable execution.
+      required_outcomes: [deliver_roadmap, manage_dependencies, surface_risks, improve_status_visibility, maintain_quality]
+      work_motions: [planning, dependency_management, risk_management, reporting, decision_tracking, qa]
+      lead_evidence: [enterprise_campaign_delivery, workflow_governance, disney_plus_launch_support]
+      supporting_evidence: [cross_functional_leadership, operational_workflow_design_airtable_implementation]
+      suppressed_evidence: [multiverse, photography, unrelated_ai_projects]
+      resume:
+        <<: *shared_services_resume
+        headline: Senior Operations & Program Leader | Governance | Transformation | Cross-Functional Delivery
+        summary: Operations and program leader who delivers complex cross-functional work through clear roadmaps, milestones, dependencies, risks, quality standards, and stakeholder visibility.
+        competency_priorities: [Program & Portfolio Leadership, Risk Management, Workflow Governance, Cross-Functional Leadership, Quality Assurance, Process Excellence]
+      cover_letter:
+        primary_story: fixed_timeline_delivery
+        secondary_story: delivery_governance
+        framing: Lead with fixed-timeline delivery, dependencies, risk management, QA, and executive visibility.
+
+    product_operations:
+      signals:
+        action_outcome: [product operations, product requirements, customer feedback loops, product adoption, feature adoption, translate user needs, roadmap operations, product launch readiness, YouTube product activation, product activation, seller enablement, GTM activation, actionable product strategies, goal-setting process, operational momentum, recurring leadership reviews]
+        supporting: [schemas, workflow design, stakeholder translation, quality controls, product and technology strategy, product strategy, operating rhythms, OKRs, product reviews]
+        generic: [product, platform, operations]
+      primary_hiring_need: Translate user and stakeholder needs into scalable product workflows, feedback loops, quality controls, and adoption.
+      required_outcomes: [translate_requirements, improve_feedback_loops, strengthen_product_quality, drive_product_adoption]
+      work_motions: [requirements, workflow_design, feedback_synthesis, quality_control, enablement]
+      lead_evidence: [career_catalyst, structured_requirements, workflow_governance]
+      supporting_evidence: [campaignos_working_prototype, operational_workflow_design_airtable_implementation]
+      suppressed_evidence: [photography, unrelated_editorial_evidence]
+      resume:
+        <<: *shared_services_resume
+        headline: Senior Product Operations & Transformation Leader | Platforms | Adoption | Operating Systems
+        summary: Product operations and transformation leader who translates user needs into structured requirements, governed workflows, feedback loops, quality controls, and practical adoption systems.
+        competency_priorities: [Product Operations, Workflow Governance, AI Workflow Design, Prompt and Schema Development, Change Management, Quality Assurance, Cross-Functional Leadership]
+        selected_project_limit: 2
+        selected_project_ids: [Career Catalyst, CampaignOS]
+        earlier_career_policy: omit
+      cover_letter:
+        primary_story: career_catalyst
+        secondary_story: campaignos_working_prototype
+        framing: Connect product and technology strategy, product activation, active product building, requirements, feedback loops, quality, GTM enablement, and adoption.
+
+    creative_operations:
+      signals:
+        action_outcome: [creative workflow, creative capacity, asset delivery, creative resource management, creative intake, studio operations, production workflow, asset coordination]
+        supporting: [quality standards, capacity visibility, campaign delivery]
+        generic: [creative, operations, delivery]
+      primary_hiring_need: Build reliable creative workflows, creative capacity visibility, quality standards, and asset delivery across teams.
+      required_outcomes: [improve_creative_intake, increase_capacity_visibility, strengthen_quality, improve_asset_delivery]
+      work_motions: [creative_intake, resource_planning, workflow_design, qa, delivery_coordination]
+      lead_evidence: [creative_management_leadership, enterprise_campaign_delivery, workflow_governance]
+      supporting_evidence: [cross_functional_leadership, roboxt_studios]
+      suppressed_evidence: [unrelated_ai_projects, additional_early_experience]
+      resume:
+        <<: *shared_services_resume
+        headline: Senior Creative & Marketing Operations Leader | Workflow | Delivery | Transformation
+        summary: Creative and marketing operations leader who builds practical intake, capacity, workflow, quality, and asset-delivery systems for complex cross-functional work.
+        competency_priorities: [Creative Operations, Marketing Operations, Workflow Governance, Quality Assurance, Cross-Functional Leadership, Process Excellence]
+        selected_project_limit: 1
+        selected_project_ids: [RoboXT Studios]
+      cover_letter:
+        primary_story: creative_management_leadership
+        secondary_story: workflow_governance
+        framing: Lead with marketing operations, creative capacity, creative workflow, quality, and high-volume delivery.
+
+    entertainment_campaign_operations:
+      signals:
+        action_outcome: [theatrical campaign, streaming campaign, campaign operations, launch readiness, measurement readiness, franchise priorities, entertainment campaign]
+        supporting: [Disney Studios, Disney+, Disney Streaming Services, Searchlight Pictures, Corporate Brand Management]
+        generic: [entertainment, marketing, campaign]
+      primary_hiring_need: Deliver high-volume theatrical and streaming campaigns through launch readiness, measurement, governance, and coordinated execution.
+      required_outcomes: [improve_launch_readiness, strengthen_measurement_readiness, coordinate_campaign_delivery, maintain_quality]
+      work_motions: [campaign_intake, launch_planning, partner_coordination, measurement, qa, reporting]
+      lead_evidence: [enterprise_campaign_delivery, disney_plus_launch_support, martech_campaign_execution]
+      supporting_evidence: [cross_functional_leadership, workflow_governance]
+      suppressed_evidence: [unrelated_ai_projects, photography]
+      resume:
+        <<: *shared_services_resume
+        headline: Senior Entertainment Operations Leader | MarTech | Campaign Delivery | Transformation
+        summary: Entertainment operations leader who connects campaign strategy, launch readiness, measurement, governance, and delivery across theatrical and streaming portfolios.
+        competency_priorities: [Entertainment Marketing, Media Operations, Marketing Operations, MarTech Strategy, Workflow Governance, Cross-Functional Leadership, Quality Assurance]
+        earlier_career_policy: compact_agency_only
+      cover_letter:
+        primary_story: enterprise_campaign_delivery
+        secondary_story: disney_plus_launch_support
+        framing: Lead with high-volume theatrical and streaming delivery, launch readiness, measurement, and governance.
+
+    editorial_content_operations:
+      signals:
+        action_outcome: [editorial strategy, publishing system, content operations, editorial calendar, contributor workflow, audience growth, content governance, content strategist, music content]
+        supporting: [WordPress, Mailchimp, newsletter, photography, copywriter, music, artists]
+        generic: [content, editorial, publishing]
+      primary_hiring_need: Build an editorial operating system that connects strategy, publishing workflows, contributors, quality, and audience awareness.
+      required_outcomes: [improve_editorial_workflow, strengthen_content_quality, coordinate_contributors, increase_audience_awareness]
+      work_motions: [editorial_planning, contributor_management, publishing, quality_control, audience_feedback]
+      lead_evidence: [multiverse, roboxt_studios, editorial_strategy]
+      supporting_evidence: [workflow_governance, enterprise_campaign_delivery]
+      suppressed_evidence: [broad_adtech_inventory, unrelated_ai_projects]
+      resume:
+        <<: *shared_services_resume
+        headline: Senior Editorial & Content Operations Leader | Strategy | Systems | Audience
+        summary: Editorial and content operations leader who connects strategy, contributor workflows, publishing systems, quality standards, and audience awareness.
+        competency_priorities: [Creative Operations, Workflow Governance, Cross-Functional Leadership, Process Excellence]
+        tools:
+          Business Productivity & Collaboration: [Microsoft 365, Microsoft Teams, Trello]
+          Publishing & Creative: [WordPress, Mailchimp, Editorial Production, Newsletter Development, Content Strategy, Photography]
+        selected_project_limit: 2
+        selected_project_ids: [OMG23 Multiverse Newsletter, RoboXT Studios]
+        earlier_career_policy: omit
+      cover_letter:
+        primary_story: multiverse
+        secondary_story: roboxt_studios
+        framing: Connect music, audience awareness, editorial judgment, and human storytelling with repeatable publishing systems and contributor coordination.
+
+    general_operations:
+      signals:
+        action_outcome: []
+        supporting: []
+        generic: [operations, strategy, systems, governance, transformation, delivery, program, platform]
+      primary_hiring_need: Bring disciplined senior operations leadership to ambiguous cross-functional priorities.
+      required_outcomes: [clarify_priorities, improve_cross_functional_execution, strengthen_operating_visibility]
+      work_motions: [planning, stakeholder_alignment, workflow_governance, execution]
+      lead_evidence: [cross_functional_leadership, workflow_governance]
+      supporting_evidence: [enterprise_campaign_delivery]
+      suppressed_evidence: [additional_early_experience, unrelated_independent_projects]
+      resume:
+        headline: Senior Operations & Transformation Leader | MarTech | AI Systems | Entertainment
+        summary: Operations and transformation leader who brings clear priorities, practical governance, cross-functional alignment, and dependable execution to complex work.
+        competency_priorities: [Operations Transformation, Business Operations, Cross-Functional Leadership, Workflow Governance, Executive Stakeholder Management, Process Excellence, Quality Assurance]
+        tools:
+          Business Productivity & Collaboration: [Microsoft 365, Microsoft Teams, Airtable]
+          Operations & Program Management: [Workflow Design, Operating Models, Process Documentation, Reporting Workflows]
+        omg23_bullet_limit: 6
+        selected_project_limit: 0
+        selected_project_ids: []
+        earlier_career_policy: omit
+        target_max_pages: 2
+        section_order: [profile, competencies, platforms, experience]
+      cover_letter:
+        primary_story: integrated_leadership
+        secondary_story: workflow_governance
+        framing: Lead conservatively with verified senior operations leadership and practical governance.
