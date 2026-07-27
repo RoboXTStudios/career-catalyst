@@ -193,6 +193,7 @@ role_intent:
         headline: Senior Business Operations & Transformation Leader | Strategy | Governance | Executive Operations
         summary: Business operations and transformation leader who converts executive priorities into clear decisions, operating cadence, governance, accountability, and sustained cross-functional follow-through.
         competency_priorities: [Business Operations, Executive Stakeholder Management, Cross-Functional Leadership, Operating Model Design, Risk Management, Workflow Governance, Program & Portfolio Leadership]
+        earlier_career_policy: compact_agency_only
       cover_letter:
         primary_story: integrated_leadership
         secondary_story: executive_operating_cadence

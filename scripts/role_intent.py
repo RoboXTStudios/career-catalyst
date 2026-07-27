@@ -10,18 +10,25 @@ import re
 import yaml
 
 try:
+    from .candidate_output import humanize_identifier, humanize_values
     from .filename_utils import company_display_name
 except ImportError:
+    from candidate_output import humanize_identifier, humanize_values
     from filename_utils import company_display_name
 
 
 DEFAULT_ARCHETYPE = "general_operations"
 ROLE_INTENT_RULES_PATH = Path("config/role_intent_rules.yml")
+SOURCE_ROLE_INTENT_RULES_PATH = Path(__file__).resolve().parents[1] / ROLE_INTENT_RULES_PATH
 
 
 def load_role_intent_rules(project_root: str | Path | None = None) -> dict[str, Any]:
     root = Path(project_root) if project_root is not None else Path.cwd()
-    loaded = yaml.safe_load((root / ROLE_INTENT_RULES_PATH).read_text(encoding="utf-8"))
+    candidates = (SOURCE_ROLE_INTENT_RULES_PATH, root / ROLE_INTENT_RULES_PATH)
+    rules_path = next((path for path in candidates if path.is_file()), None)
+    if rules_path is None:
+        raise FileNotFoundError("config/role_intent_rules.yml was not found in code or runtime roots")
+    loaded = yaml.safe_load(rules_path.read_text(encoding="utf-8"))
     rules = loaded.get("role_intent") if isinstance(loaded, dict) else None
     if not isinstance(rules, dict) or not isinstance(rules.get("archetypes"), dict):
         raise ValueError("config/role_intent_rules.yml must contain role_intent.archetypes")
@@ -186,14 +193,14 @@ def role_intent_snapshot(role_intent: Mapping[str, Any]) -> dict[str, Any]:
 def tailoring_plan(role_intent: Mapping[str, Any]) -> dict[str, Any]:
     resume = role_intent.get("resume") or {}
     return {
-        "detected_role": str(role_intent.get("primary_archetype") or DEFAULT_ARCHETYPE).replace("_", " ").title(),
+        "detected_role": humanize_identifier(role_intent.get("primary_archetype") or DEFAULT_ARCHETYPE),
         "primary_hiring_need": role_intent.get("primary_hiring_need"),
-        "leading_with": list(role_intent.get("lead_evidence") or []),
-        "supporting_with": list(role_intent.get("supporting_evidence") or []),
-        "de_emphasizing": list(role_intent.get("suppressed_evidence") or []),
-        "earlier_career": resume.get("earlier_career_policy"),
-        "selected_projects": list(resume.get("selected_project_ids") or []),
+        "leading_with": humanize_values(role_intent.get("lead_evidence") or []),
+        "supporting_with": humanize_values(role_intent.get("supporting_evidence") or []),
+        "de_emphasizing": humanize_values(role_intent.get("suppressed_evidence") or []),
+        "earlier_career": humanize_identifier(resume.get("earlier_career_policy")),
+        "selected_projects": humanize_values(resume.get("selected_project_ids") or []),
         "target_resume_length": f"{int(resume.get('target_max_pages') or 2)} pages maximum",
         "confidence": str(role_intent.get("confidence") or "low").title(),
-        "matched_signals": list(role_intent.get("reasoning_signals") or []),
+        "matched_signals": humanize_values(role_intent.get("reasoning_signals") or []),
     }

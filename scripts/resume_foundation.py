@@ -7,8 +7,10 @@ from pathlib import Path
 from typing import Any, Optional, Union
 
 try:
+    from .candidate_output import CandidateOutputError, validate_candidate_output
     from .load_data import DataLoadError, load_all_yaml
 except ImportError:
+    from candidate_output import CandidateOutputError, validate_candidate_output
     from load_data import DataLoadError, load_all_yaml
 
 
@@ -82,6 +84,7 @@ def validate_candidate_language(
     unsupported_brands: tuple[str, ...] = DEFAULT_UNSUPPORTED_BRAND_CLAIMS,
     age_signaling: tuple[str, ...] = DEFAULT_AGE_SIGNALING_EXCLUSIONS,
     education_claims: tuple[str, ...] = DEFAULT_EDUCATION_CLAIM_EXCLUSIONS,
+    candidate_facing: bool = True,
 ) -> None:
     """Prevent unsupported brand claims and age-signaling language."""
     violations = candidate_language_violations(
@@ -95,6 +98,11 @@ def validate_candidate_language(
             f"{context} violates the Golden Master candidate-language policy: "
             + ", ".join(violations)
         )
+    if candidate_facing:
+        try:
+            validate_candidate_output(text, context=context)
+        except CandidateOutputError as error:
+            raise CandidateLanguageError(str(error)) from error
 
 
 def _flatten_strings(value: Any) -> list[str]:
@@ -145,6 +153,7 @@ def _validate_active_foundation(
         unsupported_brands=info["unsupported_brand_claims"],
         age_signaling=info["age_signaling_exclusions"],
         education_claims=info["education_claim_exclusions"],
+        candidate_facing=False,
     )
 
 
