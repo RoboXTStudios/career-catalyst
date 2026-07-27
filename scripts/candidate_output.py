@@ -238,15 +238,16 @@ def tools_recipe(archetype: str, parsed_job: Mapping[str, Any]) -> dict[str, lis
 
 COMMON_EVIDENCE = {
     "leadership": "Led 10 direct reports and provided strategic and operational leadership across an integrated 64-person organization spanning Ad Operations, Creative Management, and Marketing Science and Analytics.",
+    "operating_plans": "Translated senior leadership and client priorities into operating plans, governance, decision paths, stakeholder reporting, and cross-functional execution.",
     "progression": "Advanced through five roles from Campaign Manager to Group Director while expanding responsibility across enterprise operations and transformation.",
     "delivery": "Directed operational execution for multimillion-dollar theatrical, streaming, and franchise campaigns, coordinating priorities, dependencies, quality, and stakeholder visibility.",
     "governance": "Introduced scalable workflows, governance practices, and execution standards across marketing, technology, analytics, and creative teams.",
-    "airtable": "Coordinated an Airtable implementation as a shared source of truth, aligning workflows, permissions, automations, quality checks, documentation, training, and adoption.",
+    "airtable": "Coordinated an Airtable implementation that created a shared source of truth for campaign tracking, documentation, status reporting, linked workflows, permissions, naming standards, automations, quality assurance, training, and adoption.",
     "disney_plus": "Helped operationalize the Disney+ launch through onboarding, quality assurance, measurement readiness, platform coordination, and execution workflows.",
 }
 
 EVIDENCE_RECIPES = {
-    "business_operations_chief_of_staff": ("leadership", "progression", "governance", "delivery", "airtable", "disney_plus"),
+    "business_operations_chief_of_staff": ("leadership", "operating_plans", "airtable", "governance", "delivery", "progression"),
     "pmo_program_delivery": ("delivery", "disney_plus", "governance", "leadership", "airtable", "progression"),
     "shared_services_operations": ("leadership", "governance", "airtable", "delivery", "progression", "disney_plus"),
     "martech_governance_adoption": ("governance", "disney_plus", "airtable", "delivery", "leadership", "progression"),
@@ -304,10 +305,11 @@ def candidate_cover_letter(context: Mapping[str, Any]) -> str:
         )
     if adjacency["customer_experience"]:
         proof = (
-            "My background is in enterprise marketing operations rather than traditional SaaS Customer Success, "
-            "so I would not overstate direct ownership of renewals or retention. The relevant bridge is the way I "
-            "have mapped stakeholder needs, improved handoffs, surfaced recurring friction, and helped teams use "
-            "feedback to strengthen service delivery across complex client environments."
+            "While my background is in enterprise marketing operations rather than traditional SaaS Customer Success, "
+            "I would not overstate direct ownership of renewals or retention. The strategic work is highly transferable: "
+            "executive decision support, cross-functional program leadership, governance, and measurable follow-through. "
+            "I have mapped stakeholder needs, improved handoffs, surfaced recurring friction, and used feedback to strengthen "
+            "service delivery across complex client environments."
         )
     else:
         proof = (
