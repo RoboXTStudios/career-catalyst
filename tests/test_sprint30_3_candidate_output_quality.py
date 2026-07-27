@@ -157,8 +157,11 @@ def test_customer_experience_cover_letter_is_grounded_and_natural(tmp_path: Path
     text = Path(result["output_path"]).read_text(encoding="utf-8")
     assert text.startswith("Dear GitLab Hiring Team,")
     assert 250 <= _word_count(text) <= 325
-    assert "enterprise marketing operations rather than traditional SaaS Customer Success" in text
-    assert "would not overstate direct ownership of renewals or retention" in text
+    assert "background is rooted in enterprise marketing operations" in text
+    assert "highly transferable to Customer Experience" in text
+    assert "support the Customer Experience organization" in text
+    assert "would not overstate" not in text
+    assert "traditional SaaS Customer Success" not in text
     assert "10 direct reports" in text and "64-person organization" in text
     assert "Salesforce" not in text and "Gainsight" not in text and "60+" not in text
     validate_candidate_output(text)
