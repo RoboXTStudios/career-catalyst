@@ -276,12 +276,20 @@ def candidate_cover_letter(context: Mapping[str, Any]) -> str:
     archetype = str(intent.get("primary_archetype") or "general_operations")
     adjacency = domain_adjacency(parsed)
 
-    opening = (
-        f"I am interested in the {role} role at {company} because it calls for the combination of "
-        f"{ARCHETYPE_LABELS.get(archetype, 'senior operations leadership')}, sound judgment, and "
-        "cross-functional follow-through that has defined my work. I am most effective when leaders need "
-        "shared priorities, clear ownership, useful operating visibility, and systems that help people make better decisions."
-    )
+    if adjacency["customer_experience"]:
+        opening = (
+            f"The {role} role at {company} calls for someone who can turn complex priorities into clear decisions, "
+            "accountable plans, and sustained cross-functional follow-through. That has been the through line of my work: "
+            "helping leaders and specialized teams move from competing inputs to shared priorities, visible dependencies, "
+            "and practical execution."
+        )
+    else:
+        opening = (
+            f"I am interested in the {role} role at {company} because it calls for the combination of "
+            f"{ARCHETYPE_LABELS.get(archetype, 'senior operations leadership')}, sound judgment, and "
+            "cross-functional follow-through that has defined my work. I am most effective when leaders need "
+            "shared priorities, clear ownership, useful operating visibility, and systems that help people make better decisions."
+        )
     leadership = (
         "At OMG23 (Omnicom Media Group), I advanced through five roles to Group Director. I led 10 direct "
         "reports and provided strategic and operational leadership across an integrated 64-person organization "
@@ -305,11 +313,10 @@ def candidate_cover_letter(context: Mapping[str, Any]) -> str:
         )
     if adjacency["customer_experience"]:
         proof = (
-            "While my background is in enterprise marketing operations rather than traditional SaaS Customer Success, "
-            "I would not overstate direct ownership of renewals or retention. The strategic work is highly transferable: "
-            "executive decision support, cross-functional program leadership, governance, and measurable follow-through. "
-            "I have mapped stakeholder needs, improved handoffs, surfaced recurring friction, and used feedback to strengthen "
-            "service delivery across complex client environments."
+            "While my background is rooted in enterprise marketing operations, the strategic work is highly transferable "
+            "to Customer Experience: executive decision support, cross-functional program leadership, governance, "
+            "stakeholder alignment, and measurable follow-through. I have mapped stakeholder needs, improved handoffs, "
+            "surfaced recurring friction, and used feedback to strengthen service delivery across complex client environments."
         )
     else:
         proof = (
@@ -317,11 +324,18 @@ def candidate_cover_letter(context: Mapping[str, Any]) -> str:
             "owns each decision, and keep risks visible without adding unnecessary process. It is a practical, "
             "advisory approach grounded in implementation as well as recommendation."
         )
-    closing = (
-        f"I would bring {company} calm senior judgment, factual communication, and a disciplined approach to "
-        "turning priorities into measurable, consistent progress. I would value the opportunity to discuss how this experience "
-        f"could support the {role} team."
-    )
+    if adjacency["customer_experience"]:
+        closing = (
+            f"I would bring {company} calm senior judgment, factual communication, and a disciplined approach to "
+            "turning priorities into measurable, consistent progress. I would value the opportunity to discuss how this experience "
+            "could support the Customer Experience organization."
+        )
+    else:
+        closing = (
+            f"I would bring {company} calm senior judgment, factual communication, and a disciplined approach to "
+            "turning priorities into measurable, consistent progress. I would value the opportunity to discuss how this experience "
+            f"could support the {role} team."
+        )
     content = "\n\n".join((greeting, opening, leadership, execution, proof, closing, "Best,\n\nTrisha Lynch"))
     validate_candidate_output(content, context="Generated cover letter")
     return content
