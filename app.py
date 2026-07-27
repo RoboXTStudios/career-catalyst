@@ -2184,7 +2184,7 @@ def _render_tailoring_plan(st: Any, role_intent: Dict[str, Any]) -> None:
             ("Leading with", ", ".join(plan["leading_with"]) or "Verified operating evidence"),
             ("Supporting with", ", ".join(plan["supporting_with"]) or "None"),
             ("De-emphasizing", ", ".join(plan["de_emphasizing"]) or "None"),
-            ("Earlier career", str(plan["earlier_career"]).replace("_", " ").title()),
+            ("Earlier career", plan["earlier_career"] or "Omitted to keep the résumé focused"),
             ("Selected projects", ", ".join(plan["selected_projects"]) or "None"),
             ("Target résumé length", plan["target_resume_length"]),
             ("Confidence", plan["confidence"]),

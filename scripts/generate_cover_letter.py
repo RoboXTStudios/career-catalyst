@@ -10,6 +10,7 @@ from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
 
 try:
+    from .candidate_output import candidate_cover_letter
     from .career_claims import (
         PublicCareerClaimError,
         is_ai_transformation_role,
@@ -40,6 +41,7 @@ try:
     from .text_cleanup import cleanup_repeated_words
     from .role_intent import build_role_intent
 except ImportError:
+    from candidate_output import candidate_cover_letter
     from career_claims import (
         PublicCareerClaimError,
         is_ai_transformation_role,
@@ -830,92 +832,7 @@ def _marketing_integration_cover_letter_content(context: Dict[str, Any]) -> str:
 
 
 def _general_role_intent_cover_letter_content(context: Dict[str, Any]) -> str:
-    parsed_job = context["parsed_job"]
-    intent = context["role_intent"]
-    company = str(parsed_job.get("company") or "the organization")
-    role = str(parsed_job.get("job_title") or "senior operations role")
-    need = str(intent.get("primary_hiring_need") or "bring clarity and dependable execution to complex work")
-    motions = [str(value).replace("_", " ") for value in intent.get("work_motions", [])[:4]]
-    outcomes = [str(value).replace("_", " ") for value in intent.get("required_outcomes", [])[:3]]
-    signals = [str(value) for value in intent.get("reasoning_signals", [])[:4]]
-    archetype = str(intent.get("primary_archetype") or "general_operations")
-    opening = (
-        f"The {role} role at {company} is fundamentally about this operating need: {need} "
-        "That is the kind of work I have handled throughout my career, especially when multiple "
-        "functions need shared priorities, clear ownership, and useful visibility without unnecessary process."
-    )
-    leadership = (
-        f"At {public_omg23_name(context['career_data'])}, I progressed through five roles to Group Director. "
-        f"I {leadership_claim(context['career_data'])}. I established workflows, governance, quality standards, "
-        "decision paths, and stakeholder reporting across demanding theatrical and streaming campaign work. "
-        "The scale required me to distinguish direct team leadership from broader cross-functional influence "
-        "and to make decisions clear enough for specialists and senior leaders to act."
-    )
-    execution = (
-        "My approach is grounded in the work motions named in the role: "
-        + ", ".join(motions or ["planning", "stakeholder alignment", "workflow governance"])
-        + ". The strongest role signals are "
-        + ", ".join(signals or ["cross-functional execution", "governance", "operating visibility"])
-        + ". I use practical tools and operating routines to surface risks early, connect dependencies, "
-        "document decisions, and create feedback loops that teams can sustain."
-    )
-    proof_by_archetype = {
-        "product_operations": (
-            "Career Catalyst actively operates as a requirements, schema, validation, and feedback system, "
-            "while CampaignOS is a working prototype for governed campaign operations. Together they show "
-            "how I translate user needs into product and technology strategy, operating rhythms, quality "
-            "controls, and measurable adoption. My enterprise context includes Disney "
-            "Studios Theatrical and the operating realities of a large entertainment enterprise."
-        ),
-        "shared_services_operations": (
-            "CampaignOS is a working prototype of that systems approach. It connects matrix operations, "
-            "organizational efficiency, capacity visibility, and automation with governance that keeps "
-            "human judgment visible instead of hiding it behind a tool."
-        ),
-        "business_operations_chief_of_staff": (
-            "My client-facing transformation work has required an advisory stance: understand the problem, "
-            "form a grounded hypothesis, recommend an operating model, and stay accountable through implementation."
-        ),
-        "creative_operations": (
-            "CampaignOS is a working prototype built around marketing operations, creative capacity, intake, "
-            "workflow governance, quality assurance, and delivery visibility. It reflects my belief that useful "
-            "systems protect creative judgment while making priorities and handoffs easier to manage."
-        ),
-        "editorial_content_operations": (
-            "Through Multiverse and RoboXT Studios, I have built editorial and publishing systems that connect "
-            "music, audience connection, and human storytelling with contributor coordination and consistent "
-            "production. That work keeps artists, industry partners, and fans in view without inventing music-industry claims."
-        ),
-    }
-    proof = proof_by_archetype.get(
-        archetype,
-        (
-            "A practical proof point is the operating governance I built for high-volume entertainment work: "
-            "clear intake, documented standards, visible decisions, quality checks, and escalation paths. "
-            "Those systems supported delivery under pressure while keeping accountability with the people closest to the work."
-        ),
-    )
-    role_text = " ".join(
-        str(parsed_job.get(key) or "") for key in ("job_title", "raw_text", "summary")
-    ).lower()
-    if archetype == "product_operations" and "youtube" in role_text:
-        proof = (
-            "Career Catalyst actively operates as a requirements, schema, validation, and feedback system, "
-            "while CampaignOS is a working prototype for governed campaign operations. Together they show "
-            "how I translate user needs into YouTube product activation, GTM operations, seller enablement, "
-            "feedback loops, quality controls, and measurable adoption without overstating platform-side experience."
-        )
-    close = (
-        f"For {company}, I would focus on "
-        + ", ".join(outcomes or ["clear priorities", "reliable execution", "operating visibility"])
-        + ". I would bring calm senior judgment, factual communication, and systems that make the role's "
-        "intended outcomes easier to deliver and measure."
-    )
-    paragraphs = [_dynamic_greeting(context), opening, leadership, execution]
-    if proof:
-        paragraphs.append(proof)
-    paragraphs.extend((close, "Best,\n\nTrisha Lynch"))
-    return "\n\n".join(paragraphs)
+    return candidate_cover_letter(context)
 
 
 def _bandsintown_cover_letter_content(context: Dict[str, Any]) -> str:

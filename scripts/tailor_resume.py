@@ -5,6 +5,12 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 try:
+    from .candidate_output import (
+        competency_recipe,
+        evidence_recipe,
+        profile_summary as candidate_profile_summary,
+        tools_recipe,
+    )
     from .career_claims import is_ai_transformation_role, validate_public_career_claims
     from .filename_utils import build_upload_filename
     from .resume_foundation import (
@@ -25,6 +31,12 @@ try:
     from .text_cleanup import cleanup_repeated_words
     from .role_intent import build_role_intent
 except ImportError:
+    from candidate_output import (
+        competency_recipe,
+        evidence_recipe,
+        profile_summary as candidate_profile_summary,
+        tools_recipe,
+    )
     from career_claims import is_ai_transformation_role, validate_public_career_claims
     from filename_utils import build_upload_filename
     from resume_foundation import (
@@ -236,6 +248,10 @@ def _select_core_competencies(
     resume_profile: str,
     role_intent: Optional[Dict[str, Any]] = None,
 ) -> List[str]:
+    archetype = str((role_intent or {}).get("primary_archetype") or "")
+    prescribed = competency_recipe(archetype)
+    if prescribed:
+        return prescribed
     skills = _all_skills(career_data)
     job_keywords = [str(keyword) for keyword in parsed_job.get("keywords", [])]
     intent_priorities = list(
@@ -278,6 +294,10 @@ def _selected_platform_categories(
     role_intent: Optional[Dict[str, Any]] = None,
 ) -> List[Tuple[str, List[str]]]:
     """Return a compact role-relevant tool set instead of the full foundation."""
+    archetype = str((role_intent or {}).get("primary_archetype") or "")
+    prescribed = tools_recipe(archetype, parsed_job)
+    if prescribed:
+        return list(prescribed.items())
     categories = _platform_categories(career_data)
     configured = (role_intent or {}).get("resume", {}).get("tools") or {}
     if configured:
@@ -358,7 +378,10 @@ def _profile_summary(
         (role_intent or {}).get("resume", {}).get("summary_profile") or ""
     ).strip()
     if intent_summary:
-        return intent_summary
+        return candidate_profile_summary(
+            str((role_intent or {}).get("primary_archetype") or "general_operations"),
+            intent_summary,
+        )
     personal_brand = career_data["data"]["personal_brand"]
     career_profile = personal_brand["career_profile"]
     profile_key = "google_youtube_operations" if is_google_youtube_role(parsed_job) else resume_profile
@@ -484,7 +507,7 @@ def _marketing_integration_experience_bullets(
                 "",
             ),
         ]
-    )[:6]
+    )[:5]
 
 
 def _select_experience_bullets(
@@ -505,6 +528,11 @@ def _select_experience_bullets(
         return _ai_transformation_experience_bullets(career_data, omg_position)
     if archetype == "marketing_operations_integration":
         return _marketing_integration_experience_bullets(career_data, omg_position)
+    if archetype:
+        return evidence_recipe(
+            archetype,
+            int((role_intent or {}).get("resume", {}).get("omg23_bullet_limit") or 6),
+        )
 
     candidate_bullets = []
     candidate_bullets.extend(omg_position.get("highlights", []))

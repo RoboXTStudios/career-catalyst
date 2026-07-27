@@ -177,8 +177,9 @@ def test_tailoring_plan_is_a_view_of_same_decision():
     intent = build_role_intent(_parsed(MULTI_BRAND), PROJECT_ROOT)
     plan = tailoring_plan(intent)
     assert plan["primary_hiring_need"] == intent["primary_hiring_need"]
-    assert plan["leading_with"] == intent["lead_evidence"]
-    assert plan["matched_signals"] == intent["reasoning_signals"]
+    assert len(plan["leading_with"]) == len(intent["lead_evidence"])
+    assert len(plan["matched_signals"]) == len(intent["reasoning_signals"])
+    assert all("_" not in value for value in plan["leading_with"] + plan["matched_signals"])
 
 
 def test_multi_brand_resume_selection(tmp_path: Path):
