@@ -99,6 +99,7 @@ MATERIAL_FILENAMES = {
     "Recruiter Message": "recruiter_message.txt",
     "Hiring Manager Message": "hiring_manager_message.txt",
     "Follow-Up Strategy": "followup_strategy.txt",
+    "Follow-Up Plan": "followup_strategy.txt",
     "Recruiter Follow-Up": "recruiter_followup.txt",
     "Hiring Manager Follow-Up": "hiring_manager_followup.txt",
     "Referral Ask": "referral_ask.txt",
@@ -361,6 +362,21 @@ def write_role_manifest(
 ) -> Dict[str, Any]:
     """Write one exact role manifest and return its payload."""
     folder.mkdir(parents=True, exist_ok=True)
+    manifest_path = folder / "manifest.json"
+    existing: Dict[str, Any] = {}
+    if preserve_existing and manifest_path.is_file():
+        try:
+            existing = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError, TypeError):
+            existing = {}
+        existing_owner = str(existing.get("prospect_id") or "")
+        current_owner = str(application.get("id") or application.get("prospect_id") or "")
+        if existing_owner and existing_owner != current_owner:
+            raise ValueError(
+                f"Package manifest belongs to prospect '{existing_owner}', not '{current_owner}'."
+            )
+    merged_files = dict(existing.get("files") or {})
+    merged_files.update(files)
     manifest = {
         "prospect_id": str(
             application.get("id") or application.get("prospect_id") or ""
@@ -382,14 +398,20 @@ def write_role_manifest(
             or application.get("source_url")
             or ""
         ),
-        "files": dict(files),
+        "files": merged_files,
         "archived": bool(archived),
         "archive_reason": archive_reason,
-        "legacy_files_moved": list(legacy_files_moved),
+        "legacy_files_moved": list(
+            dict.fromkeys(
+                list(existing.get("legacy_files_moved") or [])
+                + list(legacy_files_moved)
+            )
+        ),
     }
+    if preserve_existing and existing.get("materials"):
+        manifest["materials"] = dict(existing["materials"])
     if role_intent:
         manifest["role_intent"] = dict(role_intent)
-    manifest_path = folder / "manifest.json"
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     invalidate_material_package_cache()
     manifest["manifest_path"] = str(manifest_path.resolve())
@@ -491,6 +513,86 @@ def organize_package_outputs(
     }
 
 
+def merge_role_package_outputs(
+    project_root: Path,
+    application: Dict[str, Any],
+    outputs: Dict[str, Any],
+    *,
+    material_labels: Dict[str, str] | None = None,
+    export_root: Path | None = None,
+) -> Dict[str, Any]:
+    """Attach newly generated files to one exact package without replacing its manifest."""
+    root = Path(project_root).resolve()
+    found = find_exact_role_package(root, application, export_root=export_root)
+    folder = found.get("folder")
+    existing_manifest = found.get("manifest")
+    if not folder or not existing_manifest:
+        raise ValueError(
+            f"No exact package exists for prospect '{application.get('id')}'. Generate the base package first."
+        )
+    expected_id = str(application.get("id") or application.get("prospect_id") or "")
+    if str(existing_manifest.get("prospect_id") or "") != expected_id:
+        raise ValueError("Exact package ownership check failed; no files were attached.")
+    library_root = canonical_export_root(root, injected_root=export_root)
+    folder = require_beneath_export_root(Path(folder), library_root)
+    if str(existing_manifest.get("slug") or "") != role_slug(application):
+        raise ValueError("Exact package slug check failed; no files were attached.")
+
+    labels = dict(material_labels or {})
+    version_root = folder / "versions" / datetime.now(timezone.utc).strftime(
+        "%Y%m%dT%H%M%SZ"
+    )
+    merged_files = dict(existing_manifest.get("files") or {})
+    merged_materials = dict(application.get("material_paths") or {})
+    merged_materials.update(dict(existing_manifest.get("materials") or {}))
+    updated_outputs = dict(outputs)
+    installed: Dict[str, str] = {}
+    moved_sources: Dict[Path, Path] = {}
+    for key, value in outputs.items():
+        source = Path(str(value))
+        if not source.is_file() or key in {"job_file", "dashboard"}:
+            continue
+        resolved = source.resolve()
+        if resolved in moved_sources:
+            target = moved_sources[resolved]
+        else:
+            filename = _output_filename(application, key, source)
+            if not filename:
+                continue
+            target = _install_current_file(source, folder / filename, version_root)
+            moved_sources[resolved] = target
+        updated_outputs[key] = str(target)
+        installed[key] = str(target)
+        merged_files[key] = str(target)
+        label = labels.get(key)
+        if label:
+            merged_materials[label] = str(target)
+
+    if not installed:
+        raise ValueError("No supported generated files were available to attach.")
+    manifest = dict(existing_manifest)
+    manifest.update(
+        {
+            "prospect_id": expected_id,
+            "slug": role_slug(application),
+            "files": merged_files,
+            "materials": merged_materials,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }
+    )
+    manifest_path = folder / "manifest.json"
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    invalidate_material_package_cache()
+    manifest["manifest_path"] = str(manifest_path.resolve())
+    return {
+        "outputs": updated_outputs,
+        "installed": installed,
+        "manifest": manifest,
+        "material_paths": merged_materials,
+        "folder": str(folder),
+    }
+
+
 def organize_exact_material_paths(
     project_root: Path, application: Dict[str, Any], *, export_root: Path | None = None
 ) -> Dict[str, Any]:
@@ -563,9 +665,32 @@ def find_exact_role_package(
     root = Path(project_root).resolve()
     library_root = canonical_export_root(root, injected_root=export_root)
     slug = role_slug(application)
+    stored_manifest = application.get("package_manifest")
+    stored_path = (
+        Path(str(stored_manifest.get("manifest_path") or ""))
+        if isinstance(stored_manifest, dict)
+        else Path()
+    )
+    if str(stored_path) not in {"", "."} and stored_path.is_file():
+        try:
+            require_beneath_export_root(stored_path, library_root)
+            payload = _load_manifest(stored_path)
+        except (OSError, ValueError, TypeError):
+            payload = {}
+        if str(payload.get("prospect_id") or "") == str(application.get("id") or ""):
+            files = {
+                key: Path(value)
+                for key, value in dict(payload.get("files") or {}).items()
+                if Path(value).is_file()
+            }
+            return {
+                "files": files,
+                "folder": stored_path.parent,
+                "manifest": payload,
+                "archived": bool(payload.get("archived")),
+            }
     manifests = list(_manifest_index(library_root).get(slug, ()))
-    if manifests:
-        manifest_path = manifests[0]
+    for manifest_path in manifests:
         payload = _load_manifest(manifest_path)
         if str(payload.get("prospect_id") or "") == str(application.get("id") or ""):
             files = {
@@ -599,6 +724,7 @@ def move_role_package(
     application: Dict[str, Any],
     *,
     archive: bool,
+    archive_reason: str = "",
     export_root: Path | None = None,
 ) -> Dict[str, Any]:
     """Archive or restore an exact package folder without changing role status."""
@@ -608,7 +734,9 @@ def move_role_package(
         return {"moved": False, "reason": "No exact package materials yet"}
     status_route = material_route(application.get("status"))
     route = (
-        ARCHIVE_ROUTES.get(_key(application.get("status")), "archive/inactive")
+        ARCHIVE_ROUTES.get(
+            _key(archive_reason or application.get("status")), "archive/inactive"
+        )
         if archive
         else ACTIVE_ROUTES.get(_key(application.get("status")), "active/in_progress")
     )
@@ -625,9 +753,8 @@ def move_role_package(
     manifest_path = target / "manifest.json"
     payload = json.loads(manifest_path.read_text(encoding="utf-8"))
     payload["archived"] = archive
-    payload["archive_reason"] = (
-        f"Status: {application.get('status')}" if archive else ""
-    )
+    payload["status"] = str(application.get("status") or payload.get("status") or "")
+    payload["archive_reason"] = archive_reason if archive else ""
     payload["files"] = {
         key: str((target / Path(value).name).resolve())
         for key, value in dict(payload.get("files") or {}).items()

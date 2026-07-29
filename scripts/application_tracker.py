@@ -31,6 +31,7 @@ REQUIRED_FIELDS = (
 )
 VALID_STATUSES = (
     "Drafted",
+    "Paused",
     "Applied",
     "Under Consideration",
     "Interviewing",
@@ -53,7 +54,7 @@ STATUS_ALIASES = {
     "review first": "Drafted",
     "manually reviewed": "Drafted",
     "verified": "Drafted",
-    "paused": "Withdrawn / Closed",
+    "paused": "Paused",
     "submitted": "Applied",
     "application submitted": "Applied",
     "follow up": "Applied",
@@ -79,6 +80,7 @@ STATUS_ALIASES = {
 ACTIVE_STATUSES = {"Applied", "Under Consideration", "Interviewing", "Offer"}
 DRAFT_STATUSES = {"Drafted"}
 HIDDEN_STATUSES = {"Rejected", "Withdrawn / Closed"}
+ARCHIVE_ELIGIBLE_STATUSES = {"Rejected", "Withdrawn / Closed"}
 INTAKE_PROTECTED_STATUSES = {
     "Active",
     "Applied",
@@ -178,6 +180,21 @@ def get_record_status(record: Dict[str, Any]) -> str:
 def legacy_status_value(record: Dict[str, Any]) -> str:
     """Expose the stored pre-normalization value for audit/migration safety."""
     return str(record.get("legacy_status") or record.get("status") or "").strip()
+
+
+def is_role_archived(record: Dict[str, Any]) -> bool:
+    """Return the optional tracker-level archive flag, defaulting to active."""
+    return record.get("archived") is True
+
+
+def active_tracker_records(records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Return role records that remain available to ordinary workflows."""
+    return [record for record in records if not is_role_archived(record)]
+
+
+def is_archive_eligible(record: Dict[str, Any]) -> bool:
+    """Return whether a role may be explicitly archived."""
+    return not is_role_archived(record) and get_record_status(record) in ARCHIVE_ELIGIBLE_STATUSES
 
 
 def workflow_status_bucket(record: Dict[str, Any]) -> str:
@@ -375,6 +392,13 @@ def follow_up_action_state(
     """Return the one contextual follow-up action a role can show today."""
     status = get_record_status(record)
     portal_url = _portal_url(record)
+    if is_role_archived(record):
+        return _follow_up_action(
+            "no_action_today",
+            "Archived role",
+            "This role is archived, so no follow-up is available.",
+            status,
+        )
     if record.get("show_on_dashboard") is False or legacy_status_value(record) in {
         "Invalid",
         "Invalid/Hidden",
@@ -387,6 +411,7 @@ def follow_up_action_state(
         )
     terminal_reasons = {
         "Drafted": "This role is still drafted and has not been applied to.",
+        "Paused": "This role is paused and is not currently eligible for follow-up.",
         "Offer": "An offer does not need a generic application follow-up.",
         "Rejected": "This application was rejected, so no follow-up is needed.",
         "Withdrawn / Closed": "This application is closed, so no follow-up is needed.",

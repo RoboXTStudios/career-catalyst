@@ -274,14 +274,14 @@ class FormatAndAppPolicyTests(unittest.TestCase):
             self.assertIn("Cover letter text .txt", labels)
             self.assertNotIn("Cover letter .md", labels)
 
-    def test_outputs_view_is_grouped_and_archive_is_collapsed(self):
+    def test_outputs_view_is_grouped_and_archive_is_separate(self):
         source = __import__("inspect").getsource(app._render_recent_outputs)
         for label in (
             "Active Materials",
-            "Archived Packages",
             "Needs Cleanup / Legacy Materials",
         ):
             self.assertIn(label, source)
+        self.assertNotIn("Archived Packages", source)
         self.assertIn("expanded=False", source)
 
 

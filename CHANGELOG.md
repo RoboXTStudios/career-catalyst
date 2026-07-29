@@ -1,5 +1,13 @@
 # Changelog
 
+## Sprint 31
+
+- Moved follow-up into each exact role package as an on-demand Follow-Up Plan with one recommended contact route, timing, message, alternatives, and explicit activity saving.
+- Restored role-specific Career Intelligence with structured interview preparation and the warning: “These are posting-based inferences, not verified internal company information.”
+- Added optional career-intelligence context and private interview notes without treating user-supplied context as verified evidence.
+- Added tracker-level archive metadata, an Archive tab, explicit and safely previewed bulk archive, and reversible Restore as Paused behavior.
+- Preserved compatibility for explicit follow-up generation and the existing interview-prep entry point while making ordinary package generation follow-up-free by default.
+
 ## 0.0.23 - Sprint 11
 
 - Added follow-up and networking message generation.

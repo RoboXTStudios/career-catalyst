@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
@@ -590,6 +591,81 @@ def _suggested_timing(
     )
 
 
+def _followup_plan(
+    application: Dict[str, Any],
+    angle: RoleAngle,
+    messages: Dict[str, str],
+) -> Dict[str, Any]:
+    """Select one grounded outreach route from saved tracker contact data."""
+    activity = application.get("followup_activity")
+    activity = activity if isinstance(activity, dict) else {}
+    contact_type = _clean(activity.get("contact_type")).lower()
+    warm_saved = any(
+        _clean(application.get(field))
+        for field in ("warm_contact", "warm_contact_email", "referral_contact")
+    ) or contact_type in {"warm contact", "former colleague", "referral", "professional contact"}
+    recruiter_saved = any(
+        _clean(application.get(field))
+        for field in ("recruiter_contact", "recruiter_email", "recruiter_url")
+    ) or contact_type in {"recruiter", "talent acquisition", "talent-acquisition"}
+    hiring_saved = any(
+        _clean(application.get(field))
+        for field in ("hiring_manager_contact", "hiring_manager_email", "hiring_manager_url")
+    ) or contact_type in {"hiring manager", "interviewer"}
+    if warm_saved:
+        primary_key = "warm_contact_message"
+        recipient = "former professional contact who knows Trisha's work"
+        rationale = "A saved warm-contact route has the strongest context for a relevant, low-pressure note."
+    elif recruiter_saved:
+        primary_key = "recruiter_followup"
+        recipient = "recruiter or talent acquisition partner supporting the role"
+        rationale = "A recruiter or talent-acquisition contact is already recorded for this application."
+    elif hiring_saved:
+        primary_key = "hiring_manager_followup"
+        recipient = "hiring manager or relevant team leader"
+        rationale = "A hiring-manager or interviewer route is already recorded for this application."
+    else:
+        primary_key = "recruiter_followup"
+        recipient = "recruiter or talent acquisition partner supporting the role"
+        rationale = "Recruiting is the safest default post-application route when no named contact is recorded."
+    saved_channel = _clean(activity.get("channel"))
+    if saved_channel:
+        channel = saved_channel
+    elif any(_clean(application.get(field)) for field in ("warm_contact_email", "recruiter_email", "hiring_manager_email")):
+        channel = "Email"
+    elif any(_clean(application.get(field)) for field in ("recruiter_url", "hiring_manager_url")):
+        channel = "LinkedIn or the saved contact link"
+    else:
+        channel = "Email or LinkedIn"
+    status = get_record_status(application)
+    objective = {
+        "Interviewing": "Respond to the current interview-stage trigger with a concise, specific note.",
+        "Under Consideration": "Reinforce fit and make the next response easy without repeating the application.",
+    }.get(status, "Reinforce role alignment and invite the appropriate next conversation.")
+    alternatives = [key for key in messages if key != primary_key]
+    return {
+        "status": status,
+        "outreach_mode": "post-application follow-up",
+        "eligible": True,
+        "timing_window": _suggested_timing(application, True),
+        "recommended_recipient_type": recipient,
+        "recommended_channel": channel,
+        "objective": objective,
+        "rationale": rationale,
+        "reinforce": [angle.experience, angle.core_value],
+        "primary_message_key": primary_key,
+        "primary_message_label": {
+            "warm_contact_message": "Warm Contact Message",
+            "recruiter_followup": "Recruiter Follow-Up",
+            "hiring_manager_followup": "Hiring Manager Follow-Up",
+        }[primary_key],
+        "primary_message": messages[primary_key],
+        "alternative_message_keys": alternatives,
+        "what_to_avoid": list(angle.what_to_avoid),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
 def _strategy_content(
     application: Dict[str, Any],
     job_path: Optional[Path],
@@ -598,6 +674,7 @@ def _strategy_content(
     package_materials: Dict[str, Path],
     root: Path,
     post_application: bool,
+    plan: Dict[str, Any],
 ) -> str:
     company = _clean(application.get("company"))
     role = _clean(application.get("role"))
@@ -623,7 +700,6 @@ def _strategy_content(
         str(path.relative_to(root)) if path.is_relative_to(root) else str(path)
         for path in package_materials.values()
     )
-    who = "\n".join(f"- {item}" for item in angle.who_to_look_for)
     avoid = "\n".join(f"- {item}" for item in angle.what_to_avoid)
     source_list = "\n".join(f"  - {source}" for source in sources)
     option_labels = {
@@ -632,16 +708,19 @@ def _strategy_content(
         "warm_contact_message": "Warm Contact Message",
         "referral_ask": "Referral Ask",
     }
-    options = "\n\n".join(
-        f"#### {option_labels[key]}\n\n{text}" for key, text in messages.items()
-    )
     outreach_mode = (
         "Post-application follow-up"
         if post_application
         else "Pre-application networking"
     )
+    primary_key = str(plan["primary_message_key"])
+    alternatives = "\n\n".join(
+        f"#### {option_labels[key]}\n\n{messages[key]}"
+        for key in plan["alternative_message_keys"]
+    )
+    reinforce = "\n".join(f"- {item}" for item in plan["reinforce"])
     return (
-        "# Follow-Up Strategy\n\n"
+        "# Follow-Up Plan\n\n"
         f"## {company} | {role}\n\n"
         "### Current Status\n\n"
         f"- Status: {status}\n"
@@ -652,16 +731,26 @@ def _strategy_content(
         "### Best Outreach Angle\n\n"
         f"Lead with {angle.outreach_angle}. Keep the note focused on the operating "
         "challenge and the value Trisha can add, rather than restating the application.\n\n"
-        "### Who To Look For\n\n"
-        f"{who}\n\n"
+        "### Recommended Recipient\n\n"
+        f"{plan['recommended_recipient_type']}\n\n"
+        "### Suggested Channel\n\n"
+        f"{plan['recommended_channel']}\n\n"
+        "### Objective\n\n"
+        f"{plan['objective']}\n\n"
+        "### Why This Route\n\n"
+        f"{plan['rationale']}\n\n"
+        "### What To Reinforce\n\n"
+        f"{reinforce}\n\n"
         "### What To Avoid\n\n"
         f"{avoid}\n\n"
         "### Suggested Timing\n\n"
-        f"{_suggested_timing(application, post_application)}\n\n"
+        f"{plan['timing_window']}\n\n"
         "### Core Value Point\n\n"
         f"{angle.core_value}\n\n"
-        "### Message Options\n\n"
-        f"{options}\n"
+        f"### Primary Recommended Message: {option_labels[primary_key]}\n\n"
+        f"{messages[primary_key]}\n\n"
+        "### Alternative Messages\n\n"
+        f"{alternatives}\n"
     )
 
 
@@ -772,6 +861,7 @@ def generate_followups(
                 company, role, angle, post_application
             ),
         }
+        plan = _followup_plan(application, angle, messages)
         voice_avoid = tuple(
             _clean(phrase)
             for phrase in context.get("voice", {}).get("avoid", [])
@@ -799,6 +889,7 @@ def generate_followups(
             package_materials,
             root,
             post_application,
+            plan,
         )
         if "—" in strategy:
             raise FollowupGenerationError("Follow-up strategy must not contain em dashes.")
@@ -827,6 +918,7 @@ def generate_followups(
             if post_application
             else "pre-application networking"
         ),
+        "plan": plan,
         "source_materials": {key: str(path) for key, path in package_materials.items()},
         "outputs": outputs,
         "dashboard": dashboard.get("output_path"),

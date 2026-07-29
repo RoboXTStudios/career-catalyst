@@ -19,6 +19,7 @@ if __package__:
         TrackerValidationError,
         follow_up_action_state,
         get_record_status,
+        is_role_archived,
         normalize_tracker_value,
         tracker_company_keys,
         tracker_role_keys,
@@ -46,6 +47,7 @@ else:
         TrackerValidationError,
         follow_up_action_state,
         get_record_status,
+        is_role_archived,
         normalize_tracker_value,
         tracker_company_keys,
         tracker_role_keys,
@@ -2044,6 +2046,11 @@ def load_application_packages(project_root: PathInput = Path.cwd()) -> Dict[str,
     packages = _load_jobs(root)
     tracker = validate_application_tracker(root)["applications"]
     _merge_tracker(packages, tracker, root)
+    packages = [
+        package
+        for package in packages
+        if not package.get("tracker") or not is_role_archived(package["tracker"])
+    ]
     unassigned = _attach_assets(root, packages)
     for package in packages:
         package["archived_materials_available"] = archived_materials_exist(

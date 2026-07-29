@@ -581,7 +581,7 @@ def generate_package(
                 f"('{reason}'). Verify the role and use the closed-posting override to continue."
             )
         should_generate_followups = (
-            True
+            False
             if generate_followups_too is None
             else bool(generate_followups_too)
         )
@@ -620,7 +620,12 @@ def generate_package(
         )
         try:
             interview_prep = generate_interview_prep(
-                job_reference, root, shared_role_intent
+                job_reference,
+                root,
+                shared_role_intent,
+                associated_evidence_projects=context.get(
+                    "associated_evidence_projects", []
+                ),
             )
         except Exception:
             interview_prep = {}
