@@ -113,16 +113,21 @@ class GenerateFollowupsTests(unittest.TestCase):
         strategy = Path(self.paramount["outputs"]["followup_strategy"]).read_text(
             encoding="utf-8"
         )
-        self.assertIn("# Follow-Up Strategy", strategy)
+        self.assertIn("# Follow-Up Plan", strategy)
         self.assertIn("## Paramount | Director, Marketing Operations", strategy)
         for section in (
             "Current Status",
             "Best Outreach Angle",
-            "Who To Look For",
+            "Recommended Recipient",
+            "Suggested Channel",
+            "Objective",
+            "Why This Route",
+            "What To Reinforce",
             "What To Avoid",
             "Suggested Timing",
             "Core Value Point",
-            "Message Options",
+            "Primary Recommended Message: Recruiter Follow-Up",
+            "Alternative Messages",
         ):
             self.assertIn(f"### {section}", strategy)
 

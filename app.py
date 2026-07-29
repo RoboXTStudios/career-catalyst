@@ -14,17 +14,22 @@ from typing import Any, Dict
 
 from scripts.application_tracker import (
     ACTIVE_STATUSES,
+    ARCHIVE_ELIGIBLE_STATUSES,
     HIDDEN_STATUSES,
     VALID_STATUSES,
     TrackerValidationError,
+    active_tracker_records,
     follow_up_action_state,
     get_record_status,
+    is_archive_eligible,
+    is_role_archived,
     load_application_tracker,
     normalize_status,
     update_prospect,
     update_status,
     workflow_status_bucket,
 )
+from scripts.career_intelligence import generate_career_intelligence
 from scripts.dynamic_role_intelligence import get_effective_voice_profile
 from scripts.evidence_engine import (
     EVIDENCE_PROJECT_STATUSES,
@@ -75,7 +80,15 @@ from scripts.job_source_registry import normalize_job_source
 from scripts.materials_library import (
     find_exact_role_package,
     material_route,
+    merge_role_package_outputs,
     move_role_package,
+)
+from scripts.role_archive import (
+    ARCHIVE_REASONS,
+    archive_role,
+    bulk_archive_roles,
+    infer_archive_reason,
+    restore_role,
 )
 try:
     from scripts.job_source_registry import (
@@ -144,7 +157,7 @@ OUTPUT_LABELS = {
     "hiring_manager_followup": "Hiring manager follow-up",
     "warm_contact_message": "Warm contact message",
     "referral_ask": "Referral ask",
-    "followup_strategy": "Follow-up strategy",
+    "followup_strategy": "Follow-Up Plan",
     "dashboard": "Dashboard",
 }
 PACKAGE_MATERIAL_LABELS = {
@@ -162,6 +175,7 @@ PACKAGE_MATERIAL_LABELS = {
     "Interview Prep": "Interview prep",
     "Package Summary": "Package summary",
     "Follow-Up Materials": "Follow-up materials",
+    "Follow-Up Plan": "Follow-Up Plan",
     "Recruiter Follow-Up": "Recruiter follow-up",
     "Hiring Manager Follow-Up": "Hiring manager follow-up",
     "Warm Contact Message": "Warm contact message",
@@ -1528,19 +1542,9 @@ def _render_role_card(
                 st.session_state["dashboard_notice"] = "Role remains Drafted."
                 st.rerun()
             follow_up_action = follow_up_action_state(application)
-            if follow_up_action["eligible"] and more_columns[3].button(
-                "Generate Follow-Up",
-                key=f"dashboard_more_followup_{tracker_id}",
-                use_container_width=True,
-            ):
-                try:
-                    generate_followups(tracker_id, PROJECT_ROOT)
-                except FollowupGenerationError as error:
-                    st.error(str(error))
-                else:
-                    st.session_state["dashboard_notice"] = "Follow-up materials generated."
-                    st.rerun()
-            elif not follow_up_action["eligible"]:
+            if follow_up_action["eligible"]:
+                more_columns[3].caption("Use Follow-Up Plan in Generate Package.")
+            else:
                 more_columns[3].caption(
                     f"{follow_up_action['label']}: {follow_up_action['reason']}"
                 )
@@ -2410,9 +2414,12 @@ def _render_add_prospect(st: Any) -> None:
     st.info("Review the prospect on Dashboard. Use Generate Package only when you are ready to create materials.")
 
 
-def _load_applications(st: Any) -> list[Dict[str, Any]]:
+def _load_applications(
+    st: Any, *, include_archived: bool = False
+) -> list[Dict[str, Any]]:
     try:
-        return load_application_tracker(PROJECT_ROOT)
+        applications = load_application_tracker(PROJECT_ROOT)
+        return applications if include_archived else active_tracker_records(applications)
     except TrackerValidationError as error:
         st.error(str(error))
         return []
@@ -2564,6 +2571,157 @@ def _render_package_recovery(
         st.session_state.pop(recovery_key, None)
         st.info("Generation cancelled. No materials were changed.")
 
+
+FOLLOWUP_PACKAGE_LABELS = {
+    "followup_strategy": "Follow-Up Plan",
+    "recruiter_followup": "Recruiter Follow-Up",
+    "hiring_manager_followup": "Hiring Manager Follow-Up",
+    "warm_contact_message": "Warm Contact Message",
+    "referral_ask": "Referral Ask",
+}
+
+
+def _render_followup_plan_result(st: Any, result: Dict[str, Any]) -> None:
+    plan = dict(result.get("plan") or {})
+    if not plan:
+        return
+    columns = st.columns(3)
+    columns[0].markdown(f"**Timing**  \n{plan.get('timing_window', '')}")
+    columns[1].markdown(
+        f"**Recipient**  \n{plan.get('recommended_recipient_type', '')}"
+    )
+    columns[2].markdown(
+        f"**Channel**  \n{plan.get('recommended_channel', '')}"
+    )
+    st.markdown(f"**Objective:** {plan.get('objective', '')}")
+    st.markdown(f"**Why this route:** {plan.get('rationale', '')}")
+    reinforce = plan.get("reinforce") or []
+    if reinforce:
+        st.markdown("**Reinforce from the original application**")
+        for item in reinforce:
+            st.markdown(f"- {item}")
+    st.markdown(
+        f"**Primary recommended message: {plan.get('primary_message_label', '')}**"
+    )
+    st.markdown(str(plan.get("primary_message") or ""))
+    outputs = dict(result.get("outputs") or {})
+    for key in plan.get("alternative_message_keys") or []:
+        path = Path(str(outputs.get(key) or ""))
+        if path.is_file():
+            with st.expander(OUTPUT_LABELS.get(key, key.replace("_", " ").title())):
+                st.markdown(path.read_text(encoding="utf-8"))
+    avoid = plan.get("what_to_avoid") or []
+    if avoid:
+        with st.expander("What to avoid", expanded=False):
+            for item in avoid:
+                st.markdown(f"- {item}")
+
+
+def _render_followup_plan_panel(
+    st: Any, tracker_id: str, application: Dict[str, Any]
+) -> None:
+    st.markdown("### Follow-Up Plan")
+    action = follow_up_action_state(application)
+    if action["eligible"]:
+        st.caption(str(action["reason"]))
+        exact_package = find_exact_role_package(PROJECT_ROOT, application)
+        package_available = bool(exact_package.get("folder"))
+        if not package_available:
+            st.info("Generate the base role package before adding its Follow-Up Plan.")
+        if st.button(
+            "Generate Follow-Up Plan",
+            type="primary",
+            disabled=not package_available,
+            key=f"generate_followup_plan_{tracker_id}",
+        ):
+            try:
+                with st.spinner("Preparing the recommended follow-up path…"):
+                    generated = generate_followups(tracker_id, PROJECT_ROOT)
+                    merged = merge_role_package_outputs(
+                        PROJECT_ROOT,
+                        application,
+                        generated["outputs"],
+                        material_labels=FOLLOWUP_PACKAGE_LABELS,
+                    )
+                    updated = update_prospect(
+                        tracker_id,
+                        {
+                            "material_paths": merged["material_paths"],
+                            "package_manifest": merged["manifest"],
+                        },
+                        PROJECT_ROOT,
+                    )
+                    generated["outputs"] = merged["outputs"]
+                    generated["application"] = updated
+            except (FollowupGenerationError, ValueError, OSError) as error:
+                st.error(str(error))
+            else:
+                st.session_state[f"followup_plan_result_{tracker_id}"] = generated
+                st.success("Follow-Up Plan was added to this exact role package.")
+    elif action["key"] == "check_application_status" and action.get("portal_url"):
+        st.info(str(action["reason"]))
+        st.link_button("Check Application Status", str(action["portal_url"]))
+    else:
+        st.info(f"{action['label']} · {action['reason']}")
+
+    result = st.session_state.get(f"followup_plan_result_{tracker_id}")
+    if result:
+        _render_followup_plan_result(st, result)
+
+    activity = application.get("followup_activity")
+    activity = activity if isinstance(activity, dict) else {}
+    with st.expander("Follow-Up Activity", expanded=False):
+        contact_columns = st.columns(3)
+        contact_name = contact_columns[0].text_input(
+            "Contact name",
+            value=str(activity.get("contact_name") or ""),
+            key=f"followup_contact_name_{tracker_id}",
+        )
+        contact_type = contact_columns[1].text_input(
+            "Contact type",
+            value=str(activity.get("contact_type") or ""),
+            key=f"followup_contact_type_{tracker_id}",
+        )
+        channel = contact_columns[2].text_input(
+            "Channel",
+            value=str(activity.get("channel") or ""),
+            key=f"followup_channel_{tracker_id}",
+        )
+        date_columns = st.columns(2)
+        date_sent = date_columns[0].text_input(
+            "Date sent (YYYY-MM-DD)",
+            value=str(activity.get("date_sent") or ""),
+            key=f"followup_date_sent_{tracker_id}",
+        )
+        next_date = date_columns[1].text_input(
+            "Next follow-up date (YYYY-MM-DD)",
+            value=str(activity.get("next_followup_date") or ""),
+            key=f"followup_next_date_{tracker_id}",
+        )
+        response = st.text_area(
+            "Response", value=str(activity.get("response") or ""), key=f"followup_response_{tracker_id}"
+        )
+        notes = st.text_area(
+            "Notes", value=str(activity.get("notes") or ""), key=f"followup_activity_notes_{tracker_id}"
+        )
+        if st.button("Save Follow-Up Activity", key=f"save_followup_activity_{tracker_id}"):
+            update_prospect(
+                tracker_id,
+                {
+                    "followup_activity": {
+                        "contact_name": contact_name.strip(),
+                        "contact_type": contact_type.strip(),
+                        "channel": channel.strip(),
+                        "date_sent": date_sent.strip(),
+                        "response": response.strip(),
+                        "next_followup_date": next_date.strip(),
+                        "notes": notes.strip(),
+                    }
+                },
+                PROJECT_ROOT,
+            )
+            st.success("Follow-up activity saved. Application status was unchanged.")
+
 def _render_generate_package(st: Any) -> None:
     st.markdown(
         '<h2 class="cc-section-heading">Generate Application Package</h2>',
@@ -2583,11 +2741,6 @@ def _render_generate_package(st: Any) -> None:
     )
     reset_package_preview_for_selection(st.session_state, tracker_id)
     application = by_id[tracker_id]
-    generate_followups_too = st.checkbox(
-        "Generate follow-up materials after package generation",
-        value=get_record_status(application) == "Applied",
-        key=f"package_followups_{tracker_id}",
-    )
     recovery_key = _package_recovery_key(tracker_id)
     if not st.session_state.get(recovery_key):
         preflight = preflight_package_generation(tracker_id, applications, PROJECT_ROOT)
@@ -2640,7 +2793,7 @@ def _render_generate_package(st: Any) -> None:
                 result = generate_package(
                     tracker_id,
                     PROJECT_ROOT,
-                    generate_followups_too=generate_followups_too,
+                    generate_followups_too=False,
                     override_closed=override_closed,
                 )
         except PackageGenerationError as error:
@@ -2682,6 +2835,7 @@ def _render_generate_package(st: Any) -> None:
     outputs = st.session_state.get("last_package_outputs")
     if outputs:
         _show_output_paths(st, outputs, "generated_output")
+    _render_followup_plan_panel(st, tracker_id, application)
 
 
 FOLLOW_UP_SKIP_CATEGORIES = (
@@ -2853,6 +3007,248 @@ def _render_followups(st: Any) -> None:
             st.markdown(path.read_text(encoding="utf-8"))
 
 
+def _render_career_intelligence_result(st: Any, result: Dict[str, Any]) -> None:
+    structured = dict(result.get("structured") or result)
+    st.warning(str(structured.get("inference_notice") or ""))
+    st.markdown("### What the hiring manager is likely hiring for")
+    for item in structured.get("hiring_manager_intent") or []:
+        st.markdown(f"- {item}")
+    st.markdown("### Likely First-Screen Priorities")
+    for item in structured.get("first_screen_priorities") or []:
+        st.markdown(f"- {item}")
+    st.markdown("### Likely Interview Questions")
+    for group in structured.get("question_groups") or []:
+        with st.expander(str(group.get("category") or "Interview questions")):
+            for item in group.get("questions") or []:
+                st.markdown(f"**{item.get('question', '')}**")
+                st.markdown(f"- What they are testing: {item.get('testing', '')}")
+                st.markdown(f"- Answer direction: {item.get('answer_direction', '')}")
+                st.markdown(
+                    "- Best verified evidence: "
+                    + ", ".join(str(value) for value in item.get("evidence") or [])
+                )
+                st.markdown(f"- Caution: {item.get('caution', '')}")
+    with st.expander("Best Evidence and STAR Stories", expanded=True):
+        for item in structured.get("best_evidence") or []:
+            st.markdown(f"**{item.get('label', '')}** · {item.get('description', '')}")
+    with st.expander("Likely Concerns or Gaps", expanded=False):
+        for item in structured.get("concerns_and_bridges") or []:
+            st.markdown(
+                f"**Concern:** {item.get('concern', '')}  \n**Bridge:** {item.get('bridge', '')}"
+            )
+    with st.expander("Questions Trisha Should Ask", expanded=False):
+        for item in structured.get("questions_to_ask") or []:
+            st.markdown(f"- {item}")
+    st.markdown("### Tell Me About Yourself")
+    st.markdown(str(structured.get("tell_me_about_yourself") or ""))
+    st.markdown("### Why This Company / Why This Role")
+    st.markdown(str(structured.get("why_company_role") or ""))
+    st.markdown("### First 90-Day Themes")
+    for item in structured.get("first_90_day_themes") or []:
+        st.markdown(f"- {item}")
+    if structured.get("user_supplied_context"):
+        with st.expander("User-Supplied Context (not independently verified)"):
+            st.markdown(str(structured["user_supplied_context"]))
+    st.info(str(structured.get("voice_reminder") or ""))
+
+
+def _render_career_intelligence(st: Any) -> None:
+    st.markdown(
+        '<h2 class="cc-section-heading">Career Intelligence</h2>',
+        unsafe_allow_html=True,
+    )
+    applications = _load_applications(st)
+    if not applications:
+        st.info("No active roles are available.")
+        return
+    by_id = {str(item["id"]): item for item in applications}
+    tracker_id = st.selectbox(
+        "Role",
+        tuple(by_id),
+        format_func=lambda value: _application_label(by_id[value]),
+        key="career_intelligence_tracker_id",
+    )
+    application = by_id[tracker_id]
+    additional_context = st.text_area(
+        "Additional context (user supplied; not independently verified)",
+        value=str(application.get("career_intelligence_context") or ""),
+        key=f"career_intelligence_context_{tracker_id}",
+        help="Paste recruiter messages, interview logistics, research, or notes learned after applying.",
+    )
+    interview_notes = st.text_area(
+        "Private interview notes",
+        value=str(application.get("interview_notes") or ""),
+        key=f"interview_notes_{tracker_id}",
+    )
+    if st.button("Save Context and Notes", key=f"save_career_context_{tracker_id}"):
+        update_prospect(
+            tracker_id,
+            {
+                "career_intelligence_context": additional_context,
+                "interview_notes": interview_notes,
+            },
+            PROJECT_ROOT,
+        )
+        st.success("Career Intelligence context and private notes saved.")
+
+    package = find_exact_role_package(PROJECT_ROOT, application)
+    if not package.get("folder"):
+        st.info("Generate the base role package before attaching Career Intelligence.")
+    button_label = (
+        "Refresh Career Intelligence"
+        if st.session_state.get(f"career_intelligence_result_{tracker_id}")
+        else "Generate Career Intelligence"
+    )
+    if st.button(
+        button_label,
+        type="primary",
+        disabled=not bool(package.get("folder")),
+        key=f"generate_career_intelligence_{tracker_id}",
+    ):
+        try:
+            with st.spinner("Building posting-grounded interview intelligence…"):
+                package_context = build_package_context(
+                    tracker_id, applications, PROJECT_ROOT
+                )
+                result = generate_career_intelligence(
+                    package_context["job_reference"],
+                    PROJECT_ROOT,
+                    package_context["role_intent"],
+                    additional_context=additional_context,
+                    associated_evidence_projects=package_context.get(
+                        "associated_evidence_projects", []
+                    ),
+                )
+                merged = merge_role_package_outputs(
+                    PROJECT_ROOT,
+                    application,
+                    {"interview_prep": result["output_path"]},
+                    material_labels={"interview_prep": "Interview Prep"},
+                )
+                update_prospect(
+                    tracker_id,
+                    {
+                        "career_intelligence_context": additional_context,
+                        "interview_notes": interview_notes,
+                        "material_paths": merged["material_paths"],
+                        "package_manifest": merged["manifest"],
+                    },
+                    PROJECT_ROOT,
+                )
+                result["output_path"] = merged["outputs"]["interview_prep"]
+        except Exception as error:
+            st.error(str(error))
+        else:
+            st.session_state[f"career_intelligence_result_{tracker_id}"] = result
+            st.success("Career Intelligence was attached to this exact role package.")
+    result = st.session_state.get(f"career_intelligence_result_{tracker_id}")
+    if result:
+        _render_career_intelligence_result(st, result)
+
+
+def _render_archive(st: Any) -> None:
+    st.markdown('<h2 class="cc-section-heading">Role Archive</h2>', unsafe_allow_html=True)
+    applications = _load_applications(st, include_archived=True)
+    archived = [item for item in applications if is_role_archived(item)]
+    st.metric("Archived roles", len(archived))
+    filters = st.columns(3)
+    query = filters[0].text_input("Search company or role", key="archive_search").lower().strip()
+    reason_filter = filters[1].selectbox(
+        "Archive reason", ("All",) + ARCHIVE_REASONS, key="archive_reason_filter"
+    )
+    prior_values = tuple(
+        sorted({str(item.get("pre_archive_status") or "") for item in archived if item.get("pre_archive_status")})
+    )
+    prior_filter = filters[2].selectbox(
+        "Prior status", ("All",) + prior_values, key="archive_prior_filter"
+    )
+    visible = []
+    for item in archived:
+        haystack = f"{item.get('company', '')} {item.get('role', '')}".lower()
+        if query and query not in haystack:
+            continue
+        if reason_filter != "All" and item.get("archive_reason") != reason_filter:
+            continue
+        if prior_filter != "All" and item.get("pre_archive_status") != prior_filter:
+            continue
+        visible.append(item)
+    for application in visible:
+        with st.container(border=True):
+            st.markdown(f"### {html.escape(_application_label(application))}")
+            package = find_exact_role_package(PROJECT_ROOT, application)
+            materials = dict(application.get("material_paths") or {})
+            st.caption(
+                f"Reason: {application.get('archive_reason') or 'Not recorded'} · "
+                f"Archived: {application.get('archived_at') or 'Not recorded'} · "
+                f"Prior status: {application.get('pre_archive_status') or 'Not recorded'} · "
+                f"Materials: {len(materials)}"
+            )
+            actions = st.columns(2)
+            if package.get("folder") and actions[0].button(
+                "Open Package Folder", key=f"archive_open_{application.get('id')}"
+            ):
+                opened, message = open_local_path(Path(package["folder"]))
+                (st.success if opened else st.warning)(message)
+            if actions[1].button(
+                "Restore as Paused", key=f"archive_restore_{application.get('id')}"
+            ):
+                restore_role(str(application["id"]), PROJECT_ROOT)
+                st.success("Role restored as Paused.")
+                st.rerun()
+            for label, value in materials.items():
+                path = Path(str(value))
+                if path.is_file():
+                    _show_open_button(
+                        st,
+                        f"Open {label}",
+                        path,
+                        f"archive_material_{application.get('id')}_{re.sub(r'[^a-z0-9]+', '_', str(label).lower())}",
+                    )
+                else:
+                    st.caption(f"{label}: missing path {path}")
+
+    eligible = [item for item in applications if is_archive_eligible(item)]
+    with st.expander(f"Bulk archive eligible roles ({len(eligible)})", expanded=False):
+        labels = {str(item["id"]): _application_label(item) for item in eligible}
+        for item in eligible:
+            st.caption(f"{labels[str(item['id'])]} · Suggested reason: {infer_archive_reason(item)}")
+        selected = st.multiselect(
+            "Select roles to archive",
+            tuple(labels),
+            format_func=lambda value: labels[value],
+            default=(),
+            key="bulk_archive_selected",
+        )
+        reasons = {}
+        for tracker_id in selected:
+            entry = next(item for item in eligible if str(item["id"]) == tracker_id)
+            inferred = infer_archive_reason(entry)
+            reasons[tracker_id] = st.selectbox(
+                f"Archive reason · {labels[tracker_id]}",
+                ARCHIVE_REASONS,
+                index=ARCHIVE_REASONS.index(inferred),
+                key=f"bulk_archive_reason_{tracker_id}",
+            )
+        confirmed = st.checkbox(
+            "I confirm only the selected roles should be archived",
+            value=False,
+            key="bulk_archive_confirm",
+        )
+        if st.button(
+            "Archive Selected Roles",
+            disabled=not selected or not confirmed,
+            key="bulk_archive_apply",
+        ):
+            summary = bulk_archive_roles(selected, PROJECT_ROOT, reasons=reasons)
+            st.success(
+                f"Moved {len(summary['moved'])} · Archived without materials "
+                f"{len(summary['archived_without_materials'])} · Skipped "
+                f"{len(summary['skipped'])} · Failed {len(summary['failed'])}"
+            )
+            if not summary["failed"]:
+                st.rerun()
+
+
 def _render_update_status(st: Any) -> None:
     st.markdown(
         '<h2 class="cc-section-heading">Advanced Status Update</h2>',
@@ -2947,6 +3343,30 @@ def _render_update_status(st: Any) -> None:
         "Visibility follows status: Pass and Invalid/Hidden stay in cleanup; "
         "active workflow statuses remain visible."
     )
+    if current_status in ARCHIVE_ELIGIBLE_STATUSES:
+        st.warning(
+            "This role is eligible for archive. Archiving is a separate, explicit action."
+        )
+        inferred_reason = infer_archive_reason(application)
+        reason = st.selectbox(
+            "Archive reason",
+            ARCHIVE_REASONS,
+            index=ARCHIVE_REASONS.index(inferred_reason),
+            disabled=current_status == "Rejected",
+            key=f"archive_reason_{tracker_id}",
+        )
+        if st.button("Archive Role", key=f"archive_role_{tracker_id}"):
+            try:
+                archive_role(
+                    tracker_id,
+                    "Rejected" if current_status == "Rejected" else reason,
+                    PROJECT_ROOT,
+                )
+            except (TrackerValidationError, ValueError, OSError) as error:
+                st.error(str(error))
+            else:
+                st.success("Role archived without deleting its history or materials.")
+                st.rerun()
     if st.button("Save Status Update", type="primary"):
         try:
             updated = update_dashboard_role(
@@ -2969,6 +3389,10 @@ def _render_update_status(st: Any) -> None:
                 f"Updated {updated.get('company', 'Company')} — "
                 f"{updated.get('role', tracker_id)} to {get_record_status(updated)}.{submitted}"
             )
+            if get_record_status(updated) in ARCHIVE_ELIGIBLE_STATUSES:
+                st.session_state["status_update_notice"] += (
+                    " Review the separate Archive Role action when ready."
+                )
             st.rerun()
 
 
@@ -3106,23 +3530,20 @@ def _render_recent_outputs(st: Any) -> None:
     )
     applications = _load_applications(st)
     active_packages = []
-    archived_packages = []
     for application in applications:
         package = find_exact_role_package(PROJECT_ROOT, application)
-        if not package.get("folder"):
+        if not package.get("folder") or package.get("archived"):
             continue
-        entry = (application, package)
-        (archived_packages if package.get("archived") else active_packages).append(entry)
+        active_packages.append((application, package))
     legacy_files = [
         path
         for relative in ("messages", "followups", "strategy_packs", "markdown")
         for path in (PROJECT_ROOT / "exports" / relative).glob("*")
         if path.is_file()
     ]
-    metrics = st.columns(3)
+    metrics = st.columns(2)
     metrics[0].metric("Active packages", len(active_packages))
-    metrics[1].metric("Archived packages", len(archived_packages))
-    metrics[2].metric("Needs cleanup / legacy", len(legacy_files))
+    metrics[1].metric("Needs cleanup / legacy", len(legacy_files))
 
     st.markdown("**Active Materials**")
     if not active_packages:
@@ -3139,22 +3560,6 @@ def _render_recent_outputs(st: Any) -> None:
         ):
             opened, message = open_local_path(Path(package["folder"]))
             (st.success if opened else st.warning)(message)
-
-    with st.expander(f"Archived Packages ({len(archived_packages)})", expanded=False):
-        if not archived_packages:
-            st.caption("No archived package folders yet.")
-        for application, package in archived_packages:
-            row = st.columns((5, 1))
-            row[0].markdown(
-                f"**{company_display_name(application.get('company'))} — {application.get('role')}**"
-            )
-            if row[1].button(
-                "Open",
-                key=f"library_archive_{application.get('id')}",
-                use_container_width=True,
-            ):
-                opened, message = open_local_path(Path(package["folder"]))
-                (st.success if opened else st.warning)(message)
 
     with st.expander("Needs Cleanup / Legacy Materials", expanded=False):
         st.caption(
@@ -3320,15 +3725,25 @@ def main() -> None:
         f'<p class="cc-description">{html.escape(UI_DESCRIPTION)}</p>',
         unsafe_allow_html=True,
     )
-    dashboard_tab, evidence_tab, add_tab, generate_tab, followup_tab, status_tab, outputs_tab = st.tabs(
+    (
+        dashboard_tab,
+        evidence_tab,
+        add_tab,
+        generate_tab,
+        intelligence_tab,
+        status_tab,
+        outputs_tab,
+        archive_tab,
+    ) = st.tabs(
         (
             "Dashboard",
             "Evidence",
             "Add Prospect",
             "Generate Package",
-            "Follow-Up",
+            "Career Intelligence",
             "Advanced Status Update",
             "Outputs",
+            "Archive",
         )
     )
     with dashboard_tab:
@@ -3339,12 +3754,14 @@ def main() -> None:
         _render_add_prospect(st)
     with generate_tab:
         _render_generate_package(st)
-    with followup_tab:
-        _render_followups(st)
+    with intelligence_tab:
+        _render_career_intelligence(st)
     with status_tab:
         _render_update_status(st)
     with outputs_tab:
         _render_recent_outputs(st)
+    with archive_tab:
+        _render_archive(st)
 
 
 if __name__ == "__main__":

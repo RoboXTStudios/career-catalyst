@@ -196,8 +196,9 @@ class DynamicRoleIntelligenceTests(unittest.TestCase):
             output_path = Path(result["output_path"])
             generated_paths.append(output_path)
             self.assertTrue(output_path.is_file())
-            if result.get("txt_output_path"):
-                generated_paths.append(Path(result["txt_output_path"]))
+            for companion_key in ("txt_output_path", "docx_output_path"):
+                if result.get(companion_key):
+                    generated_paths.append(Path(result[companion_key]))
         for path in generated_paths:
             path.unlink(missing_ok=True)
 
@@ -351,7 +352,7 @@ class DynamicRoleIntelligenceTests(unittest.TestCase):
                 generate_followups("acme_paused_operations", root)
             bulk = generate_missing_followups(root)
 
-        self.assertIn("application is closed", str(context.exception))
+        self.assertIn("role is paused", str(context.exception).lower())
         self.assertEqual(bulk["generated_count"], 0)
         self.assertEqual(bulk["skipped_existing_count"], 0)
         self.assertEqual(bulk["skipped_count"], 1)
