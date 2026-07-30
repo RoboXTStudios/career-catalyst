@@ -184,16 +184,20 @@ def evidence_score_contribution(
     before_score = int(before.get("match_score") or 0)
     after_score = int(after.get("match_score") or 0)
     matched = list(after.get("associated_evidence_matches") or [])
+    if not matched:
+        explanation = "No additional role requirements were matched by the selected Evidence."
+    elif after_score == before_score:
+        explanation = (
+            "Selected Evidence matched relevant role requirements but did not change the overall score."
+        )
+    else:
+        explanation = "Selected Evidence matched additional verified role requirements."
     return {
         "before": before_score,
         "after": after_score,
         "delta": after_score - before_score,
         "matched_requirements": matched,
-        "explanation": (
-            "No additional role requirements were matched by the selected Evidence."
-            if not matched or after_score == before_score
-            else "Selected Evidence matched additional verified role requirements."
-        ),
+        "explanation": explanation,
     }
 
 
