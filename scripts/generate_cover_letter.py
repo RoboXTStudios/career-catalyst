@@ -10,7 +10,7 @@ from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
 
 try:
-    from .candidate_output import candidate_cover_letter
+    from .candidate_output import candidate_cover_letter, cover_letter_evidence_selection
     from .career_claims import (
         PublicCareerClaimError,
         is_ai_transformation_role,
@@ -20,6 +20,7 @@ try:
     )
     from .company_voice import company_voice_context
     from .evidence_engine import evidence_generation_context, load_evidence_cards, load_writing_voice_profile, select_evidence_cards
+    from .evidence_tailoring import project_title
     from .filename_utils import build_upload_filename, company_display_name
     from .resume_foundation import (
         CandidateLanguageError,
@@ -41,7 +42,7 @@ try:
     from .text_cleanup import cleanup_repeated_words
     from .role_intent import build_role_intent
 except ImportError:
-    from candidate_output import candidate_cover_letter
+    from candidate_output import candidate_cover_letter, cover_letter_evidence_selection
     from career_claims import (
         PublicCareerClaimError,
         is_ai_transformation_role,
@@ -51,6 +52,7 @@ except ImportError:
     )
     from company_voice import company_voice_context
     from evidence_engine import evidence_generation_context, load_evidence_cards, load_writing_voice_profile, select_evidence_cards
+    from evidence_tailoring import project_title
     from filename_utils import build_upload_filename, company_display_name
     from resume_foundation import (
         CandidateLanguageError,
@@ -116,7 +118,7 @@ def load_generation_context(
         "material_editing_plan": editing_plan,
         "role_intent": shared_role_intent,
         "parsed_job": parsed_job,
-        "match_report": score_job_match(job_path, root),
+        "match_report": score_job_match(job_path, root, associated_evidence_projects),
         **voice_context,
     }
 
@@ -1304,6 +1306,12 @@ def generate_cover_letter(
     result["associated_evidence_project_titles"] = [
         str(project.get("title")) for project in (associated_evidence_projects or [])
     ]
+    result["cover_letter_projects_used"] = (
+        [project_title(project) for project in cover_letter_evidence_selection(context)]
+        if str(context["role_intent"].get("primary_archetype") or "")
+        == "product_operations"
+        else []
+    )
     return result
 
 

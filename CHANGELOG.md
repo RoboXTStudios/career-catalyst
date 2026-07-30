@@ -1,5 +1,14 @@
 # Changelog
 
+## Sprint 31.1
+
+- Separated manually selected Relevant Evidence from system-recommended projects in the Tailoring Plan and exposed verified résumé, cover-letter, and non-use decisions.
+- Unified dynamic role intelligence and Role Intent behind one package-role classification, including strong but bounded Product Manager title handling.
+- Recomputed the current match report with the latest selected Evidence and displayed its posting-grounded score contribution without fixed bonuses.
+- Made product-oriented cover letters use up to two relevant, manually selected Evidence records through concise, verified candidate-facing prose.
+- Prioritized manually selected résumé Evidence, condensed project details to one or two bullets, and capped the project section for two-page output.
+- Added Evidence-aware package-preview invalidation so saved selections take effect on explicit regeneration without touching existing files.
+
 ## Sprint 31
 
 - Moved follow-up into each exact role package as an on-demand Follow-Up Plan with one recommended contact route, timing, message, alternatives, and explicit activity saving.

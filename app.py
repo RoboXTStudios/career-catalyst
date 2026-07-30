@@ -41,6 +41,7 @@ from scripts.evidence_engine import (
     normalize_multivalue,
     upsert_evidence_project,
 )
+from scripts.evidence_tailoring import package_preview_fingerprint
 from scripts.filename_utils import build_upload_filename, company_display_name
 from scripts.filename_utils import is_valid_role_title
 from scripts.generate_dashboard import (
@@ -107,7 +108,7 @@ from scripts.role_intent import tailoring_plan
 from scripts.parse_job import extract_metadata, normalize_compensation, parse_job_description
 from scripts.prospect_intake import ProspectIntakeError, create_prospect
 from scripts.resume_foundation import canonical_resume_foundation_info
-from scripts.score_match import score_job_data, score_job_match
+from scripts.score_match import persisted_match_fields, score_job_data, score_job_match
 from scripts.storage_paths import canonical_export_root
 
 
@@ -474,12 +475,24 @@ def expand_recommended_next_steps(session_state: Any) -> None:
 
 
 def reset_package_preview_for_selection(
-    session_state: Any, prospect_id: str
+    session_state: Any,
+    prospect_id: str,
+    evidence_project_ids: Any = None,
 ) -> bool:
-    """Discard stale package preview state when the selected prospect changes."""
+    """Discard stale package preview state when prospect or Evidence changes."""
     selected = str(prospect_id or "").strip()
     previous = str(session_state.get("package_preview_prospect_id") or "").strip()
-    if previous == selected:
+    fingerprint = (
+        package_preview_fingerprint(selected, evidence_project_ids)
+        if evidence_project_ids is not None
+        else ""
+    )
+    previous_fingerprint = str(
+        session_state.get("package_preview_selection_fingerprint") or ""
+    )
+    if previous == selected and (
+        evidence_project_ids is None or previous_fingerprint == fingerprint
+    ):
         return False
     for key in (
         "last_package_outputs",
@@ -494,6 +507,8 @@ def reset_package_preview_for_selection(
     ):
         session_state.pop(key, None)
     session_state["package_preview_prospect_id"] = selected
+    if evidence_project_ids is not None:
+        session_state["package_preview_selection_fingerprint"] = fingerprint
     return True
 
 
@@ -1233,15 +1248,27 @@ def _render_relevant_evidence_panel(
         key=f"save_relevant_evidence_{tracker_id}",
         use_container_width=True,
     ):
-        update_dashboard_role(
+        selected_projects = [
+            project for project in active_projects if str(project.get("id")) in selected
+        ]
+        resolved = resolve_job_reference(tracker_id, PROJECT_ROOT)
+        match_report = score_job_match(
+            resolved["job_path"], PROJECT_ROOT, selected_projects
+        )
+        update_prospect(
             tracker_id,
             {
-                "status": get_record_status(application),
                 "evidence_project_ids": list(selected),
+                **persisted_match_fields(match_report),
             },
             PROJECT_ROOT,
         )
-        st.session_state["dashboard_notice"] = "Relevant evidence updated."
+        reset_package_preview_for_selection(
+            st.session_state, tracker_id, list(selected)
+        )
+        st.session_state["dashboard_notice"] = (
+            "Relevant Evidence updated. Regenerate the package to apply the new tailoring."
+        )
         st.rerun()
 
 
@@ -1779,6 +1806,27 @@ def _render_package_summary(st: Any, package_result: Dict[str, Any]) -> None:
         ):
             value = quality.get(key, "—")
             column.metric(label, f"{value}/100" if isinstance(value, int) else value)
+    tailoring = package_result.get("tailoring_metadata") or {}
+    if tailoring:
+        st.markdown("**Evidence use in generated materials**")
+        st.markdown(
+            "**Used in Résumé:** "
+            + (", ".join(tailoring.get("resume_projects_used") or []) or "None")
+        )
+        st.markdown(
+            "**Used in Cover Letter:** "
+            + (", ".join(tailoring.get("cover_letter_projects_used") or []) or "None")
+        )
+        not_used = tailoring.get("projects_not_used") or []
+        st.markdown(
+            "**Not Used and Why:** "
+            + (
+                "; ".join(
+                    f"{item.get('title')}: {item.get('reason')}" for item in not_used
+                )
+                or "None"
+            )
+        )
     checklist = package_result.get("package_checklist") or []
     if checklist:
         st.markdown("**Generated package checklist**")
@@ -2185,17 +2233,56 @@ def _render_tailoring_plan(st: Any, role_intent: Dict[str, Any]) -> None:
         rows = (
             ("Detected role", plan["detected_role"]),
             ("Primary hiring need", plan["primary_hiring_need"]),
+            (
+                "Selected Relevant Evidence",
+                ", ".join(plan["selected_relevant_evidence"]) or "None selected",
+            ),
+            (
+                "System-Recommended Supporting Projects",
+                ", ".join(plan["system_recommended_projects"]) or "None",
+            ),
             ("Leading with", ", ".join(plan["leading_with"]) or "Verified operating evidence"),
             ("Supporting with", ", ".join(plan["supporting_with"]) or "None"),
             ("De-emphasizing", ", ".join(plan["de_emphasizing"]) or "None"),
             ("Earlier career", plan["earlier_career"] or "Omitted to keep the résumé focused"),
-            ("Selected projects", ", ".join(plan["selected_projects"]) or "None"),
             ("Target résumé length", plan["target_resume_length"]),
             ("Confidence", plan["confidence"]),
             ("Matched signals", ", ".join(plan["matched_signals"]) or "Conservative fallback"),
         )
         for label, value in rows:
             st.markdown(f"**{label}:** {value}")
+        contribution = plan.get("evidence_score_contribution") or {}
+        if contribution:
+            st.markdown("**Selected Evidence Evaluated:** " + (
+                ", ".join(plan["selected_relevant_evidence"]) or "None selected"
+            ))
+            st.markdown(
+                "**Evidence-Supported Matches:** "
+                + (", ".join(contribution.get("matched_requirements") or []) or "None")
+            )
+            st.markdown(f"**Evidence Contribution:** {int(contribution.get('delta') or 0):+d}")
+            st.markdown(f"**Score Changed From:** {contribution.get('before', 0)}")
+            st.markdown(f"**Current Evidence-Adjusted Match Score:** {contribution.get('after', 0)}")
+            st.caption(str(contribution.get("explanation") or ""))
+        if plan.get("resume_projects_used") or plan.get("cover_letter_projects_used") or plan.get("projects_not_used"):
+            st.markdown(
+                "**Used in Résumé:** "
+                + (", ".join(plan.get("resume_projects_used") or []) or "None")
+            )
+            st.markdown(
+                "**Used in Cover Letter:** "
+                + (", ".join(plan.get("cover_letter_projects_used") or []) or "None")
+            )
+            not_used = plan.get("projects_not_used") or []
+            st.markdown(
+                "**Not Used and Why:** "
+                + (
+                    "; ".join(
+                        f"{item.get('title')}: {item.get('reason')}" for item in not_used
+                    )
+                    or "None"
+                )
+            )
 
 
 def _render_add_prospect(st: Any) -> None:
@@ -2463,22 +2550,20 @@ def detected_application_voice(
     project_root: Path = PROJECT_ROOT,
 ) -> Dict[str, Any]:
     """Return the company voice and role family shown in the package workflow."""
-    resolved = resolve_job_reference(tracker_id, project_root)
-    parsed_job = parse_job_description(resolved["job_path"])
-    intelligence = get_effective_voice_profile(
-        company_name=str(parsed_job.get("company") or ""),
-        job_title=str(parsed_job.get("job_title") or ""),
-        job_description=str(parsed_job.get("raw_text") or ""),
-        source_url=str(parsed_job.get("source_url") or ""),
+    context = build_package_context(
+        tracker_id, load_application_tracker(project_root), project_root
     )
+    intelligence = dict(context["role_intelligence"])
     intelligence["profile_label"] = _humanize_taxonomy(
         intelligence["profile_name"]
     )
     intelligence["role_family_label"] = _humanize_taxonomy(
         intelligence.get("role_family_label") or intelligence["role_family"]
     )
-    intelligence["freshness"] = detect_job_freshness(str(parsed_job.get("raw_text") or ""))
-    intelligence["match_report"] = score_job_match(resolved["job_path"], project_root)
+    intelligence["freshness"] = detect_job_freshness(
+        str(context["parsed_job"].get("raw_text") or "")
+    )
+    intelligence["match_report"] = context["match_report"]
     return intelligence
 
 
@@ -2739,8 +2824,10 @@ def _render_generate_package(st: Any) -> None:
         format_func=lambda value: _application_label(by_id[value]),
         key="package_tracker_id",
     )
-    reset_package_preview_for_selection(st.session_state, tracker_id)
     application = by_id[tracker_id]
+    reset_package_preview_for_selection(
+        st.session_state, tracker_id, application.get("evidence_project_ids") or []
+    )
     recovery_key = _package_recovery_key(tracker_id)
     if not st.session_state.get(recovery_key):
         preflight = preflight_package_generation(tracker_id, applications, PROJECT_ROOT)
@@ -2752,16 +2839,16 @@ def _render_generate_package(st: Any) -> None:
         _render_package_recovery(st, tracker_id, application)
         return
     try:
-        voice_context = detected_application_voice(tracker_id, PROJECT_ROOT)
-    except Exception as error:
-        st.caption(f"Company voice detection unavailable: {error}")
-    else:
-        _render_intelligence_preview(st, voice_context)
-    try:
         package_context = build_package_context(tracker_id, applications, PROJECT_ROOT)
     except Exception as error:
         st.caption(f"Tailoring Plan unavailable: {error}")
     else:
+        voice_context = dict(package_context["role_intelligence"])
+        voice_context["freshness"] = detect_job_freshness(
+            str(package_context["parsed_job"].get("raw_text") or "")
+        )
+        voice_context["match_report"] = package_context["match_report"]
+        _render_intelligence_preview(st, voice_context)
         _render_tailoring_plan(st, package_context["role_intent"])
     freshness = voice_context.get("freshness", {}) if "voice_context" in locals() else {}
     override_closed = False
@@ -2825,6 +2912,11 @@ def _render_generate_package(st: Any) -> None:
             st.session_state["last_package_outputs"] = result["outputs"]
             st.session_state["last_package_result"] = result
             st.session_state["package_preview_prospect_id"] = tracker_id
+            st.session_state["package_preview_selection_fingerprint"] = (
+                package_preview_fingerprint(
+                    tracker_id, application.get("evidence_project_ids") or []
+                )
+            )
             focus_dashboard_role(st.session_state, tracker_id)
             st.session_state["dashboard_materials_role_id"] = tracker_id
     package_result = st.session_state.get("last_package_result")

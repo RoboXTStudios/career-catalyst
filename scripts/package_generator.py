@@ -40,7 +40,15 @@ try:
     from .score_match import persisted_match_fields, score_job_match
     from .tailor_resume import tailor_resume
     from .evidence_engine import evidence_projects_for_role
-    from .role_intent import build_role_intent, role_intent_snapshot
+    from .evidence_tailoring import (
+        evidence_score_contribution,
+        output_use_metadata,
+    )
+    from .role_intent import (
+        build_role_intent,
+        reconcile_package_role_intelligence,
+        role_intent_snapshot,
+    )
 except ImportError:
     from application_tracker import (
         TrackerValidationError,
@@ -74,7 +82,12 @@ except ImportError:
     from score_match import persisted_match_fields, score_job_match
     from tailor_resume import tailor_resume
     from evidence_engine import evidence_projects_for_role
-    from role_intent import build_role_intent, role_intent_snapshot
+    from evidence_tailoring import evidence_score_contribution, output_use_metadata
+    from role_intent import (
+        build_role_intent,
+        reconcile_package_role_intelligence,
+        role_intent_snapshot,
+    )
 
 
 PathInput = Union[str, Path]
@@ -411,6 +424,21 @@ def build_package_context(
         selected_package_paths = dict(manifest.get("materials") or {})
     else:
         selected_package_paths = dict(application.get("material_paths") or {})
+    associated_evidence = evidence_projects_for_role(application, root)
+    role_intent = build_role_intent(
+        {
+            **parsed,
+            "company": company_display_name(raw_company),
+            "role_family": intelligence.get("role_family"),
+        },
+        root,
+    )
+    intelligence = reconcile_package_role_intelligence(intelligence, role_intent)
+    baseline_match = score_job_match(job_reference, root, [])
+    adjusted_match = score_job_match(job_reference, root, associated_evidence)
+    score_contribution = evidence_score_contribution(baseline_match, adjusted_match)
+    role_intent["manual_evidence_projects"] = [dict(project) for project in associated_evidence]
+    role_intent["evidence_score_contribution"] = score_contribution
     context = {
         "prospect_id": str(application.get("id") or prospect_id),
         "slug": str(application.get("stable_slug") or application.get("id") or prospect_id),
@@ -425,14 +453,12 @@ def build_package_context(
         "job_description": job_description,
         "role_intelligence": intelligence,
         "selected_package_paths": selected_package_paths,
-        "associated_evidence_projects": evidence_projects_for_role(application, root),
-        "role_intent": build_role_intent(
-            {**parsed, "company": company_display_name(raw_company)}, root
-        ),
+        "associated_evidence_projects": associated_evidence,
+        "role_intent": role_intent,
+        "baseline_match_report": baseline_match,
+        "evidence_score_contribution": score_contribution,
     }
-    context["match_report"] = score_job_match(
-        job_reference, root, context["associated_evidence_projects"]
-    )
+    context["match_report"] = adjusted_match
     return context
 
 
@@ -606,6 +632,19 @@ def generate_package(
             context.get("associated_evidence_projects", []),
             shared_role_intent,
         )
+        tailoring_metadata = output_use_metadata(
+            context.get("associated_evidence_projects", []),
+            system_recommended_projects=(
+                shared_role_intent.get("resume", {}).get("selected_project_ids") or []
+            ),
+            resume_projects_used=resume.get("resume_projects_used") or [],
+            cover_letter_projects_used=(
+                cover_letter.get("cover_letter_projects_used") or []
+            ),
+            score_contribution=context.get("evidence_score_contribution") or {},
+            parsed_job=context.get("parsed_job") or {},
+        )
+        shared_role_intent["output_use_metadata"] = tailoring_metadata
         recruiter = generate_message(
             "recruiter", job_reference, root, shared_role_intent
         )
@@ -721,6 +760,7 @@ def generate_package(
         if manifest:
             manifest["materials"] = preferred_paths
             manifest["role_intent"] = role_intent_snapshot(shared_role_intent)
+            manifest["tailoring_metadata"] = tailoring_metadata
             manifest_path = Path(str(manifest["manifest_path"]))
             manifest_path.write_text(
                 json.dumps(
@@ -828,6 +868,7 @@ def generate_package(
         "freshness": freshness,
         "opportunity": opportunity,
         "package_quality": quality,
+        "tailoring_metadata": tailoring_metadata,
         "followup_error": followup_error,
         "material_errors": material_errors,
         "outputs": outputs,

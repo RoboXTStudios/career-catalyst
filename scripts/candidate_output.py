@@ -10,6 +10,21 @@ from __future__ import annotations
 import re
 from typing import Any, Mapping, Sequence
 
+try:
+    from .evidence_tailoring import (
+        cover_letter_project_paragraph,
+        project_kind,
+        project_title,
+        relevant_selected_evidence,
+    )
+except ImportError:
+    from evidence_tailoring import (
+        cover_letter_project_paragraph,
+        project_kind,
+        project_title,
+        relevant_selected_evidence,
+    )
+
 
 class CandidateOutputError(ValueError):
     """Raised when internal orchestration language reaches candidate copy."""
@@ -266,6 +281,130 @@ def evidence_recipe(archetype: str, limit: int = 6) -> list[str]:
     return [COMMON_EVIDENCE[key] for key in keys[:limit]]
 
 
+def _product_evidence_cover_letter(
+    context: Mapping[str, Any], projects: Sequence[Mapping[str, Any]]
+) -> str:
+    parsed = context["parsed_job"]
+    intent = context["role_intent"]
+    company = str(parsed.get("company") or "your organization")
+    role = str(parsed.get("job_title") or "product strategy role")
+    greeting = str((intent.get("cover_letter") or {}).get("greeting") or "Dear Hiring Team,")
+    selected = relevant_selected_evidence(projects, parsed, limit=2)
+    project_paragraphs = [
+        paragraph
+        for project in selected
+        if (paragraph := cover_letter_project_paragraph(project, parsed))
+    ]
+    parsed_text = " ".join(
+        str(parsed.get(key) or "")
+        for key in ("job_title", "raw_text", "job_description")
+    ).lower()
+    emerging_formats = any(
+        signal in parsed_text
+        for signal in ("emerging format", "podcast", "live streaming", "content lifecycle")
+    )
+    opening = (
+        f"I am interested in the {role} role at {company} because emerging formats require product "
+        "judgment that connects audience and content needs with technology, analytics, and dependable "
+        "cross-functional execution. My background combines entertainment launch readiness, ambiguous-"
+        "requirements translation, active product development, and hands-on media production."
+        if emerging_formats
+        else (
+            f"I am interested in the {role} role at {company} because it calls for product judgment that "
+            "connects user and business needs with clear requirements, priorities, quality controls, and "
+            "dependable cross-functional execution. My background combines entertainment launch readiness, "
+            "ambiguous-requirements translation, active product development, and practical operations."
+        )
+    )
+    leadership = (
+        "At OMG23 (Omnicom Media Group), I advanced through five roles to Group Director, led 10 direct "
+        "reports, and provided strategic and operational leadership across an integrated 64-person "
+        "organization. I also supported Disney+ launch readiness through governance, platform coordination, "
+        "quality assurance, tracking, and measurement readiness across creative, media, technology, and "
+        "analytics partners."
+    )
+    product_bridge = (
+        "Across those programs, I learned to turn unclear goals into sequenced decisions, surface "
+        "dependencies and tradeoffs early, and keep content, technology, analytics, and operations partners "
+        "aligned around launch-ready work. That operating discipline complements the hands-on product and "
+        + (
+            "production evidence I would bring to an emerging-formats team."
+            if emerging_formats
+            else "delivery evidence I would bring to a product organization."
+        )
+    )
+    closing = (
+        f"I would bring {company} grounded product thinking, clear requirements, thoughtful tradeoff "
+        "management, and calm cross-functional leadership. I would welcome the opportunity to discuss how "
+        + (
+            "that combination could help the team shape and deliver engaging emerging-format experiences."
+            if emerging_formats
+            else "that combination could help the team shape priorities and deliver useful product outcomes."
+        )
+    )
+    content = "\n\n".join(
+        [
+            greeting,
+            opening,
+            leadership,
+            product_bridge,
+            *project_paragraphs,
+            closing,
+            "Best,\n\nTrisha Lynch",
+        ]
+    )
+    validate_candidate_output(content, context="Generated cover letter")
+    return content
+
+
+def cover_letter_evidence_selection(
+    context: Mapping[str, Any], *, limit: int = 2
+) -> list[dict[str, Any]]:
+    """Select manual Evidence first, then fill with configured product projects."""
+    parsed = context["parsed_job"]
+    selected = relevant_selected_evidence(
+        list(context.get("associated_evidence_projects") or []), parsed, limit=limit
+    )
+    seen_kinds = {project_kind(project) for project in selected}
+    seen_titles = {project_title(project).lower() for project in selected}
+    configured_names = list(
+        (context.get("role_intent") or {}).get("resume", {}).get("selected_project_ids")
+        or []
+    )
+    career_projects = (
+        (context.get("career_data") or {}).get("data", {}).get("projects", {}).get("projects", [])
+        or []
+    )
+    system_projects: list[dict[str, Any]] = []
+    for name in configured_names:
+        project = next(
+            (item for item in career_projects if str(item.get("name") or "") == str(name)),
+            None,
+        )
+        if not project:
+            continue
+        system_projects.append(
+            {
+                "id": str(project.get("id") or name),
+                "title": str(project.get("name") or name),
+                "project_type": str(project.get("role") or "Independent product work"),
+                "actions": str(project.get("summary") or ""),
+                "results": list(project.get("highlights") or []),
+                "tags": ["Product Development", "Workflow Design"],
+                "manual": False,
+            }
+        )
+    for project in relevant_selected_evidence(system_projects, parsed, limit=limit):
+        if len(selected) >= limit:
+            break
+        if project_kind(project) in seen_kinds or project_title(project).lower() in seen_titles:
+            continue
+        selected.append(project)
+        seen_kinds.add(project_kind(project))
+        seen_titles.add(project_title(project).lower())
+    return selected[:limit]
+
+
 def candidate_cover_letter(context: Mapping[str, Any]) -> str:
     """Build natural, grounded general-role copy without exposing orchestration data."""
     parsed = context["parsed_job"]
@@ -275,6 +414,10 @@ def candidate_cover_letter(context: Mapping[str, Any]) -> str:
     greeting = str((intent.get("cover_letter") or {}).get("greeting") or "Dear Hiring Team,")
     archetype = str(intent.get("primary_archetype") or "general_operations")
     adjacency = domain_adjacency(parsed)
+    if archetype == "product_operations":
+        selected_projects = cover_letter_evidence_selection(context)
+        if selected_projects:
+            return _product_evidence_cover_letter(context, selected_projects)
 
     if adjacency["customer_experience"]:
         opening = (
