@@ -19,6 +19,12 @@ try:
         validate_candidate_language,
     )
     from .evidence_engine import evidence_generation_context, load_writing_voice_profile
+    from .evidence_tailoring import (
+        project_kind,
+        project_title,
+        relevant_selected_evidence,
+        resume_project_bullets,
+    )
     from .parse_job import parse_job_description
     from .package_context import validate_material_context
     from .role_context import is_google_youtube_role
@@ -45,6 +51,12 @@ except ImportError:
         validate_candidate_language,
     )
     from evidence_engine import evidence_generation_context, load_writing_voice_profile
+    from evidence_tailoring import (
+        project_kind,
+        project_title,
+        relevant_selected_evidence,
+        resume_project_bullets,
+    )
     from parse_job import parse_job_description
     from package_context import validate_material_context
     from role_context import is_google_youtube_role
@@ -724,22 +736,14 @@ def _selected_projects(
 def _relevant_associated_evidence(
     projects: List[Dict[str, Any]], parsed_job: Dict[str, Any]
 ) -> List[Dict[str, Any]]:
-    """Keep prospect-scoped Evidence only when its stored language overlaps the role."""
-    role_text = _normalize_text(
-        " ".join(_flatten_strings([parsed_job.get("job_title"), parsed_job.get("raw_text"), parsed_job.get("keywords", [])]))
-    )
-    role_terms = set(role_text.split()) - {"and", "the", "for", "with", "from", "role"}
-    ranked = []
-    for project in projects:
-        terms = _flatten_strings(
-            [project.get("title"), project.get("function"), project.get("project_type"), project.get("actions"), project.get("results"), project.get("skills", []), project.get("technologies", []), project.get("tags", [])]
-        )
-        evidence_terms = set(_normalize_text(" ".join(terms)).split()) - {"and", "the", "for", "with", "from", "role", "built"}
-        score = len(role_terms & evidence_terms)
-        if score:
-            ranked.append((score, project))
-    ranked.sort(key=lambda item: (-item[0], str(item[1].get("id") or "")))
-    return [project for _score, project in ranked[:2]]
+    """Keep relevant prospect-scoped Evidence in the user's saved order."""
+    relevant = relevant_selected_evidence(projects, parsed_job, limit=3)
+    relevant_ids = {str(project.get("id") or project_title(project)) for project in relevant}
+    return [
+        project
+        for project in projects
+        if str(project.get("id") or project_title(project)) in relevant_ids
+    ][:3]
 
 
 def _earlier_career_positions(
@@ -871,6 +875,20 @@ def _render_markdown(
     associated_evidence_projects = _relevant_associated_evidence(
         associated_evidence_projects or [], parsed_job
     )
+    manual_kinds = {project_kind(project) for project in associated_evidence_projects}
+    manual_titles = {project_title(project).lower() for project in associated_evidence_projects}
+    configured_project_limit = int(
+        (role_intent or {}).get("resume", {}).get("selected_project_limit") or 3
+    )
+    total_project_limit = min(
+        3, max(len(associated_evidence_projects), configured_project_limit)
+    )
+    selected_projects = [
+        item
+        for item in selected_projects
+        if project_kind(item[0]) not in manual_kinds
+        and str(item[0].get("name") or "").lower() not in manual_titles
+    ][: max(0, total_project_limit - len(associated_evidence_projects))]
     earlier_positions = _earlier_career_positions(
         career_data,
         parsed_job,
@@ -944,6 +962,16 @@ def _render_markdown(
             else "Relevant Projects & Impact"
         )
         lines.extend([f"## {project_heading}", ""])
+    for project in associated_evidence_projects:
+        context = " · ".join(
+            str(value)
+            for value in (project.get("employer"), project.get("client") or project.get("business_unit"), project.get("project_type"))
+            if value
+        )
+        lines.extend([f"### {project_title(project)}", "", context or "Verified role-associated evidence", ""])
+        lines.extend(f"- {bullet}" for bullet in resume_project_bullets(project, parsed_job))
+        lines.append("")
+
     for project, bullets in selected_projects:
         lines.extend(
             [
@@ -954,19 +982,6 @@ def _render_markdown(
             ]
         )
         lines.extend(f"- {bullet}" for bullet in bullets)
-        lines.append("")
-
-    for project in associated_evidence_projects:
-        context = " · ".join(
-            str(value)
-            for value in (project.get("employer"), project.get("client") or project.get("business_unit"), project.get("project_type"))
-            if value
-        )
-        lines.extend([f"### {project.get('title')}", "", context or "Verified role-associated evidence", ""])
-        if project.get("actions"):
-            lines.append(f"- {project.get('actions')}")
-        if project.get("results"):
-            lines.append(f"- {project.get('results')}")
         lines.append("")
 
     if earlier_positions:
@@ -1066,7 +1081,7 @@ def tailor_resume(
     verified_evidence_context = evidence_generation_context(associated_evidence_projects)
     parsed_job = parse_job_description(root / job_path)
     shared_role_intent = role_intent or build_role_intent(parsed_job, root)
-    match_report = score_job_match(job_path, root)
+    match_report = score_job_match(job_path, root, associated_evidence_projects)
     markdown = cleanup_repeated_words(
         _render_markdown(
             career_data,
@@ -1129,6 +1144,12 @@ def tailor_resume(
         "banned_phrase_rewrites": rewrite_notes,
         "associated_evidence_project_titles": [
             str(project.get("title")) for project in (associated_evidence_projects or [])
+        ],
+        "resume_projects_used": [
+            project_title(project)
+            for project in _relevant_associated_evidence(
+                associated_evidence_projects, parsed_job
+            )
         ],
         "role_intent": shared_role_intent,
         "associated_evidence_context": verified_evidence_context,

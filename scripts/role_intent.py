@@ -20,6 +20,11 @@ except ImportError:
 DEFAULT_ARCHETYPE = "general_operations"
 ROLE_INTENT_RULES_PATH = Path("config/role_intent_rules.yml")
 SOURCE_ROLE_INTENT_RULES_PATH = Path(__file__).resolve().parents[1] / ROLE_INTENT_RULES_PATH
+PACKAGE_ROLE_FAMILIES = {
+    "product_operations": ("product_strategy_ops", "Product Strategy & Operations"),
+    "business_operations_chief_of_staff": ("business_operations", "Business Operations & Strategy"),
+    "general_operations": ("business_operations", "Senior Operations Leadership"),
+}
 
 
 def load_role_intent_rules(project_root: str | Path | None = None) -> dict[str, Any]:
@@ -47,6 +52,44 @@ def _role_text(role: Mapping[str, Any]) -> str:
         " ".join(str(value) for value in role.get("qualifications", []) if value),
     )
     return re.sub(r"\s+", " ", " ".join(str(value or "") for value in values)).lower()
+
+
+def _product_management_title(role: Mapping[str, Any]) -> bool:
+    """Return whether the exact title is product management, with explicit exclusions."""
+    title = re.sub(
+        r"\s+", " ", str(role.get("job_title") or role.get("title") or role.get("role") or "")
+    ).strip().lower()
+    if _product_management_title_excluded(title):
+        return False
+    return any(
+        re.match(pattern, title) is not None
+        for pattern in (
+            r"^(?:(?:senior|sr\.?|principal|ai)\s+)*product manager\b",
+            r"^director of product\b",
+            r"^product lead\b",
+        )
+    )
+
+
+def _product_management_title_excluded(title_or_role: Any) -> bool:
+    if isinstance(title_or_role, Mapping):
+        title = str(
+            title_or_role.get("job_title")
+            or title_or_role.get("title")
+            or title_or_role.get("role")
+            or ""
+        ).lower()
+    else:
+        title = str(title_or_role or "").lower()
+    return any(
+        excluded in title
+        for excluded in (
+            "product marketing",
+            "marketing product",
+            "product sales",
+            "sales product",
+        )
+    )
 
 
 def _contains(text: str, phrase: str) -> bool:
@@ -122,7 +165,25 @@ def build_role_intent(
         ranked.append((score, str(archetype), matches))
     ranked.sort(key=lambda item: (-item[0], item[1]))
     best_score, best_archetype, best_matches = ranked[0] if ranked else (0, DEFAULT_ARCHETYPE, [])
-    if best_score < threshold:
+    dynamic_family = str(
+        role.get("role_family") or role.get("dynamic_role_family") or ""
+    ).strip()
+    product_override = _product_management_title(role) or (
+        dynamic_family == "product_strategy_ops"
+        and not _product_management_title_excluded(role)
+    )
+    if product_override:
+        primary = "product_operations"
+        product_entry = next(
+            (item for item in ranked if item[1] == "product_operations"),
+            (0, "product_operations", []),
+        )
+        best_score = max(best_score, threshold * 2)
+        selected_matches = list(product_entry[2])
+        title = str(role.get("job_title") or role.get("title") or role.get("role") or "")
+        selected_matches.insert(0, (threshold * 2, title or "product management title"))
+        confidence = "high"
+    elif best_score < threshold:
         primary = DEFAULT_ARCHETYPE
         selected_matches = best_matches
         confidence = "low" if best_score < max(1, threshold // 2) else "medium"
@@ -139,6 +200,18 @@ def build_role_intent(
     rule = deepcopy(archetypes[primary])
     resume = deepcopy(rule.get("resume") or {})
     cover_letter = deepcopy(rule.get("cover_letter") or {})
+    if primary == "product_operations" and any(
+        signal in text
+        for signal in ("emerging format", "podcast", "streaming", "content lifecycle")
+    ):
+        resume["headline"] = (
+            "Product Strategy & Operations Leader | Emerging Media | AI Systems | Entertainment"
+        )
+        resume["summary"] = (
+            "Product strategy and operations leader who translates ambiguous requirements into clear "
+            "priorities and cross-functional delivery, connecting streaming launch readiness, active "
+            "product development, and hands-on media production with practical product judgment."
+        )
     resume.setdefault("headline_profile", resume.pop("headline", ""))
     if "headline" in resume:
         resume.pop("headline")
@@ -148,8 +221,15 @@ def build_role_intent(
     resume.setdefault("competency_profile", primary)
     resume.setdefault("tools_profile", primary)
     cover_letter["greeting"] = _greeting(role.get("company"))
+    default_family = dynamic_family or primary
+    package_family, package_label = PACKAGE_ROLE_FAMILIES.get(
+        primary,
+        (default_family, humanize_identifier(default_family or primary)),
+    )
     return {
         "primary_archetype": primary,
+        "package_role_family": package_family,
+        "package_role_label": package_label,
         "secondary_archetypes": secondary,
         "confidence": confidence,
         "seniority": _seniority(role),
@@ -172,6 +252,8 @@ def role_intent_snapshot(role_intent: Mapping[str, Any]) -> dict[str, Any]:
     cover = role_intent.get("cover_letter") or {}
     return {
         "primary_archetype": role_intent.get("primary_archetype"),
+        "package_role_family": role_intent.get("package_role_family"),
+        "package_role_label": role_intent.get("package_role_label"),
         "secondary_archetypes": list(role_intent.get("secondary_archetypes") or []),
         "confidence": role_intent.get("confidence"),
         "primary_hiring_need": role_intent.get("primary_hiring_need"),
@@ -190,16 +272,59 @@ def role_intent_snapshot(role_intent: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
+def reconcile_package_role_intelligence(
+    intelligence: Mapping[str, Any], role_intent: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Make dynamic intelligence and package generation expose one role family."""
+    resolved = dict(intelligence)
+    family = str(
+        role_intent.get("package_role_family")
+        or resolved.get("role_family")
+        or "business_operations"
+    )
+    label = str(
+        role_intent.get("package_role_label")
+        or resolved.get("role_family_label")
+        or humanize_identifier(family)
+    )
+    resolved["dynamic_role_family"] = intelligence.get("role_family")
+    resolved["role_family"] = family
+    resolved["role_family_label"] = label
+    resolved["package_role_archetype"] = role_intent.get("primary_archetype")
+    return resolved
+
+
 def tailoring_plan(role_intent: Mapping[str, Any]) -> dict[str, Any]:
     resume = role_intent.get("resume") or {}
+    manual_evidence = list(role_intent.get("manual_evidence_projects") or [])
+    output_use = role_intent.get("output_use_metadata") or {}
+    suppressed = list(role_intent.get("suppressed_evidence") or [])
+    if manual_evidence:
+        suppressed = [value for value in suppressed if "unrelated" not in str(value).lower()]
     return {
-        "detected_role": humanize_identifier(role_intent.get("primary_archetype") or DEFAULT_ARCHETYPE),
+        "detected_role": str(role_intent.get("package_role_label") or "")
+        or humanize_identifier(role_intent.get("primary_archetype") or DEFAULT_ARCHETYPE),
         "primary_hiring_need": role_intent.get("primary_hiring_need"),
         "leading_with": humanize_values(role_intent.get("lead_evidence") or []),
         "supporting_with": humanize_values(role_intent.get("supporting_evidence") or []),
-        "de_emphasizing": humanize_values(role_intent.get("suppressed_evidence") or []),
+        "de_emphasizing": humanize_values(suppressed),
         "earlier_career": humanize_identifier(resume.get("earlier_career_policy")),
         "selected_projects": humanize_values(resume.get("selected_project_ids") or []),
+        "selected_relevant_evidence": [
+            str(project.get("title") or project.get("name") or "Untitled Evidence")
+            for project in manual_evidence
+        ],
+        "system_recommended_projects": humanize_values(
+            resume.get("selected_project_ids") or []
+        ),
+        "resume_projects_used": list(output_use.get("resume_projects_used") or []),
+        "cover_letter_projects_used": list(
+            output_use.get("cover_letter_projects_used") or []
+        ),
+        "projects_not_used": list(output_use.get("projects_not_used") or []),
+        "evidence_score_contribution": dict(
+            role_intent.get("evidence_score_contribution") or {}
+        ),
         "target_resume_length": f"{int(resume.get('target_max_pages') or 2)} pages maximum",
         "confidence": str(role_intent.get("confidence") or "low").title(),
         "matched_signals": humanize_values(role_intent.get("reasoning_signals") or []),
