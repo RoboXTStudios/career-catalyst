@@ -5,7 +5,7 @@ from __future__ import annotations
 from copy import deepcopy
 from datetime import datetime, timezone
 import re
-from typing import Any, Iterable, Mapping
+from typing import Any, Callable, Iterable, Mapping
 
 
 LIVE_STATUSES = (
@@ -127,24 +127,51 @@ def migrate_legacy_statuses(
     return migrated, report
 
 
+StatusResolver = Callable[[Mapping[str, Any]], str]
+
+
+def _default_status_resolver(record: Mapping[str, Any]) -> str:
+    return canonical_status(record.get("status"))
+
+
 def filter_live_records(
-    records: Iterable[Mapping[str, Any]], status: str = "All"
+    records: Iterable[Mapping[str, Any]],
+    status: str = "All",
+    *,
+    status_resolver: StatusResolver | None = None,
 ) -> list[dict[str, Any]]:
-    """Use one status predicate for summary chips and dropdown filters."""
+    """Use one status predicate for summary chips and dropdown filters.
+
+    The dashboard supplies the tracker-aware resolver so legacy records whose
+    submitted evidence promotes ``Active`` to ``Applied`` or ``Under
+    Consideration`` are grouped exactly like their role cards. Callers that
+    only have canonical lifecycle records retain the deterministic default.
+    """
+    resolve_status = status_resolver or _default_status_resolver
     selected = canonical_status(status, default="All") if status != "All" else "All"
     values = [dict(record) for record in records if record.get("archived") is not True]
     if selected == "All":
         return values
-    return [record for record in values if canonical_status(record.get("status")) == selected]
+    return [record for record in values if resolve_status(record) == selected]
 
 
-def lifecycle_counts(records: Iterable[Mapping[str, Any]]) -> dict[str, int]:
+def lifecycle_counts(
+    records: Iterable[Mapping[str, Any]],
+    *,
+    status_resolver: StatusResolver | None = None,
+) -> dict[str, int]:
     """Return counts whose values exactly match the shared filter."""
-    values = filter_live_records(records)
+    values = filter_live_records(records, status_resolver=status_resolver)
     return {
         "All": len(values),
         **{
-            status: len(filter_live_records(values, status))
+            status: len(
+                filter_live_records(
+                    values,
+                    status,
+                    status_resolver=status_resolver,
+                )
+            )
             for status in DASHBOARD_STATUS_ORDER
         },
     }

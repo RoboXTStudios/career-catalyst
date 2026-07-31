@@ -360,7 +360,7 @@ APP_CSS = """
 
 def summarize_applications(applications: list[Dict[str, Any]]) -> Dict[str, int]:
     """Return counts from the exact predicate used by dashboard filters."""
-    counts = lifecycle_counts(applications)
+    counts = lifecycle_counts(applications, status_resolver=get_record_status)
     return {
         "Total": counts["All"],
         **{status: counts[status] for status in VALID_STATUSES if counts[status]},
