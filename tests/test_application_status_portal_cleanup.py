@@ -21,12 +21,12 @@ class ApplicationStatusPortalCleanupTests(unittest.TestCase):
     def test_primary_status_model_and_legacy_mapping(self):
         self.assertEqual(
             VALID_STATUSES,
-            ("Drafted", "Paused", "Applied", "Under Consideration", "Interviewing", "Offer", "Rejected", "Withdrawn / Closed"),
+            ("Prospect", "Considered", "Applied", "Under Consideration", "Interviewing", "Offer", "Rejected", "Withdrawn / Closed"),
         )
         cases = {
-            "Active": "Drafted",
-            "Reviewed": "Drafted",
-            "Paused": "Paused",
+            "Active": "Prospect",
+            "Reviewed": "Considered",
+            "Paused": "Considered",
             "Follow-up": "Applied",
             "Pass": "Withdrawn / Closed",
             "Invalid/Hidden": "Withdrawn / Closed",
@@ -91,7 +91,7 @@ class ApplicationStatusPortalCleanupTests(unittest.TestCase):
             {"status": "Applied"},
             {"status": "Rejected"},
         ])
-        self.assertEqual(summary, {"Total": 3, "Drafted": 1, "Applied": 1, "Rejected": 1})
+        self.assertEqual(summary, {"Total": 3, "Prospect": 1, "Applied": 1, "Rejected": 1})
 
 
 if __name__ == "__main__":

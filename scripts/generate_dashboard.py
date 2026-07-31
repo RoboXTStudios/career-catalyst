@@ -167,8 +167,6 @@ def _applied_date(record: Dict[str, Any]) -> Optional[date]:
 
 
 def _follow_up_was_sent(record: Dict[str, Any]) -> bool:
-    if get_record_status(record) == "Follow-up":
-        return True
     for key in ("follow_up_sent", "followup_sent"):
         value = record.get(key)
         if value is True or str(value or "").strip().lower() in {"yes", "sent", "true", "complete", "completed"}:
@@ -361,32 +359,17 @@ def filter_dashboard_records(
     query = normalize_tracker_value(search)
     filtered = []
     for record in records:
+        if is_role_archived(record):
+            continue
         tier = str(record.get("match_tier") or "Not scored yet")
         if match_tier != "All" and tier != match_tier:
             continue
         if recommended_action != "All" and record.get("recommended_action") != recommended_action:
             continue
         status = get_record_status(record)
-        bucket = workflow_status_bucket(record)
         if application_status == "Invalid/Hidden" and not _is_invalid_hidden(record):
             continue
-        if application_status in {
-            "Active",
-            "Applied / Follow-up",
-            "Reviewed",
-            "Paused",
-            "Pass",
-        } and bucket != application_status:
-            continue
-        if application_status not in {
-            "All",
-            "Invalid/Hidden",
-            "Active",
-            "Applied / Follow-up",
-            "Reviewed",
-            "Paused",
-            "Pass",
-        } and status != application_status:
+        if application_status not in {"All", "Invalid/Hidden"} and status != application_status:
             continue
         if follow_up_status != "All" and record.get("follow_up_status") != follow_up_status:
             continue
@@ -416,7 +399,6 @@ def _needs_cleanup(record: Dict[str, Any]) -> bool:
         record.get("match_tier") in {"Weak Match", "Pass"}
         or record.get("recommended_action") == "Pass"
         or _is_hidden(record)
-        or status == "Paused"
         or "closed" in posting_status
         or any(value in freshness for value in ("stale", "unknown"))
         or salary in {"", "not disclosed", "unknown"}
@@ -454,7 +436,7 @@ def select_dashboard_mode(
             item
             for item in values
             if (
-                workflow_status_bucket(item) == "Reviewed"
+                get_record_status(item) == "Considered"
                 or item.get("match_tier") == "Stretch Match"
                 or item.get("recommended_action") == "Review First"
             )
@@ -462,7 +444,7 @@ def select_dashboard_mode(
         ]
     if mode == "Cleanup Mode":
         return [item for item in values if _needs_cleanup(item)]
-    return [item for item in values if not _is_hidden(item)]
+    return [item for item in values if not is_role_archived(item)]
 
 
 def source_verification_caution(record: Dict[str, Any]) -> str:
@@ -1067,7 +1049,7 @@ def prepare_dashboard_records(
             elif outreach_available:
                 material_state = "Available"
                 material_label = "Application messages available"
-            elif status == "Paused":
+            elif status in {"Prospect", "Considered"}:
                 material_state = "Missing"
                 material_label = "Outreach materials missing"
             else:
@@ -1393,7 +1375,7 @@ def _compact_status_line(package: Dict[str, Any]) -> str:
 def _render_package(package: Dict[str, Any], dashboard_directory: Path) -> str:
     tracker = package.get("tracker", {})
     anchor_id = _role_anchor_id(tracker, package)
-    status = get_record_status(tracker) if tracker else "Drafted"
+    status = get_record_status(tracker) if tracker else "Prospect"
     signal = next_action_signal(tracker)
     search_text = normalize_tracker_value(
         f"{package.get('company', '')} {package.get('role', '')} {tracker.get('location', '')}"
@@ -1458,24 +1440,28 @@ def _partition_packages(
     packages: List[Dict[str, Any]],
 ) -> Dict[str, List[Dict[str, Any]]]:
     groups: Dict[str, List[Dict[str, Any]]] = {
-        "active": [],
+        "prospect": [],
+        "considered": [],
         "applied": [],
-        "reviewed": [],
-        "paused": [],
-        "pass": [],
-        "hidden": [],
+        "under_consideration": [],
+        "interviewing": [],
+        "offer": [],
+        "rejected": [],
+        "withdrawn_closed": [],
     }
     for package in packages:
         tracker = package.get("tracker", {})
-        bucket = workflow_status_bucket(tracker) if tracker else "Active"
+        status = get_record_status(tracker) if tracker else "Prospect"
         target = {
-            "Active": "active",
-            "Applied / Follow-up": "applied",
-            "Reviewed": "reviewed",
-            "Paused": "paused",
-            "Pass": "pass",
-            "Hidden / Invalid": "hidden",
-        }[bucket]
+            "Prospect": "prospect",
+            "Considered": "considered",
+            "Applied": "applied",
+            "Under Consideration": "under_consideration",
+            "Interviewing": "interviewing",
+            "Offer": "offer",
+            "Rejected": "rejected",
+            "Withdrawn / Closed": "withdrawn_closed",
+        }.get(status, "prospect")
         groups[target].append(package)
     for key, values in groups.items():
         ordered_trackers = sort_dashboard_records(
@@ -1499,12 +1485,14 @@ def _summary_counts(
 ) -> Dict[str, int]:
     return {
         "Total": sum(len(values) for values in groups.values()),
-        "Active": len(groups["active"]),
-        "Applied / Follow-up": len(groups["applied"]),
-        "Reviewed": len(groups["reviewed"]),
-        "Paused": len(groups["paused"]),
-        "Pass": len(groups["pass"]),
-        "Hidden / Invalid": len(groups["hidden"]),
+        "Prospect": len(groups["prospect"]),
+        "Considered": len(groups["considered"]),
+        "Applied": len(groups["applied"]),
+        "Under Consideration": len(groups["under_consideration"]),
+        "Interviewing": len(groups["interviewing"]),
+        "Offer": len(groups["offer"]),
+        "Rejected": len(groups["rejected"]),
+        "Withdrawn / Closed": len(groups["withdrawn_closed"]),
     }
 
 
@@ -1683,11 +1671,7 @@ def _render_html(
     application_cards = "".join(
         _render_package(package, dashboard_directory) for package in all_packages
     )
-    visible_count = sum(
-        get_record_status(record) not in {"Rejected", "Withdrawn / Closed"}
-        and record.get("show_on_dashboard") is not False
-        for record in all_records
-    )
+    visible_count = len(all_records)
 
     return f"""<!doctype html>
 <html lang="en">
@@ -1839,7 +1823,7 @@ def _render_html(
       font-size: 12px;
       font-weight: 700;
     }}
-    .status-drafted {{ background: var(--gold-soft); color: var(--gold); }}
+    .status-prospect, .status-considered {{ background: var(--gold-soft); color: var(--gold); }}
     .status-applied, .status-under_consideration {{ background: var(--blue-soft); color: var(--blue); }}
     .status-interviewing, .status-offer {{ background: var(--accent-soft); color: var(--accent); }}
     .status-rejected, .status-withdrawn_closed {{ background: var(--red-soft); color: var(--red); }}
@@ -2003,8 +1987,7 @@ def _render_html(
     const query = searchInput.value.trim().toLowerCase();
     let visible = 0;
     document.querySelectorAll('.application-card').forEach((card) => {{
-      const closedOnAll = status === 'All' && ['Rejected', 'Withdrawn / Closed'].includes(card.dataset.status);
-      const matches = !closedOnAll && (status === 'All' || card.dataset.status === status)
+      const matches = (status === 'All' || card.dataset.status === status)
         && (match === 'All' || card.dataset.match === match)
         && (!query || card.dataset.search.includes(query));
       card.hidden = !matches;

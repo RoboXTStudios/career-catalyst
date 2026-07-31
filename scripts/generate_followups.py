@@ -18,6 +18,7 @@ try:
     from .package_generator import PackageGenerationError, resolve_job_reference
     from .package_context import validate_material_context
     from .role_context import is_google_youtube_role
+    from .role_lifecycle import POST_APPLICATION_STATUSES as LIFECYCLE_POST_APPLICATION_STATUSES
 except ImportError:
     from application_tracker import follow_up_action_state, get_record_status, load_application_tracker, update_prospect
     from dynamic_role_intelligence import get_effective_voice_profile
@@ -28,13 +29,14 @@ except ImportError:
     from package_generator import PackageGenerationError, resolve_job_reference
     from package_context import validate_material_context
     from role_context import is_google_youtube_role
+    from role_lifecycle import POST_APPLICATION_STATUSES as LIFECYCLE_POST_APPLICATION_STATUSES
 
 
 PathInput = Union[str, Path]
-FOLLOWUP_ELIGIBLE_STATUSES = (
-    "Applied",
-    "Under Consideration",
-    "Interviewing",
+FOLLOWUP_ELIGIBLE_STATUSES = tuple(
+    status
+    for status in ("Applied", "Under Consideration", "Interviewing")
+    if status in LIFECYCLE_POST_APPLICATION_STATUSES
 )
 POST_APPLICATION_STATUSES = FOLLOWUP_ELIGIBLE_STATUSES
 MESSAGE_LIMITS = {

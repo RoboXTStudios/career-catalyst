@@ -34,9 +34,10 @@ ACTIVE_ROUTES = {
     "offer": "active/applied_followup",
     "ready to apply": "active/ready_to_apply",
     "active": "active/ready_to_apply",
+    "prospect": "active/in_progress",
+    "considered": "active/in_progress",
     "drafted": "active/in_progress",
     "reviewed": "active/in_progress",
-    "paused": "active/in_progress",
 }
 ARCHIVE_ROUTES = {
     "passed": "archive/passed",

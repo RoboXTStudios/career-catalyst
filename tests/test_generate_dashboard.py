@@ -111,13 +111,13 @@ class GenerateDashboardTests(unittest.TestCase):
         role_ids = re.findall(r'id="(role-[^"]+)"', self.content)
         self.assertEqual(len(role_ids), len(set(role_ids)))
 
-    def test_invalid_playstation_role_is_not_in_active_section(self):
+    def test_closed_playstation_role_remains_visible_until_archived(self):
         self.assertIn("Director, Ad Operations &amp; Technology", self.content)
         self.assertRegex(
             self.content,
             r'data-status="Withdrawn / Closed"[^>]*>.*?Director, Ad Operations &amp; Technology',
         )
-        self.assertIn("closedOnAll", self.content)
+        self.assertNotIn("closedOnAll", self.content)
 
     def test_crunchyroll_role_matches_tracker_status(self):
         applications = load_application_tracker(PROJECT_ROOT)

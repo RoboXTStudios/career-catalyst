@@ -201,15 +201,14 @@ Career Catalyst uses `data/application_tracker.yml` as the source of truth for a
 
 Supported statuses:
 
-- Drafted
-- Reviewed
+- Prospect
+- Considered
 - Applied
-- Follow-up
+- Under Consideration
 - Interviewing
-- Paused
+- Offer
 - Rejected
-- Invalid
-- Archived
+- Withdrawn / Closed
 
 Validate tracker data and regenerate the dashboard:
 
@@ -218,7 +217,7 @@ python3 scripts/cli.py validate-tracker
 python3 scripts/cli.py dashboard
 ```
 
-Tracker entries can include company and role aliases to help the dashboard match generated job packages to the correct application record. Invalid or unavailable roles can be preserved with `show_on_dashboard: false` so they do not clutter the active dashboard.
+Tracker entries can include company and role aliases to help the dashboard match generated job packages to the correct application record. Archive is a separate local storage state, not a role status. See [Sprint 32 maintenance](docs/sprint32_maintenance.md) for safe post-merge migration, audit, and cleanup commands.
 
 ## Sprint 10: Local Application Cockpit
 

@@ -86,7 +86,7 @@ class ApplicationTrackerTests(unittest.TestCase):
         self.assertEqual(by_id["playstation_head_global_creative_ops"]["status"], "Paused")
         self.assertEqual(
             get_record_status(by_id["playstation_head_global_creative_ops"]),
-            "Paused",
+            "Considered",
         )
         self.assertEqual(
             by_id["google_strategy_ops_youtube_auction_brand"]["status"],

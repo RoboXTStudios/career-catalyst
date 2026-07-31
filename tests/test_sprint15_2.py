@@ -27,7 +27,7 @@ def _record(identifier="acme_director_operations", **updates):
         "company_aliases": [],
         "role": "Director, Operations",
         "role_aliases": [],
-        "status": "Active",
+        "status": "Prospect",
         "priority": "High",
         "show_on_dashboard": True,
         "source": "Official career page",
@@ -79,11 +79,9 @@ class DashboardSimplificationTests(unittest.TestCase):
         labels = dict(app.dashboard_status_actions(_record()))
         for label in (
             "Mark Applied",
-            "Mark Reviewed",
-            "Pause",
-            "Pass",
-            "Hide / Invalid",
-            "Keep Active",
+            "Mark Considered",
+            "Withdraw / Close",
+            "New Prospect",
         ):
             self.assertIn(label, labels)
         source = inspect.getsource(app._render_role_card)

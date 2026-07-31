@@ -315,9 +315,9 @@ class DynamicRoleIntelligenceTests(unittest.TestCase):
             with self.assertRaises(FollowupGenerationError) as context:
                 generate_followups("acme_editorial_lead", root)
 
-        self.assertIn("still drafted and has not been applied", str(context.exception))
+        self.assertIn("being considered and has not been applied", str(context.exception))
 
-    def test_paused_role_generates_only_when_explicitly_selected(self):
+    def test_considered_role_generates_only_when_explicitly_selected(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory)
             shutil.copytree(PROJECT_ROOT / "config", root / "config")
@@ -328,12 +328,12 @@ class DynamicRoleIntelligenceTests(unittest.TestCase):
                     {
                         "applications": [
                             {
-                                "id": "acme_paused_operations",
+                                "id": "acme_considered_operations",
                                 "company": "Acme Cooperative",
                                 "company_aliases": [],
                                 "role": "Director of Business Operations",
                                 "role_aliases": [],
-                                "status": "Paused",
+                                "status": "Considered",
                                 "priority": "Medium",
                                 "source": "Official career page",
                                 "notes": "",
@@ -349,10 +349,10 @@ class DynamicRoleIntelligenceTests(unittest.TestCase):
             )
 
             with self.assertRaises(FollowupGenerationError) as context:
-                generate_followups("acme_paused_operations", root)
+                generate_followups("acme_considered_operations", root)
             bulk = generate_missing_followups(root)
 
-        self.assertIn("role is paused", str(context.exception).lower())
+        self.assertIn("considered", str(context.exception).lower())
         self.assertEqual(bulk["generated_count"], 0)
         self.assertEqual(bulk["skipped_existing_count"], 0)
         self.assertEqual(bulk["skipped_count"], 1)

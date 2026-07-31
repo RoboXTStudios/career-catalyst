@@ -13,16 +13,18 @@ from typing import Any, Dict, Iterable, List, Optional, Union
 try:
     from .application_tracker import load_application_tracker, normalize_status
     from .materials_library import material_route, role_slug
+    from .role_lifecycle import LIVE_STATUSES, TERMINAL_STATUSES
 except ImportError:  # pragma: no cover - direct script usage
     from application_tracker import load_application_tracker, normalize_status
     from materials_library import material_route, role_slug
+    from role_lifecycle import LIVE_STATUSES, TERMINAL_STATUSES
 
 PathInput = Union[str, Path]
 ACTIVE_ROOTS = ("exports/active",)
 ARCHIVE_ROOT = "exports/archive/inactive"
 PRESERVED_EXTENSIONS = {".docx", ".txt", ".json"}
-ACTIVE_STATUSES = {"Active", "Drafted", "Reviewed", "Paused", "Applied", "Follow-up", "Interviewing"}
-INACTIVE_STATUSES = {"Pass", "Rejected", "Invalid", "Invalid/Hidden", "Archived", "Closed", "No Longer Pursuing"}
+ACTIVE_STATUSES = set(LIVE_STATUSES) - set(TERMINAL_STATUSES)
+INACTIVE_STATUSES = set(TERMINAL_STATUSES)
 
 
 def _relative(root: Path, path: Path) -> str:
