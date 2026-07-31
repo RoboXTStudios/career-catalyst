@@ -31,7 +31,6 @@ from scripts.role_archive import (
     archive_role,
     bulk_archive_roles,
     infer_archive_reason,
-    restore_role,
 )
 
 
@@ -106,7 +105,7 @@ def _base_package(root: Path, tracker_id: str) -> dict:
 
 
 def test_base_package_generation_does_not_create_followups_by_default(tmp_path: Path):
-    root, tracker_id = _runtime(tmp_path, status="Drafted")
+    root, tracker_id = _runtime(tmp_path, status="Prospect")
     result = generate_package(tracker_id, root, export_root=root / "canonical")
     assert not any("followup" in key for key in result["outputs"])
 
@@ -134,7 +133,7 @@ def test_eligible_followup_statuses():
 
 
 def test_ineligible_followup_statuses():
-    for status in ("Drafted", "Paused", "Offer", "Rejected", "Withdrawn / Closed"):
+    for status in ("Prospect", "Considered", "Offer", "Rejected", "Withdrawn / Closed"):
         assert not follow_up_action_state({"status": status})["eligible"]
 
 
@@ -307,10 +306,10 @@ def test_output_has_no_unsupported_candidate_claims(tmp_path: Path):
 # ARCHIVE
 
 
-def test_paused_is_canonical_and_not_archive_eligible():
+def test_paused_is_legacy_considered_and_not_archive_eligible():
     record = {"status": "Paused"}
-    assert "Paused" in VALID_STATUSES
-    assert get_record_status(record) == "Paused"
+    assert "Paused" not in VALID_STATUSES
+    assert get_record_status(record) == "Considered"
     assert not is_archive_eligible(record)
 
 
@@ -320,50 +319,54 @@ def test_terminal_statuses_are_archive_eligible():
 
 
 def test_archive_reasons_preserve_legacy_distinctions():
-    assert set(ARCHIVE_REASONS) == {"Rejected", "Withdrawn / Closed", "Passed", "Hidden / Invalid"}
-    assert infer_archive_reason({"status": "Passed"}) == "Passed"
+    assert set(ARCHIVE_REASONS) == {"Rejected", "Withdrawn / Closed", "Hidden / Invalid"}
+    assert infer_archive_reason({"status": "Passed"}) == "Withdrawn / Closed"
     assert infer_archive_reason({"status": "Invalid/Hidden"}) == "Hidden / Invalid"
 
 
 def test_missing_archive_metadata_defaults_active():
-    record = {"id": "x", "status": "Drafted"}
+    record = {"id": "x", "status": "Prospect"}
     assert active_tracker_records([record]) == [record]
 
 
 def test_archive_removes_role_from_active_records(tmp_path: Path):
     root, tracker_id = _runtime(tmp_path, status="Rejected")
-    archive_role(tracker_id, "Rejected", root)
+    archive_role(
+        tracker_id, "Rejected", root,
+        archive_root=root / "local_archive",
+    )
     assert not active_tracker_records(load_application_tracker(root))
 
 
 def test_archive_moves_exact_package_and_updates_paths(tmp_path: Path):
     root, tracker_id = _runtime(tmp_path, status="Rejected")
     _base_package(root, tracker_id)
-    result = archive_role(tracker_id, "Rejected", root)
-    assert result["package"]["moved"]
-    updated = _application(root, tracker_id)
-    assert updated["archived"] is True
-    assert "/archive/rejected/" in updated["package_manifest"]["manifest_path"]
-    assert all(Path(path).is_file() for path in updated["material_paths"].values())
+    result = archive_role(
+        tracker_id, "Rejected", root,
+        archive_root=root / "local_archive",
+    )
+    assert not load_application_tracker(root)
+    assert Path(result["folder"], "role_manifest.json").is_file()
+    assert all(
+        Path(result["folder"], item["filename"]).is_file()
+        for item in result["manifest"]["materials"]
+    )
 
 
 def test_role_without_materials_archives_safely(tmp_path: Path):
     root, tracker_id = _runtime(tmp_path, status="Withdrawn / Closed")
-    result = archive_role(tracker_id, "Withdrawn / Closed", root)
-    assert not result["package"]["moved"]
-    assert _application(root, tracker_id)["archived"] is True
+    result = archive_role(
+        tracker_id, "Withdrawn / Closed", root,
+        archive_root=root / "local_archive",
+    )
+    assert result["manifest"]["materials"] == []
+    assert not load_application_tracker(root)
 
 
-def test_restore_as_paused_restores_package_paths(tmp_path: Path):
-    root, tracker_id = _runtime(tmp_path, status="Rejected")
-    _base_package(root, tracker_id)
-    archive_role(tracker_id, "Rejected", root)
-    result = restore_role(tracker_id, root)
-    restored = result["application"]
-    assert restored["status"] == "Paused"
-    assert restored["archived"] is False
-    assert restored in active_tracker_records(load_application_tracker(root))
-    assert "/active/in_progress/" in restored["package_manifest"]["manifest_path"]
+def test_archive_ui_has_no_stale_restore_control():
+    source = inspect.getsource(app._render_archive)
+    assert "Restore as" not in source
+    assert "Reopen as New Prospect" in source
 
 
 def test_bulk_archive_changes_only_selected_records(tmp_path: Path):
@@ -372,20 +375,28 @@ def test_bulk_archive_changes_only_selected_records(tmp_path: Path):
     second = dict(tracker["applications"][0], id="second", stable_slug="second")
     tracker["applications"].append(second)
     (root / "data/application_tracker.yml").write_text(yaml.safe_dump(tracker, sort_keys=False))
-    result = bulk_archive_roles([first], root, reasons={first: "Rejected"})
+    result = bulk_archive_roles(
+        [first], root, reasons={first: "Rejected"},
+        archive_root=root / "local_archive",
+    )
     by_id = {item["id"]: item for item in load_application_tracker(root)}
     assert result["archived_count"] == 1
-    assert by_id[first]["archived"] is True
+    assert first not in by_id
     assert by_id["second"].get("archived") is not True
 
 
 def test_archive_never_deletes_material_content(tmp_path: Path):
     root, tracker_id = _runtime(tmp_path, status="Rejected")
     _base_package(root, tracker_id)
-    before = sorted(path.read_bytes() for path in root.rglob("*.txt"))
-    archive_role(tracker_id, "Rejected", root)
-    after = sorted(path.read_bytes() for path in root.rglob("*.txt"))
-    assert after == before
+    archive_role(
+        tracker_id, "Rejected", root,
+        archive_root=root / "local_archive",
+    )
+    archived_text = {
+        path.read_text(encoding="utf-8")
+        for path in (root / "local_archive").rglob("*.txt")
+    }
+    assert {"verified resume", "verified cover letter", "verified strategy"} <= archived_text
 
 
 def test_navigation_replaces_followup_with_intelligence_and_archive():

@@ -19,7 +19,7 @@ def test_record_aware_primary_status_mapping_preserves_legacy_values():
     }
     assert get_record_status(active_application) == "Applied"
     assert legacy_status_value(active_application) == "Active"
-    assert get_record_status({"status": "Paused"}) == "Paused"
+    assert get_record_status({"status": "Paused"}) == "Considered"
     assert get_record_status({"status": "Follow-up"}) == "Applied"
 
 

@@ -10,6 +10,7 @@ from typing import Any, Dict, Optional, Union, List
 try:
     from .application_tracker import (
         TrackerValidationError,
+        get_record_status,
         load_application_tracker,
         normalize_tracker_value,
         update_prospect,
@@ -52,6 +53,7 @@ try:
 except ImportError:
     from application_tracker import (
         TrackerValidationError,
+        get_record_status,
         load_application_tracker,
         normalize_tracker_value,
         update_prospect,
@@ -541,7 +543,7 @@ def generate_package(
     force_clean_draft: bool = False,
     export_root: Optional[PathInput] = None,
 ) -> Dict[str, Any]:
-    """Generate all package materials and apply the safe Drafted-to-Reviewed transition."""
+    """Generate all package materials and mark a new Prospect as Considered."""
     root = Path(project_root) if project_root is not None else Path.cwd()
     try:
         resolved = resolve_job_reference(job_file_or_tracker_id, root)
@@ -673,8 +675,8 @@ def generate_package(
         package_summary = save_package_summary(root, parsed, freshness, opportunity, quality)
 
         tracker_id = str(application["id"])
-        if application.get("status") == "Drafted":
-            application = update_status(tracker_id, "Reviewed", root)
+        if get_record_status(application) == "Prospect":
+            application = update_status(tracker_id, "Considered", root)
         application = update_prospect(
             tracker_id,
             {

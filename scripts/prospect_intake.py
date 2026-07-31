@@ -369,7 +369,7 @@ def create_prospect(
             "company": company,
             "company_aliases": company_aliases,
             "role": role,
-            "status": str(job_data.get("status") or "Drafted"),
+            "status": str(job_data.get("status") or "Prospect"),
             "priority": str(job_data.get("priority") or "Medium"),
             "source": verification["source_name"],
             "official_url": official_url,
@@ -387,6 +387,15 @@ def create_prospect(
             "work_arrangement": work_arrangement,
             "notes": str(job_data.get("notes") or "").strip(),
             "next_action": next_action,
+            **{
+                key: str(job_data[key])
+                for key in (
+                    "reopened_from_archive_id",
+                    "reopened_from_manifest",
+                    "reopen_request_id",
+                )
+                if job_data.get(key)
+            },
             "field_warnings": field_warnings,
             "show_on_dashboard": bool(job_data.get("show_on_dashboard", True)),
             "job_file": _project_relative(job_path, root),
@@ -471,7 +480,7 @@ def add_prospect_from_job_file(
             "id": tracker_id,
             "company": company,
             "role": role,
-            "status": "Drafted",
+            "status": "Prospect",
             "priority": "Medium",
             "source": verification["source_name"],
             "official_url": str(parsed.get("source_url") or ""),

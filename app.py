@@ -5,6 +5,7 @@ Run with: streamlit run app.py
 
 from __future__ import annotations
 
+import hashlib
 import html
 import re
 import subprocess
@@ -13,16 +14,13 @@ from pathlib import Path
 from typing import Any, Dict
 
 from scripts.application_tracker import (
-    ACTIVE_STATUSES,
     ARCHIVE_ELIGIBLE_STATUSES,
-    HIDDEN_STATUSES,
     VALID_STATUSES,
     TrackerValidationError,
     active_tracker_records,
     follow_up_action_state,
     get_record_status,
     is_archive_eligible,
-    is_role_archived,
     load_application_tracker,
     normalize_status,
     update_prospect,
@@ -89,7 +87,9 @@ from scripts.role_archive import (
     archive_role,
     bulk_archive_roles,
     infer_archive_reason,
-    restore_role,
+    list_archive_entries,
+    open_archive_folder,
+    reopen_as_new_prospect,
 )
 try:
     from scripts.job_source_registry import (
@@ -109,7 +109,8 @@ from scripts.parse_job import extract_metadata, normalize_compensation, parse_jo
 from scripts.prospect_intake import ProspectIntakeError, create_prospect
 from scripts.resume_foundation import canonical_resume_foundation_info
 from scripts.score_match import persisted_match_fields, score_job_data, score_job_match
-from scripts.storage_paths import canonical_export_root
+from scripts.role_lifecycle import filter_live_records, lifecycle_counts
+from scripts.storage_paths import canonical_archive_root, canonical_export_root
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -120,7 +121,6 @@ UI_DESCRIPTION = (
 TRACKER_GROUPS = VALID_STATUSES
 CLEANUP_TRACKER_GROUPS = (
     "Needs decision",
-    "Paused",
     "Passed",
     "Hidden / Invalid",
     "Stale / Cannot Verify",
@@ -297,7 +297,7 @@ APP_CSS = """
     font-size: 12px;
     font-weight: 700;
   }
-  .cc-status-drafted { background: var(--cc-gold-soft); color: var(--cc-gold); }
+  .cc-status-prospect, .cc-status-considered { background: var(--cc-gold-soft); color: var(--cc-gold); }
   .cc-status-applied, .cc-status-under-consideration { background: var(--cc-blue-soft); color: var(--cc-blue); }
   .cc-status-interviewing, .cc-status-offer { background: var(--cc-accent-soft); color: var(--cc-accent); }
   .cc-status-rejected, .cc-status-withdrawn-closed { background: var(--cc-red-soft); color: var(--cc-red); }
@@ -359,12 +359,12 @@ APP_CSS = """
 
 
 def summarize_applications(applications: list[Dict[str, Any]]) -> Dict[str, int]:
-    """Return concise, non-empty counts for the primary workflow statuses."""
-    counts = {status: 0 for status in VALID_STATUSES}
-    for application in applications:
-        status = get_record_status(application)
-        counts[status if status in counts else "Withdrawn / Closed"] += 1
-    return {"Total": len(applications), **{key: value for key, value in counts.items() if value}}
+    """Return counts from the exact predicate used by dashboard filters."""
+    counts = lifecycle_counts(applications)
+    return {
+        "Total": counts["All"],
+        **{status: counts[status] for status in VALID_STATUSES if counts[status]},
+    }
 
 
 def group_applications_by_status(
@@ -388,7 +388,8 @@ def group_applications_by_status(
         elif mode == "Cleanup Mode":
             label = "Needs decision"
         else:
-            label = status if status in grouped else "Withdrawn / Closed"
+            label = status if status in grouped else "Needs decision"
+        grouped.setdefault(label, [])
         grouped[label].append(application)
     if not preserve_order:
         for values in grouped.values():
@@ -651,9 +652,9 @@ def update_dashboard_role(
         updates["follow_up_status"] = (
             "" if follow_up_status == "Auto" else follow_up_status
         )
-    # Workflow status is authoritative for dashboard visibility and grouping.
+    # Archive state, not status, controls whether a role remains in live views.
     if "status" in values:
-        updates["show_on_dashboard"] = status not in HIDDEN_STATUSES
+        updates["show_on_dashboard"] = True
     if status in VALID_STATUSES:
         return update_status(clean_id, status, project_root, **updates)
     # Unknown legacy statuses remain readable and notes can still be edited safely.
@@ -688,22 +689,13 @@ def move_dashboard_role_materials(
 def dashboard_status_actions(record: Dict[str, Any]) -> tuple[tuple[str, str], ...]:
     """Return status-aware quick actions as label/action-key pairs."""
     status = get_record_status(record)
-    active_label = (
-        "Resume / Active"
-        if status == "Paused"
-        else "Reopen / Active"
-        if status in HIDDEN_STATUSES
-        else "Keep Active"
-    )
     actions = [
         ("Mark Applied", "applied"),
-        ("Mark Reviewed", "reviewed"),
-        ("Pause", "paused"),
-        ("Pass", "pass"),
-        ("Hide / Invalid", "invalid_hidden"),
-        (active_label, "active"),
+        ("Mark Considered", "considered"),
+        ("Withdraw / Close", "withdrawn_closed"),
+        ("New Prospect", "prospect"),
     ]
-    if status in {"Applied", "Follow-up", "Interviewing"}:
+    if status in {"Applied", "Under Consideration", "Interviewing"}:
         actions.extend(
             (
                 ("Follow-Up Sent", "follow_up_sent"),
@@ -725,29 +717,21 @@ def contextual_primary_actions(
         record.get("recommended_action") or ""
     ).startswith("Complete Import"):
         return (("Open posting", "open_posting"),) if has_posting_url else ()
-    if mode == "Cleanup Mode" and bucket in {"Active", "Reviewed"}:
+    status = get_record_status(record)
+    if mode == "Cleanup Mode" and status in {"Prospect", "Considered"}:
         return (
-            ("Pass", "pass"),
-            ("Hide / Invalid", "invalid_hidden"),
-            ("Keep Active", "active"),
+            ("Withdraw / Close", "withdrawn_closed"),
+            ("Keep Considered", "considered"),
         )
-    if bucket == "Paused":
-        return (
-            ("Resume / Active", "active"),
-            ("Pass", "pass"),
-            ("Hide / Invalid", "invalid_hidden"),
-        )
-    if bucket == "Pass":
-        return (("Reopen / Active", "active"), ("Hide / Invalid", "invalid_hidden"))
-    if bucket == "Hidden / Invalid":
-        return (("Reopen / Active", "active"),)
-    if bucket == "Reviewed":
+    if status in {"Rejected", "Withdrawn / Closed"}:
+        return ()
+    if status == "Considered":
         material_action = (
             ("Open materials", "open_materials")
             if has_materials
             else ("Generate package", "generate_package")
         )
-        return (material_action, ("Mark Applied", "applied"), ("Pass", "pass"))
+        return (material_action, ("Mark Applied", "applied"), ("Withdraw / Close", "withdrawn_closed"))
     if bucket == "Applied / Follow-up":
         actions = []
         if has_materials:
@@ -778,11 +762,9 @@ def apply_dashboard_status_action(
     """Apply one named card action through the canonical dashboard update path."""
     action_updates: Dict[str, Dict[str, Any]] = {
         "applied": {"status": "Applied", "show_on_dashboard": True},
-        "reviewed": {"status": "Drafted", "show_on_dashboard": True},
-        "paused": {"status": "Withdrawn / Closed", "show_on_dashboard": False},
-        "pass": {"status": "Withdrawn / Closed", "show_on_dashboard": False},
-        "invalid_hidden": {"status": "Withdrawn / Closed", "show_on_dashboard": False},
-        "active": {"status": "Drafted", "show_on_dashboard": True},
+        "considered": {"status": "Considered", "show_on_dashboard": True},
+        "withdrawn_closed": {"status": "Withdrawn / Closed", "show_on_dashboard": True},
+        "prospect": {"status": "Prospect", "show_on_dashboard": True},
         "follow_up_sent": {
             "status": "Applied",
             "follow_up_status": "Follow-up sent",
@@ -822,7 +804,7 @@ def build_prospect_payload(values: Dict[str, Any]) -> Dict[str, Any]:
         "posting_date": str(values.get("posting_date") or "").strip(),
         "source": str(values.get("source") or "Official career page").strip(),
         "priority": str(values.get("priority") or "Medium"),
-        "status": str(values.get("status") or "Drafted"),
+        "status": str(values.get("status") or "Prospect"),
         "work_arrangement": str(values.get("work_arrangement") or "").strip(),
         "job_description": str(values.get("job_description") or "").strip(),
         "notes": str(values.get("notes") or "").strip(),
@@ -990,7 +972,7 @@ def _primary_facts_html(application: Dict[str, Any], package: Dict[str, Any]) ->
     status = get_record_status(application)
     relevant_follow_up = (
         application.get("follow_up_status")
-        if status in {"Applied", "Follow-up", "Interviewing"}
+        if status in {"Applied", "Under Consideration", "Interviewing"}
         else None
     )
     facts = (
@@ -1548,7 +1530,7 @@ def _render_role_card(
                 key=f"dashboard_more_pause_{tracker_id}",
                 use_container_width=True,
             ):
-                apply_dashboard_status_action(tracker_id, "paused", PROJECT_ROOT)
+                apply_dashboard_status_action(tracker_id, "withdrawn_closed", PROJECT_ROOT)
                 st.session_state["dashboard_notice"] = "Role moved to Withdrawn / Closed."
                 st.rerun()
             if more_columns[1].button(
@@ -1560,13 +1542,13 @@ def _render_role_card(
                     st.session_state, dashboard_role_reference(application)
                 )
                 st.rerun()
-            if get_record_status(application) == "Drafted" and more_columns[2].button(
-                "Keep Drafted",
+            if get_record_status(application) == "Prospect" and more_columns[2].button(
+                "Mark Considered",
                 key=f"dashboard_more_reviewed_{tracker_id}",
                 use_container_width=True,
             ):
-                apply_dashboard_status_action(tracker_id, "reviewed", PROJECT_ROOT)
-                st.session_state["dashboard_notice"] = "Role remains Drafted."
+                apply_dashboard_status_action(tracker_id, "considered", PROJECT_ROOT)
+                st.session_state["dashboard_notice"] = "Role marked Considered."
                 st.rerun()
             follow_up_action = follow_up_action_state(application)
             if follow_up_action["eligible"]:
@@ -1612,8 +1594,7 @@ def _render_role_card(
                 edited_posting_url = st.text_input("Posting URL", value=str(application.get("posting_url") or record_posting_url(application) or ""))
                 edited_portal_url = st.text_input("Application/status portal URL", value=str(application.get("application_portal_url") or ""))
                 st.caption(
-                    "Visibility follows status: Pass and Invalid/Hidden stay in cleanup; "
-                    "active workflow statuses remain visible."
+                    "Live roles remain visible until an eligible terminal role is explicitly archived."
                 )
                 save_clicked = st.form_submit_button(
                     "Save role updates", type="primary", use_container_width=True
@@ -1866,7 +1847,7 @@ def _initialize_intake_state(st: Any) -> None:
         "prospect_posting_date_manual_override": False,
         "prospect_source": "Official career page",
         "prospect_priority": "Medium",
-        "prospect_status": "Drafted",
+        "prospect_status": "Prospect",
         "prospect_work_arrangement": "Not specified",
         "prospect_description": "",
         "prospect_notes": "",
@@ -2519,7 +2500,8 @@ def submitted_applications(
     return [
         application
         for application in applications
-        if get_record_status(application) in {"Applied", "Follow-up", "Interviewing"}
+        if get_record_status(application)
+        in {"Applied", "Under Consideration", "Interviewing"}
     ]
 
 
@@ -3017,11 +2999,7 @@ def _render_followups(st: Any) -> None:
         opened, message = open_local_path(followup_directory)
         (st.success if opened else st.warning)(message)
 
-    applications = [
-        application
-        for application in _load_applications(st)
-        if application.get("show_on_dashboard") is not False
-    ]
+    applications = _load_applications(st)
     if not applications:
         st.info("No roles are available for follow-up review.")
         return
@@ -3239,66 +3217,72 @@ def _render_career_intelligence(st: Any) -> None:
 
 
 def _render_archive(st: Any) -> None:
-    st.markdown('<h2 class="cc-section-heading">Role Archive</h2>', unsafe_allow_html=True)
-    applications = _load_applications(st, include_archived=True)
-    archived = [item for item in applications if is_role_archived(item)]
-    st.metric("Archived roles", len(archived))
-    filters = st.columns(3)
-    query = filters[0].text_input("Search company or role", key="archive_search").lower().strip()
-    reason_filter = filters[1].selectbox(
-        "Archive reason", ("All",) + ARCHIVE_REASONS, key="archive_reason_filter"
+    st.markdown('<h2 class="cc-section-heading">Archive Log</h2>', unsafe_allow_html=True)
+    archive_root = canonical_archive_root(PROJECT_ROOT)
+    all_entries = list_archive_entries(archive_root)
+    st.metric("Archived roles", len(all_entries))
+    filters = st.columns(2)
+    query = filters[0].text_input("Search company or role", key="archive_search")
+    final_statuses = tuple(
+        sorted({entry["final_status"] for entry in all_entries if entry["final_status"]})
     )
-    prior_values = tuple(
-        sorted({str(item.get("pre_archive_status") or "") for item in archived if item.get("pre_archive_status")})
+    final_status = filters[1].selectbox(
+        "Final status", ("All",) + final_statuses, key="archive_final_status"
     )
-    prior_filter = filters[2].selectbox(
-        "Prior status", ("All",) + prior_values, key="archive_prior_filter"
+    visible = list_archive_entries(
+        archive_root, query=query, final_status=final_status
     )
-    visible = []
-    for item in archived:
-        haystack = f"{item.get('company', '')} {item.get('role', '')}".lower()
-        if query and query not in haystack:
-            continue
-        if reason_filter != "All" and item.get("archive_reason") != reason_filter:
-            continue
-        if prior_filter != "All" and item.get("pre_archive_status") != prior_filter:
-            continue
-        visible.append(item)
+    if not visible:
+        st.caption("No archived roles match the current filters.")
+    st.session_state.setdefault("archive_reopen_completed", [])
+    completed = set(st.session_state["archive_reopen_completed"])
     for application in visible:
+        archive_key = hashlib.sha256(
+            str(application["manifest_path"]).encode("utf-8")
+        ).hexdigest()[:12]
         with st.container(border=True):
-            st.markdown(f"### {html.escape(_application_label(application))}")
-            package = find_exact_role_package(PROJECT_ROOT, application)
-            materials = dict(application.get("material_paths") or {})
+            st.markdown(
+                f"### {html.escape(application['company'])} — "
+                f"{html.escape(application['role_title'])}"
+            )
             st.caption(
-                f"Reason: {application.get('archive_reason') or 'Not recorded'} · "
-                f"Archived: {application.get('archived_at') or 'Not recorded'} · "
-                f"Prior status: {application.get('pre_archive_status') or 'Not recorded'} · "
-                f"Materials: {len(materials)}"
+                f"Final status: {application['final_status'] or 'Not recorded'} · "
+                f"Archived: {application['archived_at'] or 'Not recorded'}"
             )
             actions = st.columns(2)
-            if package.get("folder") and actions[0].button(
-                "Open Package Folder", key=f"archive_open_{application.get('id')}"
+            if actions[0].button(
+                "Open Folder", key=f"archive_open_{archive_key}"
             ):
-                opened, message = open_local_path(Path(package["folder"]))
-                (st.success if opened else st.warning)(message)
+                opened, message = open_archive_folder(
+                    application["archive_folder"], archive_root
+                )
+                (st.success if opened else st.error)(message)
+            archive_id = application["original_role_id"]
             if actions[1].button(
-                "Restore as Paused", key=f"archive_restore_{application.get('id')}"
+                "Reopen as New Prospect",
+                key=f"archive_reopen_{archive_key}",
+                disabled=archive_key in completed,
             ):
-                restore_role(str(application["id"]), PROJECT_ROOT)
-                st.success("Role restored as Paused.")
-                st.rerun()
-            for label, value in materials.items():
-                path = Path(str(value))
-                if path.is_file():
-                    _show_open_button(
-                        st,
-                        f"Open {label}",
-                        path,
-                        f"archive_material_{application.get('id')}_{re.sub(r'[^a-z0-9]+', '_', str(label).lower())}",
+                request_id = f"streamlit:{archive_key}"
+                try:
+                    result = reopen_as_new_prospect(
+                        application["manifest_path"],
+                        PROJECT_ROOT,
+                        archive_root=archive_root,
+                        request_id=request_id,
                     )
+                except (TrackerValidationError, ValueError, OSError) as error:
+                    st.error(str(error))
                 else:
-                    st.caption(f"{label}: missing path {path}")
+                    completed.add(archive_key)
+                    st.session_state["archive_reopen_completed"] = sorted(completed)
+                    st.success(
+                        "Created a fresh Prospect. Historical scores, package state, "
+                        "follow-up plans, and generated materials were not restored."
+                    )
+                    st.rerun()
 
+    applications = _load_applications(st)
     eligible = [item for item in applications if is_archive_eligible(item)]
     with st.expander(f"Bulk archive eligible roles ({len(eligible)})", expanded=False):
         labels = {str(item["id"]): _application_label(item) for item in eligible}
@@ -3333,8 +3317,7 @@ def _render_archive(st: Any) -> None:
         ):
             summary = bulk_archive_roles(selected, PROJECT_ROOT, reasons=reasons)
             st.success(
-                f"Moved {len(summary['moved'])} · Archived without materials "
-                f"{len(summary['archived_without_materials'])} · Skipped "
+                f"Archived {len(summary['archived'])} · Skipped "
                 f"{len(summary['skipped'])} · Failed {len(summary['failed'])}"
             )
             if not summary["failed"]:
@@ -3432,12 +3415,13 @@ def _render_update_status(st: Any) -> None:
         else:
             st.caption("No posting URL stored.")
     st.caption(
-        "Visibility follows status: Pass and Invalid/Hidden stay in cleanup; "
-        "active workflow statuses remain visible."
+        "Live roles remain visible until an eligible terminal role is explicitly archived."
     )
     if current_status in ARCHIVE_ELIGIBLE_STATUSES:
         st.warning(
-            "This role is eligible for archive. Archiving is a separate, explicit action."
+            "Archiving removes this role from live Career Catalyst after preserving its "
+            "posting, history, and existing materials in a local archive folder. Reopening "
+            "later creates a new Prospect."
         )
         inferred_reason = infer_archive_reason(application)
         reason = st.selectbox(
@@ -3457,7 +3441,7 @@ def _render_update_status(st: Any) -> None:
             except (TrackerValidationError, ValueError, OSError) as error:
                 st.error(str(error))
             else:
-                st.success("Role archived without deleting its history or materials.")
+                st.success("Role moved to the local archive and removed from live workflows.")
                 st.rerun()
     if st.button("Save Status Update", type="primary"):
         try:
@@ -3578,15 +3562,8 @@ def _render_dashboard(st: Any) -> None:
     )
 
     all_records = prepare_dashboard_records(applications, packages)
-    records = list(all_records)
-    if application_status == "All":
-        records = [
-            record for record in records
-            if get_record_status(record) not in {"Rejected", "Withdrawn / Closed"}
-            and record.get("show_on_dashboard") is not False
-        ]
     records = filter_dashboard_records(
-        records,
+        all_records,
         match_tier=match_tier,
         application_status=application_status,
         search=search,

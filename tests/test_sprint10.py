@@ -42,7 +42,7 @@ class Sprint10Tests(unittest.TestCase):
     def tearDown(self):
         self.temporary_directory.cleanup()
 
-    def _create_tracker_job(self, status="Drafted"):
+    def _create_tracker_job(self, status="Prospect"):
         job_path = self.root / "jobs" / "director_operations_acme.md"
         job_path.write_text(
             "\n".join(
@@ -123,7 +123,7 @@ class Sprint10Tests(unittest.TestCase):
                 "salary_range": "$150,000-$180,000",
                 "source": "Official Acme Careers",
                 "priority": "High",
-                "status": "Drafted",
+                "status": "Prospect",
                 "work_arrangement": "Hybrid",
                 "job_description": DESCRIPTION,
                 "notes": "Strong fit.",
@@ -145,7 +145,7 @@ class Sprint10Tests(unittest.TestCase):
         prospect = {
             "company": "Acme Entertainment",
             "role": "Director, Operations",
-            "status": "Drafted",
+            "status": "Prospect",
             "priority": "High",
             "show_on_dashboard": True,
         }
@@ -169,7 +169,7 @@ class Sprint10Tests(unittest.TestCase):
                 "id": "acme_director_operations",
                 "company": "Acme Entertainment",
                 "role": "Director, Operations",
-                "status": "Reviewed",
+                "status": "Considered",
                 "priority": "High",
                 "show_on_dashboard": True,
             },
@@ -239,13 +239,13 @@ class Sprint10Tests(unittest.TestCase):
             for manager in reversed(managers):
                 manager.stop()
 
-    def test_generate_package_updates_drafted_to_reviewed(self):
-        self._create_tracker_job("Drafted")
+    def test_generate_package_updates_prospect_to_considered(self):
+        self._create_tracker_job("Prospect")
         result = self._generate_with_mocks()
 
-        self.assertEqual(result["status"], "Reviewed")
+        self.assertEqual(result["status"], "Considered")
         self.assertEqual(
-            load_application_tracker(self.root)[0]["status"], "Reviewed"
+            load_application_tracker(self.root)[0]["status"], "Considered"
         )
 
     def test_generate_package_does_not_overwrite_applied(self):

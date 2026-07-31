@@ -1,18 +1,34 @@
 """Load, update, and validate the Career Catalyst application tracker."""
 
 from datetime import date, datetime
+import os
 import re
 from collections import Counter
 from copy import deepcopy
 from pathlib import Path
+import tempfile
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import yaml
 
 try:
     from .filename_utils import canonical_employer_name
+    from .role_lifecycle import (
+        ARCHIVE_ELIGIBLE_STATUSES,
+        LIVE_STATUSES,
+        POST_APPLICATION_STATUSES,
+        TERMINAL_STATUSES,
+        canonical_status,
+    )
 except ImportError:
     from filename_utils import canonical_employer_name
+    from role_lifecycle import (
+        ARCHIVE_ELIGIBLE_STATUSES,
+        LIVE_STATUSES,
+        POST_APPLICATION_STATUSES,
+        TERMINAL_STATUSES,
+        canonical_status,
+    )
 
 
 PathInput = Union[str, Path]
@@ -29,16 +45,7 @@ REQUIRED_FIELDS = (
     "priority",
     "show_on_dashboard",
 )
-VALID_STATUSES = (
-    "Drafted",
-    "Paused",
-    "Applied",
-    "Under Consideration",
-    "Interviewing",
-    "Offer",
-    "Rejected",
-    "Withdrawn / Closed",
-)
+VALID_STATUSES = LIVE_STATUSES
 LEGACY_STATUS_FIELDS = (
     "application_status",
     "submitted_status",
@@ -46,46 +53,17 @@ LEGACY_STATUS_FIELDS = (
     "dashboard_status",
     "stage",
 )
-STATUS_ALIASES = {
-    "active": "Drafted",
-    "in progress": "Drafted",
-    "open": "Drafted",
-    "reviewed": "Drafted",
-    "review first": "Drafted",
-    "manually reviewed": "Drafted",
-    "verified": "Drafted",
-    "paused": "Paused",
-    "submitted": "Applied",
-    "application submitted": "Applied",
-    "follow up": "Applied",
-    "followup": "Applied",
-    "follow up needed": "Applied",
-    "follow up sent": "Under Consideration",
-    "due now": "Under Consideration",
-    "recruiter contacted": "Under Consideration",
-    "hiring manager contacted": "Under Consideration",
-    "under review": "Under Consideration",
-    "on hold": "Under Consideration",
-    "passed": "Withdrawn / Closed",
-    "pass": "Withdrawn / Closed",
-    "declined": "Withdrawn / Closed",
-    "do not pursue": "Withdrawn / Closed",
-    "hidden": "Withdrawn / Closed",
-    "invalid": "Withdrawn / Closed",
-    "invalid hidden": "Withdrawn / Closed",
-    "archived": "Withdrawn / Closed",
-    "closed": "Withdrawn / Closed",
-    "stale closed risk": "Withdrawn / Closed",
-}
-ACTIVE_STATUSES = {"Applied", "Under Consideration", "Interviewing", "Offer"}
-DRAFT_STATUSES = {"Drafted"}
-HIDDEN_STATUSES = {"Rejected", "Withdrawn / Closed"}
-ARCHIVE_ELIGIBLE_STATUSES = {"Rejected", "Withdrawn / Closed"}
+ACTIVE_STATUSES = set(POST_APPLICATION_STATUSES)
+DRAFT_STATUSES = {"Prospect", "Considered"}
+HIDDEN_STATUSES = set(TERMINAL_STATUSES)
 INTAKE_PROTECTED_STATUSES = {
     "Active",
+    "Considered",
     "Applied",
+    "Under Consideration",
     "Follow-up",
     "Interviewing",
+    "Offer",
     "Pass",
     "Rejected",
     "Invalid",
@@ -126,16 +104,7 @@ def normalize_tracker_value(value: Any) -> str:
 
 def normalize_status(value: Any) -> str:
     """Return a canonical status while safely preserving unknown legacy values."""
-    clean = str(value or "").strip()
-    if not clean:
-        return "Drafted"
-    normalized = normalize_tracker_value(clean)
-    if normalized in STATUS_ALIASES:
-        return STATUS_ALIASES[normalized]
-    canonical = {
-        normalize_tracker_value(status): status for status in VALID_STATUSES
-    }
-    return canonical.get(normalized, clean)
+    return canonical_status(value)
 
 
 def get_record_status(record: Dict[str, Any]) -> str:
@@ -174,12 +143,18 @@ def get_record_status(record: Dict[str, Any]) -> str:
     for field in LEGACY_STATUS_FIELDS:
         if record.get(field) not in (None, ""):
             return normalize_status(record[field])
-    return "Drafted"
+    return "Prospect"
 
 
 def legacy_status_value(record: Dict[str, Any]) -> str:
     """Expose the stored pre-normalization value for audit/migration safety."""
-    return str(record.get("legacy_status") or record.get("status") or "").strip()
+    migration = record.get("lifecycle_migration")
+    migrated_from = (
+        migration.get("original_status") if isinstance(migration, dict) else ""
+    )
+    return str(
+        record.get("legacy_status") or migrated_from or record.get("status") or ""
+    ).strip()
 
 
 def is_role_archived(record: Dict[str, Any]) -> bool:
@@ -410,8 +385,8 @@ def follow_up_action_state(
             status,
         )
     terminal_reasons = {
-        "Drafted": "This role is still drafted and has not been applied to.",
-        "Paused": "This role is paused and is not currently eligible for follow-up.",
+        "Prospect": "This role is still a prospect and has not been applied to.",
+        "Considered": "This role is being considered and has not been applied to.",
         "Offer": "An offer does not need a generic application follow-up.",
         "Rejected": "This application was rejected, so no follow-up is needed.",
         "Withdrawn / Closed": "This application is closed, so no follow-up is needed.",
@@ -616,15 +591,25 @@ def save_application_tracker(
     tracker_path = root / TRACKER_PATH
     tracker_path.parent.mkdir(parents=True, exist_ok=True)
     try:
-        tracker_path.write_text(
-            yaml.safe_dump(
-                {"applications": applications},
-                sort_keys=False,
-                allow_unicode=True,
-                width=1000,
-            ),
-            encoding="utf-8",
+        payload = yaml.safe_dump(
+            {"applications": applications},
+            sort_keys=False,
+            allow_unicode=True,
+            width=1000,
         )
+        with tempfile.NamedTemporaryFile(
+            "w",
+            encoding="utf-8",
+            dir=tracker_path.parent,
+            prefix=f".{tracker_path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as handle:
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+            temporary_path = Path(handle.name)
+        os.replace(temporary_path, tracker_path)
     except OSError as error:
         raise TrackerUpdateError(
             f"Unable to save application tracker {TRACKER_PATH}: {error}"
@@ -694,7 +679,7 @@ def add_prospect(
             "company_aliases": [],
             "role": role,
             "role_aliases": [],
-            "status": str(incoming.get("status") or "Drafted"),
+            "status": str(incoming.get("status") or "Prospect"),
             "priority": str(incoming.get("priority") or "Medium"),
             "source": str(incoming.get("source") or "Official career page"),
             "notes": str(incoming.get("notes") or ""),
@@ -705,11 +690,12 @@ def add_prospect(
         applications.append(entry)
     else:
         entry = existing
-        original_status = str(existing.get("status") or "Drafted")
+        original_status = str(existing.get("status") or "Prospect")
         entry.update(incoming)
         # Intake must never demote an application that has progressed beyond drafting.
         if original_status in INTAKE_PROTECTED_STATUSES or (
-            original_status != "Drafted" and incoming.get("status") == "Drafted"
+            normalize_status(original_status) not in DRAFT_STATUSES
+            and incoming.get("status") == "Prospect"
         ):
             entry["status"] = original_status
         entry.setdefault("company_aliases", [])
@@ -776,7 +762,7 @@ def update_status(
     if entry is None:
         raise TrackerUpdateError(f"Tracker entry not found: {tracker_id}")
 
-    previous_status = str(entry.get("status") or "Drafted")
+    previous_status = str(entry.get("status") or "Prospect")
     previous_primary_status = get_record_status(entry)
     if previous_status != previous_primary_status and not entry.get("legacy_status"):
         entry["legacy_status"] = previous_status
@@ -808,7 +794,7 @@ def hide_role(
     reason: str,
     project_root: Optional[PathInput] = None,
 ) -> Dict[str, Any]:
-    """Mark a role Invalid, hide it, and retain any existing notes."""
+    """Close a legacy hidden role without conflating status and archive state."""
     applications = load_application_tracker(project_root)
     entry = next(
         (application for application in applications if application.get("id") == tracker_id),
@@ -821,8 +807,8 @@ def hide_role(
     clean_reason = reason.strip()
     if clean_reason and clean_reason not in existing_notes:
         entry["notes"] = " ".join(value for value in (existing_notes, clean_reason) if value)
-    entry["status"] = "Invalid"
-    entry["show_on_dashboard"] = False
+    entry["status"] = "Withdrawn / Closed"
+    entry["show_on_dashboard"] = True
     save_application_tracker(applications, project_root)
     return dict(entry)
 

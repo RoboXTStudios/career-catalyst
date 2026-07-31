@@ -9,8 +9,10 @@ from typing import Any, Dict, Mapping, Optional
 
 try:
     from .application_tracker import follow_up_action_state, get_record_status
+    from .role_lifecycle import PRE_APPLICATION_STATUSES, TERMINAL_STATUSES
 except ImportError:
     from application_tracker import follow_up_action_state, get_record_status
+    from role_lifecycle import PRE_APPLICATION_STATUSES, TERMINAL_STATUSES
 
 
 FORBIDDEN_BY_STATUS = {
@@ -64,7 +66,7 @@ def deterministic_next_steps(
     ).strip()
     actions: list[Dict[str, str]] = []
 
-    if status == "Drafted":
+    if status in PRE_APPLICATION_STATUSES:
         if missing_role_data or str(values.get("recommended_action") or "").startswith("Complete Import"):
             actions.append(_action("complete_import", "Complete role details", "Required role facts are still missing."))
         actions.append(_action("review_fit", "Review fit and Evidence", "This saved prospect is still under consideration."))
@@ -89,7 +91,7 @@ def deterministic_next_steps(
         follow_up = follow_up_action_state(values, today)
         if follow_up.get("eligible") and "follow_up" not in completed:
             actions.append(_action("follow_up", str(follow_up.get("label") or "Prepare follow-up"), str(follow_up.get("reason") or "A saved follow-up trigger is active.")))
-    elif status in {"Rejected", "Withdrawn / Closed"}:
+    elif status in TERMINAL_STATUSES:
         actions.append(_action("archive_learning", "Archive and capture learning", "This application is closed; no application or outreach action is appropriate."))
     elif status == "Offer":
         actions.append(_action("offer_decision", "Review offer and decision timeline", "An offer is saved, so decision support is the only primary action."))

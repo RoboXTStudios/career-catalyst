@@ -27,7 +27,7 @@ def _record(identifier, **updates):
         "id": identifier,
         "company": identifier.title(),
         "role": "Director, Operations",
-        "status": "Drafted",
+        "status": "Prospect",
         "priority": "Medium",
         "notes": "",
         "next_action": "Review fit",
@@ -45,16 +45,8 @@ def _record(identifier, **updates):
 
 
 class Sprint15StatusTests(unittest.TestCase):
-    def test_pass_and_required_statuses_are_supported_and_filterable(self):
-        for status in (
-            "Drafted",
-            "Active",
-            "Applied",
-            "Reviewed",
-            "Paused",
-            "Pass",
-            "Invalid/Hidden",
-        ):
+    def test_required_statuses_are_supported_and_filterable(self):
+        for status in VALID_STATUSES:
             self.assertIn(status, VALID_STATUSES)
             self.assertIn(status, STATUS_FILTERS)
 
@@ -74,10 +66,10 @@ class Sprint15StatusTests(unittest.TestCase):
         }
         self.assertTrue({"pass", "hidden"}.issubset(cleanup_ids))
 
-    def test_pass_can_be_explicitly_filtered(self):
+    def test_withdrawn_closed_can_be_explicitly_filtered(self):
         records = [_record("pass", status="Pass"), _record("active", status="Active")]
         self.assertEqual(
-            [item["id"] for item in filter_dashboard_records(records, application_status="Pass")],
+            [item["id"] for item in filter_dashboard_records(records, application_status="Withdrawn / Closed")],
             ["pass"],
         )
 
@@ -120,12 +112,12 @@ class Sprint15InlineUpdateTests(unittest.TestCase):
         self.assertEqual(stored["second"]["suggested_follow_up_date"], "2026-07-10")
         self.assertIn("status_updated_at", stored["second"])
 
-    def test_cleanup_quick_statuses_persist(self):
-        for status in ("Pass", "Paused", "Invalid/Hidden"):
+    def test_canonical_quick_statuses_persist(self):
+        for status in ("Considered", "Withdrawn / Closed"):
             app.update_dashboard_role("second", {"status": status}, self.root)
             stored = {item["id"]: item for item in load_application_tracker(self.root)}
             self.assertEqual(stored["second"]["status"], status)
-        self.assertFalse(stored["second"]["show_on_dashboard"])
+        self.assertTrue(stored["second"]["show_on_dashboard"])
 
     def test_legacy_status_can_update_notes_without_crashing(self):
         records = load_application_tracker(self.root)
@@ -183,13 +175,13 @@ class Sprint15MaterialsTests(unittest.TestCase):
         applications = [
             _record("applied", status="Applied"),
             _record("missing", status="Applied"),
-            _record("paused", status="Paused"),
+            _record("considered", status="Considered"),
             _record("pass", status="Pass"),
         ]
         packages = {
             "applied": {"files": {"Follow-Up Materials": follow_up}},
             "missing": {"files": {}},
-            "paused": {"files": {"Recruiter Message": message}},
+            "considered": {"files": {"Recruiter Message": message}},
             "pass": {"files": {"Follow-Up Materials": follow_up}},
         }
         states = {
@@ -197,7 +189,7 @@ class Sprint15MaterialsTests(unittest.TestCase):
         }
         self.assertEqual(states["applied"]["_follow_up_materials_status"], "Available")
         self.assertEqual(states["missing"]["_follow_up_materials_status"], "Missing")
-        self.assertEqual(states["paused"]["_materials_availability_label"], "Application messages available")
+        self.assertEqual(states["considered"]["_materials_availability_label"], "Application messages available")
         self.assertEqual(states["pass"]["follow_up_status"], "Not applicable")
         self.assertEqual(states["pass"]["_follow_up_materials_status"], "Not applicable")
 

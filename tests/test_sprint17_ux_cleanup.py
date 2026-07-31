@@ -224,8 +224,8 @@ class CompactDashboardTests(unittest.TestCase):
             },
             "files": {},
         }
-        groups = {"active": [], "applied": [package], "reviewed": [], "paused": [], "pass": [], "hidden": []}
-        counts = {"Total": 1, "Active": 0, "Applied / Follow-up": 1, "Reviewed": 0, "Paused": 0, "Pass": 0, "Hidden / Invalid": 0}
+        groups = {"prospect": [], "considered": [], "applied": [package], "under_consideration": [], "interviewing": [], "offer": [], "rejected": [], "withdrawn_closed": []}
+        counts = {"Total": 1, "Prospect": 0, "Considered": 0, "Applied": 1, "Under Consideration": 0, "Interviewing": 0, "Offer": 0, "Rejected": 0, "Withdrawn / Closed": 0}
         content = _render_html(groups, counts, [], Path("/tmp/dashboard"))
         self.assertIn("Today’s Focus", content)
         self.assertIn('data-status-filter="Applied"', content)

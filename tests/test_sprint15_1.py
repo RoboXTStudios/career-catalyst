@@ -46,14 +46,14 @@ def _record(identifier, **updates):
 class StatusNormalizationTests(unittest.TestCase):
     def test_supported_and_legacy_values_normalize_consistently(self):
         expected = {
-            "Pass": "Pass",
-            "passed": "Pass",
-            "Paused": "Paused",
-            "on hold": "Paused",
-            "Invalid/Hidden": "Invalid/Hidden",
-            "hidden": "Invalid/Hidden",
+            "Pass": "Withdrawn / Closed",
+            "passed": "Withdrawn / Closed",
+            "Paused": "Considered",
+            "on hold": "Under Consideration",
+            "Invalid/Hidden": "Withdrawn / Closed",
+            "hidden": "Withdrawn / Closed",
             "submitted": "Applied",
-            "followup": "Follow-up",
+            "followup": "Applied",
         }
         for value, canonical in expected.items():
             self.assertEqual(normalize_status(value), canonical)
@@ -66,7 +66,7 @@ class StatusNormalizationTests(unittest.TestCase):
             "dashboard_status": "Active",
             "stage": "Submitted",
         }
-        self.assertEqual(get_record_status(record), "Pass")
+        self.assertEqual(get_record_status(record), "Withdrawn / Closed")
         self.assertEqual(get_record_status({"application_status": "submitted"}), "Applied")
 
 
@@ -93,10 +93,9 @@ class DashboardStatusActionTests(unittest.TestCase):
     def test_each_button_action_updates_only_the_stable_target_id(self):
         expected = {
             "applied": "Applied",
-            "paused": "Paused",
-            "pass": "Pass",
-            "invalid_hidden": "Invalid/Hidden",
-            "active": "Active",
+            "considered": "Considered",
+            "withdrawn_closed": "Withdrawn / Closed",
+            "prospect": "Prospect",
         }
         for action, status in expected.items():
             self._write(self.original)
@@ -107,21 +106,18 @@ class DashboardStatusActionTests(unittest.TestCase):
             self.assertEqual(stored["first"], self.original[0])
             self.assertEqual(
                 stored["second"]["show_on_dashboard"],
-                status not in {"Pass", "Invalid/Hidden"},
+                True,
             )
 
-    def test_pass_paused_and_invalid_render_and_group_from_saved_status(self):
+    def test_considered_and_closed_render_and_group_from_saved_status(self):
         for action, label in (
-            ("pass", "Passed"),
-            ("paused", "Paused"),
-            ("invalid_hidden", "Hidden / Invalid"),
+            ("considered", "Considered"),
+            ("withdrawn_closed", "Withdrawn / Closed"),
         ):
             self._write(self.original)
             updated = app.apply_dashboard_status_action("second", action, self.root)
             self.assertIn(get_record_status(updated), app._status_badges(updated))
-            grouped = app.group_applications_by_status(
-                list(self._stored().values()), mode="Cleanup Mode"
-            )
+            grouped = app.group_applications_by_status(list(self._stored().values()))
             self.assertEqual([item["id"] for item in grouped[label]], ["second"])
 
     def test_reopening_clears_stale_hidden_visibility(self):
@@ -130,8 +126,8 @@ class DashboardStatusActionTests(unittest.TestCase):
             _record("second", status="Invalid/Hidden", show_on_dashboard=False),
         ]
         self._write(records)
-        updated = app.apply_dashboard_status_action("second", "active", self.root)
-        self.assertEqual(get_record_status(updated), "Active")
+        updated = app.apply_dashboard_status_action("second", "prospect", self.root)
+        self.assertEqual(get_record_status(updated), "Prospect")
         self.assertTrue(updated["show_on_dashboard"])
 
     def test_applied_actions_include_follow_up_sent_and_needed(self):
@@ -139,37 +135,28 @@ class DashboardStatusActionTests(unittest.TestCase):
         self.assertIn("Follow-Up Sent", labels)
         self.assertIn("Follow-Up Needed", labels)
         sent = app.apply_dashboard_status_action("second", "follow_up_sent", self.root)
-        self.assertEqual(get_record_status(sent), "Follow-up")
+        self.assertEqual(get_record_status(sent), "Applied")
         self.assertEqual(sent["follow_up_status"], "Follow-up sent")
 
 
 class DashboardGroupingAndFilterTests(unittest.TestCase):
-    def test_regular_groups_do_not_conflate_active_applied_paused_pass_hidden(self):
+    def test_regular_groups_do_not_conflate_canonical_statuses(self):
         records = [
             _record("applied", status="Applied"),
-            _record("active", status="Active"),
-            _record("drafted", status="Drafted"),
-            _record("paused", status="Paused"),
-            _record("pass", status="Pass", show_on_dashboard=False),
-            _record("hidden", status="Invalid/Hidden", show_on_dashboard=False),
+            _record("prospect", status="Prospect"),
+            _record("considered", status="Considered"),
+            _record("closed", status="Withdrawn / Closed"),
         ]
         grouped = app.group_applications_by_status(records)
-        self.assertEqual([item["id"] for item in grouped["Applied / Follow-Up"]], ["applied"])
-        self.assertEqual(
-            [item["id"] for item in grouped["Active"]], ["active", "drafted"]
-        )
-        self.assertEqual([item["id"] for item in grouped["Paused"]], ["paused"])
-        self.assertEqual([item["id"] for item in grouped["Passed"]], ["pass"])
-        self.assertEqual(
-            [item["id"] for item in grouped["Hidden / Invalid"]], ["hidden"]
-        )
+        self.assertEqual([item["id"] for item in grouped["Applied"]], ["applied"])
+        self.assertEqual([item["id"] for item in grouped["Prospect"]], ["prospect"])
+        self.assertEqual([item["id"] for item in grouped["Considered"]], ["considered"])
+        self.assertEqual([item["id"] for item in grouped["Withdrawn / Closed"]], ["closed"])
 
     def test_cleanup_mode_includes_and_labels_every_cleanup_reason(self):
         records = [
             _record("weak", match_tier="Weak Match"),
-            _record("paused", status="Paused"),
-            _record("pass", status="Pass", show_on_dashboard=False),
-            _record("hidden", status="Invalid/Hidden", show_on_dashboard=False),
+            _record("closed", status="Withdrawn / Closed"),
             _record("stale", verification_status="Stale / Closed Risk"),
             _record("cannot", verification_status="Cannot Verify"),
             _record("unknown", source_trust_label="Unknown Source"),
@@ -178,60 +165,42 @@ class DashboardGroupingAndFilterTests(unittest.TestCase):
         cleanup = select_dashboard_mode(records, "Cleanup Mode")
         self.assertEqual({item["id"] for item in cleanup}, {item["id"] for item in records})
         grouped = app.group_applications_by_status(cleanup, mode="Cleanup Mode")
-        self.assertEqual([item["id"] for item in grouped["Paused"]], ["paused"])
-        self.assertEqual([item["id"] for item in grouped["Passed"]], ["pass"])
-        self.assertEqual([item["id"] for item in grouped["Hidden / Invalid"]], ["hidden"])
         self.assertEqual(
             {item["id"] for item in grouped["Stale / Cannot Verify"]},
             {"stale", "cannot", "unknown"},
         )
         self.assertEqual(
             {item["id"] for item in grouped["Needs decision"]},
-            {"weak", "aggregator"},
+            {"weak", "closed", "aggregator"},
         )
 
-    def test_status_filters_are_canonical_and_do_not_conflate_pass_with_hidden(self):
-        for status in (
-            "All",
-            "Drafted",
-            "Active",
-            "Applied",
-            "Reviewed",
-            "Paused",
-            "Pass",
-            "Invalid/Hidden",
-        ):
+    def test_status_filters_are_canonical(self):
+        for status in ("All", *app.VALID_STATUSES):
             self.assertIn(status, STATUS_FILTERS)
         records = [
-            _record("pass", status="Pass", show_on_dashboard=False),
-            _record("paused", status="Paused"),
-            _record("hidden", status="Invalid/Hidden", show_on_dashboard=False),
-            _record("active_stale_flag", status="Active", show_on_dashboard=False),
+            _record("closed", status="Withdrawn / Closed"),
+            _record("considered", status="Considered"),
+            _record("prospect", status="Prospect"),
         ]
         self.assertEqual(
-            [item["id"] for item in filter_dashboard_records(records, application_status="Pass")],
-            ["pass"],
+            [item["id"] for item in filter_dashboard_records(records, application_status="Withdrawn / Closed")],
+            ["closed"],
         )
         self.assertEqual(
-            [item["id"] for item in filter_dashboard_records(records, application_status="Paused")],
-            ["paused"],
-        )
-        self.assertEqual(
-            [item["id"] for item in filter_dashboard_records(records, application_status="Invalid/Hidden")],
-            ["hidden"],
+            [item["id"] for item in filter_dashboard_records(records, application_status="Considered")],
+            ["considered"],
         )
         self.assertEqual(
             [item["id"] for item in select_dashboard_mode(records, "All Mode")],
-            ["paused", "active_stale_flag"],
+            ["closed", "considered", "prospect"],
         )
 
 
 class RecommendedStepsAndFallbackTests(unittest.TestCase):
     def test_cleanup_guidance_respects_existing_status(self):
         scenarios = (
-            (_record("pass", status="Pass"), "Already passed", "mark pass"),
-            (_record("hidden", status="Invalid/Hidden"), "Hidden from active workflow", "mark pass"),
-            (_record("paused", status="Paused"), "Review later or mark pass", "Keep hidden"),
+            (_record("closed", status="Withdrawn / Closed"), "closed", "generate package"),
+            (_record("considered", status="Considered"), "Review", "Keep hidden"),
         )
         for record, expected, rejected in scenarios:
             step = recommended_next_steps([record], "Cleanup Mode")[0]

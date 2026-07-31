@@ -1,5 +1,13 @@
 # Changelog
 
+## Sprint 32
+
+- Replaced duplicated role-status lists with one canonical lifecycle and migrated legacy Paused roles to Considered.
+- Made Application Summary counts and filters operate on the same complete set of live, non-archived roles.
+- Replaced tracker-level archive flags with verified Finder-accessible archive bundles and a minimal Archive Log.
+- Replaced stale-state restoration with Reopen as New Prospect.
+- Added deterministic lifecycle integrity reporting and dry-run-first storage cleanup with quarantine.
+
 ## Sprint 31.1
 
 - Separated manually selected Relevant Evidence from system-recommended projects in the Tailoring Plan and exposed verified résumé, cover-letter, and non-use decisions.

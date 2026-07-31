@@ -20,19 +20,18 @@ class Sprint101UiHelperTests(unittest.TestCase):
     def test_summary_metrics_count_tracker_states(self):
         applications = [
             {"status": "Applied", "show_on_dashboard": True},
-            {"status": "Reviewed", "show_on_dashboard": True},
-            {"status": "Paused", "show_on_dashboard": True},
+            {"status": "Considered", "show_on_dashboard": True},
+            {"status": "Considered", "show_on_dashboard": True},
             {"status": "Invalid", "show_on_dashboard": False},
         ]
 
         self.assertEqual(
             self.app.summarize_applications(applications),
             {
-                "Total applications": 4,
+                "Total": 4,
                 "Applied": 1,
-                "Reviewed": 1,
-                "Paused": 1,
-                "Invalid/Hidden": 1,
+                "Considered": 2,
+                "Withdrawn / Closed": 1,
             },
         )
 
@@ -40,25 +39,26 @@ class Sprint101UiHelperTests(unittest.TestCase):
         applications = [
             {"id": "applied", "status": "Applied", "show_on_dashboard": True},
             {"id": "interview", "status": "Interviewing", "show_on_dashboard": True},
-            {"id": "reviewed", "status": "Reviewed", "show_on_dashboard": True},
-            {"id": "paused", "status": "Paused", "show_on_dashboard": True},
+            {"id": "reviewed", "status": "Considered", "show_on_dashboard": True},
+            {"id": "considered", "status": "Considered", "show_on_dashboard": True},
             {"id": "invalid", "status": "Invalid", "show_on_dashboard": False},
         ]
 
         grouped = self.app.group_applications_by_status(applications)
 
         self.assertEqual(
-            {item["id"] for item in grouped["Active / Applied"]},
-            {"applied", "interview"},
+            {item["id"] for item in grouped["Applied"]},
+            {"applied"},
         )
         self.assertEqual(
-            {item["id"] for item in grouped["Draft / Reviewed / Paused"]},
-            {"reviewed", "paused"},
+            {item["id"] for item in grouped["Interviewing"]},
+            {"interview"},
         )
         self.assertEqual(
-            {item["id"] for item in grouped["Hidden / Invalid"]},
-            {"invalid"},
+            {item["id"] for item in grouped["Considered"]},
+            {"reviewed", "considered"},
         )
+        self.assertEqual({item["id"] for item in grouped["Withdrawn / Closed"]}, {"invalid"})
 
     def test_career_catalyst_ui_language_is_present(self):
         for phrase in (

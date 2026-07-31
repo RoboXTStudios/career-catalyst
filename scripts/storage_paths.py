@@ -13,6 +13,9 @@ import yaml
 
 PathInput = Union[str, Path]
 EXPORT_ROOT_ENV = "CAREER_CATALYST_EXPORT_ROOT"
+ARCHIVE_ROOT_ENV = "CAREER_CATALYST_ARCHIVE_ROOT"
+QUARANTINE_ROOT_ENV = "CAREER_CATALYST_QUARANTINE_ROOT"
+REPORT_ROOT_ENV = "CAREER_CATALYST_REPORT_ROOT"
 
 
 class StoragePathError(ValueError):
@@ -80,6 +83,43 @@ def require_beneath_export_root(path: PathInput, export_root: PathInput) -> Path
     if resolved != root and root not in resolved.parents:
         raise StoragePathError(
             f"Package path '{resolved}' is outside canonical export root '{root}'."
+        )
+    return resolved
+
+
+def _sibling_storage_root(
+    project_root: Optional[PathInput], env_name: str, directory_name: str
+) -> Path:
+    configured = str(os.environ.get(env_name) or "").strip()
+    if configured:
+        return Path(configured).expanduser().resolve()
+    return (canonical_export_root(project_root).parent / directory_name).resolve()
+
+
+def canonical_archive_root(project_root: Optional[PathInput] = None) -> Path:
+    """Return the Finder-accessible local role archive root."""
+    return _sibling_storage_root(project_root, ARCHIVE_ROOT_ENV, "archive")
+
+
+def canonical_quarantine_root(project_root: Optional[PathInput] = None) -> Path:
+    """Return the non-destructive cleanup quarantine root."""
+    return _sibling_storage_root(
+        project_root, QUARANTINE_ROOT_ENV, "cleanup_quarantine"
+    )
+
+
+def canonical_report_root(project_root: Optional[PathInput] = None) -> Path:
+    """Return the maintenance report root."""
+    return _sibling_storage_root(project_root, REPORT_ROOT_ENV, "reports")
+
+
+def require_beneath(path: PathInput, root: PathInput, *, label: str) -> Path:
+    """Resolve and validate a path beneath a configured storage root."""
+    resolved = Path(path).expanduser().resolve()
+    boundary = Path(root).expanduser().resolve()
+    if resolved != boundary and boundary not in resolved.parents:
+        raise StoragePathError(
+            f"{label} path '{resolved}' is outside configured root '{boundary}'."
         )
     return resolved
 
