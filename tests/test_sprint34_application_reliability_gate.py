@@ -178,6 +178,11 @@ def test_sanitized_openai_score_is_deterministic_and_unchanged_by_generation(tmp
     from scripts.evidence_engine import evidence_projects_for_role
     from scripts.application_tracker import load_application_tracker
 
+    expected = yaml.safe_load(
+        (ROOT / "tests" / "fixtures" / "sprint34" / "openai_program_manager_lead.yml").read_text(
+            encoding="utf-8"
+        )
+    )["expected"]
     application = load_application_tracker(root)[0]
     projects = evidence_projects_for_role(application, root)
     baseline = score_job_match(
@@ -187,10 +192,10 @@ def test_sanitized_openai_score_is_deterministic_and_unchanged_by_generation(tmp
         "jobs/openai_program_manager_lead.md", root, projects
     )
     contribution = evidence_score_contribution(baseline, adjusted)
-    assert baseline["match_score"] == 75
-    assert contribution["delta"] == 0
+    assert baseline["match_score"] == expected["base_score"] == 75
+    assert contribution["delta"] == expected["evidence_contribution"] == 0
     assert contribution["matched_requirements"] == ["lead", "delivery", "product"]
-    assert adjusted["match_score"] == 75
+    assert adjusted["match_score"] == expected["final_score"] == 75
 
     generate_package(
         "openai_program_manager_lead",
@@ -201,7 +206,7 @@ def test_sanitized_openai_score_is_deterministic_and_unchanged_by_generation(tmp
     after = score_job_match(
         "jobs/openai_program_manager_lead.md", root, projects
     )
-    assert after["match_score"] == adjusted["match_score"] == 75
+    assert after["match_score"] == adjusted["match_score"] == expected["final_score"] == 75
 
 
 def test_high_scoring_role_remains_high_scoring_through_generation(tmp_path: Path):
