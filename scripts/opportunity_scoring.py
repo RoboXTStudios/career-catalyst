@@ -28,7 +28,7 @@ def _bounded(value: float) -> int:
     return int(max(0, min(100, round(value))))
 
 
-def _salary_score(value: Any) -> int:
+def _salary_score(value: Any) -> Optional[int]:
     compensation = normalize_compensation(value, source="saved")
     amounts = [
         float(amount)
@@ -38,7 +38,7 @@ def _salary_score(value: Any) -> int:
     if compensation.get("period") == "hour":
         amounts = [amount * 2080 for amount in amounts]
     if not amounts:
-        return 55
+        return None
     maximum = max(amounts)
     minimum = min(amounts)
     if minimum >= 150000:
@@ -140,7 +140,17 @@ def score_opportunity(
         "Posting Freshness": int(freshness_result["score"]),
         "Interview Probability": interview,
     }
-    overall = _bounded(sum(dimensions[key] * WEIGHTS[key] for key in WEIGHTS))
+    scored_weight = sum(
+        WEIGHTS[key] for key, value in dimensions.items() if value is not None
+    )
+    overall = _bounded(
+        sum(
+            float(value) * WEIGHTS[key]
+            for key, value in dimensions.items()
+            if value is not None
+        )
+        / max(scored_weight, 0.01)
+    )
     if freshness_result.get("is_closed"):
         recommendation = "Skip"
     elif overall >= 80:
@@ -156,4 +166,10 @@ def score_opportunity(
         "apply_recommendation": recommendation,
         "dimensions": dimensions,
         "salary_disclosed": bool(compensation.get("detected")),
+        "compensation_disclosure_state": compensation.get("disclosure_state") or "unknown_unverified",
+        "salary_verification_action": (
+            "Verify compensation before recruiter screen."
+            if not compensation.get("detected")
+            else ""
+        ),
     }

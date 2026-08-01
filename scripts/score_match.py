@@ -583,32 +583,47 @@ def _salary_amounts(salary_value: Any, raw_text: str) -> List[int]:
     )
 
 
-def _salary_fit(salary_value: Any, raw_text: str) -> Tuple[int, str, Optional[str]]:
-    disclosed = bool(
-        str(salary_value or "").strip()
-        and str(salary_value or "").strip().lower() not in {"not disclosed", "unknown", "n/a"}
+def _salary_fit(
+    salary_value: Any, raw_text: str
+) -> Tuple[Optional[int], str, Optional[str], str]:
+    normalized = normalize_compensation(
+        salary_value if salary_value else raw_text,
+        source="saved" if salary_value else "description",
     )
-    amounts = _salary_amounts(salary_value, raw_text) if disclosed else []
+    state = str(normalized.get("disclosure_state") or "unknown_unverified")
+    amounts = _salary_amounts(normalized, raw_text)
     if not amounts:
-        return 55, "Not disclosed", "Compensation is not disclosed; verify the range before investing in a package."
+        if state == "not_listed":
+            return (
+                None,
+                "Compensation not listed — verify before recruiter screen.",
+                "Compensation was not listed; verify the range before the recruiter screen.",
+                state,
+            )
+        return (
+            None,
+            "Compensation unknown — verify posting or recruiter details.",
+            "Compensation is unknown; verify the posting or recruiter details.",
+            "unknown_unverified",
+        )
     minimum, maximum = min(amounts), max(amounts)
-    normalized = normalize_compensation(salary_value, source="saved")
     display = str(normalized.get("display") or salary_value).strip()
     if minimum >= 150000:
-        return 100, display, None
+        return 100, display, None, "provided"
     if maximum >= 150000:
-        return 90, display, None
+        return 90, display, None, "provided"
     if minimum >= 120000:
-        return 78, display, None
+        return 78, display, None, "provided"
     if maximum >= 120000:
-        return 68, display, "The lower end of the range is below Trisha's $120k caution threshold."
+        return 68, display, "The lower end of the range is below Trisha's $120k caution threshold.", "provided"
     if maximum >= 85000:
         return (
             45,
             display,
             "Compensation is below the $120k caution threshold; pursue only if the role is a strategic doorway.",
+            "provided",
         )
-    return 25, display, "Compensation is materially below Trisha's target range."
+    return 25, display, "Compensation is materially below Trisha's target range.", "provided"
 
 
 def _work_arrangement(parsed_job: Dict[str, Any]) -> Tuple[int, str, Optional[str]]:
@@ -635,13 +650,18 @@ def _work_arrangement(parsed_job: Dict[str, Any]) -> Tuple[int, str, Optional[st
     return 55, arrangement or "Not specified", "Work arrangement is not specified."
 
 
-def _confidence(parsed_job: Dict[str, Any], salary_display: str, work_label: str, freshness: Dict[str, Any]) -> str:
+def _confidence(
+    parsed_job: Dict[str, Any],
+    compensation_state: str,
+    work_label: str,
+    freshness: Dict[str, Any],
+) -> str:
     missing = sum(
         (
             not bool(parsed_job.get("job_title")),
             not bool(parsed_job.get("company")),
             not bool(parsed_job.get("location")),
-            salary_display == "Not disclosed",
+            compensation_state != "provided",
             work_label == "Not specified",
             freshness.get("age_days") is None,
         )
@@ -652,7 +672,7 @@ def _confidence(parsed_job: Dict[str, Any], salary_display: str, work_label: str
         confidence = "Medium"
     else:
         confidence = "Low"
-    if salary_display == "Not disclosed" and confidence == "High":
+    if compensation_state != "provided" and confidence == "High":
         return "Medium"
     return confidence
 
@@ -678,23 +698,25 @@ def _decision_match_report(parsed_job: Dict[str, Any], legacy_report: Dict[str, 
     industry_score, industry_signal, pure_agency = _industry_fit(
         combined, parsed_job.get("company")
     )
-    salary_score, salary_display, salary_gap = _salary_fit(
+    salary_score, salary_display, salary_gap, compensation_state = _salary_fit(
         parsed_job.get("compensation") or parsed_job.get("salary_range"), raw_text
     )
     work_score, work_label, work_gap = _work_arrangement(parsed_job)
     freshness = detect_job_freshness(raw_text)
     non_fit_signals = [signal for signal in OBVIOUS_NON_FIT_SIGNALS if signal in combined.lower()]
 
-    score = round(
+    weighted_score = (
         (legacy_report["match_score"] * 0.30)
         + (functional_score * 0.25)
         + (seniority_score * 0.15)
         + (industry_score * 0.12)
-        + (salary_score * 0.08)
+        + ((salary_score or 0) * 0.08)
         + (work_score * 0.05)
         + (int(freshness["score"]) * 0.05)
-        - (15 if non_fit_signals else 0)
     )
+    if salary_score is None:
+        weighted_score /= 0.92
+    score = round(weighted_score - (15 if non_fit_signals else 0))
     if freshness.get("is_closed"):
         score = min(score, 25)
     score = int(max(0, min(100, score)))
@@ -707,7 +729,7 @@ def _decision_match_report(parsed_job: Dict[str, Any], legacy_report: Dict[str, 
         strengths.append(seniority_strength)
     if industry_signal and not pure_agency:
         strengths.append(f"The {industry_signal} context is adjacent to Trisha's target industries.")
-    if salary_score >= 78:
+    if salary_score is not None and salary_score >= 78:
         strengths.append("The disclosed compensation is aligned with or near Trisha's target.")
     if work_score >= 82:
         strengths.append(f"The {work_label.lower()} arrangement supports practical fit.")
@@ -769,12 +791,18 @@ def _decision_match_report(parsed_job: Dict[str, Any], legacy_report: Dict[str, 
         "Weak Match": "The role has some overlap but falls short on important fit factors.",
         "Pass": "The current listing is not a sensible package-generation priority.",
     }[tier]
-    if salary_score <= 45 and industry_score >= 75 and tier in {"Good Match", "Stretch Match"}:
+    if salary_score is not None and salary_score <= 45 and industry_score >= 75 and tier in {"Good Match", "Stretch Match"}:
         lead = "This could be a strategic doorway into a target industry, but the compensation gap is material."
 
     legacy_report.update(
         {
             "salary_range": salary_display,
+            "compensation_disclosure_state": compensation_state,
+            "salary_verification_action": (
+                "Verify compensation before recruiter screen."
+                if compensation_state != "provided"
+                else ""
+            ),
             "match_score": score,
             "match_band": _match_band(score),
             "match_tier": tier,
@@ -782,7 +810,7 @@ def _decision_match_report(parsed_job: Dict[str, Any], legacy_report: Dict[str, 
             "match_strengths": _dedupe(strengths)[:5],
             "match_gaps": _dedupe(gaps)[:5],
             "recommended_action": action,
-            "confidence": _confidence(parsed_job, salary_display, work_label, freshness),
+            "confidence": _confidence(parsed_job, compensation_state, work_label, freshness),
         }
     )
     return legacy_report
@@ -872,6 +900,7 @@ def score_job_data(job_data: Dict[str, Any], project_root: Optional[PathInput] =
         "compensation": job_data.get("compensation") or normalize_compensation(
             job_data.get("salary_range") or raw_text,
             source="saved" if job_data.get("salary_range") else "description",
+            disclosure_state=job_data.get("compensation_disclosure_state"),
         ),
         "posting_date": job_data.get("posting_date"),
         "keywords": extract_keywords(canonical_text),

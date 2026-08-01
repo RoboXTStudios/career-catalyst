@@ -105,7 +105,15 @@ from scripts.package_generator import (
     resolve_job_reference,
 )
 from scripts.role_intent import tailoring_plan
-from scripts.parse_job import extract_metadata, normalize_compensation, parse_job_description
+from scripts.parse_job import (
+    COMPENSATION_DISCLOSURE_STATES,
+    COMPENSATION_STATE_LABELS,
+    compensation_status_message,
+    extract_metadata,
+    normalize_compensation,
+    normalize_compensation_disclosure_state,
+    parse_job_description,
+)
 from scripts.prospect_intake import ProspectIntakeError, create_prospect
 from scripts.resume_foundation import canonical_resume_foundation_info
 from scripts.score_match import persisted_match_fields, score_job_data, score_job_match
@@ -498,6 +506,11 @@ def reset_package_preview_for_selection(
     for key in (
         "last_package_outputs",
         "last_package_result",
+        "ats_resume_preview",
+        "styled_resume_preview",
+        "cover_letter_preview",
+        "package_summary_preview",
+        "package_evidence_usage",
         "package_role_intelligence",
         "package_intelligence_preview",
         "package_suggested_cover_letter_angle",
@@ -634,6 +647,16 @@ def update_dashboard_role(
         "verification_notes",
         "posting_url",
         "application_portal_url",
+        "salary_range",
+        "compensation_disclosure_state",
+        "compensation_currency",
+        "compensation_period",
+        "compensation_raw",
+        "compensation_source",
+        "match_tier",
+        "match_summary",
+        "recommended_action",
+        "confidence",
     ):
         if field in values:
             updates[field] = str(values.get(field) or "")
@@ -647,6 +670,18 @@ def update_dashboard_role(
         updates["show_on_dashboard"] = bool(values["show_on_dashboard"])
     if "source_verified" in values:
         updates["source_verified"] = bool(values["source_verified"])
+    for field in ("compensation_minimum", "compensation_maximum"):
+        if field in values:
+            updates[field] = values[field]
+    if "match_score" in values:
+        updates["match_score"] = values["match_score"]
+    for field in ("match_strengths", "match_gaps"):
+        if field in values:
+            updates[field] = list(values.get(field) or [])
+    if "compensation_manual_override" in values:
+        updates["compensation_manual_override"] = bool(
+            values["compensation_manual_override"]
+        )
     if "follow_up_status" in values:
         follow_up_status = str(values.get("follow_up_status") or "").strip()
         updates["follow_up_status"] = (
@@ -783,6 +818,12 @@ def apply_dashboard_status_action(
 
 def build_prospect_payload(values: Dict[str, Any]) -> Dict[str, Any]:
     """Normalize widget values without importing or executing Streamlit."""
+    compensation = values.get("compensation") or normalize_compensation(
+        values.get("salary_range"),
+        source="manual" if values.get("compensation_manual_override") else "saved",
+        manual_override=bool(values.get("compensation_manual_override")),
+        disclosure_state=values.get("compensation_disclosure_state"),
+    )
     return {
         "posting_url": str(values.get("posting_url") or values.get("official_url") or "").strip(),
         "application_portal_url": str(values.get("application_portal_url") or "").strip(),
@@ -795,11 +836,8 @@ def build_prospect_payload(values: Dict[str, Any]) -> Dict[str, Any]:
         "job_title": str(values.get("job_title") or "").strip(),
         "location": str(values.get("location") or "").strip(),
         "salary_range": str(values.get("salary_range") or "").strip(),
-        "compensation": values.get("compensation") or normalize_compensation(
-            values.get("salary_range"),
-            source="manual" if values.get("compensation_manual_override") else "saved",
-            manual_override=bool(values.get("compensation_manual_override")),
-        ),
+        "compensation": compensation,
+        "compensation_disclosure_state": compensation["disclosure_state"],
         "compensation_manual_override": bool(values.get("compensation_manual_override")),
         "posting_date": str(values.get("posting_date") or "").strip(),
         "source": str(values.get("source") or "Official career page").strip(),
@@ -810,6 +848,38 @@ def build_prospect_payload(values: Dict[str, Any]) -> Dict[str, Any]:
         "notes": str(values.get("notes") or "").strip(),
         "next_action": str(values.get("next_action") or "").strip(),
         "show_on_dashboard": bool(values.get("show_on_dashboard", True)),
+    }
+
+
+def compensation_record_updates(
+    disclosure_state: str, value: Any, *, manual_override: bool = True
+) -> Dict[str, Any]:
+    """Build one canonical tracker update without inventing missing numbers."""
+    compensation = normalize_compensation(
+        value,
+        source="manual" if manual_override else "saved",
+        manual_override=manual_override,
+        disclosure_state=disclosure_state,
+    )
+    if disclosure_state == "provided" and not compensation.get("detected"):
+        raise ValueError(
+            "Provided compensation requires a verified range or value."
+        )
+    return {
+        "salary_range": str(
+            compensation.get("display")
+            or compensation.get("status_message")
+            or "Compensation unknown — verify posting or recruiter details."
+        ),
+        "compensation_disclosure_state": compensation["disclosure_state"],
+        "compensation_minimum": compensation.get("minimum"),
+        "compensation_maximum": compensation.get("maximum"),
+        "compensation_currency": compensation.get("currency") or "",
+        "compensation_period": compensation.get("period") or "",
+        "compensation_raw": compensation.get("raw") or "",
+        "compensation_source": compensation.get("source") or "",
+        "compensation_manual_override": compensation.get("manual_override", False),
+        "compensation": compensation,
     }
 
 
@@ -912,6 +982,26 @@ def _package_map(project_root: Path = PROJECT_ROOT) -> Dict[str, Dict[str, Any]]
     }
 
 
+def _compensation_display(
+    application: Dict[str, Any], package: Dict[str, Any] | None = None
+) -> str:
+    value = str(
+        application.get("salary_range")
+        or (package or {}).get("salary_range")
+        or ""
+    ).strip()
+    if value and value.lower() not in {"not disclosed", "unknown", "n/a"}:
+        return value
+    state = normalize_compensation_disclosure_state(
+        application.get("compensation_disclosure_state"),
+        detected=bool(
+            application.get("compensation_minimum") is not None
+            or application.get("compensation_maximum") is not None
+        ),
+    )
+    return compensation_status_message(state) or value
+
+
 def _metadata_html(application: Dict[str, Any], package: Dict[str, Any]) -> str:
     humanize = lambda value: str(value).replace("_", " ").title()
     source_display = application.get("source_name")
@@ -919,7 +1009,7 @@ def _metadata_html(application: Dict[str, Any], package: Dict[str, Any]) -> str:
         source_display = application.get("source") or "Unknown"
     metadata = (
         ("Location", application.get("location") or package.get("location")),
-        ("Salary", application.get("salary_range") or package.get("salary_range")),
+        ("Salary", _compensation_display(application, package)),
         ("Freshness", application.get("freshness_label") or application.get("freshness")),
         ("Posting date", application.get("posting_date") or "Posting date unknown"),
         ("Freshness Risk", application.get("freshness_risk") or "Unknown"),
@@ -978,7 +1068,7 @@ def _primary_facts_html(application: Dict[str, Any], package: Dict[str, Any]) ->
     facts = (
         ("Location", application.get("location") or package.get("location")),
         ("Work arrangement", application.get("work_arrangement")),
-        ("Salary", application.get("salary_range") or package.get("salary_range")),
+        ("Salary", _compensation_display(application, package)),
         ("Source type", application.get("source_type") or "Unknown Source"),
         ("Verification", application.get("verification_status") or "Not Verified"),
         ("Posting date", application.get("posting_date") or "Posting date unknown"),
@@ -1125,6 +1215,34 @@ def _render_source_verification_panel(
         key=f"source_posting_date_{tracker_id}",
         placeholder="YYYY-MM-DD",
     )
+    saved_compensation_state = normalize_compensation_disclosure_state(
+        application.get("compensation_disclosure_state"),
+        detected=bool(
+            application.get("compensation_minimum") is not None
+            or application.get("compensation_maximum") is not None
+        ),
+    )
+    compensation_state = st.selectbox(
+        "Compensation status",
+        COMPENSATION_DISCLOSURE_STATES,
+        index=COMPENSATION_DISCLOSURE_STATES.index(saved_compensation_state),
+        format_func=lambda value: COMPENSATION_STATE_LABELS[value],
+        key=f"source_compensation_state_{tracker_id}",
+    )
+    compensation_value = ""
+    if compensation_state != "not_listed":
+        compensation_value = st.text_input(
+            "Compensation range or value",
+            value=str(application.get("compensation_raw") or (
+                application.get("salary_range")
+                if saved_compensation_state == "provided"
+                else ""
+            )),
+            key=f"source_compensation_value_{tracker_id}",
+        )
+    compensation_message = compensation_status_message(compensation_state)
+    if compensation_message:
+        st.caption(compensation_message)
     current_verification = str(
         application.get("verification_status") or "Not Verified"
     )
@@ -1166,6 +1284,36 @@ def _render_source_verification_panel(
         key=f"source_save_{tracker_id}",
         use_container_width=True,
     ):
+        try:
+            compensation_updates = compensation_record_updates(
+                compensation_state, compensation_value
+            )
+        except ValueError as error:
+            st.warning(str(error))
+            return
+        selected_ids = {
+            str(value) for value in application.get("evidence_project_ids") or []
+        }
+        try:
+            selected_projects = [
+                project
+                for project in load_evidence_projects(PROJECT_ROOT)
+                if str(project.get("id") or "") in selected_ids
+            ]
+        except EvidenceEngineError:
+            selected_projects = []
+        resolved = resolve_job_reference(tracker_id, PROJECT_ROOT)
+        parsed = parse_job_description(resolved["job_path"])
+        match_report = score_job_data(
+            {
+                **application,
+                **compensation_updates,
+                "job_title": application.get("role"),
+                "job_description": parsed.get("raw_text") or "",
+            },
+            PROJECT_ROOT,
+            selected_projects,
+        )
         update_dashboard_role(
             tracker_id,
             {
@@ -1175,6 +1323,8 @@ def _render_source_verification_panel(
                 "source_verified": source_verified,
                 "freshness": freshness,
                 "verification_notes": source_notes,
+                **compensation_updates,
+                **persisted_match_fields(match_report),
             },
             PROJECT_ROOT,
         )
@@ -1790,6 +1940,11 @@ def _render_package_summary(st: Any, package_result: Dict[str, Any]) -> None:
     tailoring = package_result.get("tailoring_metadata") or {}
     if tailoring:
         st.markdown("**Evidence use in generated materials**")
+        st.caption(
+            f"Selected: {tailoring.get('selected_count', 0)} · "
+            f"Used anywhere: {tailoring.get('used_anywhere_count', 0)} · "
+            f"Omitted from package: {tailoring.get('omitted_from_package_count', 0)}"
+        )
         st.markdown(
             "**Used in Résumé:** "
             + (", ".join(tailoring.get("resume_projects_used") or []) or "None")
@@ -1808,6 +1963,40 @@ def _render_package_summary(st: Any, package_result: Dict[str, Any]) -> None:
                 or "None"
             )
         )
+        fallback = tailoring.get("unselected_fallback_used") or []
+        st.markdown(
+            "**Unselected fallback used:** "
+            + (", ".join(str(item.get("title")) for item in fallback) or "None")
+        )
+        artifact_usage = tailoring.get("artifact_usage") or {}
+        for selected_evidence in tailoring.get("selected_evidence") or []:
+            evidence_id = str(selected_evidence.get("id") or "")
+            title = str(selected_evidence.get("title") or "Untitled Evidence")
+            details = []
+            for artifact_key, label in (
+                ("ats_resume", "ATS résumé"),
+                ("styled_resume", "styled résumé"),
+                ("cover_letter", "cover letter"),
+            ):
+                selection = artifact_usage.get(artifact_key) or {}
+                used = any(
+                    str(item.get("id") or "") == evidence_id
+                    for item in selection.get("used") or []
+                )
+                omitted = next(
+                    (
+                        item
+                        for item in selection.get("omitted") or []
+                        if str(item.get("id") or "") == evidence_id
+                    ),
+                    None,
+                )
+                details.append(
+                    f"{label}: Used"
+                    if used
+                    else f"{label}: Not used ({(omitted or {}).get('reason') or 'Better suited to another artifact.'})"
+                )
+            st.caption(f"{title} — " + "; ".join(details))
     checklist = package_result.get("package_checklist") or []
     if checklist:
         st.markdown("**Generated package checklist**")
@@ -1842,6 +2031,7 @@ def _initialize_intake_state(st: Any) -> None:
         "prospect_salary": "",
         "prospect_salary_auto_value": "",
         "prospect_salary_manual_override": False,
+        "prospect_compensation_state": "unknown_unverified",
         "prospect_posting_date": "",
         "prospect_posting_date_auto_value": "",
         "prospect_posting_date_manual_override": False,
@@ -1864,6 +2054,7 @@ def apply_detected_intake_metadata(session_state: Any) -> Dict[str, Any]:
     if not session_state.get("prospect_salary_manual_override") and metadata.get("salary_range"):
         session_state["prospect_salary"] = metadata["salary_range"]
         session_state["prospect_salary_auto_value"] = metadata["salary_range"]
+        session_state["prospect_compensation_state"] = "provided"
     if not session_state.get("prospect_posting_date_manual_override") and metadata.get("posting_date"):
         session_state["prospect_posting_date"] = metadata["posting_date"]
         session_state["prospect_posting_date_auto_value"] = metadata["posting_date"]
@@ -1873,10 +2064,13 @@ def apply_detected_intake_metadata(session_state: Any) -> Dict[str, Any]:
 
 def mark_compensation_manual_override(session_state: Any) -> None:
     """Remember that the editable compensation value now belongs to the user."""
+    manual_value = str(session_state.get("prospect_salary") or "").strip()
     session_state["prospect_salary_manual_override"] = (
-        str(session_state.get("prospect_salary") or "").strip()
+        manual_value
         != str(session_state.get("prospect_salary_auto_value") or "").strip()
     )
+    if normalize_compensation(manual_value, manual_override=True).get("detected"):
+        session_state["prospect_compensation_state"] = "provided"
     mark_prospect_intelligence_stale(session_state)
 
 
@@ -1905,6 +2099,7 @@ def detect_prospect_intelligence(values: Dict[str, Any]) -> Dict[str, Any]:
         values.get("salary_range") or values.get("job_description"),
         source="manual" if values.get("compensation_manual_override") else "description",
         manual_override=bool(values.get("compensation_manual_override")),
+        disclosure_state=values.get("compensation_disclosure_state"),
     )
     intelligence["match_report"] = score_job_data(values, PROJECT_ROOT)
     intelligence["job_description"] = str(values.get("job_description") or "")
@@ -1936,7 +2131,12 @@ def reparse_prospect_fields(values: Dict[str, Any]) -> Dict[str, Any]:
             refreshed[key] = fallback[key]
     refreshed["match_report"] = score_job_data(refreshed, PROJECT_ROOT)
     refreshed["compensation"] = metadata.get("compensation") or normalize_compensation(
-        refreshed.get("salary_range"), source="description"
+        refreshed.get("salary_range"),
+        source="description",
+        disclosure_state=values.get("compensation_disclosure_state"),
+    )
+    refreshed["compensation_disclosure_state"] = refreshed["compensation"].get(
+        "disclosure_state", "unknown_unverified"
     )
     refreshed["source_verification"] = normalize_job_source(refreshed)
     return refreshed
@@ -1997,6 +2197,7 @@ def apply_prospect_url_import_state(
             session_state[key] = ""
         session_state["prospect_salary_auto_value"] = ""
         session_state["prospect_salary_manual_override"] = False
+        session_state["prospect_compensation_state"] = "unknown_unverified"
         session_state["prospect_posting_date_auto_value"] = ""
         session_state["prospect_posting_date_manual_override"] = False
         mark_prospect_intelligence_stale(session_state)
@@ -2036,6 +2237,7 @@ def apply_prospect_url_import_state(
             "Paste the job description and re-score before generating package."
         )
         session_state["prospect_intelligence_stale"] = True
+        session_state["prospect_compensation_state"] = "unknown_unverified"
         return {"status": "partial", "message": message, "verification": verification}
 
     imported_title = imported.get("job_title")
@@ -2058,6 +2260,11 @@ def apply_prospect_url_import_state(
     if imported.get("salary_range"):
         session_state["prospect_salary_auto_value"] = imported["salary_range"]
         session_state["prospect_salary_manual_override"] = False
+        session_state["prospect_compensation_state"] = "provided"
+    elif imported.get("compensation_disclosure_state"):
+        session_state["prospect_compensation_state"] = normalize_compensation_disclosure_state(
+            imported.get("compensation_disclosure_state")
+        )
     if imported.get("posting_date"):
         session_state["prospect_posting_date_auto_value"] = imported["posting_date"]
         session_state["prospect_posting_date_manual_override"] = False
@@ -2313,12 +2520,25 @@ def _render_add_prospect(st: Any) -> None:
             "Role title", key="prospect_role", on_change=mark_intelligence_stale
         )
         st.text_input("Location", key="prospect_location")
-        st.text_input(
-            "Compensation",
-            key="prospect_salary",
-            on_change=mark_salary_manual,
-            help="Detected base compensation is prefilled. You can replace it with a verified manual value.",
+        st.selectbox(
+            "Compensation status",
+            COMPENSATION_DISCLOSURE_STATES,
+            key="prospect_compensation_state",
+            format_func=lambda value: COMPENSATION_STATE_LABELS[value],
+            on_change=mark_intelligence_stale,
         )
+        if st.session_state["prospect_compensation_state"] != "not_listed":
+            st.text_input(
+                "Compensation",
+                key="prospect_salary",
+                on_change=mark_salary_manual,
+                help="Enter a verified range or value. Leave blank when it is unknown.",
+            )
+        status_message = compensation_status_message(
+            st.session_state["prospect_compensation_state"]
+        )
+        if status_message:
+            st.caption(status_message)
         st.text_input(
             "Posting Date",
             key="prospect_posting_date",
@@ -2364,6 +2584,9 @@ def _render_add_prospect(st: Any) -> None:
                 "job_title": st.session_state["prospect_role"],
                 "location": st.session_state["prospect_location"],
                 "salary_range": st.session_state["prospect_salary"],
+                "compensation_disclosure_state": st.session_state[
+                    "prospect_compensation_state"
+                ],
                 "posting_date": st.session_state["prospect_posting_date"],
                 "work_arrangement": st.session_state["prospect_work_arrangement"],
                 "job_description": st.session_state["prospect_description"],
@@ -2380,6 +2603,7 @@ def _render_add_prospect(st: Any) -> None:
         if refreshed.get("salary_range") and not st.session_state.get("prospect_salary_manual_override"):
             st.session_state["prospect_salary"] = refreshed["salary_range"]
             st.session_state["prospect_salary_auto_value"] = refreshed["salary_range"]
+            st.session_state["prospect_compensation_state"] = "provided"
         if refreshed.get("posting_date") and not st.session_state.get("prospect_posting_date_manual_override"):
             st.session_state["prospect_posting_date"] = refreshed["posting_date"]
             st.session_state["prospect_posting_date_auto_value"] = refreshed["posting_date"]
@@ -2396,6 +2620,17 @@ def _render_add_prospect(st: Any) -> None:
 
     st.button("Re-parse details and re-score", on_click=reparse_current_fields)
 
+    salary_input = (
+        ""
+        if st.session_state["prospect_compensation_state"] == "not_listed"
+        else st.session_state["prospect_salary"]
+    )
+    compensation = normalize_compensation(
+        salary_input,
+        source="manual" if st.session_state.get("prospect_salary_manual_override") else "saved",
+        manual_override=bool(st.session_state.get("prospect_salary_manual_override")),
+        disclosure_state=st.session_state["prospect_compensation_state"],
+    )
     values = {
         "posting_url": st.session_state["prospect_url_value"],
         "application_portal_url": st.session_state.get("prospect_application_portal_url", ""),
@@ -2411,12 +2646,9 @@ def _render_add_prospect(st: Any) -> None:
         "company": st.session_state["prospect_company"],
         "job_title": st.session_state["prospect_role"],
         "location": st.session_state["prospect_location"],
-        "salary_range": st.session_state["prospect_salary"],
-        "compensation": normalize_compensation(
-            st.session_state["prospect_salary"],
-            source="manual" if st.session_state.get("prospect_salary_manual_override") else "saved",
-            manual_override=bool(st.session_state.get("prospect_salary_manual_override")),
-        ),
+        "salary_range": salary_input,
+        "compensation": compensation,
+        "compensation_disclosure_state": compensation["disclosure_state"],
         "compensation_manual_override": bool(st.session_state.get("prospect_salary_manual_override")),
         "posting_date": st.session_state["prospect_posting_date"],
         "source": st.session_state["prospect_source"],
@@ -2447,6 +2679,12 @@ def _render_add_prospect(st: Any) -> None:
     title_is_valid = is_valid_role_title(values["job_title"])
     if values["job_title"] and not title_is_valid:
         st.warning("Please confirm the role title before saving.")
+    compensation_valid_for_save = not (
+        st.session_state["prospect_compensation_state"] == "provided"
+        and not compensation.get("detected")
+    )
+    if not compensation_valid_for_save:
+        st.warning("Enter a verified compensation range or choose Not listed or Unknown / unverified.")
     if (
         values["company"]
         and title_is_valid
@@ -2456,6 +2694,7 @@ def _render_add_prospect(st: Any) -> None:
     complete_for_save = bool(
         values["company"]
         and title_is_valid
+        and compensation_valid_for_save
         and len(values["job_description"].strip()) >= MINIMUM_DESCRIPTION_LENGTH
     )
     save_clicked = st.button(

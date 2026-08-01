@@ -205,8 +205,11 @@ def _field_warnings(
     if not str(normalized.get("work_arrangement") or "").strip() or str(normalized.get("work_arrangement")).strip() == "Not specified":
         warnings.append("Work arrangement was not detected. Review before saving.")
     compensation = normalized.get("compensation") or {}
-    if not compensation.get("detected"):
-        warnings.append("Salary was not disclosed. Continue with review if the role is otherwise strong.")
+    state = str(compensation.get("disclosure_state") or "unknown_unverified")
+    if state == "not_listed":
+        warnings.append("Compensation not listed — verify before recruiter screen.")
+    elif state == "unknown_unverified":
+        warnings.append("Compensation unknown — verify posting or recruiter details.")
     elif compensation.get("needs_review"):
         warnings.append("Compensation was saved from a manual value. Review before applying.")
     if _source_needs_verify_first(verification):
@@ -290,8 +293,17 @@ def create_prospect(
         normalized_input.get("compensation") or salary_value,
         source="manual" if normalized_input.get("compensation_manual_override") else "description",
         manual_override=bool(normalized_input.get("compensation_manual_override")),
+        disclosure_state=(
+            normalized_input.get("compensation_disclosure_state")
+            or metadata.get("compensation_disclosure_state")
+        ),
     )
-    salary_range = str(compensation.get("display") or salary_value or "Not disclosed").strip()
+    salary_range = str(
+        compensation.get("display")
+        or compensation.get("status_message")
+        or salary_value
+        or "Compensation unknown — verify posting or recruiter details."
+    ).strip()
     try:
         official_url = validate_official_url(raw_url) if raw_url else ""
     except JobImportError as error:
@@ -317,6 +329,7 @@ def create_prospect(
             "work_arrangement": work_arrangement,
             "salary_range": salary_range,
             "compensation": compensation,
+            "compensation_disclosure_state": compensation["disclosure_state"],
             "job_description": description,
             "official_url": official_url,
             "source_url": official_url,
@@ -384,6 +397,7 @@ def create_prospect(
             "compensation_raw": compensation.get("raw"),
             "compensation_source": compensation.get("source"),
             "compensation_manual_override": compensation.get("manual_override", False),
+            "compensation_disclosure_state": compensation["disclosure_state"],
             "work_arrangement": work_arrangement,
             "notes": str(job_data.get("notes") or "").strip(),
             "next_action": next_action,
@@ -472,9 +486,19 @@ def add_prospect_from_job_file(
         "location": location,
         "work_arrangement": work_arrangement,
         "salary_range": str(parsed.get("salary_range") or "Not disclosed"),
+        "compensation": parsed.get("compensation"),
     }
     field_warnings = _field_warnings(normalized_for_warnings, verification, intelligence)
     next_action = _merge_next_action(verification.get("recommended_next_step"), verification)
+    compensation = parsed.get("compensation") or normalize_compensation(
+        parsed.get("salary_range"),
+        disclosure_state=parsed.get("compensation_disclosure_state"),
+    )
+    salary_display = str(
+        parsed.get("salary_range")
+        or compensation.get("status_message")
+        or "Compensation unknown — verify posting or recruiter details."
+    )
     tracker_result = add_prospect(
         {
             "id": tracker_id,
@@ -485,7 +509,14 @@ def add_prospect_from_job_file(
             "source": verification["source_name"],
             "official_url": str(parsed.get("source_url") or ""),
             "location": location,
-            "salary_range": str(parsed.get("salary_range") or "Not disclosed"),
+            "salary_range": salary_display,
+            "compensation_disclosure_state": compensation["disclosure_state"],
+            "compensation_minimum": compensation.get("minimum"),
+            "compensation_maximum": compensation.get("maximum"),
+            "compensation_currency": compensation.get("currency"),
+            "compensation_period": compensation.get("period"),
+            "compensation_raw": compensation.get("raw"),
+            "compensation_source": compensation.get("source"),
             "work_arrangement": work_arrangement,
             "job_file": _project_relative(resolved, root),
             "next_action": next_action,

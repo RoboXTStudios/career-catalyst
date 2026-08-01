@@ -159,7 +159,10 @@ class PackageReliabilityTests(unittest.TestCase):
         self._job()
         result = self._generate_with_core_outputs_mocked()
         application = load_application_tracker(self.root)[0]
-        self.assertEqual(application["salary_range"], "Not disclosed")
+        self.assertEqual(
+            application["salary_range"],
+            "Compensation unknown — verify posting or recruiter details.",
+        )
         self.assertIn("opportunity", result)
         self.assertIn("package_quality", result)
 
@@ -179,7 +182,10 @@ class PackageReliabilityTests(unittest.TestCase):
         result = create_prospect({"job_description": description}, self.root)
         self.assertEqual(result["application"]["company"], "New World Systems")
         self.assertEqual(result["application"]["role"], "Director, Business Operations")
-        self.assertEqual(result["application"]["salary_range"], "Not disclosed")
+        self.assertEqual(
+            result["application"]["salary_range"],
+            "Compensation unknown — verify posting or recruiter details.",
+        )
 
 
 if __name__ == "__main__":

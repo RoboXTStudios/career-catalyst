@@ -14,6 +14,26 @@ STOP_WORDS = {
     "this", "to", "was", "were", "will", "with",
 }
 
+GENERIC_EVIDENCE_TERMS = {
+    "leadership",
+    "management",
+    "operations",
+    "priorities",
+    "strategy",
+}
+
+ARTIFACT_CAPACITIES = {
+    "ats_resume": 3,
+    "styled_resume": 3,
+    "cover_letter": 3,
+}
+
+ARTIFACT_LABELS = {
+    "ats_resume": "ATS resume",
+    "styled_resume": "styled resume",
+    "cover_letter": "cover letter",
+}
+
 
 def project_title(project: Mapping[str, Any]) -> str:
     return str(project.get("title") or project.get("name") or "Untitled Evidence").strip()
@@ -78,6 +98,7 @@ def evidence_relevance(
         ]
     )
     matched = sorted(posting_terms & evidence_terms)
+    specific_matches = [term for term in matched if term not in GENERIC_EVIDENCE_TERMS]
     text = role_text(parsed_job)
     kind = project_kind(project)
     phrase_matches: list[str] = []
@@ -94,6 +115,7 @@ def evidence_relevance(
     matched_signals = list(dict.fromkeys([*phrase_matches, *matched]))
     return {
         "score": len(matched) + (3 * len(phrase_matches)),
+        "specific_score": len(specific_matches) + (3 * len(phrase_matches)),
         "matched_signals": matched_signals[:10],
     }
 
@@ -116,7 +138,255 @@ def relevant_selected_evidence(
     return [item for _score, _index, item in ranked[: max(0, limit)]]
 
 
+def _project_id(project: Mapping[str, Any]) -> str:
+    return str(project.get("id") or project_title(project)).strip()
+
+
+def _verified_detail(project: Mapping[str, Any]) -> bool:
+    return bool(
+        _flatten(
+            [
+                project.get("actions"),
+                project.get("results"),
+                project.get("candidate_facing_bullet"),
+                project.get("highlights"),
+            ]
+        )
+    )
+
+
+def _artifact_suitability(project: Mapping[str, Any], artifact_type: str) -> int:
+    detail = _flatten(
+        [
+            project.get("actions"),
+            project.get("results"),
+            project.get("candidate_facing_bullet"),
+            project.get("highlights"),
+        ]
+    )
+    if not detail:
+        return 0
+    if artifact_type == "cover_letter":
+        return 2 if project.get("actions") and project.get("results") else 1
+    return 2 if len(detail) >= 2 else 1
+
+
+def _selection_entry(
+    project: Mapping[str, Any],
+    *,
+    relevance: Mapping[str, Any],
+    user_order: int,
+    suitability: int,
+    source: str,
+) -> dict[str, Any]:
+    return {
+        "id": _project_id(project),
+        "title": project_title(project),
+        "source": source,
+        "user_order": user_order,
+        "relevance_score": int(relevance.get("score") or 0),
+        "matched_signals": list(relevance.get("matched_signals") or []),
+        "artifact_suitability": suitability,
+        "_project": dict(project),
+    }
+
+
+def _redundancy_ratio(
+    entry: Mapping[str, Any], selected: Sequence[Mapping[str, Any]]
+) -> float:
+    signals = {str(value).lower() for value in entry.get("matched_signals") or []}
+    if not signals or not selected:
+        return 0.0
+    return max(
+        len(
+            signals
+            & {str(value).lower() for value in prior.get("matched_signals") or []}
+        )
+        / len(signals)
+        for prior in selected
+    )
+
+
+def public_artifact_selection(selection: Mapping[str, Any]) -> dict[str, Any]:
+    """Return the persisted, candidate-safe portion of one artifact decision."""
+
+    def public_entry(entry: Mapping[str, Any]) -> dict[str, Any]:
+        return {
+            key: value
+            for key, value in entry.items()
+            if key != "_project"
+        }
+
+    return {
+        "artifact_type": selection.get("artifact_type"),
+        "artifact_label": selection.get("artifact_label"),
+        "capacity": selection.get("capacity"),
+        "selected_ids": list(selection.get("selected_ids") or []),
+        "eligible": [public_entry(item) for item in selection.get("eligible") or []],
+        "ranked": [public_entry(item) for item in selection.get("ranked") or []],
+        "used": [public_entry(item) for item in selection.get("used") or []],
+        "omitted": [public_entry(item) for item in selection.get("omitted") or []],
+        "fallback_used": [
+            public_entry(item) for item in selection.get("fallback_used") or []
+        ],
+    }
+
+
+def select_evidence_for_artifact(
+    parsed_job: Mapping[str, Any],
+    selected_projects: Sequence[Mapping[str, Any]],
+    *,
+    artifact_type: str,
+    capacity: int | None = None,
+    fallback_projects: Sequence[Mapping[str, Any]] = (),
+    minimum_selected: int = 0,
+) -> dict[str, Any]:
+    """Rank one authoritative selected-Evidence pool for a specific artifact.
+
+    Selected records are always evaluated before unselected fallbacks.  Every
+    selected record is returned as either used or omitted with a concrete reason.
+    """
+    resolved_capacity = max(
+        0, int(capacity if capacity is not None else ARTIFACT_CAPACITIES.get(artifact_type, 3))
+    )
+    ranked: list[dict[str, Any]] = []
+    omitted: list[dict[str, Any]] = []
+    for index, project in enumerate(selected_projects):
+        relevance = evidence_relevance(project, parsed_job)
+        suitability = _artifact_suitability(project, artifact_type)
+        entry = _selection_entry(
+            project,
+            relevance=relevance,
+            user_order=index,
+            suitability=suitability,
+            source="selected",
+        )
+        if (
+            artifact_type == "cover_letter"
+            and project_kind(project) == "career_catalyst"
+            and int(relevance.get("specific_score") or 0) <= 0
+        ):
+            omitted.append(
+                {
+                    **entry,
+                    "reason": "Better suited to another artifact; this posting lacks a direct product or AI connection.",
+                }
+            )
+            continue
+        if not _verified_detail(project):
+            omitted.append({**entry, "reason": "Insufficient verified detail for this artifact."})
+            continue
+        if int(relevance.get("score") or 0) <= 0:
+            omitted.append(
+                {
+                    **entry,
+                    "reason": "Lower role relevance than the Evidence used for this artifact.",
+                }
+            )
+            continue
+        ranked.append(entry)
+    ranked.sort(
+        key=lambda item: (
+            -int(item["relevance_score"]),
+            -int(item["artifact_suitability"]),
+            int(item["user_order"]),
+        )
+    )
+    remaining = list(ranked)
+    used: list[dict[str, Any]] = []
+    while remaining and len(used) < resolved_capacity:
+        remaining.sort(
+            key=lambda item: (
+                -(
+                    int(item["relevance_score"])
+                    - (2 if _redundancy_ratio(item, used) >= 0.75 else 0)
+                ),
+                -int(item["artifact_suitability"]),
+                int(item["user_order"]),
+            )
+        )
+        used.append(remaining.pop(0))
+    ranked = [*used, *remaining]
+    for entry in remaining:
+        redundancy = _redundancy_ratio(entry, used)
+        omitted.append(
+            {
+                **entry,
+                "reason": (
+                    "Redundant with stronger selected Evidence already used in this artifact."
+                    if redundancy >= 0.75
+                    else (
+                        f"Space limit: ranked below the top {resolved_capacity} selected Evidence "
+                        f"record{'s' if resolved_capacity != 1 else ''} for this "
+                        f"{ARTIFACT_LABELS.get(artifact_type, artifact_type)}."
+                    )
+                ),
+            }
+        )
+
+    fallback_used: list[dict[str, Any]] = []
+    fallback_slots = min(
+        max(0, resolved_capacity - len(used)),
+        max(0, int(minimum_selected) - len(used)),
+    )
+    if fallback_slots:
+        selected_ids = {_project_id(project) for project in selected_projects}
+        fallback_ranked: list[dict[str, Any]] = []
+        for index, project in enumerate(fallback_projects):
+            if _project_id(project) in selected_ids or not _verified_detail(project):
+                continue
+            relevance = evidence_relevance(project, parsed_job)
+            if int(relevance.get("score") or 0) <= 0:
+                continue
+            fallback_ranked.append(
+                _selection_entry(
+                    project,
+                    relevance=relevance,
+                    user_order=index,
+                    suitability=_artifact_suitability(project, artifact_type),
+                    source="unselected_fallback",
+                )
+            )
+        fallback_ranked.sort(
+            key=lambda item: (
+                -int(item["relevance_score"]),
+                -int(item["artifact_suitability"]),
+                int(item["user_order"]),
+            )
+        )
+        fallback_used = fallback_ranked[:fallback_slots]
+        used.extend(fallback_used)
+
+    omitted_by_id = {_project_id(item.get("_project") or item): item for item in omitted}
+    omitted = [
+        omitted_by_id[_project_id(project)]
+        for project in selected_projects
+        if _project_id(project) in omitted_by_id
+    ]
+    return {
+        "artifact_type": artifact_type,
+        "artifact_label": ARTIFACT_LABELS.get(artifact_type, artifact_type),
+        "capacity": resolved_capacity,
+        "selected_ids": [_project_id(project) for project in selected_projects],
+        "eligible": list(ranked),
+        "ranked": list(ranked),
+        "used": used,
+        "used_projects": [dict(item["_project"]) for item in used],
+        "omitted": omitted,
+        "fallback_used": fallback_used,
+    }
+
+
 def _first_sentence(value: Any) -> str:
+    if isinstance(value, (list, tuple, set)):
+        return next(
+            (
+                sentence
+                for item in value
+                if (sentence := _first_sentence(item))
+            ),
+            "",
+        )
     text = re.sub(r"\s+", " ", str(value or "")).strip()
     if not text:
         return ""
@@ -209,41 +479,92 @@ def output_use_metadata(
     cover_letter_projects_used: Sequence[str] = (),
     score_contribution: Mapping[str, Any] | None = None,
     parsed_job: Mapping[str, Any] | None = None,
+    artifact_selections: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> dict[str, Any]:
     parsed = parsed_job or {}
     resume_used = list(dict.fromkeys(str(value) for value in resume_projects_used if value))
     cover_used = list(dict.fromkeys(str(value) for value in cover_letter_projects_used if value))
+    public_selections = {
+        key: public_artifact_selection(value)
+        for key, value in (artifact_selections or {}).items()
+    }
+    if public_selections:
+        resume_used = list(
+            dict.fromkeys(
+                item["title"]
+                for key in ("ats_resume", "styled_resume")
+                for item in public_selections.get(key, {}).get("used", [])
+                if item.get("source") == "selected"
+            )
+        )
+        cover_used = [
+            item["title"]
+            for item in public_selections.get("cover_letter", {}).get("used", [])
+            if item.get("source") == "selected"
+        ]
     used = set(resume_used) | set(cover_used)
+    used_selected_ids = {
+        str(item.get("id") or "")
+        for selection in public_selections.values()
+        for item in selection.get("used", [])
+        if item.get("source") == "selected" and item.get("id")
+    }
     selected = []
     not_used = []
     for project in selected_projects:
         title = project_title(project)
+        evidence_id = str(project.get("id") or "")
         relevance = evidence_relevance(project, parsed)
         selected.append(
             {
-                "id": str(project.get("id") or ""),
+                "id": evidence_id,
                 "title": title,
                 "manual": True,
                 "relevance_score": int(relevance["score"]),
                 "matched_signals": list(relevance["matched_signals"]),
             }
         )
-        if title not in used:
+        project_was_used = (
+            evidence_id in used_selected_ids
+            if public_selections
+            else title in used
+        )
+        if not project_was_used:
+            artifact_reasons = [
+                item.get("reason")
+                for selection in public_selections.values()
+                for item in selection.get("omitted", [])
+                if item.get("id") == str(project.get("id") or "") and item.get("reason")
+            ]
             not_used.append(
                 {
                     "id": str(project.get("id") or ""),
                     "title": title,
-                    "reason": "No sufficiently specific role connection was found in the verified record.",
+                    "reason": artifact_reasons[0] if artifact_reasons else "No sufficiently specific role connection was found in the verified record.",
                 }
             )
+    fallback_used = list(
+        {
+            (item.get("id"), item.get("title")): item
+            for selection in public_selections.values()
+            for item in selection.get("fallback_used", [])
+        }.values()
+    )
     return {
         "selected_evidence": selected,
+        "selected_count": len(selected),
+        "used_anywhere_count": (
+            len(used_selected_ids) if public_selections else len(used)
+        ),
+        "omitted_from_package_count": len(not_used),
         "system_recommended_projects": list(
             dict.fromkeys(str(value) for value in system_recommended_projects if value)
         ),
         "resume_projects_used": resume_used,
         "cover_letter_projects_used": cover_used,
         "projects_not_used": not_used,
+        "artifact_usage": public_selections,
+        "unselected_fallback_used": fallback_used,
         "evidence_score_contribution": dict(score_contribution or {}),
     }
 

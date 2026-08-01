@@ -16,12 +16,12 @@ try:
     from .filename_utils import canonical_employer_name, company_display_name, is_valid_role_title
     from .job_identity import infer_job_fields_from_url, preferred_role_title
     from .job_source_registry import classify_source, normalize_job_source
-    from .parse_job import extract_metadata
+    from .parse_job import extract_metadata, normalize_compensation
 except ImportError:
     from filename_utils import canonical_employer_name, company_display_name, is_valid_role_title
     from job_identity import infer_job_fields_from_url, preferred_role_title
     from job_source_registry import classify_source, normalize_job_source
-    from parse_job import extract_metadata
+    from parse_job import extract_metadata, normalize_compensation
 
 
 BLOCKED_PRIMARY_HOSTS = (
@@ -35,6 +35,19 @@ MINIMUM_DESCRIPTION_LENGTH = 80
 
 class JobImportError(Exception):
     """Raised when a career page cannot produce a safe, useful import."""
+
+
+def _import_compensation(metadata: Dict[str, Any], description: str) -> Dict[str, Any]:
+    """Classify absence only after a complete posting was successfully parsed."""
+    existing = metadata.get("compensation") or {}
+    state = (
+        "provided"
+        if existing.get("detected")
+        else "not_listed"
+        if len(str(description or "").strip()) >= MINIMUM_DESCRIPTION_LENGTH
+        else "unknown_unverified"
+    )
+    return normalize_compensation(existing, disclosure_state=state)
 
 
 class _VisibleTextParser(HTMLParser):
@@ -154,6 +167,7 @@ def _extract_greenhouse_job(url: str, timeout: int = 12) -> Optional[Dict[str, A
     payload = _fetch_json(api_url, timeout)
     description = _plain_html_text(payload.get("content"))
     metadata = extract_metadata(description)
+    compensation = _import_compensation(metadata, description)
     company = _greenhouse_company_from_url(url)
     canonical_url = str(payload.get("absolute_url") or identity.get("canonical_url") or url).strip()
     parsed = {
@@ -174,7 +188,8 @@ def _extract_greenhouse_job(url: str, timeout: int = 12) -> Optional[Dict[str, A
         "canonical_apply_url": canonical_url,
         "job_description": description,
         "salary_range": metadata.get("salary_range") or "",
-        "compensation": metadata.get("compensation"),
+        "compensation": compensation,
+        "compensation_disclosure_state": compensation["disclosure_state"],
         "posting_date": metadata.get("posting_date") or "",
     }
     _validate_greenhouse_payload(parsed, identity)
@@ -286,6 +301,10 @@ def _structured_job_fields(posting: Dict[str, Any], url: str, platform: str = ""
         salary = str(posting.get("salaryRange") or posting.get("salary") or "").strip()
     if not salary:
         salary = str(description_metadata.get("salary_range") or "").strip()
+    compensation = normalize_compensation(
+        salary or description_metadata.get("compensation"),
+        disclosure_state=("provided" if salary else "not_listed" if len(description) >= MINIMUM_DESCRIPTION_LENGTH else "unknown_unverified"),
+    )
     application_url = str(
         posting.get("applicationUrl") or posting.get("applyUrl") or posting.get("absolute_url")
         or posting.get("url") or url
@@ -313,7 +332,8 @@ def _structured_job_fields(posting: Dict[str, Any], url: str, platform: str = ""
         "canonical_apply_url": application_url,
         "job_description": description,
         "salary_range": salary,
-        "compensation": description_metadata.get("compensation"),
+        "compensation": compensation,
+        "compensation_disclosure_state": compensation["disclosure_state"],
         "posting_date": _posting_date(
             posting.get("datePosted") or posting.get("postedAt") or posting.get("createdAt")
         ),
@@ -668,6 +688,7 @@ def create_job_markdown(job_data: Dict[str, Any]) -> str:
         ("Location", location),
         ("Work arrangement", work_arrangement),
         ("Salary range", job_data.get("salary_range")),
+        ("Compensation status", job_data.get("compensation_disclosure_state") or (job_data.get("compensation") or {}).get("disclosure_state")),
         ("Posting date", job_data.get("posting_date")),
         ("Official source", job_data.get("source")),
         ("Official URL", job_data.get("official_url") or job_data.get("source_url")),
@@ -721,6 +742,7 @@ def extract_job_text(html: str, url: str) -> str:
     title, company = _clean_identity(title, company)
     visible_text = "\n".join(parser.text_parts)
     metadata = extract_metadata(visible_text)
+    compensation = _import_compensation(metadata, visible_text)
     location = metadata.get("location") or "Not specified"
     return create_job_markdown(
         {
@@ -729,6 +751,8 @@ def extract_job_text(html: str, url: str) -> str:
             "location": location,
             "work_arrangement": metadata.get("work_arrangement") or _work_arrangement(location, visible_text),
             "salary_range": metadata.get("salary_range"),
+            "compensation": compensation,
+            "compensation_disclosure_state": compensation["disclosure_state"],
             "posting_date": metadata.get("posting_date"),
             "source": _source_name(url),
             "official_url": url,
@@ -770,13 +794,15 @@ def extract_job_fields(html: str, url: str) -> Dict[str, Any]:
     title, company = _clean_identity(title, company)
     visible_text = _clean_visible_text(html)
     metadata = extract_metadata(visible_text)
+    compensation = _import_compensation(metadata, visible_text)
     html_layer = {
         "job_title": preferred_role_title("", metadata.get("job_title") or title, clean_url),
         "company": canonical_employer_name(metadata.get("company") or company),
         "location": metadata.get("location") or "Not specified",
         "work_arrangement": metadata.get("work_arrangement") or _work_arrangement(metadata.get("location"), visible_text),
         "salary_range": metadata.get("salary_range") or "",
-        "compensation": metadata.get("compensation"),
+        "compensation": compensation,
+        "compensation_disclosure_state": compensation["disclosure_state"],
         "posting_date": metadata.get("posting_date") or "",
         "source": _source_name(clean_url),
         "source_platform": _source_name(clean_url),
@@ -809,6 +835,7 @@ def parse_imported_job(raw_text: str, url: str) -> Dict[str, Any]:
         r"^##\s+Job Description\s*$\n(.*)", raw_text, flags=re.I | re.M | re.S
     )
     description = (description_match.group(1) if description_match else raw_text).strip()
+    compensation = _import_compensation(metadata, description)
     fallback = infer_job_fields_from_url(url)
     title, company = _clean_identity(metadata.get("job_title"), metadata.get("company"))
     title = preferred_role_title("", title, url)
@@ -821,7 +848,8 @@ def parse_imported_job(raw_text: str, url: str) -> Dict[str, Any]:
         "location": location,
         "work_arrangement": work_arrangement or "Not specified",
         "salary_range": metadata.get("salary_range") or "",
-        "compensation": metadata.get("compensation"),
+        "compensation": compensation,
+        "compensation_disclosure_state": compensation["disclosure_state"],
         "posting_date": metadata.get("posting_date") or "",
         "job_id": fallback.get("job_id") or "",
         "source": _source_name(url),
