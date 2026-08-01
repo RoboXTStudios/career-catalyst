@@ -386,9 +386,14 @@ def preflight_package_generation(
     if health.get("path"):
         try:
             parsed_health_job = parse_job_description(Path(str(health["path"])))
+            source_text = str(parsed_health_job.get("raw_text") or "")
+            if "—" in source_text:
+                auto_repairs.append("Candidate-facing em dashes will be normalized before validation")
+            if re.search(r"20\+\s+years|nearly\s+two\s+decades|two\s+decades|seasoned|veteran", source_text, re.I):
+                auto_repairs.append("Age-signaling language will be normalized before validation")
             if re.search(
                 r"OMD Entertainment|OMG23\s*/\s*OMD Entertainment",
-                str(parsed_health_job.get("company") or ""),
+                source_text,
                 re.I,
             ):
                 auto_repairs.append("Canonical employer naming will be repaired in generated materials")
@@ -1110,7 +1115,12 @@ def _copy_stage_inputs(source: Path, stage: Path) -> None:
 
 def _rewrite_stage_paths(value: Any, stage: Path, root: Path, stage_exports: Path, destination: Path) -> Any:
     if isinstance(value, str):
-        return value.replace(str(stage_exports), str(destination)).replace(str(stage), str(root))
+        rewritten = value.replace(str(stage_exports), str(destination)).replace(str(stage), str(root))
+        # macOS may expose the same temporary directory as /var and /private/var;
+        # never return an accidentally doubled /private prefix to the tracker/UI.
+        while "/private/private/" in rewritten:
+            rewritten = rewritten.replace("/private/private/", "/private/")
+        return rewritten
     if isinstance(value, list):
         return [_rewrite_stage_paths(item, stage, root, stage_exports, destination) for item in value]
     if isinstance(value, dict):
@@ -1190,7 +1200,10 @@ def generate_package(
         tracker_text = staged_tracker.read_text(encoding="utf-8")
         tracker_text = tracker_text.replace(str(stage_exports), str(destination)).replace(str(stage), str(root))
         tracker_path.write_text(tracker_text, encoding="utf-8")
-        return _rewrite_stage_paths(result, stage, root, stage_exports, destination)
+        rewritten = _rewrite_stage_paths(result, stage, root, stage_exports, destination)
+        if isinstance(rewritten, dict):
+            rewritten["canonical_export_root"] = str(destination)
+        return rewritten
     except Exception as error:
         for target, previous in reversed(promoted):
             if previous is None:
