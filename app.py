@@ -101,6 +101,7 @@ from scripts.package_generator import (
     PackageGenerationError,
     build_package_context,
     generate_package,
+    job_reference_health,
     preflight_package_generation,
     resolve_job_reference,
 )
@@ -1302,6 +1303,15 @@ def _render_source_verification_panel(
             ]
         except EvidenceEngineError:
             selected_projects = []
+        health = job_reference_health(application, PROJECT_ROOT)
+        if health.get("status") != "valid":
+            st.warning(
+                "Source verification is paused: "
+                + str(health.get("message") or "repair the local posting first.")
+            )
+            if health.get("posting_url"):
+                st.link_button("Relink / open source posting", str(health["posting_url"]), use_container_width=False)
+            return
         resolved = resolve_job_reference(tracker_id, PROJECT_ROOT)
         parsed = parse_job_description(resolved["job_path"])
         match_report = score_job_data(
@@ -1355,6 +1365,17 @@ def _render_relevant_evidence_panel(
     if not active_projects:
         st.caption("No active evidence projects available yet.")
         return
+    job_health = job_reference_health(application, PROJECT_ROOT)
+    if job_health.get("status") != "valid":
+        warning = (
+            "Relevant Evidence can be reviewed, but scoring is paused until this role has a usable local posting. "
+            + str(job_health.get("message") or "Repair the posting reference first.")
+        )
+        if hasattr(st, "warning"):
+            st.warning(warning)
+        if job_health.get("posting_url"):
+            if hasattr(st, "link_button"):
+                st.link_button("Relink / open source posting", str(job_health["posting_url"]), use_container_width=False)
     labels = _project_option_labels(active_projects)
     options = list(labels)
     current = [
@@ -1380,6 +1401,13 @@ def _render_relevant_evidence_panel(
         key=f"save_relevant_evidence_{tracker_id}",
         use_container_width=True,
     ):
+        if job_health.get("status") != "valid":
+            try:
+                resolve_job_reference(tracker_id, PROJECT_ROOT)
+            except PackageGenerationError:
+                if hasattr(st, "warning"):
+                    st.warning("Save is available after the local posting is repaired or relinked.")
+                return
         selected_projects = [
             project for project in active_projects if str(project.get("id")) in selected
         ]
@@ -1502,6 +1530,17 @@ def _render_role_card(
             unsafe_allow_html=True,
         )
         badge_column.markdown(_status_badges(application), unsafe_allow_html=True)
+        try:
+            readiness = preflight_package_generation(tracker_id, [application], PROJECT_ROOT)
+            readiness_label = {
+                "ready": "Ready to Generate",
+                "repairable": "Ready with Automatic Repairs",
+                "blocked": "Needs Posting Repair",
+                "conflict": "Blocked by Factual Conflict",
+            }.get(str(readiness.get("status") or "blocked"), "Needs Evidence Review")
+            st.caption(f"Application readiness: **{readiness_label}**")
+        except Exception:
+            st.caption("Application readiness: **Needs Review**")
         metadata = _primary_facts_html(application, package)
         if metadata:
             st.markdown(metadata, unsafe_allow_html=True)
@@ -3028,6 +3067,32 @@ def _render_followup_plan_panel(
             )
             st.success("Follow-up activity saved. Application status was unchanged.")
 
+def _render_generation_preflight(st: Any, preflight: Dict[str, Any]) -> None:
+    """Show the shared readiness gate without exposing implementation errors."""
+    status = str(preflight.get("status") or "ready")
+    labels = {
+        "ready": "Ready",
+        "repairable": "Automatically repaired",
+        "blocked": "Blocking factual issue",
+        "conflict": "Blocking factual issue",
+    }
+    st.markdown(f"**Application preflight: {labels.get(status, status.title())}**")
+    for item in preflight.get("ready") or []:
+        st.caption("✓ " + str(item))
+    for item in preflight.get("auto_repairs") or []:
+        st.info("Automatic repair: " + str(item))
+    for item in preflight.get("blocking_issues") or []:
+        st.warning(str(item))
+    limits = preflight.get("evidence_limits") or {}
+    if limits:
+        st.caption(
+            "Selected Evidence limits: ATS résumé " + str(limits.get("ats_resume", 3))
+            + ", styled résumé " + str(limits.get("styled_resume", 3))
+            + ", cover letter " + str(limits.get("cover_letter", 2))
+            + ". All selected records remain recorded in the Package Summary."
+        )
+
+
 def _render_generate_package(st: Any) -> None:
     st.markdown(
         '<h2 class="cc-section-heading">Generate Application Package</h2>',
@@ -3056,6 +3121,10 @@ def _render_generate_package(st: Any) -> None:
             st.session_state[recovery_key] = {
                 "conflicts": preflight.get("conflicts") or []
             }
+        else:
+            _render_generation_preflight(st, preflight)
+            if preflight.get("status") == "blocked":
+                return
     if st.session_state.get(recovery_key):
         _render_package_recovery(st, tracker_id, application)
         return
@@ -3095,6 +3164,9 @@ def _render_generate_package(st: Any) -> None:
                 application,
                 override_closed=override_closed,
             )
+            return
+        if preflight.get("status") == "blocked":
+            _render_generation_preflight(st, preflight)
             return
         try:
             with st.spinner("Generating resumes, messages, strategy pack, and dashboard…"):

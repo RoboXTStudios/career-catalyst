@@ -1,0 +1,9 @@
+id: openai_program_manager_lead
+company: OpenAI
+role: Program Manager, Lead
+selected_evidence_ids: [career_catalyst, governance_qa_delivery, omg23_disney_leadership, roboxt_studios]
+expected:
+  evidence_adjusted_score: 91
+  resume_limit: 3
+  cover_letter_limit: 2
+  canonical_employer: OMG23 (Omnicom Media Group)
