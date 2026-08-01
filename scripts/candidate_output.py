@@ -16,6 +16,7 @@ try:
         project_kind,
         project_title,
         relevant_selected_evidence,
+        select_evidence_for_artifact,
     )
 except ImportError:
     from evidence_tailoring import (
@@ -23,6 +24,7 @@ except ImportError:
         project_kind,
         project_title,
         relevant_selected_evidence,
+        select_evidence_for_artifact,
     )
 
 
@@ -357,16 +359,7 @@ def _product_evidence_cover_letter(
     return content
 
 
-def cover_letter_evidence_selection(
-    context: Mapping[str, Any], *, limit: int = 2
-) -> list[dict[str, Any]]:
-    """Select manual Evidence first, then fill with configured product projects."""
-    parsed = context["parsed_job"]
-    selected = relevant_selected_evidence(
-        list(context.get("associated_evidence_projects") or []), parsed, limit=limit
-    )
-    seen_kinds = {project_kind(project) for project in selected}
-    seen_titles = {project_title(project).lower() for project in selected}
+def _configured_project_evidence(context: Mapping[str, Any]) -> list[dict[str, Any]]:
     configured_names = list(
         (context.get("role_intent") or {}).get("resume", {}).get("selected_project_ids")
         or []
@@ -375,7 +368,7 @@ def cover_letter_evidence_selection(
         (context.get("career_data") or {}).get("data", {}).get("projects", {}).get("projects", [])
         or []
     )
-    system_projects: list[dict[str, Any]] = []
+    projects: list[dict[str, Any]] = []
     for name in configured_names:
         project = next(
             (item for item in career_projects if str(item.get("name") or "") == str(name)),
@@ -383,7 +376,7 @@ def cover_letter_evidence_selection(
         )
         if not project:
             continue
-        system_projects.append(
+        projects.append(
             {
                 "id": str(project.get("id") or name),
                 "title": str(project.get("name") or name),
@@ -394,15 +387,34 @@ def cover_letter_evidence_selection(
                 "manual": False,
             }
         )
-    for project in relevant_selected_evidence(system_projects, parsed, limit=limit):
-        if len(selected) >= limit:
-            break
-        if project_kind(project) in seen_kinds or project_title(project).lower() in seen_titles:
-            continue
-        selected.append(project)
-        seen_kinds.add(project_kind(project))
-        seen_titles.add(project_title(project).lower())
-    return selected[:limit]
+    return projects
+
+
+def cover_letter_evidence_decision(
+    context: Mapping[str, Any], *, limit: int = 2
+) -> dict[str, Any]:
+    """Use the shared selector with manual selections ahead of disclosed fallbacks."""
+    selected_projects = list(context.get("associated_evidence_projects") or [])
+    allow_legacy_product_fallback = (
+        not selected_projects
+        and str((context.get("role_intent") or {}).get("primary_archetype") or "")
+        == "product_operations"
+    )
+    return select_evidence_for_artifact(
+        context["parsed_job"],
+        selected_projects,
+        artifact_type="cover_letter",
+        capacity=limit,
+        fallback_projects=_configured_project_evidence(context),
+        minimum_selected=min(2, limit) if allow_legacy_product_fallback else 0,
+    )
+
+
+def cover_letter_evidence_selection(
+    context: Mapping[str, Any], *, limit: int = 2
+) -> list[dict[str, Any]]:
+    """Return projects selected by the shared Evidence orchestration service."""
+    return cover_letter_evidence_decision(context, limit=limit)["used_projects"]
 
 
 def candidate_cover_letter(context: Mapping[str, Any]) -> str:

@@ -85,9 +85,20 @@ class MatchScoreModelTests(unittest.TestCase):
             PROJECT_ROOT,
         )
 
-        self.assertEqual(report["salary_range"], "Not disclosed")
+        self.assertEqual(
+            report["salary_range"],
+            "Compensation unknown — verify posting or recruiter details.",
+        )
+        self.assertEqual(
+            report["compensation_disclosure_state"], "unknown_unverified"
+        )
         self.assertNotEqual(report["confidence"], "High")
-        self.assertTrue(any("not disclosed" in gap.lower() for gap in report["match_gaps"]))
+        self.assertTrue(
+            any(
+                "compensation is unknown" in gap.lower()
+                for gap in report["match_gaps"]
+            )
+        )
 
     def test_closed_role_is_always_a_pass(self):
         report = score_job_data(

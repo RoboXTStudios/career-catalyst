@@ -22,8 +22,10 @@ try:
     from .evidence_tailoring import (
         project_kind,
         project_title,
+        public_artifact_selection,
         relevant_selected_evidence,
         resume_project_bullets,
+        select_evidence_for_artifact,
     )
     from .parse_job import parse_job_description
     from .package_context import validate_material_context
@@ -54,8 +56,10 @@ except ImportError:
     from evidence_tailoring import (
         project_kind,
         project_title,
+        public_artifact_selection,
         relevant_selected_evidence,
         resume_project_bullets,
+        select_evidence_for_artifact,
     )
     from parse_job import parse_job_description
     from package_context import validate_material_context
@@ -832,6 +836,7 @@ def _render_markdown(
     associated_evidence_projects: Optional[List[Dict[str, Any]]] = None,
     complete_foundation: bool = False,
     role_intent: Optional[Dict[str, Any]] = None,
+    manual_evidence_selected: bool = False,
 ) -> str:
     personal_brand = career_data["data"]["personal_brand"]
     candidate = personal_brand["candidate"]
@@ -883,12 +888,16 @@ def _render_markdown(
     total_project_limit = min(
         3, max(len(associated_evidence_projects), configured_project_limit)
     )
-    selected_projects = [
-        item
-        for item in selected_projects
-        if project_kind(item[0]) not in manual_kinds
-        and str(item[0].get("name") or "").lower() not in manual_titles
-    ][: max(0, total_project_limit - len(associated_evidence_projects))]
+    selected_projects = (
+        []
+        if manual_evidence_selected
+        else [
+            item
+            for item in selected_projects
+            if project_kind(item[0]) not in manual_kinds
+            and str(item[0].get("name") or "").lower() not in manual_titles
+        ][: max(0, total_project_limit - len(associated_evidence_projects))]
+    )
     earlier_positions = _earlier_career_positions(
         career_data,
         parsed_job,
@@ -1079,8 +1088,16 @@ def tailor_resume(
     career_data = load_resume_foundation(root)
     associated_evidence_projects = associated_evidence_projects or []
     verified_evidence_context = evidence_generation_context(associated_evidence_projects)
+    manual_evidence_selected = bool(associated_evidence_projects)
     parsed_job = parse_job_description(root / job_path)
     shared_role_intent = role_intent or build_role_intent(parsed_job, root)
+    evidence_selection = select_evidence_for_artifact(
+        parsed_job,
+        associated_evidence_projects,
+        artifact_type="ats_resume",
+        capacity=3,
+    )
+    resume_evidence_projects = evidence_selection["used_projects"]
     match_report = score_job_match(job_path, root, associated_evidence_projects)
     markdown = cleanup_repeated_words(
         _render_markdown(
@@ -1088,8 +1105,9 @@ def tailor_resume(
             parsed_job,
             match_report,
             resume_profile,
-            associated_evidence_projects,
+            resume_evidence_projects,
             role_intent=shared_role_intent,
+            manual_evidence_selected=manual_evidence_selected,
         )
     )
     markdown, rewrite_notes = rewrite_banned_voice_phrases(markdown)
@@ -1146,11 +1164,9 @@ def tailor_resume(
             str(project.get("title")) for project in (associated_evidence_projects or [])
         ],
         "resume_projects_used": [
-            project_title(project)
-            for project in _relevant_associated_evidence(
-                associated_evidence_projects, parsed_job
-            )
+            project_title(project) for project in resume_evidence_projects
         ],
+        "evidence_selection": public_artifact_selection(evidence_selection),
         "role_intent": shared_role_intent,
         "associated_evidence_context": verified_evidence_context,
     }

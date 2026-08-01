@@ -592,7 +592,17 @@ def generate_package(
                 "company_voice_source": intelligence["source"],
                 "company_voice_label": intelligence.get("company_voice_label", intelligence["profile_name"]),
                 "company_inference_confidence": intelligence.get("confidence_label", "Medium"),
-                "salary_range": str(parsed.get("salary_range") or application.get("salary_range") or "Not disclosed"),
+                "salary_range": str(
+                    parsed.get("salary_range")
+                    or application.get("salary_range")
+                    or (parsed.get("compensation") or {}).get("status_message")
+                    or "Compensation unknown — verify posting or recruiter details."
+                ),
+                "compensation_disclosure_state": (
+                    parsed.get("compensation_disclosure_state")
+                    or application.get("compensation_disclosure_state")
+                    or "unknown_unverified"
+                ),
                 "posting_date": freshness.get("posting_date") or "",
                 "posting_age_days": freshness.get("age_days"),
                 "freshness": freshness["category"],
@@ -634,6 +644,11 @@ def generate_package(
             context.get("associated_evidence_projects", []),
             shared_role_intent,
         )
+        resume_selection = dict(resume.get("evidence_selection") or {})
+        styled_selection = dict(resume_selection)
+        styled_selection.update(
+            {"artifact_type": "styled_resume", "artifact_label": "styled resume"}
+        )
         tailoring_metadata = output_use_metadata(
             context.get("associated_evidence_projects", []),
             system_recommended_projects=(
@@ -645,6 +660,11 @@ def generate_package(
             ),
             score_contribution=context.get("evidence_score_contribution") or {},
             parsed_job=context.get("parsed_job") or {},
+            artifact_selections={
+                "ats_resume": resume_selection,
+                "styled_resume": styled_selection,
+                "cover_letter": cover_letter.get("evidence_selection") or {},
+            },
         )
         shared_role_intent["output_use_metadata"] = tailoring_metadata
         recruiter = generate_message(
@@ -672,7 +692,14 @@ def generate_package(
             interview_prep = {}
 
         quality = calculate_package_quality(score, resume, cover_letter, intelligence)
-        package_summary = save_package_summary(root, parsed, freshness, opportunity, quality)
+        package_summary = save_package_summary(
+            root,
+            parsed,
+            freshness,
+            opportunity,
+            quality,
+            tailoring_metadata=tailoring_metadata,
+        )
 
         tracker_id = str(application["id"])
         if get_record_status(application) == "Prospect":

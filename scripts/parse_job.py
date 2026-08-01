@@ -69,9 +69,27 @@ METADATA_LABELS = {
     "location": ("location", "work location"),
     "work_arrangement": ("work arrangement", "work model", "work style"),
     "salary_range": ("salary", "salary range", "compensation", "compensation range"),
+    "compensation_disclosure_state": ("compensation status", "salary disclosure status"),
     "employment_type": ("employment type", "job type", "type"),
     "source_url": ("source url", "source", "posting url", "job url"),
     "posting_date": ("posting date", "date posted", "posted on", "dateposted", "published"),
+}
+
+COMPENSATION_DISCLOSURE_STATES = (
+    "provided",
+    "not_listed",
+    "unknown_unverified",
+)
+
+COMPENSATION_STATE_LABELS = {
+    "provided": "Provided",
+    "not_listed": "Not listed",
+    "unknown_unverified": "Unknown / unverified",
+}
+
+COMPENSATION_STATE_MESSAGES = {
+    "not_listed": "Compensation not listed — verify before recruiter screen.",
+    "unknown_unverified": "Compensation unknown — verify posting or recruiter details.",
 }
 
 RESPONSIBILITY_HEADINGS = (
@@ -265,8 +283,44 @@ def _comp_display_amount(value: Optional[float], period: str) -> str:
     return f"${value:,.0f}"
 
 
-def empty_compensation(raw: Any = "", source: str = "description", manual_override: bool = False) -> Dict[str, Any]:
+def normalize_compensation_disclosure_state(
+    value: Any, *, detected: bool = False
+) -> str:
+    """Normalize saved labels without guessing that a blank means Not listed."""
+    if detected:
+        return "provided"
+    normalized = re.sub(r"[^a-z]+", "_", str(value or "").strip().lower()).strip("_")
+    aliases = {
+        "provided": "provided",
+        "not_listed": "not_listed",
+        "not_disclosed": "not_listed",
+        "unknown": "unknown_unverified",
+        "unverified": "unknown_unverified",
+        "unknown_unverified": "unknown_unverified",
+    }
+    return aliases.get(normalized, "unknown_unverified")
+
+
+def compensation_status_message(value: Any) -> str:
+    state = (
+        value.get("disclosure_state")
+        if isinstance(value, dict)
+        else value
+    )
+    normalized = normalize_compensation_disclosure_state(state)
+    return COMPENSATION_STATE_MESSAGES.get(normalized, "")
+
+
+def empty_compensation(
+    raw: Any = "",
+    source: str = "description",
+    manual_override: bool = False,
+    disclosure_state: Any = None,
+) -> Dict[str, Any]:
     """Return the stable empty compensation shape used throughout intake and scoring."""
+    state = normalize_compensation_disclosure_state(disclosure_state)
+    if state == "provided":
+        state = "unknown_unverified"
     return {
         "minimum": None,
         "maximum": None,
@@ -278,6 +332,9 @@ def empty_compensation(raw: Any = "", source: str = "description", manual_overri
         "manual_override": bool(manual_override),
         "detected": bool(str(raw or "").strip()) if manual_override else False,
         "needs_review": bool(str(raw or "").strip()) if manual_override else False,
+        "disclosure_state": state,
+        "disclosure_label": COMPENSATION_STATE_LABELS[state],
+        "status_message": COMPENSATION_STATE_MESSAGES.get(state, ""),
     }
 
 
@@ -286,21 +343,31 @@ def normalize_compensation(
     *,
     source: str = "description",
     manual_override: bool = False,
+    disclosure_state: Any = None,
 ) -> Dict[str, Any]:
     """Parse one deterministic compensation result without AI or network work."""
     if isinstance(value, dict):
         raw_value = value.get("raw") or value.get("display") or ""
         source = str(value.get("source") or source)
         manual_override = bool(value.get("manual_override", manual_override))
+        if disclosure_state is None:
+            disclosure_state = value.get("disclosure_state")
         if value.get("detected") and (value.get("minimum") is not None or value.get("maximum") is not None):
-            result = empty_compensation(raw_value, source, manual_override)
+            result = empty_compensation(
+                raw_value, source, manual_override, disclosure_state="provided"
+            )
             result.update(value)
+            result["disclosure_state"] = "provided"
+            result["disclosure_label"] = COMPENSATION_STATE_LABELS["provided"]
+            result["status_message"] = ""
             return result
         value = raw_value
 
     text = re.sub(r"\s+", " ", str(value or "")).strip()
     if not text:
-        return empty_compensation("", source, manual_override)
+        return empty_compensation(
+            "", source, manual_override, disclosure_state=disclosure_state
+        )
 
     amount = _COMP_AMOUNT
     range_pattern = re.compile(
@@ -345,7 +412,12 @@ def normalize_compensation(
             break
 
     if not match:
-        return empty_compensation(text, "manual" if manual_override else source, manual_override)
+        return empty_compensation(
+            text,
+            "manual" if manual_override else source,
+            manual_override,
+            disclosure_state=disclosure_state,
+        )
 
     if kind == "range":
         minimum = _comp_amount(match, "min")
@@ -364,7 +436,12 @@ def normalize_compensation(
         for number in values
     )
     if not valid:
-        return empty_compensation(text, "manual" if manual_override else source, manual_override)
+        return empty_compensation(
+            text,
+            "manual" if manual_override else source,
+            manual_override,
+            disclosure_state=disclosure_state,
+        )
 
     if minimum is not None and maximum is not None:
         display = f"{_comp_display_amount(minimum, period)} – {_comp_display_amount(maximum, period)}"
@@ -385,6 +462,9 @@ def normalize_compensation(
         "manual_override": bool(manual_override),
         "detected": True,
         "needs_review": bool(manual_override and text != display),
+        "disclosure_state": "provided",
+        "disclosure_label": COMPENSATION_STATE_LABELS["provided"],
+        "status_message": "",
     }
 
 
@@ -490,7 +570,13 @@ def _extract_job_title(text: str) -> Optional[str]:
 
 def extract_metadata(text: str) -> Dict[str, Any]:
     """Extract basic job metadata when available."""
-    compensation = _extract_compensation(text)
+    explicit_compensation_state = _extract_labeled_value(
+        text, METADATA_LABELS["compensation_disclosure_state"]
+    )
+    compensation = normalize_compensation(
+        _extract_compensation(text),
+        disclosure_state=explicit_compensation_state,
+    )
     metadata = {
         "job_title": _extract_job_title(text),
         "company": _extract_labeled_value(text, METADATA_LABELS["company"]),
@@ -498,6 +584,7 @@ def extract_metadata(text: str) -> Dict[str, Any]:
         "work_arrangement": _extract_work_arrangement(text),
         "salary_range": (compensation.get("raw") or None) if compensation.get("detected") else None,
         "compensation": compensation,
+        "compensation_disclosure_state": compensation["disclosure_state"],
         "employment_type": _extract_employment_type(text),
         "source_url": _extract_source_url(text),
         "posting_date": _extract_labeled_value(text, METADATA_LABELS["posting_date"]),
@@ -623,6 +710,7 @@ def parse_job_description(file_path: PathInput) -> Dict[str, Any]:
         "location": metadata["location"],
         "salary_range": metadata["salary_range"],
         "compensation": metadata["compensation"],
+        "compensation_disclosure_state": metadata["compensation_disclosure_state"],
         "employment_type": metadata["employment_type"],
         "source_url": metadata["source_url"],
         "posting_date": metadata["posting_date"],

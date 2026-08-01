@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Mapping
 
 try:
     from .filename_utils import build_upload_filename
@@ -61,6 +61,7 @@ def save_package_summary(
     freshness: Dict[str, Any],
     opportunity: Dict[str, Any],
     quality: Dict[str, Any],
+    tailoring_metadata: Mapping[str, Any] | None = None,
 ) -> Dict[str, Any]:
     """Write the user-facing intelligence and quality checkpoint into the package."""
     filename = build_upload_filename(
@@ -73,8 +74,49 @@ def save_package_summary(
     path = root / "exports" / "strategy_packs" / filename
     path.parent.mkdir(parents=True, exist_ok=True)
     dimensions = "\n".join(
-        f"- {name}: {score}/100" for name, score in opportunity["dimensions"].items()
+        f"- {name}: {score}/100" if isinstance(score, (int, float)) else f"- {name}: Not scored (neutral)"
+        for name, score in opportunity["dimensions"].items()
     )
+    compensation = parsed_job.get("compensation") or {}
+    salary_display = (
+        parsed_job.get("salary_range")
+        or compensation.get("status_message")
+        or "Compensation unknown — verify posting or recruiter details."
+    )
+    evidence_metadata = dict(tailoring_metadata or {})
+    artifact_usage = evidence_metadata.get("artifact_usage") or {}
+    evidence_lines = []
+    for selected in evidence_metadata.get("selected_evidence") or []:
+        evidence_id = str(selected.get("id") or "")
+        title = str(selected.get("title") or "Untitled Evidence")
+        uses = []
+        for artifact_key, label in (
+            ("ats_resume", "ATS résumé"),
+            ("styled_resume", "styled résumé"),
+            ("cover_letter", "cover letter"),
+        ):
+            selection = artifact_usage.get(artifact_key) or {}
+            used = next(
+                (item for item in selection.get("used") or [] if str(item.get("id") or "") == evidence_id),
+                None,
+            )
+            omitted = next(
+                (item for item in selection.get("omitted") or [] if str(item.get("id") or "") == evidence_id),
+                None,
+            )
+            if used:
+                uses.append(f"{label}: Used")
+            elif omitted:
+                uses.append(f"{label}: Not used ({omitted.get('reason')})")
+            else:
+                uses.append(f"{label}: Not used (Better suited to another package artifact.)")
+        evidence_lines.append(f"- {title} — " + "; ".join(uses))
+    fallback_lines = [
+        f"- {item.get('title')} ({item.get('source')})"
+        for item in evidence_metadata.get("unselected_fallback_used") or []
+    ]
+    evidence_section = "\n".join(evidence_lines) or "- No Relevant Evidence was selected."
+    fallback_section = "\n".join(fallback_lines) or "- None"
     content = f"""# Application Package Summary
 
 ## Opportunity
@@ -84,7 +126,7 @@ def save_package_summary(
 - Freshness: {freshness['label']}
 - Posting Status: {freshness['posting_status']}
 - Posting Date: {freshness.get('posting_date') or 'Unknown'}
-- Salary: {parsed_job.get('salary_range') or 'Not disclosed'}
+- Salary: {salary_display}
 
 ### Score Dimensions
 
@@ -97,6 +139,18 @@ def save_package_summary(
 - ATS Keyword Match: {quality['ats_keyword_match']}/100
 - Voice Match: {quality['voice_match']}/100
 - Confidence Level: {quality['confidence_level']}
+
+## Evidence Usage
+
+- Selected: {evidence_metadata.get('selected_count', 0)}
+- Used anywhere: {evidence_metadata.get('used_anywhere_count', 0)}
+- Omitted from the entire package: {evidence_metadata.get('omitted_from_package_count', 0)}
+
+{evidence_section}
+
+### Unselected Fallback Evidence
+
+{fallback_section}
 """
     path.write_text(content, encoding="utf-8")
     return {"output_path": str(path)}

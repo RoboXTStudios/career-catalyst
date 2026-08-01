@@ -10,7 +10,11 @@ from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
 
 try:
-    from .candidate_output import candidate_cover_letter, cover_letter_evidence_selection
+    from .candidate_output import (
+        candidate_cover_letter,
+        cover_letter_evidence_decision,
+        cover_letter_evidence_selection,
+    )
     from .career_claims import (
         PublicCareerClaimError,
         is_ai_transformation_role,
@@ -20,7 +24,11 @@ try:
     )
     from .company_voice import company_voice_context
     from .evidence_engine import evidence_generation_context, load_evidence_cards, load_writing_voice_profile, select_evidence_cards
-    from .evidence_tailoring import project_title
+    from .evidence_tailoring import (
+        cover_letter_project_paragraph,
+        project_title,
+        public_artifact_selection,
+    )
     from .filename_utils import build_upload_filename, company_display_name
     from .resume_foundation import (
         CandidateLanguageError,
@@ -42,7 +50,11 @@ try:
     from .text_cleanup import cleanup_repeated_words
     from .role_intent import build_role_intent
 except ImportError:
-    from candidate_output import candidate_cover_letter, cover_letter_evidence_selection
+    from candidate_output import (
+        candidate_cover_letter,
+        cover_letter_evidence_decision,
+        cover_letter_evidence_selection,
+    )
     from career_claims import (
         PublicCareerClaimError,
         is_ai_transformation_role,
@@ -52,7 +64,11 @@ except ImportError:
     )
     from company_voice import company_voice_context
     from evidence_engine import evidence_generation_context, load_evidence_cards, load_writing_voice_profile, select_evidence_cards
-    from evidence_tailoring import project_title
+    from evidence_tailoring import (
+        cover_letter_project_paragraph,
+        project_title,
+        public_artifact_selection,
+    )
     from filename_utils import build_upload_filename, company_display_name
     from resume_foundation import (
         CandidateLanguageError,
@@ -106,7 +122,7 @@ def load_generation_context(
     associated_evidence_projects = associated_evidence_projects or []
     shared_role_intent = role_intent or build_role_intent(parsed_job, root)
     editing_plan = material_editing_plan(parsed_job, root, shared_role_intent)
-    return {
+    context = {
         "root": root,
         "career_data": career_data,
         "voice": career_data["config"].get("voice", {}),
@@ -121,6 +137,10 @@ def load_generation_context(
         "match_report": score_job_match(job_path, root, associated_evidence_projects),
         **voice_context,
     }
+    context["cover_letter_evidence_selection"] = cover_letter_evidence_decision(
+        context, limit=2
+    )
+    return context
 
 
 def _word_count(text: str) -> int:
@@ -310,6 +330,53 @@ def repair_cover_letter_content(content: str, context: Dict[str, Any]) -> str:
     if count > 400:
         return _trim_cover_letter(content)
     return content
+
+
+def _ground_cover_letter_in_selected_evidence(
+    content: str, context: Dict[str, Any]
+) -> str:
+    """Keep the established narrative while making selected proof explicit."""
+    decision = context.get("cover_letter_evidence_selection") or {}
+    projects = list(decision.get("used_projects") or [])
+    evidence_paragraphs = [
+        paragraph
+        for project in projects
+        if (paragraph := cover_letter_project_paragraph(project, context["parsed_job"]))
+    ]
+    if not evidence_paragraphs:
+        return content
+
+    paragraphs = [
+        part.strip() for part in re.split(r"\n\s*\n", str(content or "").strip()) if part.strip()
+    ]
+    greeting = paragraphs.pop(0) if paragraphs and _word_count(paragraphs[0]) <= 5 else ""
+    signoff: List[str] = []
+    while paragraphs and (
+        re.match(r"^(?:Sincerely|Best|Warmly|Thank you)\b", paragraphs[-1], re.I)
+        or _word_count(paragraphs[-1]) <= 4
+    ):
+        signoff.insert(0, paragraphs.pop())
+
+    evidence_titles = [project_title(project).lower() for project in projects]
+    narrative = [
+        paragraph
+        for paragraph in paragraphs
+        if not any(title and title in paragraph.lower() for title in evidence_titles)
+    ]
+    opening_context = narrative[:2]
+    closing = narrative[-1:] if narrative[2:] else []
+    grounded = [
+        value
+        for value in (
+            greeting,
+            *opening_context,
+            *evidence_paragraphs,
+            *closing,
+            *signoff,
+        )
+        if value
+    ]
+    return "\n\n".join(grounded)
 
 
 def _join_human(values: List[str]) -> str:
@@ -1278,10 +1345,13 @@ def generate_cover_letter(
     context = load_generation_context(
         job_path, project_root, associated_evidence_projects, role_intent
     )
+    grounded_content = _ground_cover_letter_in_selected_evidence(
+        _cover_letter_content(context), context
+    )
     result = save_material(
         context,
         "Cover_Letter",
-        _cover_letter_content(context),
+        grounded_content,
         minimum_words=250,
         maximum_words=325,
         repair_content=repair_cover_letter_content,
@@ -1306,12 +1376,13 @@ def generate_cover_letter(
     result["associated_evidence_project_titles"] = [
         str(project.get("title")) for project in (associated_evidence_projects or [])
     ]
-    result["cover_letter_projects_used"] = (
-        [project_title(project) for project in cover_letter_evidence_selection(context)]
-        if str(context["role_intent"].get("primary_archetype") or "")
-        == "product_operations"
-        else []
+    decision = context.get("cover_letter_evidence_selection") or cover_letter_evidence_decision(
+        context, limit=2
     )
+    result["cover_letter_projects_used"] = [
+        project_title(project) for project in decision.get("used_projects") or []
+    ]
+    result["evidence_selection"] = public_artifact_selection(decision)
     return result
 
 
