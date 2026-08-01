@@ -112,7 +112,10 @@ def save_package_summary(
                 uses.append(f"{label}: Not used ({omitted.get('reason')})")
             else:
                 uses.append(f"{label}: Not used (Better suited to another package artifact.)")
-        evidence_lines.append(f"- {title} — " + "; ".join(uses))
+        supported = ", ".join(str(value) for value in selected.get("matched_signals") or []) or "No direct requirement signal recorded"
+        evidence_lines.append(
+            f"- {title} — Requirements supported: {supported}. " + "; ".join(uses)
+        )
     fallback_lines = [
         f"- {item.get('title')} ({item.get('source')})"
         for item in evidence_metadata.get("unselected_fallback_used") or []
