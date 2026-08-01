@@ -18,6 +18,7 @@ try:
     from .package_generator import PackageGenerationError, resolve_job_reference
     from .package_context import validate_material_context
     from .role_context import is_google_youtube_role
+    from .text_cleanup import normalize_candidate_text
     from .role_lifecycle import POST_APPLICATION_STATUSES as LIFECYCLE_POST_APPLICATION_STATUSES
 except ImportError:
     from application_tracker import follow_up_action_state, get_record_status, load_application_tracker, update_prospect
@@ -29,6 +30,7 @@ except ImportError:
     from package_generator import PackageGenerationError, resolve_job_reference
     from package_context import validate_material_context
     from role_context import is_google_youtube_role
+    from text_cleanup import normalize_candidate_text
     from role_lifecycle import POST_APPLICATION_STATUSES as LIFECYCLE_POST_APPLICATION_STATUSES
 
 
@@ -769,7 +771,7 @@ def _write_output(
         "Trisha Lynch", role, company, export_type, "txt"
     )
     output_path = output_directory / filename
-    output_path.write_text(content.rstrip() + "\n", encoding="utf-8")
+    output_path.write_text(normalize_candidate_text(content).rstrip() + "\n", encoding="utf-8")
     return output_path
 
 
@@ -863,6 +865,9 @@ def generate_followups(
                 company, role, angle, post_application
             ),
         }
+        messages = {
+            key: normalize_candidate_text(value) for key, value in messages.items()
+        }
         plan = _followup_plan(application, angle, messages)
         voice_avoid = tuple(
             _clean(phrase)
@@ -883,7 +888,7 @@ def generate_followups(
             key: str(_write_output(root, role, company, export_type, messages[key]))
             for key, export_type in output_specs
         }
-        strategy = _strategy_content(
+        strategy = normalize_candidate_text(_strategy_content(
             application,
             job_path,
             angle,
@@ -892,7 +897,7 @@ def generate_followups(
             root,
             post_application,
             plan,
-        )
+        ))
         if "—" in strategy:
             raise FollowupGenerationError("Follow-up strategy must not contain em dashes.")
         validate_material_context(strategy, parsed_job, "Followup_Strategy")

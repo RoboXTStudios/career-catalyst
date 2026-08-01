@@ -12,12 +12,14 @@ try:
     from .filename_utils import build_upload_filename
     from .generate_cover_letter import load_generation_context
     from .package_context import validate_material_context
+    from .text_cleanup import normalize_candidate_text
 except ImportError:  # pragma: no cover
     from candidate_output import humanize_values, validate_candidate_output
     from career_claims import validate_public_career_claims
     from filename_utils import build_upload_filename
     from generate_cover_letter import load_generation_context
     from package_context import validate_material_context
+    from text_cleanup import normalize_candidate_text
 
 
 PathInput = Union[str, Path]
@@ -337,7 +339,7 @@ def generate_career_intelligence(
         "lead_evidence_labels": lead_labels,
         "generated_at": datetime.now(timezone.utc).isoformat(),
     }
-    content = _render(result)
+    content = normalize_candidate_text(_render(result))
     validate_candidate_output(content, context="Career Intelligence")
     validate_public_career_claims(content)
     validate_material_context(content, parsed, "Interview_Prep")

@@ -8,8 +8,10 @@ from typing import Any, Dict, Mapping
 
 try:
     from .filename_utils import build_upload_filename
+    from .text_cleanup import normalize_candidate_text
 except ImportError:
     from filename_utils import build_upload_filename
+    from text_cleanup import normalize_candidate_text
 
 
 def _bounded(value: float) -> int:
@@ -152,5 +154,5 @@ def save_package_summary(
 
 {fallback_section}
 """
-    path.write_text(content, encoding="utf-8")
+    path.write_text(normalize_candidate_text(content), encoding="utf-8")
     return {"output_path": str(path)}
