@@ -35,7 +35,7 @@ try:
         validate_package_outputs,
     )
     from .package_context import PackageContextMismatchError, validate_material_context
-    from .materials_library import find_exact_role_package, organize_package_outputs
+    from .materials_library import find_exact_role_package, organize_package_outputs, portable_manifest_paths
     from .storage_paths import canonical_export_root, legacy_material_paths
     from .filename_utils import company_display_name
     from .parse_job import JobParseError, parse_job_description
@@ -54,6 +54,7 @@ try:
         reconcile_package_role_intelligence,
         role_intent_snapshot,
     )
+    from .role_state_resolver import resolve_job_file, resolve_tracker_record
 except ImportError:
     from application_tracker import (
         TrackerValidationError,
@@ -80,7 +81,7 @@ except ImportError:
         validate_package_outputs,
     )
     from package_context import PackageContextMismatchError, validate_material_context
-    from materials_library import find_exact_role_package, organize_package_outputs
+    from materials_library import find_exact_role_package, organize_package_outputs, portable_manifest_paths
     from storage_paths import canonical_export_root, legacy_material_paths
     from filename_utils import company_display_name
     from parse_job import JobParseError, parse_job_description
@@ -96,6 +97,7 @@ except ImportError:
         reconcile_package_role_intelligence,
         role_intent_snapshot,
     )
+    from role_state_resolver import resolve_job_file, resolve_tracker_record
 
 
 PathInput = Union[str, Path]
@@ -130,58 +132,19 @@ def _job_files(root: Path) -> list[Path]:
 
 
 def _matching_job_file(application: Dict[str, Any], root: Path) -> Optional[Path]:
-    stored = application.get("job_file")
-    if stored:
-        path = Path(str(stored))
-        resolved = path if path.is_absolute() else root / path
-        if resolved.is_file():
-            return resolved
-
-    tracker_id = str(application.get("id") or "")
-    company_key = normalize_tracker_value(application.get("company"))
-    role_key = normalize_tracker_value(application.get("role"))
-    matches = []
-    for path in _job_files(root):
-        try:
-            parsed = parse_job_description(path)
-        except JobParseError:
-            continue
-        raw_text = str(parsed.get("raw_text") or "")
-        if tracker_id and f"Tracker ID: {tracker_id}".lower() in raw_text.lower():
-            return path
-        if tracker_id:
-            continue
-        if (
-            normalize_tracker_value(parsed.get("company")) == company_key
-            and normalize_tracker_value(parsed.get("job_title")) == role_key
-        ):
-            matches.append(path)
-    return matches[0] if len(matches) == 1 else None
+    result = resolve_job_file(application, root)
+    path = result.get("path") if result.get("status") == "valid" else None
+    return Path(path) if path else None
 
 
 def _selected_tracker_record(
     prospect_id: str, tracker: Any
 ) -> Dict[str, Any]:
     """Resolve one tracker record strictly by a durable identity field."""
-    records = tracker.get("applications", []) if isinstance(tracker, dict) else tracker
-    if not isinstance(records, list):
-        raise PackageGenerationError("Application tracker data is not a record list.")
-    target = str(prospect_id or "").strip()
-    matches = [
-        record
-        for record in records
-        if target
-        and target
-        in {
-            str(record.get(key) or "").strip()
-            for key in ("prospect_id", "id", "stable_slug", "record_id")
-        }
-    ]
-    if len(matches) != 1:
-        raise PackageGenerationError(
-            f"Expected one exact tracker record for '{prospect_id}'; found {len(matches)}."
-        )
-    return dict(matches[0])
+    try:
+        return resolve_tracker_record(prospect_id, tracker)
+    except ValueError as error:
+        raise PackageGenerationError(str(error)) from error
 
 
 def _tracker_records(tracker: Any) -> List[Dict[str, Any]]:
@@ -255,75 +218,24 @@ def _duplicate_posting_conflicts(
 
 def job_reference_health(application: Dict[str, Any], root: PathInput) -> Dict[str, Any]:
     """Describe a role's local posting without raising an application error."""
-    project_root = Path(root).expanduser().resolve()
-    stored = str(application.get("job_file") or "").strip()
-    stored_path = Path(stored).expanduser() if stored else None
-    resolved_stored = (
-        stored_path if stored_path and stored_path.is_absolute()
-        else (project_root / stored_path if stored_path else None)
-    )
-    if resolved_stored and resolved_stored.is_file():
-        try:
-            parsed = parse_job_description(resolved_stored)
-            text = str(parsed.get("raw_text") or "").strip()
-            if len(text) >= 80:
-                return {
-                    "status": "valid",
-                    "path": str(resolved_stored),
-                    "relative_path": str(resolved_stored.relative_to(project_root))
-                    if resolved_stored.is_relative_to(project_root) else str(resolved_stored),
-                    "posting_url": str(parsed.get("source_url") or application.get("source_url") or ""),
-                    "has_usable_text": True,
-                }
-            return {
-                "status": "unusable",
-                "path": str(resolved_stored),
-                "posting_url": str(parsed.get("source_url") or application.get("source_url") or ""),
-                "has_usable_text": False,
-                "message": "The local posting exists but does not contain usable posting text.",
-            }
-        except (OSError, JobParseError) as error:
-            return {
-                "status": "unusable",
-                "path": str(resolved_stored),
-                "posting_url": str(application.get("source_url") or application.get("official_url") or ""),
-                "has_usable_text": False,
-                "message": f"The local posting could not be parsed: {error}",
-            }
-    fallback = _matching_job_file(application, project_root)
-    if fallback and fallback.is_file():
-        try:
-            parsed = parse_job_description(fallback)
-            if len(str(parsed.get("raw_text") or "").strip()) >= 80:
-                return {
-                    "status": "valid",
-                    "path": str(fallback),
-                    "relative_path": str(fallback.relative_to(project_root)),
-                    "posting_url": str(parsed.get("source_url") or application.get("source_url") or ""),
-                    "has_usable_text": True,
-                    "relinked": bool(stored),
-                    "outside_runtime": bool(resolved_stored and resolved_stored.is_absolute() and not resolved_stored.is_relative_to(project_root)),
-                }
-        except (OSError, JobParseError):
-            pass
-    url = str(
-        application.get("canonical_apply_url")
-        or application.get("official_url")
-        or application.get("source_url")
-        or ""
-    ).strip()
-    outside_runtime = bool(
-        resolved_stored and resolved_stored.is_absolute()
-        and not resolved_stored.is_relative_to(project_root)
+    result = resolve_job_file(application, Path(root))
+    if result.get("status") == "valid":
+        parsed = result.get("parsed") or {}
+        return {
+            **result,
+            "posting_url": str(parsed.get("source_url") or application.get("source_url") or ""),
+            "has_usable_text": True,
+        }
+    message = result.get("reason") or (
+        "The local posting could not be resolved unambiguously."
+        if result.get("status") == "ambiguous"
+        else "No usable local job description is associated with this role."
     )
     return {
-        "status": "missing",
-        "path": str(resolved_stored) if resolved_stored else "",
-        "posting_url": url,
+        **result,
         "has_usable_text": False,
-        "outside_runtime": outside_runtime,
-        "recoverable": bool(url),
-        "message": "No usable local job description is associated with this role.",
+        "recoverable": bool(application.get("source_url") or application.get("official_url")),
+        "message": message,
     }
 
 
@@ -668,7 +580,7 @@ def resolve_job_reference(
     resolved = candidate if candidate.is_absolute() else root / candidate
     applications = load_application_tracker(root)
 
-    if resolved.is_file():
+    if resolved.is_file() and (resolved.resolve() == (root / "jobs").resolve() or (root / "jobs").resolve() in resolved.resolve().parents):
         parsed = parse_job_description(resolved)
         raw_text = str(parsed.get("raw_text") or "")
         embedded_id_match = re.search(
@@ -699,15 +611,13 @@ def resolve_job_reference(
             application = intake["application"]
         return {"job_path": resolved, "application": application}
 
-    application = next(
-        (item for item in applications if str(item.get("id")) == reference),
-        None,
-    )
+    application = next((item for item in applications if reference in {str(item.get(key) or "") for key in ("id", "prospect_id", "stable_slug", "record_id")}), None)
     if application is None:
         raise PackageGenerationError(
             f"No job file or tracker entry matched '{job_file_or_tracker_id}'."
         )
-    job_path = _matching_job_file(application, root)
+    job_result = resolve_job_file(application, root)
+    job_path = Path(str(job_result["path"])) if job_result.get("status") == "valid" else None
     if job_path is None:
         raise PackageGenerationError(
             f"No local job file could be matched to tracker entry '{reference}'."

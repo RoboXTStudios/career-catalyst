@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import html
+import os
 import re
 import subprocess
 import sys
@@ -123,7 +124,11 @@ from scripts.role_lifecycle import filter_live_records, lifecycle_counts
 from scripts.storage_paths import canonical_archive_root, canonical_export_root
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent
+# The launcher executes code from a durable code root against a separate
+# runtime root.  Runtime-owned tracker, jobs, Evidence, and config must win.
+PROJECT_ROOT = Path(
+    os.environ.get("CAREER_CATALYST_RUNTIME_ROOT") or Path(__file__).resolve().parent
+).expanduser().resolve()
 MISSING_POSTING_NOTICE = (
     "Posting file unavailable. Role data and saved Evidence remain accessible. "
     "Relink or restore the posting before generating new materials."
