@@ -1,0 +1,11 @@
+id: 3cloud_missing_job_render_guard
+company: 3Cloud
+role: Senior Director, Digital Workplace
+status: Applied
+match_score: 82
+selected_evidence_ids: [career_catalyst, governance_qa_delivery]
+job_file: jobs/3cloud_missing_job_render_guard.md
+source_url: https://jobs.example.test/3cloud/senior-director-digital-workplace
+existing_package_preserved: true
+# This fixture deliberately has no corresponding local posting. Read-only UI
+# must retain the stored role, score, Evidence, and package links.
