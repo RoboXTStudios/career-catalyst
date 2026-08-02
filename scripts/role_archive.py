@@ -27,6 +27,7 @@ try:
         save_application_tracker,
     )
     from .materials_library import find_exact_role_package
+    from .role_state_resolver import resolve_job_file
     from .storage_paths import (
         canonical_archive_root,
         canonical_export_root,
@@ -44,6 +45,7 @@ except ImportError:  # pragma: no cover
         save_application_tracker,
     )
     from materials_library import find_exact_role_package
+    from role_state_resolver import resolve_job_file
     from storage_paths import (
         canonical_archive_root,
         canonical_export_root,
@@ -263,10 +265,8 @@ def archive_role(
         bundle.mkdir()
         sources, package_folder = _material_sources(root, entry, exports)
         materials = _copy_materials(sources, bundle / "materials")
-        job_value = entry.get("job_file") or entry.get("job_path")
-        job_source = Path(str(job_value)) if job_value else None
-        if job_source and not job_source.is_absolute():
-            job_source = root / job_source
+        job_result = resolve_job_file(entry, root)
+        job_source = Path(str(job_result["path"])) if job_result.get("status") == "valid" else None
         if job_source and job_source.is_file():
             shutil.copy2(job_source, bundle / "job_posting.txt")
         else:

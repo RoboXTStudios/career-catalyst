@@ -350,6 +350,62 @@ def invalidate_material_package_cache() -> None:
     _MANIFEST_INDEX_VALIDATED_AT.clear()
 
 
+def portable_manifest_paths(folder: Path, mapping: Dict[str, Any]) -> Dict[str, str]:
+    """Store package paths relative to the stable package folder.
+
+    Relative paths survive moving a runtime between machines. Values outside
+    the folder are retained only as legacy metadata, never as active files.
+    """
+    base = Path(folder).expanduser().resolve()
+    result: Dict[str, str] = {}
+    for key, value in dict(mapping or {}).items():
+        if not value:
+            continue
+        path = Path(str(value)).expanduser()
+        try:
+            resolved = path.resolve()
+            if resolved == base or base in resolved.parents:
+                result[str(key)] = resolved.relative_to(base).as_posix()
+                continue
+        except OSError:
+            pass
+        result[str(key)] = str(value)
+    return result
+
+
+def _resolve_manifest_artifacts(folder: Path, payload: Dict[str, Any]) -> Dict[str, Path]:
+    """Resolve legacy absolute, relative, and basename manifest entries safely."""
+    folder = folder.resolve()
+    values: Dict[str, Any] = {}
+    values.update(dict(payload.get("files") or {}))
+    values.update(dict(payload.get("materials") or {}))
+    available = [path for path in folder.rglob("*") if path.is_file() and path.name != "manifest.json"]
+    resolved: Dict[str, Path] = {}
+    for key, value in values.items():
+        raw = Path(str(value)).expanduser()
+        choices: list[Path] = []
+        if raw.is_absolute() and raw.is_file():
+            try:
+                candidate = raw.resolve()
+                if candidate == folder or folder in candidate.parents:
+                    choices.append(candidate)
+            except OSError:
+                pass
+        if not choices:
+            relative = (folder / raw).resolve()
+            if relative.is_file() and (relative == folder or folder in relative.parents):
+                choices.append(relative)
+        if not choices and raw.name:
+            choices = [path for path in available if path.name == raw.name]
+        if not choices:
+            generic = OUTPUT_FILENAMES.get(str(key)) or MATERIAL_FILENAMES.get(str(key))
+            if generic:
+                choices = [path for path in available if path.name == generic]
+        if len(choices) == 1:
+            resolved[str(key)] = choices[0]
+    return resolved
+
+
 def write_role_manifest(
     folder: Path,
     application: Dict[str, Any],
@@ -679,11 +735,7 @@ def find_exact_role_package(
         except (OSError, ValueError, TypeError):
             payload = {}
         if str(payload.get("prospect_id") or "") == str(application.get("id") or ""):
-            files = {
-                key: Path(value)
-                for key, value in dict(payload.get("files") or {}).items()
-                if Path(value).is_file()
-            }
+            files = _resolve_manifest_artifacts(stored_path.parent, payload)
             return {
                 "files": files,
                 "folder": stored_path.parent,
@@ -694,11 +746,7 @@ def find_exact_role_package(
     for manifest_path in manifests:
         payload = _load_manifest(manifest_path)
         if str(payload.get("prospect_id") or "") == str(application.get("id") or ""):
-            files = {
-                key: Path(value)
-                for key, value in dict(payload.get("files") or {}).items()
-                if Path(value).is_file()
-            }
+            files = _resolve_manifest_artifacts(manifest_path.parent, payload)
             return {
                 "files": files,
                 "folder": manifest_path.parent,
