@@ -237,3 +237,9 @@
 - Initialized Career Catalyst project structure.
 - Added foundational documentation.
 - Added starter YAML and Markdown template files.
+# Sprint 34
+
+- Added a shared application preflight and explicit readiness states.
+- Added automatic candidate-facing formatting repairs and quality reporting.
+- Made missing job references recoverable warnings instead of app-crashing errors.
+- Added staged, transactional package generation with rollback of failed output.

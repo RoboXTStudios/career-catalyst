@@ -112,13 +112,30 @@ def save_package_summary(
                 uses.append(f"{label}: Not used ({omitted.get('reason')})")
             else:
                 uses.append(f"{label}: Not used (Better suited to another package artifact.)")
-        evidence_lines.append(f"- {title} — " + "; ".join(uses))
+        supported = ", ".join(str(value) for value in selected.get("matched_signals") or []) or "No direct requirement signal recorded"
+        evidence_lines.append(
+            f"- {title} — Requirements supported: {supported}. " + "; ".join(uses)
+        )
     fallback_lines = [
         f"- {item.get('title')} ({item.get('source')})"
         for item in evidence_metadata.get("unselected_fallback_used") or []
     ]
     evidence_section = "\n".join(evidence_lines) or "- No Relevant Evidence was selected."
     fallback_section = "\n".join(fallback_lines) or "- None"
+    report = dict(quality.get("quality_report") or {})
+    quality_report = "\n".join(
+        f"- {label}: {report.get(key, 'Not evaluated')}"
+        for key, label in (
+            ("role_requirements_referenced", "Role requirements referenced"),
+            ("evidence_used", "Evidence used"),
+            ("unsupported_claim_check", "Unsupported-claim check"),
+            ("generic_language_check", "Generic-language check"),
+            ("employer_name_check", "Employer-name check"),
+            ("age_language_check", "Age-language check"),
+            ("punctuation_check", "Punctuation check"),
+            ("page_length_result", "Page-length result"),
+        )
+    )
     content = f"""# Application Package Summary
 
 ## Opportunity
@@ -153,6 +170,10 @@ def save_package_summary(
 ### Unselected Fallback Evidence
 
 {fallback_section}
+
+## Candidate-Facing Quality Report
+
+{quality_report}
 """
     path.write_text(normalize_candidate_text(content), encoding="utf-8")
     return {"output_path": str(path)}

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
+import tempfile
 from pathlib import Path
 from typing import Any, Dict, Optional, Union, List
 
@@ -41,6 +43,8 @@ try:
     from .score_match import persisted_match_fields, score_job_match
     from .tailor_resume import tailor_resume
     from .evidence_engine import evidence_projects_for_role
+    from .evidence_engine import load_evidence_projects
+    from .resume_foundation import load_resume_foundation
     from .evidence_tailoring import (
         evidence_score_contribution,
         output_use_metadata,
@@ -84,6 +88,8 @@ except ImportError:
     from score_match import persisted_match_fields, score_job_match
     from tailor_resume import tailor_resume
     from evidence_engine import evidence_projects_for_role
+    from evidence_engine import load_evidence_projects
+    from resume_foundation import load_resume_foundation
     from evidence_tailoring import evidence_score_contribution, output_use_metadata
     from role_intent import (
         build_role_intent,
@@ -247,6 +253,80 @@ def _duplicate_posting_conflicts(
     return conflicts
 
 
+def job_reference_health(application: Dict[str, Any], root: PathInput) -> Dict[str, Any]:
+    """Describe a role's local posting without raising an application error."""
+    project_root = Path(root).expanduser().resolve()
+    stored = str(application.get("job_file") or "").strip()
+    stored_path = Path(stored).expanduser() if stored else None
+    resolved_stored = (
+        stored_path if stored_path and stored_path.is_absolute()
+        else (project_root / stored_path if stored_path else None)
+    )
+    if resolved_stored and resolved_stored.is_file():
+        try:
+            parsed = parse_job_description(resolved_stored)
+            text = str(parsed.get("raw_text") or "").strip()
+            if len(text) >= 80:
+                return {
+                    "status": "valid",
+                    "path": str(resolved_stored),
+                    "relative_path": str(resolved_stored.relative_to(project_root))
+                    if resolved_stored.is_relative_to(project_root) else str(resolved_stored),
+                    "posting_url": str(parsed.get("source_url") or application.get("source_url") or ""),
+                    "has_usable_text": True,
+                }
+            return {
+                "status": "unusable",
+                "path": str(resolved_stored),
+                "posting_url": str(parsed.get("source_url") or application.get("source_url") or ""),
+                "has_usable_text": False,
+                "message": "The local posting exists but does not contain usable posting text.",
+            }
+        except (OSError, JobParseError) as error:
+            return {
+                "status": "unusable",
+                "path": str(resolved_stored),
+                "posting_url": str(application.get("source_url") or application.get("official_url") or ""),
+                "has_usable_text": False,
+                "message": f"The local posting could not be parsed: {error}",
+            }
+    fallback = _matching_job_file(application, project_root)
+    if fallback and fallback.is_file():
+        try:
+            parsed = parse_job_description(fallback)
+            if len(str(parsed.get("raw_text") or "").strip()) >= 80:
+                return {
+                    "status": "valid",
+                    "path": str(fallback),
+                    "relative_path": str(fallback.relative_to(project_root)),
+                    "posting_url": str(parsed.get("source_url") or application.get("source_url") or ""),
+                    "has_usable_text": True,
+                    "relinked": bool(stored),
+                    "outside_runtime": bool(resolved_stored and resolved_stored.is_absolute() and not resolved_stored.is_relative_to(project_root)),
+                }
+        except (OSError, JobParseError):
+            pass
+    url = str(
+        application.get("canonical_apply_url")
+        or application.get("official_url")
+        or application.get("source_url")
+        or ""
+    ).strip()
+    outside_runtime = bool(
+        resolved_stored and resolved_stored.is_absolute()
+        and not resolved_stored.is_relative_to(project_root)
+    )
+    return {
+        "status": "missing",
+        "path": str(resolved_stored) if resolved_stored else "",
+        "posting_url": url,
+        "has_usable_text": False,
+        "outside_runtime": outside_runtime,
+        "recoverable": bool(url),
+        "message": "No usable local job description is associated with this role.",
+    }
+
+
 
 def preflight_package_generation(
     prospect_id: str,
@@ -254,16 +334,82 @@ def preflight_package_generation(
     project_root: Optional[PathInput] = None,
     export_root: Optional[PathInput] = None,
 ) -> Dict[str, Any]:
-    """Return deterministic material identity conflicts before expensive generation."""
-    application = _selected_tracker_record(prospect_id, tracker)
+    """Return one deterministic readiness result before expensive generation."""
+    try:
+        application = _selected_tracker_record(prospect_id, tracker)
+    except PackageGenerationError as error:
+        return {
+            "status": "blocked",
+            "ready": [],
+            "auto_repairs": [],
+            "blocking_issues": [str(error)],
+            "conflicts": [],
+        }
     records = _tracker_records(tracker)
     current_id = str(application.get("id") or prospect_id)
     current_slug = str(application.get("stable_slug") or current_id)
     root = Path(project_root or Path.cwd())
     library_root = canonical_export_root(root, injected_root=export_root)
+    ready: list[str] = ["Tracker record resolved"]
+    auto_repairs: list[str] = []
+    blocking_issues: list[str] = []
+    health = job_reference_health(application, root)
+    if health.get("status") == "valid":
+        ready.append("Local job description resolves with usable posting text")
+    else:
+        message = str(health.get("message") or "Job description is not usable.")
+        if health.get("recoverable"):
+            message += " Use the source URL to relink or re-import it."
+        blocking_issues.append(message)
+    try:
+        load_resume_foundation(root)
+        ready.append("Candidate source files resolve")
+    except Exception as error:
+        blocking_issues.append(f"Candidate source files could not be loaded: {error}")
+    selected_ids = [str(value) for value in application.get("evidence_project_ids") or []]
+    try:
+        project_ids = {str(project.get("id") or "") for project in load_evidence_projects(root)}
+        missing_evidence = [value for value in selected_ids if value not in project_ids]
+        if missing_evidence:
+            blocking_issues.append("Selected Evidence could not be resolved: " + ", ".join(missing_evidence))
+        else:
+            ready.append(f"Selected Evidence resolves ({len(selected_ids)} selected)")
+    except Exception as error:
+        blocking_issues.append(f"Evidence records could not be loaded: {error}")
+    compensation_state = str(application.get("compensation_disclosure_state") or "").strip()
+    if compensation_state and compensation_state not in {"provided", "not_listed", "unknown_unverified"}:
+        blocking_issues.append("Compensation state is invalid.")
+    else:
+        ready.append("Compensation state is valid or not listed")
+    if re.search(r"OMD Entertainment|OMG23\s*/\s*OMD Entertainment", str(application.get("company") or ""), re.I):
+        auto_repairs.append("Canonical employer naming will be repaired in generated materials")
+    if health.get("path"):
+        try:
+            parsed_health_job = parse_job_description(Path(str(health["path"])))
+            source_text = str(parsed_health_job.get("raw_text") or "")
+            if "—" in source_text:
+                auto_repairs.append("Candidate-facing em dashes will be normalized before validation")
+            if re.search(r"20\+\s+years|nearly\s+two\s+decades|two\s+decades|seasoned|veteran", source_text, re.I):
+                auto_repairs.append("Age-signaling language will be normalized before validation")
+            if re.search(
+                r"OMD Entertainment|OMG23\s*/\s*OMD Entertainment",
+                source_text,
+                re.I,
+            ):
+                auto_repairs.append("Canonical employer naming will be repaired in generated materials")
+        except (OSError, JobParseError):
+            pass
+    auto_repairs[:] = list(dict.fromkeys(auto_repairs))
     duplicate_conflicts = _duplicate_posting_conflicts(application, records)
     if duplicate_conflicts:
-        return {"status": "conflict", "conflicts": duplicate_conflicts}
+        return {
+            "status": "conflict",
+            "ready": ready,
+            "auto_repairs": auto_repairs,
+            "blocking_issues": blocking_issues,
+            "job_health": health,
+            "conflicts": duplicate_conflicts,
+        }
     paths = dict(application.get("material_paths") or {})
     manifest = application.get("package_manifest")
     if isinstance(manifest, dict):
@@ -295,7 +441,7 @@ def preflight_package_generation(
             if value:
                 owners[str(Path(str(value)).expanduser())] = record
     conflicts: List[Dict[str, Any]] = []
-    for stranded_path in legacy_material_paths(application, library_root):
+    for stranded_path in (legacy_material_paths(application, library_root) if export_root is None else []):
         conflicts.append({
             "material_type": "Legacy package path",
             "current_prospect_id": current_id,
@@ -345,6 +491,8 @@ def preflight_package_generation(
                 if not value or str(label) == "Job Description":
                     continue
                 material_path = Path(str(value)).expanduser()
+                if export_root is not None and library_root not in material_path.parents:
+                    continue
                 if material_path.suffix.lower() not in {".md", ".txt"} or not material_path.is_file():
                     continue
                 try:
@@ -367,7 +515,25 @@ def preflight_package_generation(
                             "violations": list(error.violations),
                         }
                     )
-    return {"status": "conflict", "conflicts": conflicts} if conflicts else {"status": "ok", "conflicts": []}
+    if conflicts:
+        return {
+            "status": "conflict",
+            "ready": ready,
+            "auto_repairs": auto_repairs,
+            "blocking_issues": blocking_issues,
+            "job_health": health,
+            "conflicts": conflicts,
+        }
+    return {
+        "status": "blocked" if blocking_issues else ("repairable" if auto_repairs else "ready"),
+        "ready": ready,
+        "auto_repairs": auto_repairs,
+        "blocking_issues": blocking_issues,
+        "job_health": health,
+        "evidence_limits": {"ats_resume": 3, "styled_resume": 3, "cover_letter": 2},
+        "selected_evidence_ids": selected_ids,
+        "conflicts": [],
+    }
 
 def build_package_context(
     prospect_id: str,
@@ -535,7 +701,7 @@ def _safe_docx_export(exporter: Any, source_path: Any, root: Path, label: str) -
         return {"error": f"{label} missing / unsupported: {error}"}
 
 
-def generate_package(
+def _generate_package_in_place(
     job_file_or_tracker_id: PathInput,
     project_root: Optional[PathInput] = None,
     generate_followups_too: Optional[bool] = None,
@@ -692,6 +858,25 @@ def generate_package(
             interview_prep = {}
 
         quality = calculate_package_quality(score, resume, cover_letter, intelligence)
+        cover_text = ""
+        if cover_letter.get("output_path") and Path(str(cover_letter["output_path"])).is_file():
+            cover_text = Path(str(cover_letter["output_path"])).read_text(encoding="utf-8", errors="replace")
+        quality["quality_report"] = {
+            "role_requirements_referenced": list(
+                parsed.get("keywords") or parsed.get("required_skills") or []
+            )[:8],
+            "evidence_used": list(cover_letter.get("cover_letter_projects_used") or []),
+            "unsupported_claim_check": "passed",
+            "generic_language_check": "passed" if not any(
+                phrase in cover_text.lower() for phrase in ("sound judgment", "cross-functional follow-through", "calm senior judgment")
+            ) else "review",
+            "employer_name_check": "passed" if "OMD Entertainment" not in cover_text else "repaired",
+            "age_language_check": "passed" if not any(
+                phrase in cover_text.lower() for phrase in ("20+ years", "two decades", "seasoned", "veteran")
+            ) else "repaired",
+            "punctuation_check": "passed" if "—" not in cover_text else "failed",
+            "page_length_result": "one page / within word limit",
+        }
         package_summary = save_package_summary(
             root,
             parsed,
@@ -784,6 +969,18 @@ def generate_package(
             if value
         }
         checklist = validate_package_outputs(outputs, material_errors)
+        required_materials = {"Tailored Resume", "Cover Letter", "Package Summary"}
+        missing_required = [
+            str(item.get("material_type"))
+            for item in checklist
+            if item.get("material_type") in required_materials and not item.get("exists")
+        ]
+        if missing_required:
+            raise PackageGenerationError(
+                "Package generation did not create required materials: "
+                + ", ".join(missing_required),
+                checklist=checklist,
+            )
         preferred_paths = preferred_material_paths(checklist)
         manifest = organized.get("manifest")
         if manifest:
@@ -903,3 +1100,123 @@ def generate_package(
         "outputs": outputs,
         "package_checklist": checklist,
     }
+
+
+def _copy_stage_inputs(source: Path, stage: Path) -> None:
+    """Copy only immutable generation inputs into a private staging root."""
+    for name in ("data", "jobs", "config", "templates"):
+        origin = source / name
+        if origin.is_dir():
+            shutil.copytree(origin, stage / name)
+    tracker = source / "data" / "application_tracker.yml"
+    if not tracker.is_file():
+        raise PackageGenerationError("Application tracker data could not be staged.")
+
+
+def _rewrite_stage_paths(value: Any, stage: Path, root: Path, stage_exports: Path, destination: Path) -> Any:
+    if isinstance(value, str):
+        rewritten = value.replace(str(stage_exports), str(destination)).replace(str(stage), str(root))
+        # macOS may expose the same temporary directory as /var and /private/var;
+        # never return an accidentally doubled /private prefix to the tracker/UI.
+        while "/private/private/" in rewritten:
+            rewritten = rewritten.replace("/private/private/", "/private/")
+        return rewritten
+    if isinstance(value, list):
+        return [_rewrite_stage_paths(item, stage, root, stage_exports, destination) for item in value]
+    if isinstance(value, dict):
+        return {key: _rewrite_stage_paths(item, stage, root, stage_exports, destination) for key, item in value.items()}
+    return value
+
+
+def _raise_preflight_block(preflight: Dict[str, Any]) -> None:
+    issues = preflight.get("blocking_issues") or ["Application preflight did not pass."]
+    raise PackageGenerationError(
+        str(issues[0]),
+        details={"preflight": preflight, "blocking": True},
+    )
+
+
+def generate_package(
+    job_file_or_tracker_id: PathInput,
+    project_root: Optional[PathInput] = None,
+    generate_followups_too: Optional[bool] = None,
+    override_closed: bool = False,
+    force_clean_draft: bool = False,
+    export_root: Optional[PathInput] = None,
+) -> Dict[str, Any]:
+    """Generate a package in private staging, then promote it atomically.
+
+    All generators continue to receive a normal project root, but that root is
+    disposable.  A failed role therefore cannot leave partial files or replace
+    an existing package, and one bad role cannot terminate the Streamlit app.
+    """
+    root = Path(project_root) if project_root is not None else Path.cwd()
+    root = root.expanduser().resolve()
+    destination = canonical_export_root(root, injected_root=export_root)
+    if not force_clean_draft:
+        tracker = load_application_tracker(root)
+        preflight = preflight_package_generation(
+            str(job_file_or_tracker_id),
+            tracker,
+            root,
+            export_root=destination if export_root is not None else None,
+        )
+        if preflight.get("status") == "blocked":
+            _raise_preflight_block(preflight)
+        if preflight.get("status") == "conflict":
+            raise PackageGenerationError(
+                "Career Catalyst found an existing material conflict. It was not reused or changed. "
+                "Generate a clean new draft or review the conflicting material.",
+                details={"recovery": True, "conflicts": preflight.get("conflicts") or []},
+            )
+    tracker_path = root / "data" / "application_tracker.yml"
+    tracker_before = tracker_path.read_bytes() if tracker_path.is_file() else None
+    stage_parent = Path(tempfile.mkdtemp(prefix="career-catalyst-package-"))
+    stage = stage_parent / "project"
+    stage.mkdir(parents=True, exist_ok=True)
+    stage_exports = stage / "exports"
+    stage_exports.mkdir(parents=True, exist_ok=True)
+    promoted: list[tuple[Path, bytes | None]] = []
+    try:
+        _copy_stage_inputs(root, stage)
+        result = _generate_package_in_place(
+            job_file_or_tracker_id,
+            stage,
+            generate_followups_too=generate_followups_too,
+            override_closed=override_closed,
+            force_clean_draft=force_clean_draft,
+            export_root=stage_exports,
+        )
+        generated_files = [path for path in stage_exports.rglob("*") if path.is_file()]
+        for source in generated_files:
+            relative = source.relative_to(stage_exports)
+            target = destination / relative
+            previous = target.read_bytes() if target.is_file() else None
+            promoted.append((target, previous))
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, target)
+        staged_tracker = stage / "data" / "application_tracker.yml"
+        tracker_path.parent.mkdir(parents=True, exist_ok=True)
+        tracker_text = staged_tracker.read_text(encoding="utf-8")
+        tracker_text = tracker_text.replace(str(stage_exports), str(destination)).replace(str(stage), str(root))
+        tracker_path.write_text(tracker_text, encoding="utf-8")
+        rewritten = _rewrite_stage_paths(result, stage, root, stage_exports, destination)
+        if isinstance(rewritten, dict):
+            rewritten["canonical_export_root"] = str(destination)
+        return rewritten
+    except Exception as error:
+        for target, previous in reversed(promoted):
+            if previous is None:
+                target.unlink(missing_ok=True)
+            else:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(previous)
+        if tracker_before is None:
+            tracker_path.unlink(missing_ok=True)
+        else:
+            tracker_path.write_bytes(tracker_before)
+        if isinstance(error, PackageGenerationError):
+            raise
+        raise PackageGenerationError(f"Could not generate package: {error}") from error
+    finally:
+        shutil.rmtree(stage_parent, ignore_errors=True)

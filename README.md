@@ -361,6 +361,27 @@ The UI also shows detected company category, role family, suggested cover letter
 
 Cover letters and messages should be reviewed before submission, especially for creative or music-focused roles.
 
+### Sprint 34 application reliability gate
+
+Every package-generation entry point now passes through one shared preflight. The
+UI reports Ready, Automatically repaired, or Blocking factual issue states before
+generation, including posting-reference health, Evidence resolution, candidate
+source files, compensation state, and safe output paths. Candidate-facing
+formatting repairs (punctuation, age-signaling language, and historical employer
+aliases) are applied only to rendered artifacts; source Evidence and history stay
+unchanged. Résumé and cover-letter Evidence limits are disclosed in the Package
+Summary, which also records the quality checks and omission reasons.
+
+Generation runs in a private staging directory and promotes only a complete,
+validated package. A failed run restores the prior tracker and package paths and
+leaves the app running. Missing or stale job files remain visible with an
+actionable relink warning; no posting is fabricated or silently substituted.
+
+Rollback is limited to the package transaction: the prior tracker bytes and
+affected export files are restored automatically when validation or promotion
+fails. Technical details are kept in the application log rather than shown as a
+Python traceback in the normal UI.
+
 ## What Comes Next
 
 Later sprints can add interview prep generation and carefully verified company or job-source workflows.
