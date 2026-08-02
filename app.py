@@ -123,6 +123,10 @@ from scripts.storage_paths import canonical_archive_root, canonical_export_root
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
+MISSING_POSTING_NOTICE = (
+    "Posting file unavailable. Role data and saved Evidence remain accessible. "
+    "Relink or restore the posting before generating new materials."
+)
 UI_DESCRIPTION = (
     "Add prospects, generate tailored application packages, track statuses, and manage "
     "job search materials from one local workspace."
@@ -170,6 +174,41 @@ OUTPUT_LABELS = {
     "followup_strategy": "Follow-Up Plan",
     "dashboard": "Dashboard",
 }
+
+
+def _safe_job_reference_health(
+    application: Dict[str, Any], project_root: Path = PROJECT_ROOT
+) -> Dict[str, Any]:
+    """Return posting readiness without allowing a malformed reference to break UI."""
+    try:
+        health = job_reference_health(application, project_root)
+    except Exception:
+        health = {}
+    if str(health.get("status") or "") == "valid":
+        return health
+    return {
+        **health,
+        "status": str(health.get("status") or "missing"),
+        "recoverable": bool(health.get("recoverable") or health.get("posting_url")),
+        "message": MISSING_POSTING_NOTICE,
+    }
+
+
+def _render_missing_posting_notice(st: Any, health: Dict[str, Any]) -> None:
+    """Show the stable repair state while keeping stored role data readable."""
+    if str(health.get("status") or "") == "valid":
+        return
+    if hasattr(st, "warning"):
+        st.warning(MISSING_POSTING_NOTICE)
+    elif hasattr(st, "caption"):
+        st.caption(MISSING_POSTING_NOTICE)
+    posting_url = str(health.get("posting_url") or "").strip()
+    if posting_url and hasattr(st, "link_button"):
+        st.link_button(
+            "Relink / open source posting",
+            posting_url,
+            use_container_width=False,
+        )
 PACKAGE_MATERIAL_LABELS = {
     "Job Description": "Job description",
     "Tailored Markdown Resume": "Tailored resume",
@@ -1303,16 +1342,16 @@ def _render_source_verification_panel(
             ]
         except EvidenceEngineError:
             selected_projects = []
-        health = job_reference_health(application, PROJECT_ROOT)
+        health = _safe_job_reference_health(application, PROJECT_ROOT)
         if health.get("status") != "valid":
-            st.warning(
-                "Source verification is paused: "
-                + str(health.get("message") or "repair the local posting first.")
-            )
-            if health.get("posting_url"):
-                st.link_button("Relink / open source posting", str(health["posting_url"]), use_container_width=False)
+            _render_missing_posting_notice(st, health)
+            st.caption("Source verification is paused until the local posting is repaired.")
             return
-        resolved = resolve_job_reference(tracker_id, PROJECT_ROOT)
+        try:
+            resolved = resolve_job_reference(tracker_id, PROJECT_ROOT)
+        except PackageGenerationError:
+            _render_missing_posting_notice(st, _safe_job_reference_health(application, PROJECT_ROOT))
+            return
         parsed = parse_job_description(resolved["job_path"])
         match_report = score_job_data(
             {
@@ -1365,17 +1404,9 @@ def _render_relevant_evidence_panel(
     if not active_projects:
         st.caption("No active evidence projects available yet.")
         return
-    job_health = job_reference_health(application, PROJECT_ROOT)
+    job_health = _safe_job_reference_health(application, PROJECT_ROOT)
     if job_health.get("status") != "valid":
-        warning = (
-            "Relevant Evidence can be reviewed, but scoring is paused until this role has a usable local posting. "
-            + str(job_health.get("message") or "Repair the posting reference first.")
-        )
-        if hasattr(st, "warning"):
-            st.warning(warning)
-        if job_health.get("posting_url"):
-            if hasattr(st, "link_button"):
-                st.link_button("Relink / open source posting", str(job_health["posting_url"]), use_container_width=False)
+        _render_missing_posting_notice(st, job_health)
     labels = _project_option_labels(active_projects)
     options = list(labels)
     current = [
@@ -1400,18 +1431,16 @@ def _render_relevant_evidence_panel(
         "Save Relevant Evidence",
         key=f"save_relevant_evidence_{tracker_id}",
         use_container_width=True,
+        disabled=job_health.get("status") != "valid",
     ):
-        if job_health.get("status") != "valid":
-            try:
-                resolve_job_reference(tracker_id, PROJECT_ROOT)
-            except PackageGenerationError:
-                if hasattr(st, "warning"):
-                    st.warning("Save is available after the local posting is repaired or relinked.")
-                return
         selected_projects = [
             project for project in active_projects if str(project.get("id")) in selected
         ]
-        resolved = resolve_job_reference(tracker_id, PROJECT_ROOT)
+        try:
+            resolved = resolve_job_reference(tracker_id, PROJECT_ROOT)
+        except PackageGenerationError:
+            _render_missing_posting_notice(st, _safe_job_reference_health(application, PROJECT_ROOT))
+            return
         match_report = score_job_match(
             resolved["job_path"], PROJECT_ROOT, selected_projects
         )
@@ -1459,6 +1488,9 @@ def _render_role_card(
                 f"Date: {status_date(application) or 'Not recorded'}",
             ]
             st.caption(" · ".join(compact_facts))
+            _render_missing_posting_notice(
+                st, _safe_job_reference_health(application, PROJECT_ROOT)
+            )
             st.markdown(f"**Next:** {html.escape(str(signal['action']))}")
             files = package.get("files", {})
             posting_url = record_posting_url(application)
@@ -1541,6 +1573,9 @@ def _render_role_card(
             st.caption(f"Application readiness: **{readiness_label}**")
         except Exception:
             st.caption("Application readiness: **Needs Review**")
+        _render_missing_posting_notice(
+            st, _safe_job_reference_health(application, PROJECT_ROOT)
+        )
         metadata = _primary_facts_html(application, package)
         if metadata:
             st.markdown(metadata, unsafe_allow_html=True)
@@ -3077,6 +3112,9 @@ def _render_generation_preflight(st: Any, preflight: Dict[str, Any]) -> None:
         "conflict": "Blocking factual issue",
     }
     st.markdown(f"**Application preflight: {labels.get(status, status.title())}**")
+    job_health = preflight.get("job_health") or {}
+    if status == "blocked" and str(job_health.get("status") or "") != "valid":
+        _render_missing_posting_notice(st, job_health)
     for item in preflight.get("ready") or []:
         st.caption("✓ " + str(item))
     for item in preflight.get("auto_repairs") or []:
@@ -3334,10 +3372,15 @@ def _render_followups(st: Any) -> None:
     )
     mode_column.markdown(f"**Outreach mode:** {mode}")
     follow_up_action = follow_up_action_state(application)
+    posting_health = _safe_job_reference_health(application, PROJECT_ROOT)
+    if posting_health.get("status") != "valid":
+        _render_missing_posting_notice(st, posting_health)
     generate_clicked = False
-    if follow_up_action["eligible"]:
+    if follow_up_action["eligible"] and posting_health.get("status") == "valid":
         st.caption(str(follow_up_action["reason"]))
-        generate_clicked = st.button("Generate Follow-Up", type="primary")
+        generate_clicked = st.button(
+            "Generate Follow-Up", type="primary", disabled=False
+        )
     elif (
         follow_up_action["key"] == "check_application_status"
         and follow_up_action["portal_url"]
@@ -3354,6 +3397,8 @@ def _render_followups(st: Any) -> None:
         _render_intelligence_preview(
             st, detected_application_voice(tracker_id, PROJECT_ROOT)
         )
+    except PackageGenerationError:
+        _render_missing_posting_notice(st, posting_health)
     except Exception as error:
         st.caption(f"Role intelligence unavailable: {error}")
 
@@ -3473,6 +3518,9 @@ def _render_career_intelligence(st: Any) -> None:
         st.success("Career Intelligence context and private notes saved.")
 
     package = find_exact_role_package(PROJECT_ROOT, application)
+    posting_health = _safe_job_reference_health(application, PROJECT_ROOT)
+    if posting_health.get("status") != "valid":
+        _render_missing_posting_notice(st, posting_health)
     if not package.get("folder"):
         st.info("Generate the base role package before attaching Career Intelligence.")
     button_label = (
@@ -3483,7 +3531,8 @@ def _render_career_intelligence(st: Any) -> None:
     if st.button(
         button_label,
         type="primary",
-        disabled=not bool(package.get("folder")),
+        disabled=not bool(package.get("folder"))
+        or posting_health.get("status") != "valid",
         key=f"generate_career_intelligence_{tracker_id}",
     ):
         try:
