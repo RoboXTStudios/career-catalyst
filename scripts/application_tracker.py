@@ -510,6 +510,67 @@ def make_tracker_id(company: Any, role: Any) -> str:
     return normalized
 
 
+def find_existing_prospect(
+    prospect: Dict[str, Any],
+    project_root: Optional[PathInput] = None,
+) -> Optional[Dict[str, Any]]:
+    """Find one existing opportunity before intake can write a duplicate.
+
+    Stable IDs are authoritative.  A normalized posting URL or requisition id
+    is the next safest identity signal; company and role are used only when
+    they identify exactly one record.  The returned record is a copy so this
+    read-only guard cannot mutate tracker state.
+    """
+    records = load_application_tracker(project_root)
+    company = canonical_employer_name(prospect.get("company"))
+    role = str(prospect.get("role") or prospect.get("job_title") or "").strip()
+    candidate_id = str(prospect.get("id") or prospect.get("tracker_id") or "").strip()
+    if not candidate_id and company and role:
+        candidate_id = make_tracker_id(company, role)
+    if candidate_id:
+        for record in records:
+            if str(record.get("id") or "") == candidate_id:
+                return deepcopy(record)
+
+    def _url(value: Any) -> str:
+        return str(value or "").strip().rstrip("/").casefold()
+
+    candidate_urls = {
+        _url(prospect.get(field))
+        for field in ("official_url", "source_url", "posting_url", "canonical_apply_url")
+        if _url(prospect.get(field))
+    }
+    candidate_job_id = normalize_tracker_value(prospect.get("job_id"))
+    if candidate_urls or candidate_job_id:
+        matches = []
+        for record in records:
+            record_urls = {
+                _url(record.get(field))
+                for field in ("official_url", "source_url", "posting_url", "canonical_apply_url")
+                if _url(record.get(field))
+            }
+            record_job_id = normalize_tracker_value(record.get("job_id"))
+            if (candidate_urls and candidate_urls.intersection(record_urls)) or (
+                candidate_job_id and candidate_job_id == record_job_id
+            ):
+                matches.append(record)
+        if len(matches) == 1:
+            return deepcopy(matches[0])
+
+    if company and role:
+        company_key = normalize_tracker_value(company)
+        role_key = normalize_tracker_value(role)
+        matches = [
+            record
+            for record in records
+            if normalize_tracker_value(canonical_employer_name(record.get("company"))) == company_key
+            and normalize_tracker_value(record.get("role")) == role_key
+        ]
+        if len(matches) == 1:
+            return deepcopy(matches[0])
+    return None
+
+
 def tracker_company_keys(application: Dict[str, Any]) -> set[str]:
     values = [application.get("company", "")]
     aliases = application.get("company_aliases", [])
