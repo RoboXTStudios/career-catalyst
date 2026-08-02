@@ -9,8 +9,10 @@ import yaml
 
 try:
     from .role_editing import detect_role_editing_category
+    from .role_state_resolver import resolve_selected_evidence
 except ImportError:
     from role_editing import detect_role_editing_category
+    from role_state_resolver import resolve_selected_evidence
 
 
 CONFIDENCE_ORDER = {"low": 1, "medium": 2, "high": 3}
@@ -403,12 +405,14 @@ def enrich_seed_evidence_projects(project_root: str | Path | None = None) -> lis
 
 def evidence_projects_for_role(application: dict[str, Any], project_root: str | Path | None = None) -> list[dict[str, Any]]:
     """Return prospect-scoped, externally usable Evidence in saved order."""
-    requested = [str(project_id) for project_id in application.get("evidence_project_ids", []) if str(project_id).strip()]
-    if not requested:
-        return []
-    projects = {project["id"]: project for project in load_evidence_projects(project_root)}
-    selected = [projects[project_id] for project_id in requested if project_id in projects]
-    return [project for project in selected if evidence_is_externally_usable(project)]
+    resolution = resolve_selected_evidence(
+        application, load_evidence_projects(project_root)
+    )
+    return [
+        project
+        for project in resolution["projects"]
+        if evidence_is_externally_usable(project)
+    ]
 
 
 def evidence_is_externally_usable(project: dict[str, Any]) -> bool:

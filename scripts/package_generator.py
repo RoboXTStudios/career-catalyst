@@ -54,7 +54,11 @@ try:
         reconcile_package_role_intelligence,
         role_intent_snapshot,
     )
-    from .role_state_resolver import resolve_job_file, resolve_tracker_record
+    from .role_state_resolver import (
+        resolve_job_file,
+        resolve_selected_evidence,
+        resolve_tracker_record,
+    )
 except ImportError:
     from application_tracker import (
         TrackerValidationError,
@@ -97,7 +101,11 @@ except ImportError:
         reconcile_package_role_intelligence,
         role_intent_snapshot,
     )
-    from role_state_resolver import resolve_job_file, resolve_tracker_record
+    from role_state_resolver import (
+        resolve_job_file,
+        resolve_selected_evidence,
+        resolve_tracker_record,
+    )
 
 
 PathInput = Union[str, Path]
@@ -278,15 +286,23 @@ def preflight_package_generation(
         ready.append("Candidate source files resolve")
     except Exception as error:
         blocking_issues.append(f"Candidate source files could not be loaded: {error}")
-    selected_ids = [str(value) for value in application.get("evidence_project_ids") or []]
     try:
-        project_ids = {str(project.get("id") or "") for project in load_evidence_projects(root)}
-        missing_evidence = [value for value in selected_ids if value not in project_ids]
+        evidence_resolution = resolve_selected_evidence(
+            application, load_evidence_projects(root)
+        )
+        selected_ids = list(evidence_resolution["selected_ids"])
+        missing_evidence = list(evidence_resolution["missing_ids"])
         if missing_evidence:
             blocking_issues.append("Selected Evidence could not be resolved: " + ", ".join(missing_evidence))
         else:
             ready.append(f"Selected Evidence resolves ({len(selected_ids)} selected)")
     except Exception as error:
+        evidence_resolution = {
+            "selected_ids": [],
+            "projects": [],
+            "missing_ids": [],
+        }
+        selected_ids = []
         blocking_issues.append(f"Evidence records could not be loaded: {error}")
     compensation_state = str(application.get("compensation_disclosure_state") or "").strip()
     if compensation_state and compensation_state not in {"provided", "not_listed", "unknown_unverified"}:
@@ -471,6 +487,11 @@ def preflight_package_generation(
         "job_health": health,
         "evidence_limits": {"ats_resume": 3, "styled_resume": 3, "cover_letter": 2},
         "selected_evidence_ids": selected_ids,
+        "resolved_evidence_ids": [
+            str(project.get("id") or "")
+            for project in evidence_resolution["projects"]
+        ],
+        "missing_evidence_ids": list(evidence_resolution["missing_ids"]),
         "conflicts": [],
     }
 
