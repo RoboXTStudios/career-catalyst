@@ -35,7 +35,7 @@ try:
         validate_package_outputs,
     )
     from .package_context import PackageContextMismatchError, validate_material_context
-    from .materials_library import organize_package_outputs
+    from .materials_library import find_exact_role_package, organize_package_outputs
     from .storage_paths import canonical_export_root, legacy_material_paths
     from .filename_utils import company_display_name
     from .parse_job import JobParseError, parse_job_description
@@ -80,7 +80,7 @@ except ImportError:
         validate_package_outputs,
     )
     from package_context import PackageContextMismatchError, validate_material_context
-    from materials_library import organize_package_outputs
+    from materials_library import find_exact_role_package, organize_package_outputs
     from storage_paths import canonical_export_root, legacy_material_paths
     from filename_utils import company_display_name
     from parse_job import JobParseError, parse_job_description
@@ -428,6 +428,17 @@ def preflight_package_generation(
                 }],
             }
         paths.update(dict(manifest.get("materials") or {}))
+    # Older tracker snapshots can contain absolute /private/Users paths even
+    # though the canonical manifest is present under the current export root.
+    # Stable manifest ownership wins over those stale references; this avoids
+    # treating the role's own package as belonging to a different opportunity.
+    exact_package = find_exact_role_package(root, application, export_root=library_root)
+    exact_manifest = exact_package.get("manifest") or {}
+    exact_owner = str(exact_manifest.get("prospect_id") or "") == current_id
+    if exact_owner:
+        canonical_files = dict(exact_manifest.get("files") or {})
+        if canonical_files:
+            paths = canonical_files
     owners: Dict[str, Dict[str, Any]] = {}
     for record in records:
         rid = str(record.get("id") or "")
@@ -441,7 +452,11 @@ def preflight_package_generation(
             if value:
                 owners[str(Path(str(value)).expanduser())] = record
     conflicts: List[Dict[str, Any]] = []
-    for stranded_path in (legacy_material_paths(application, library_root) if export_root is None else []):
+    for stranded_path in (
+        legacy_material_paths(application, library_root)
+        if export_root is None and not exact_owner
+        else []
+    ):
         conflicts.append({
             "material_type": "Legacy package path",
             "current_prospect_id": current_id,
@@ -454,7 +469,8 @@ def preflight_package_generation(
     for label, value in paths.items():
         if not value or str(label) == "Job Description":
             continue
-        path_text = str(Path(str(value)).expanduser())
+        material_path = Path(str(value)).expanduser()
+        path_text = str(material_path)
         owner = owners.get(path_text)
         if owner is not None:
             conflicts.append({
@@ -465,6 +481,17 @@ def preflight_package_generation(
                 "conflicting_role": str(owner.get("role") or ""),
                 "path": str(value),
                 "reason": "material path is already associated with a different prospect",
+            })
+            continue
+        if material_path.is_file() and library_root not in material_path.resolve().parents:
+            conflicts.append({
+                "material_type": str(label),
+                "current_prospect_id": current_id,
+                "conflicting_prospect_id": "",
+                "conflicting_company": "",
+                "conflicting_role": "",
+                "path": str(value),
+                "reason": "existing material is outside the canonical export root",
             })
             continue
         normalized_path = path_text.replace("\\", "/")
@@ -950,15 +977,6 @@ def _generate_package_in_place(
             if companion:
                 outputs[text_key] = companion
         outputs = {key: value for key, value in outputs.items() if value}
-        organized = organize_package_outputs(
-            root,
-            application,
-            outputs,
-            preserve_existing=force_clean_draft,
-            export_root=Path(export_root) if export_root is not None else None,
-            role_intent=role_intent_snapshot(shared_role_intent),
-        )
-        outputs = dict(organized["outputs"])
         material_errors = {
             key: value
             for key, value in {
@@ -968,8 +986,32 @@ def _generate_package_in_place(
             }.items()
             if value
         }
-        checklist = validate_package_outputs(outputs, material_errors)
+        # Validate required generated outputs before moving anything into the
+        # canonical package.  A failed generation therefore cannot create an
+        # empty manifest or version away a previously valid package.
+        precheck = validate_package_outputs(outputs, material_errors)
         required_materials = {"Tailored Resume", "Cover Letter", "Package Summary"}
+        missing_required = [
+            str(item.get("material_type"))
+            for item in precheck
+            if item.get("material_type") in required_materials and not item.get("exists")
+        ]
+        if missing_required:
+            raise PackageGenerationError(
+                "Package generation did not create required materials: "
+                + ", ".join(missing_required),
+                checklist=precheck,
+            )
+        organized = organize_package_outputs(
+            root,
+            application,
+            outputs,
+            preserve_existing=force_clean_draft,
+            export_root=Path(export_root) if export_root is not None else None,
+            role_intent=role_intent_snapshot(shared_role_intent),
+        )
+        outputs = dict(organized["outputs"])
+        checklist = validate_package_outputs(outputs, material_errors)
         missing_required = [
             str(item.get("material_type"))
             for item in checklist

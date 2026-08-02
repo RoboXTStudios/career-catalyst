@@ -20,6 +20,7 @@ from scripts.application_tracker import (
     active_tracker_records,
     follow_up_action_state,
     get_record_status,
+    find_existing_prospect,
     is_archive_eligible,
     load_application_tracker,
     normalize_status,
@@ -40,7 +41,7 @@ from scripts.evidence_engine import (
     upsert_evidence_project,
 )
 from scripts.evidence_tailoring import package_preview_fingerprint
-from scripts.filename_utils import build_upload_filename, company_display_name
+from scripts.filename_utils import build_upload_filename, canonical_employer_name, company_display_name
 from scripts.filename_utils import is_valid_role_title
 from scripts.generate_dashboard import (
     ACTION_FILTERS,
@@ -674,9 +675,19 @@ def update_dashboard_role(
     clean_id = str(tracker_id or "").strip()
     if not clean_id:
         raise TrackerValidationError("A stable tracker id is required for dashboard updates.")
-    status = normalize_status(values.get("status"))
+    existing = find_dashboard_role(load_application_tracker(project_root), clean_id)
+    if existing is None:
+        raise TrackerValidationError(f"Tracker entry not found: {clean_id}")
+    current_status = get_record_status(existing)
+    status = normalize_status(values.get("status")) if "status" in values else current_status
     updates: Dict[str, Any] = {}
     for field in (
+        "company",
+        "role",
+        "location",
+        "work_arrangement",
+        "job_file",
+        "job_description",
         "priority",
         "notes",
         "next_action",
@@ -727,10 +738,32 @@ def update_dashboard_role(
         updates["follow_up_status"] = (
             "" if follow_up_status == "Auto" else follow_up_status
         )
+    if "company" in updates:
+        updates["company"] = canonical_employer_name(updates["company"])
+    if "job_description" in updates and str(updates.get("job_description") or "").strip():
+        job_reference = str(updates.get("job_file") or existing.get("job_file") or "").strip()
+        job_path = Path(job_reference).expanduser()
+        if not job_path.is_absolute():
+            job_path = project_root / job_path
+        resolved_job = job_path.resolve()
+        if resolved_job.is_file() and (
+            resolved_job == project_root.resolve() or project_root.resolve() in resolved_job.parents
+        ):
+            original_job = resolved_job.read_text(encoding="utf-8", errors="replace")
+            header, separator, _body = original_job.partition("\n\n")
+            if not separator:
+                header = original_job.rstrip()
+            resolved_job.write_text(
+                header.rstrip() + "\n\n" + str(updates["job_description"]).strip() + "\n",
+                encoding="utf-8",
+            )
     # Archive state, not status, controls whether a role remains in live views.
     if "status" in values:
         updates["show_on_dashboard"] = True
-    if status in VALID_STATUSES:
+    # Avoid stamping history or recalculating status when an edit leaves it
+    # unchanged.  Score, Evidence IDs, history, and manual overrides are not
+    # included in this edit path and therefore remain byte-for-byte intact.
+    if status in VALID_STATUSES and status != current_status:
         return update_status(clean_id, status, project_root, **updates)
     # Unknown legacy statuses remain readable and notes can still be edited safely.
     return update_prospect(clean_id, updates, project_root)
@@ -1503,7 +1536,7 @@ def _render_role_card(
                 ),
                 None,
             )
-            action_specs = [("view", "View Role", None)]
+            action_specs = [("view", "View Role", None), ("edit", "Edit Role", None)]
             if portal_url:
                 action_specs.append(("portal", "Check Application Status", portal_url))
             if posting_url:
@@ -1520,6 +1553,14 @@ def _render_role_card(
                 focus_dashboard_role(
                     st.session_state, dashboard_role_reference(application)
                 )
+                st.rerun()
+            if action_columns["edit"].button(
+                "Edit Role",
+                key=f"compact_edit_{tracker_id}",
+                use_container_width=True,
+            ):
+                focus_dashboard_role(st.session_state, dashboard_role_reference(application))
+                st.session_state["dashboard_edit_role_id"] = tracker_id
                 st.rerun()
             if posting_url:
                 action_columns["posting"].link_button("Open Posting", posting_url, use_container_width=True)
@@ -1782,7 +1823,11 @@ def _render_role_card(
                     f"{follow_up_action['label']}: {follow_up_action['reason']}"
                 )
 
-        with st.expander("Advanced edit role", expanded=False):
+        edit_focused = str(
+            st.session_state.get("dashboard_edit_role_id") or ""
+        ) == tracker_id
+        with st.expander("Advanced edit role", expanded=edit_focused):
+            st.caption("Edit Role — changes preserve status, score, Evidence, and application history.")
             current_status = get_record_status(application)
             choices = status_options(current_status)
             current_priority = str(application.get("priority") or "Medium")
@@ -1793,6 +1838,27 @@ def _render_role_card(
             )
             with st.form(key=f"dashboard_edit_{tracker_id}"):
                 edit_columns = st.columns(2)
+                edited_company = edit_columns[0].text_input(
+                    "Company",
+                    value=str(application.get("company") or ""),
+                    key=f"dashboard_company_{tracker_id}",
+                )
+                edited_role = edit_columns[1].text_input(
+                    "Role title",
+                    value=str(application.get("role") or ""),
+                    key=f"dashboard_role_{tracker_id}",
+                )
+                detail_columns = st.columns(2)
+                edited_location = detail_columns[0].text_input(
+                    "Location",
+                    value=str(application.get("location") or ""),
+                    key=f"dashboard_location_{tracker_id}",
+                )
+                edited_work_arrangement = detail_columns[1].text_input(
+                    "Work arrangement",
+                    value=str(application.get("work_arrangement") or ""),
+                    key=f"dashboard_work_arrangement_{tracker_id}",
+                )
                 edited_status = edit_columns[0].selectbox(
                     "Status",
                     choices,
@@ -1817,6 +1883,30 @@ def _render_role_card(
                 )
                 edited_posting_url = st.text_input("Posting URL", value=str(application.get("posting_url") or record_posting_url(application) or ""))
                 edited_portal_url = st.text_input("Application/status portal URL", value=str(application.get("application_portal_url") or ""))
+                edited_job_file = st.text_input(
+                    "Job description reference",
+                    value=str(application.get("job_file") or ""),
+                    key=f"dashboard_job_file_{tracker_id}",
+                    help="Keep this pointed at the exact local posting used for package generation.",
+                )
+                job_description_value = str(application.get("job_description") or "")
+                if not job_description_value:
+                    job_reference_path = Path(str(application.get("job_file") or ""))
+                    if not job_reference_path.is_absolute():
+                        job_reference_path = PROJECT_ROOT / job_reference_path
+                    if job_reference_path.is_file():
+                        try:
+                            job_description_value = str(
+                                parse_job_description(job_reference_path).get("raw_text") or ""
+                            )
+                        except Exception:
+                            job_description_value = ""
+                edited_job_description = st.text_area(
+                    "Job description (optional refresh)",
+                    value=job_description_value,
+                    key=f"dashboard_job_description_{tracker_id}",
+                    height=180,
+                )
                 st.caption(
                     "Live roles remain visible until an eligible terminal role is explicitly archived."
                 )
@@ -1828,12 +1918,18 @@ def _render_role_card(
                     update_dashboard_role(
                         tracker_id,
                         {
+                            "company": edited_company,
+                            "role": edited_role,
+                            "location": edited_location,
+                            "work_arrangement": edited_work_arrangement,
                             "status": edited_status,
                             "priority": edited_priority,
                             "notes": edited_notes,
                             "next_action": edited_next_action,
                             "posting_url": edited_posting_url,
                             "application_portal_url": edited_portal_url,
+                            "job_file": edited_job_file,
+                            "job_description": edited_job_description,
                         },
                         PROJECT_ROOT,
                     )
@@ -1843,6 +1939,7 @@ def _render_role_card(
                     message = "Role updates saved."
                     st.session_state[flash_key] = message
                     st.session_state["dashboard_notice"] = message
+                    st.session_state.pop("dashboard_edit_role_id", None)
                     st.rerun()
 
 
@@ -1984,6 +2081,33 @@ def _show_output_paths(st: Any, outputs: Dict[str, str], key_prefix: str) -> Non
             )
         else:
             st.caption("Missing / not generated.")
+
+
+def _render_persistent_package_controls(
+    st: Any, tracker_id: str, application: Dict[str, Any]
+) -> None:
+    """Render durable material actions from the exact manifest, not session state."""
+    package = find_exact_role_package(PROJECT_ROOT, application)
+    files = {
+        str(key): Path(value)
+        for key, value in dict(package.get("files") or {}).items()
+        if value
+    }
+    existing = {key: value for key, value in files.items() if value.is_file()}
+    folder = package.get("folder")
+    if not existing and not folder:
+        return
+    st.markdown("### Current package materials")
+    if package.get("archived"):
+        st.caption("An archived package is available; generating again will create the current role-scoped version.")
+    _material_button_rows(st, tracker_id, existing)
+    if folder and Path(folder).is_dir():
+        _show_open_button(
+            st,
+            "Open package folder",
+            Path(folder),
+            f"persistent_package_folder_{tracker_id}",
+        )
 
 
 def _render_package_summary(st: Any, package_result: Dict[str, Any]) -> None:
@@ -2780,6 +2904,41 @@ def _render_add_prospect(st: Any) -> None:
     if not save_clicked:
         return
 
+    # Intake is a write boundary. Resolve a stable existing opportunity first
+    # so a re-import opens recovery actions instead of silently enriching or
+    # appearing to create a second prospect.
+    duplicate = find_existing_prospect(build_prospect_payload(values), PROJECT_ROOT)
+    if duplicate is not None:
+        duplicate_id = str(duplicate.get("id") or "")
+        st.warning(
+            "This opportunity already exists in Career Catalyst. "
+            f"Existing role: {duplicate.get('role') or 'Unknown'} at "
+            f"{company_display_name(duplicate.get('company'))}. No new prospect was created."
+        )
+        duplicate_columns = st.columns(3)
+        if duplicate_columns[0].button(
+            "Open existing role",
+            key=f"duplicate_open_{duplicate_id}",
+            use_container_width=True,
+        ):
+            focus_dashboard_role(st.session_state, duplicate_id)
+            st.rerun()
+        if duplicate_columns[1].button(
+            "Edit existing role",
+            key=f"duplicate_edit_{duplicate_id}",
+            use_container_width=True,
+        ):
+            focus_dashboard_role(st.session_state, duplicate_id)
+            st.session_state["dashboard_edit_role_id"] = duplicate_id
+            st.rerun()
+        if duplicate_columns[2].button(
+            "Cancel",
+            key=f"duplicate_cancel_{duplicate_id}",
+            use_container_width=True,
+        ):
+            st.info("No changes were made.")
+        return
+
     try:
         with st.spinner("Saving prospect…"):
             intake = create_prospect(
@@ -2791,7 +2950,13 @@ def _render_add_prospect(st: Any) -> None:
         st.error(str(error))
         return
 
-    st.success(f"Added {intake['tracker_id']} without generating materials.")
+    if not intake.get("tracker_created", True):
+        st.warning(
+            "This opportunity already existed and was refreshed safely. "
+            "Open the existing role to review its preserved history and materials."
+        )
+    else:
+        st.success(f"Added {intake['tracker_id']} without generating materials.")
     st.info("Review the prospect on Dashboard. Use Generate Package only when you are ready to create materials.")
 
 
@@ -2928,6 +3093,9 @@ def _render_package_recovery(
                 f"Generated clean package for {result['job_title']} at {result['company']}."
             )
             _render_package_summary(st, result)
+            refreshed = find_dashboard_role(load_application_tracker(PROJECT_ROOT), tracker_id)
+            if refreshed is not None:
+                _render_persistent_package_controls(st, tracker_id, refreshed)
     if col2.button(
         "View conflicting material",
         key=_package_recovery_action_key(tracker_id, "view"),
@@ -3149,6 +3317,7 @@ def _render_generate_package(st: Any) -> None:
         key="package_tracker_id",
     )
     application = by_id[tracker_id]
+    _render_persistent_package_controls(st, tracker_id, application)
     reset_package_preview_for_selection(
         st.session_state, tracker_id, application.get("evidence_project_ids") or []
     )
