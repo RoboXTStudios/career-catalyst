@@ -29,6 +29,8 @@ ROLE_FAMILY_LABELS = {
     "business_operations": "Business Operations",
     "editorial_content_strategy": "Editorial & Content Strategy",
     "community_growth": "Community Growth",
+    "music_partnerships_label_relations": "Music Partnerships & Label Relations",
+    "strategy_gtm_operations": "Strategy & GTM Operations",
     "generic_senior_operator": "Senior Operations Leadership",
 }
 

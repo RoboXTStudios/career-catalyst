@@ -41,7 +41,7 @@ from scripts.evidence_engine import (
     normalize_multivalue,
     upsert_evidence_project,
 )
-from scripts.evidence_tailoring import package_preview_fingerprint
+from scripts.evidence_tailoring import package_preview_fingerprint, recommend_evidence_ids
 from scripts.filename_utils import build_upload_filename, canonical_employer_name, company_display_name
 from scripts.filename_utils import is_valid_role_title
 from scripts.generate_dashboard import (
@@ -1480,6 +1480,19 @@ def _render_relevant_evidence_panel(
         for project_id in evidence_resolution["selected_ids"]
         if str(project_id) in labels
     ]
+    if job_health.get("status") == "valid":
+        try:
+            recommended = recommend_evidence_ids(
+                parse_job_description(Path(str(job_health["path"]))), active_projects, limit=3
+            )
+        except (OSError, ValueError, TypeError):
+            recommended = []
+        if recommended:
+            st.caption(
+                "Role-aware suggestions: "
+                + "; ".join(labels.get(project_id, project_id) for project_id in recommended)
+                + ". Saved selections remain authoritative until you change them."
+            )
     selected = st.multiselect(
         "Relevant Evidence",
         options=options,
@@ -2654,6 +2667,11 @@ def _render_intelligence_preview(st: Any, intelligence: Dict[str, Any]) -> None:
             st.markdown(
                 f"Freshness: **{freshness['label']}**  |  Posting status: **{freshness['posting_status']}**"
             )
+        if intelligence.get("location") or intelligence.get("work_arrangement"):
+            st.markdown(
+                f"Location: **{intelligence.get('location') or 'Not specified'}**  |  "
+                f"Work arrangement: **{intelligence.get('work_arrangement') or 'Not specified'}**"
+            )
         verification = intelligence.get("source_verification")
         if verification:
             st.markdown(
@@ -3091,6 +3109,10 @@ def detected_application_voice(
         str(context["parsed_job"].get("raw_text") or "")
     )
     intelligence["match_report"] = context["match_report"]
+    intelligence["location"] = str(context["parsed_job"].get("location") or "")
+    intelligence["work_arrangement"] = str(
+        context["parsed_job"].get("work_arrangement") or ""
+    )
     return intelligence
 
 
@@ -3428,6 +3450,12 @@ def _render_generate_package(st: Any) -> None:
             str(package_context["parsed_job"].get("raw_text") or "")
         )
         voice_context["match_report"] = package_context["match_report"]
+        voice_context["location"] = str(
+            package_context["parsed_job"].get("location") or ""
+        )
+        voice_context["work_arrangement"] = str(
+            package_context["parsed_job"].get("work_arrangement") or ""
+        )
         _render_intelligence_preview(st, voice_context)
         _render_tailoring_plan(st, package_context["role_intent"])
     freshness = voice_context.get("freshness", {}) if "voice_context" in locals() else {}
@@ -3486,6 +3514,10 @@ def _render_generate_package(st: Any) -> None:
                     st, {"package_checklist": error.checklist}
                 )
         else:
+            if not result.get("package_complete"):
+                st.error("Package generation did not complete. The prior package remains unchanged.")
+                _render_package_summary(st, result)
+                return
             st.success(
                 f"Generated {result['job_title']} at {result['company']} — status: {result['status']}."
             )

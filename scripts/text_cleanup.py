@@ -32,6 +32,29 @@ def normalize_candidate_text(text: str) -> str:
     )
     for pattern, replacement in replacements:
         cleaned = re.sub(pattern, replacement, cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(
+        r"\bIn\s+(RoboXT Studios|Career Catalyst|CampaignOS)\s*,\s*(founded|led|built|created|designed)\b",
+        r"At \1, I \2",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    cleaned = re.sub(
+        r"(?m)(^|[.!?]\s+)(Built|Created|Designed|Led|Founded)\b",
+        lambda match: f"{match.group(1)}I {match.group(2).lower()}",
+        cleaned,
+    )
+    cleaned = re.sub(
+        r"\b(?:led|managed)\s+(?:a\s+)?(?:team|organization)\s+of\s+(?:60\+?|64)\b",
+        "provided strategic and operational leadership across an integrated 64-person organization",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    cleaned = re.sub(
+        r"\bCampaignOS\s+is\s+(?:a|an)\s+(?:platform|product|system)\b",
+        "CampaignOS is a working prototype",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
     cleaned = re.sub(r"\ba\s+experienced\b", "an experienced", cleaned, flags=re.IGNORECASE)
     return cleaned
 

@@ -6,8 +6,11 @@ import json
 import re
 import shutil
 import tempfile
+import uuid
 from pathlib import Path
 from typing import Any, Dict, Optional, Union, List
+
+import yaml
 
 try:
     from .application_tracker import (
@@ -32,11 +35,12 @@ try:
     from .package_materials import (
         create_text_companion,
         preferred_material_paths,
+        validate_complete_package,
         validate_package_outputs,
     )
     from .package_context import PackageContextMismatchError, validate_material_context
     from .materials_library import find_exact_role_package, organize_package_outputs, portable_manifest_paths
-    from .storage_paths import canonical_export_root, legacy_material_paths
+    from .storage_paths import canonical_export_root, canonical_storage_path, legacy_material_paths, require_beneath_export_root
     from .filename_utils import company_display_name
     from .parse_job import JobParseError, parse_job_description
     from .prospect_intake import add_prospect_from_job_file
@@ -82,11 +86,12 @@ except ImportError:
     from package_materials import (
         create_text_companion,
         preferred_material_paths,
+        validate_complete_package,
         validate_package_outputs,
     )
     from package_context import PackageContextMismatchError, validate_material_context
     from materials_library import find_exact_role_package, organize_package_outputs, portable_manifest_paths
-    from storage_paths import canonical_export_root, legacy_material_paths
+    from storage_paths import canonical_export_root, canonical_storage_path, legacy_material_paths, require_beneath_export_root
     from filename_utils import company_display_name
     from parse_job import JobParseError, parse_job_description
     from prospect_intake import add_prospect_from_job_file
@@ -921,11 +926,12 @@ def _generate_package_in_place(
         # canonical package.  A failed generation therefore cannot create an
         # empty manifest or version away a previously valid package.
         precheck = validate_package_outputs(outputs, material_errors)
-        required_materials = {"Tailored Resume", "Cover Letter", "Package Summary"}
+        required_precheck = validate_complete_package(
+            {**outputs, "manifest_path": ""}
+        )
         missing_required = [
-            str(item.get("material_type"))
-            for item in precheck
-            if item.get("material_type") in required_materials and not item.get("exists")
+            value for value in required_precheck["missing_required"]
+            if value != "Canonical Manifest"
         ]
         if missing_required:
             raise PackageGenerationError(
@@ -942,20 +948,22 @@ def _generate_package_in_place(
             role_intent=role_intent_snapshot(shared_role_intent),
         )
         outputs = dict(organized["outputs"])
+        manifest = organized.get("manifest")
+        if manifest:
+            outputs["manifest_path"] = str(manifest.get("manifest_path") or "")
         checklist = validate_package_outputs(outputs, material_errors)
-        missing_required = [
-            str(item.get("material_type"))
-            for item in checklist
-            if item.get("material_type") in required_materials and not item.get("exists")
-        ]
-        if missing_required:
+        completion = validate_complete_package(
+            outputs,
+            owner_id=tracker_id,
+            export_root=Path(export_root) if export_root is not None else canonical_export_root(root),
+        )
+        if not completion["complete"]:
             raise PackageGenerationError(
                 "Package generation did not create required materials: "
-                + ", ".join(missing_required),
-                checklist=checklist,
+                + ", ".join(completion["missing_required"]),
+                checklist=completion["checklist"],
             )
         preferred_paths = preferred_material_paths(checklist)
-        manifest = organized.get("manifest")
         if manifest:
             manifest["materials"] = preferred_paths
             manifest["role_intent"] = role_intent_snapshot(shared_role_intent)
@@ -1072,6 +1080,8 @@ def _generate_package_in_place(
         "material_errors": material_errors,
         "outputs": outputs,
         "package_checklist": checklist,
+        "manifest": manifest,
+        "package_complete": True,
     }
 
 
@@ -1086,19 +1096,39 @@ def _copy_stage_inputs(source: Path, stage: Path) -> None:
         raise PackageGenerationError("Application tracker data could not be staged.")
 
 
+def _rebase_stage_path(value: str, stage: Path, root: Path, stage_exports: Path, destination: Path) -> str:
+    candidate = Path(value).expanduser()
+    if not candidate.is_absolute():
+        return value
+    resolved = canonical_storage_path(candidate)
+    exports_boundary = canonical_storage_path(stage_exports)
+    stage_boundary = canonical_storage_path(stage)
+    if resolved == exports_boundary or exports_boundary in resolved.parents:
+        return str(canonical_storage_path(destination / resolved.relative_to(exports_boundary)))
+    if resolved == stage_boundary or stage_boundary in resolved.parents:
+        return str(canonical_storage_path(root / resolved.relative_to(stage_boundary)))
+    return str(canonical_storage_path(resolved))
+
+
 def _rewrite_stage_paths(value: Any, stage: Path, root: Path, stage_exports: Path, destination: Path) -> Any:
     if isinstance(value, str):
-        rewritten = value.replace(str(stage_exports), str(destination)).replace(str(stage), str(root))
-        # macOS may expose the same temporary directory as /var and /private/var;
-        # never return an accidentally doubled /private prefix to the tracker/UI.
-        while "/private/private/" in rewritten:
-            rewritten = rewritten.replace("/private/private/", "/private/")
-        return rewritten
+        return _rebase_stage_path(value, stage, root, stage_exports, destination)
     if isinstance(value, list):
         return [_rewrite_stage_paths(item, stage, root, stage_exports, destination) for item in value]
     if isinstance(value, dict):
         return {key: _rewrite_stage_paths(item, stage, root, stage_exports, destination) for key, item in value.items()}
     return value
+
+
+def _package_result_completion(result: Dict[str, Any], export_root: Path) -> Dict[str, Any]:
+    outputs = dict(result.get("outputs") or {})
+    manifest = dict(result.get("manifest") or {})
+    outputs["manifest_path"] = str(manifest.get("manifest_path") or outputs.get("manifest_path") or "")
+    return validate_complete_package(
+        outputs,
+        owner_id=str(result.get("tracker_id") or ""),
+        export_root=export_root,
+    )
 
 
 def _raise_preflight_block(preflight: Dict[str, Any]) -> None:
@@ -1149,9 +1179,24 @@ def generate_package(
     stage.mkdir(parents=True, exist_ok=True)
     stage_exports = stage / "exports"
     stage_exports.mkdir(parents=True, exist_ok=True)
-    promoted: list[tuple[Path, bytes | None]] = []
+    promoted_package: Path | None = None
+    rollback_package: Path | None = None
+    promotion_candidate: Path | None = None
+    promotion_swapped = False
     try:
         _copy_stage_inputs(root, stage)
+        source_tracker = load_application_tracker(root)
+        source_application = next(
+            (item for item in source_tracker if str(item.get("id") or "") == str(job_file_or_tracker_id)),
+            None,
+        )
+        if source_application:
+            existing = find_exact_role_package(root, source_application, export_root=destination)
+            existing_folder = existing.get("folder")
+            if existing_folder:
+                existing_folder = require_beneath_export_root(existing_folder, destination)
+                relative_existing = existing_folder.relative_to(destination)
+                shutil.copytree(existing_folder, stage_exports / relative_existing, dirs_exist_ok=True)
         result = _generate_package_in_place(
             job_file_or_tracker_id,
             stage,
@@ -1160,30 +1205,123 @@ def generate_package(
             force_clean_draft=force_clean_draft,
             export_root=stage_exports,
         )
-        generated_files = [path for path in stage_exports.rglob("*") if path.is_file()]
-        for source in generated_files:
-            relative = source.relative_to(stage_exports)
-            target = destination / relative
-            previous = target.read_bytes() if target.is_file() else None
-            promoted.append((target, previous))
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(source, target)
+        staged_completion = _package_result_completion(result, stage_exports)
+        if not staged_completion["complete"]:
+            raise PackageGenerationError(
+                "Package generation did not create a complete staged package: "
+                + ", ".join(staged_completion["missing_required"]),
+                checklist=staged_completion["checklist"],
+            )
+        staged_package = require_beneath_export_root(result["saved_package_location"], stage_exports)
+        relative_package = staged_package.relative_to(canonical_storage_path(stage_exports))
+        promoted_package = require_beneath_export_root(destination / relative_package, destination)
+        promoted_package.parent.mkdir(parents=True, exist_ok=True)
+        token = uuid.uuid4().hex
+        promotion_candidate = promoted_package.parent / f".{promoted_package.name}.staging-{token}"
+        rollback_package = promoted_package.parent / f".{promoted_package.name}.rollback-{token}"
+        shutil.copytree(staged_package, promotion_candidate)
+
+        rewritten = _rewrite_stage_paths(result, stage, root, stage_exports, destination)
+        rewritten["saved_package_location"] = str(promoted_package)
+        rewritten_manifest = dict(rewritten.get("manifest") or {})
+        rewritten_manifest["manifest_path"] = str(promoted_package / "manifest.json")
+        rewritten["manifest"] = rewritten_manifest
+        rewritten_outputs = dict(rewritten.get("outputs") or {})
+        rewritten_outputs["manifest_path"] = rewritten_manifest["manifest_path"]
+        rewritten["outputs"] = rewritten_outputs
+
+        candidate_manifest = promotion_candidate / "manifest.json"
+        manifest_payload = {
+            key: value for key, value in rewritten_manifest.items() if key != "manifest_path"
+        }
+        candidate_manifest.write_text(json.dumps(manifest_payload, indent=2) + "\n", encoding="utf-8")
+
+        candidate_outputs = {}
+        for key, value in rewritten_outputs.items():
+            path = Path(str(value))
+            if path.is_absolute() and (path == promoted_package or promoted_package in path.parents):
+                candidate_outputs[key] = str(promotion_candidate / path.relative_to(promoted_package))
+            else:
+                candidate_outputs[key] = value
+        candidate_outputs["manifest_path"] = str(candidate_manifest)
+        candidate_completion = validate_complete_package(
+            candidate_outputs,
+            owner_id=str(rewritten.get("tracker_id") or ""),
+            export_root=destination,
+        )
+        if not candidate_completion["complete"]:
+            raise PackageGenerationError(
+                "Package promotion candidate is incomplete: "
+                + ", ".join(candidate_completion["missing_required"]),
+                checklist=candidate_completion["checklist"],
+            )
+
+        if promoted_package.exists():
+            promoted_package.replace(rollback_package)
+        promotion_candidate.replace(promoted_package)
+        promotion_swapped = True
+
+        rewritten_outputs = {
+            key: value
+            for key, value in rewritten_outputs.items()
+            if not Path(str(value)).is_absolute() or Path(str(value)).is_file()
+        }
+        rewritten_outputs["manifest_path"] = str(promoted_package / "manifest.json")
+        rewritten["outputs"] = rewritten_outputs
+        rewritten_manifest["legacy_files_moved"] = [
+            value
+            for value in rewritten_manifest.get("legacy_files_moved") or []
+            if Path(str(value)).is_file()
+        ]
+        rewritten["manifest"] = rewritten_manifest
+        (promoted_package / "manifest.json").write_text(
+            json.dumps(
+                {key: value for key, value in rewritten_manifest.items() if key != "manifest_path"},
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
         staged_tracker = stage / "data" / "application_tracker.yml"
         tracker_path.parent.mkdir(parents=True, exist_ok=True)
-        tracker_text = staged_tracker.read_text(encoding="utf-8")
-        tracker_text = tracker_text.replace(str(stage_exports), str(destination)).replace(str(stage), str(root))
-        tracker_path.write_text(tracker_text, encoding="utf-8")
-        rewritten = _rewrite_stage_paths(result, stage, root, stage_exports, destination)
-        if isinstance(rewritten, dict):
-            rewritten["canonical_export_root"] = str(destination)
+        staged_tracker_payload = yaml.safe_load(staged_tracker.read_text(encoding="utf-8")) or {}
+        tracker_payload = _rewrite_stage_paths(
+            staged_tracker_payload, stage, root, stage_exports, destination
+        )
+        tracker_records = (
+            tracker_payload.get("applications")
+            if isinstance(tracker_payload, dict)
+            else tracker_payload
+        )
+        for record in tracker_records or []:
+            if str(record.get("id") or "") == str(rewritten.get("tracker_id") or ""):
+                record["package_manifest"] = rewritten_manifest
+                record["material_paths"] = dict(rewritten_manifest.get("materials") or {})
+                break
+        tracker_path.write_text(yaml.safe_dump(tracker_payload, sort_keys=False), encoding="utf-8")
+
+        final_completion = _package_result_completion(rewritten, destination)
+        if not final_completion["complete"]:
+            raise PackageGenerationError(
+                "Promoted package failed final validation: "
+                + ", ".join(final_completion["missing_required"]),
+                checklist=final_completion["checklist"],
+            )
+        rewritten["canonical_export_root"] = str(destination)
+        rewritten["package_checklist"] = final_completion["checklist"]
+        rewritten["package_complete"] = True
+        if rollback_package and rollback_package.exists():
+            shutil.rmtree(rollback_package)
         return rewritten
     except Exception as error:
-        for target, previous in reversed(promoted):
-            if previous is None:
-                target.unlink(missing_ok=True)
-            else:
-                target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_bytes(previous)
+        if promotion_swapped and promoted_package and promoted_package.exists() and rollback_package and rollback_package.exists():
+            shutil.rmtree(promoted_package)
+            rollback_package.replace(promoted_package)
+        elif promotion_swapped and promoted_package and promoted_package.exists() and rollback_package and not rollback_package.exists():
+            shutil.rmtree(promoted_package)
+        if promotion_candidate and promotion_candidate.exists():
+            shutil.rmtree(promotion_candidate)
         if tracker_before is None:
             tracker_path.unlink(missing_ok=True)
         else:

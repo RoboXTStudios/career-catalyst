@@ -142,6 +142,55 @@ def _project_id(project: Mapping[str, Any]) -> str:
     return str(project.get("id") or project_title(project)).strip()
 
 
+def deduplicate_evidence_projects(
+    projects: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    """Deduplicate recommendations by stable Evidence ID, preserving order."""
+    seen: set[str] = set()
+    result: list[dict[str, Any]] = []
+    for project in projects:
+        identity = _project_id(project)
+        if not identity or identity in seen:
+            continue
+        seen.add(identity)
+        result.append(dict(project))
+    return result
+
+
+def recommend_evidence_ids(
+    parsed_job: Mapping[str, Any],
+    projects: Sequence[Mapping[str, Any]],
+    *,
+    limit: int = 3,
+) -> list[str]:
+    """Return deterministic, role-aware suggestions without changing selection."""
+    unique = deduplicate_evidence_projects(projects)
+    text = role_text(parsed_job)
+    preferred: list[str] = []
+    if "label relations" in text or ("music partnerships" in text and "label" in text):
+        preferred = [
+            "just_for_us_podcast",
+            "roboxt_studios",
+            "enterprise_media_operations_transformation",
+        ]
+    elif "sales strategy" in text or "sales operations" in text or "revenue operations" in text:
+        preferred = [
+            "enterprise_media_operations_transformation",
+            "career_catalyst",
+            "disney_plus_launch_readiness",
+        ]
+    available = {_project_id(project): project for project in unique}
+    ordered = [identity for identity in preferred if identity in available]
+    if len(ordered) < limit:
+        ranked = relevant_selected_evidence(unique, parsed_job, limit=len(unique))
+        ordered.extend(
+            identity
+            for project in ranked
+            if (identity := _project_id(project)) not in ordered
+        )
+    return ordered[: max(0, limit)]
+
+
 def _verified_detail(project: Mapping[str, Any]) -> bool:
     return bool(
         _flatten(

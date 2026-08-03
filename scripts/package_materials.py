@@ -6,6 +6,11 @@ import re
 from pathlib import Path
 from typing import Any, Dict, Iterable
 
+try:
+    from .storage_paths import canonical_storage_path, require_beneath_export_root
+except ImportError:
+    from storage_paths import canonical_storage_path, require_beneath_export_root
+
 
 MATERIAL_SPECS = (
     ("ATS Resume", "Resumes", ("ats_docx", "ats_resume_text"), ("docx", "txt", "md")),
@@ -26,6 +31,75 @@ MATERIAL_SPECS = (
     ("Follow-Up Strategy", "Follow-up", ("followup_strategy_text", "followup_strategy"), ("txt", "md")),
     ("Job Description", "Source", ("job_file",), ("txt", "md")),
 )
+
+REQUIRED_PACKAGE_SPECS = (
+    ("ATS Resume DOCX", ("ats_docx",), ".docx"),
+    ("Styled Resume DOCX", ("styled_docx",), ".docx"),
+    ("Cover Letter DOCX", ("cover_letter_docx",), ".docx"),
+    ("Package Summary", ("package_summary_text", "package_summary"), None),
+    ("Canonical Manifest", ("manifest_path",), ".json"),
+)
+
+
+def _valid_regular_file(value: Any, suffix: str | None = None) -> Path | None:
+    if not value:
+        return None
+    path = canonical_storage_path(str(value))
+    if not path.is_file() or path.stat().st_size <= 0:
+        return None
+    if suffix and path.suffix.lower() != suffix:
+        return None
+    return path
+
+
+def validate_complete_package(
+    outputs: Dict[str, Any],
+    *,
+    owner_id: str = "",
+    export_root: Any = None,
+) -> Dict[str, Any]:
+    """Validate the minimum final package from physical promoted files.
+
+    This is deliberately stricter than the presentation checklist.  A package
+    cannot be successful without both résumé DOCX variants, the letter DOCX,
+    summary, and its canonical manifest.
+    """
+    checklist = []
+    missing = []
+    for label, keys, suffix in REQUIRED_PACKAGE_SPECS:
+        path = next(
+            (
+                valid
+                for key in keys
+                if (valid := _valid_regular_file(outputs.get(key), suffix)) is not None
+            ),
+            None,
+        )
+        if path is not None and export_root is not None:
+            path = require_beneath_export_root(path, export_root)
+        exists = path is not None
+        if not exists:
+            missing.append(label)
+        checklist.append(
+            {
+                "material_type": label,
+                "display_label": label,
+                "exists": exists,
+                "preferred_open_path": str(path) if path else None,
+                "missing_reason": None if exists else "Missing, empty, or invalid final artifact",
+            }
+        )
+    manifest_path = _valid_regular_file(outputs.get("manifest_path"), ".json")
+    if manifest_path is not None:
+        try:
+            import json
+
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError, TypeError):
+            manifest = {}
+        if owner_id and str(manifest.get("prospect_id") or "") != str(owner_id):
+            missing = list(dict.fromkeys([*missing, "Canonical Manifest Ownership"]))
+    return {"complete": not missing, "missing_required": missing, "checklist": checklist}
 
 
 def _existing_candidates(outputs: Dict[str, Any], keys: Iterable[str]) -> list[Path]:

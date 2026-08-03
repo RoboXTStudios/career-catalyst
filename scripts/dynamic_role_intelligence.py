@@ -40,6 +40,8 @@ ROLE_FAMILIES = (
     "business_operations",
     "editorial_content_strategy",
     "community_growth",
+    "music_partnerships_label_relations",
+    "strategy_gtm_operations",
     "generic_senior_operator",
 )
 
@@ -274,6 +276,16 @@ CATEGORY_GUIDANCE = {
 }
 
 ROLE_GUIDANCE = {
+    "music_partnerships_label_relations": {
+        "tone": ["music-aware", "partner-centered", "commercial", "senior"],
+        "angle": "connect label relations and music partnerships with trusted partner management, negotiation, and cross-functional delivery",
+        "proof_points": ["Just for Us Podcast", "RoboXT Studios", "enterprise media operations transformation"],
+    },
+    "strategy_gtm_operations": {
+        "tone": ["analytical", "commercial", "precise", "operational"],
+        "angle": "connect strategy and operations with GTM planning, pipeline governance, forecasting, and executive decisions",
+        "proof_points": ["enterprise media operations transformation", "Career Catalyst", "Disney+ launch readiness"],
+    },
     "music_content_strategy": {
         "tone": ["editorial", "music-aware", "human"],
         "angle": "connect music culture and audience understanding with voice, content strategy, and repeatable editorial systems",
@@ -515,6 +527,13 @@ def detect_role_family(job_title: str = "", job_description: str = "") -> str:
             "product organization",
         )
     )
+
+    if "label relations" in title or (
+        "music partnerships" in combined and any(signal in title for signal in ("manager", "lead", "director"))
+    ):
+        return "music_partnerships_label_relations"
+    if any(signal in title for signal in ("sales strategy operations", "sales strategy and operations")):
+        return "strategy_gtm_operations"
 
     if (wmg_context or (music_operations_company and "integration operations" in title)) and operations_context and any(
         signal in title

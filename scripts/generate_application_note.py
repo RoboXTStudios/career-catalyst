@@ -167,7 +167,14 @@ def generate_application_note(
     return save_material(
         context,
         "Application_Note",
-        _application_note_content(context),
+        additional_information_content(_application_note_content(context)),
         minimum_words=60,
-        maximum_words=100,
+        maximum_words=102,
     )
+
+
+def additional_information_content(content: str) -> str:
+    """Format a concise portal response, never a second cover letter."""
+    words = str(content or "").strip().split()
+    body = " ".join(words[:98]).strip()
+    return "Additional Information\n" + body
