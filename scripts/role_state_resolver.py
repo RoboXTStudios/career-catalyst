@@ -42,7 +42,48 @@ def resolve_tracker_record(prospect_id: str, tracker: Any) -> Dict[str, Any]:
 
 
 def selected_evidence_ids(record: Dict[str, Any]) -> List[str]:
-    return [str(value).strip() for value in record.get("evidence_project_ids") or [] if str(value).strip()]
+    """Read the one canonical tracker Evidence field with legacy read aliases.
+
+    ``evidence_project_ids`` is authoritative whenever it is present, including
+    when it is an intentionally empty list.  Historical aliases are accepted
+    only for older records that do not contain the canonical field; package
+    manifests and Streamlit session state are never consulted here.
+    """
+    if "evidence_project_ids" in record:
+        raw_values = record.get("evidence_project_ids")
+    elif "selected_evidence_ids" in record:
+        raw_values = record.get("selected_evidence_ids")
+    else:
+        raw_values = record.get("selected_evidence")
+    if isinstance(raw_values, dict):
+        raw_values = raw_values.get("ids") or raw_values.get("selected_ids") or []
+    values = raw_values if isinstance(raw_values, (list, tuple, set)) else []
+    resolved: List[str] = []
+    for value in values:
+        if isinstance(value, dict):
+            value = value.get("id")
+        clean = str(value or "").strip()
+        if clean and clean not in resolved:
+            resolved.append(clean)
+    return resolved
+
+
+def resolve_selected_evidence(
+    record: Dict[str, Any], projects: Iterable[Dict[str, Any]]
+) -> Dict[str, Any]:
+    """Resolve tracker-selected Evidence without allowing stale state to win."""
+    selected_ids = selected_evidence_ids(record)
+    by_id = {
+        str(project.get("id") or "").strip(): project
+        for project in projects
+        if isinstance(project, dict) and str(project.get("id") or "").strip()
+    }
+    missing_ids = [project_id for project_id in selected_ids if project_id not in by_id]
+    return {
+        "selected_ids": selected_ids,
+        "projects": [by_id[project_id] for project_id in selected_ids if project_id in by_id],
+        "missing_ids": missing_ids,
+    }
 
 
 def _normal(value: Any) -> str:

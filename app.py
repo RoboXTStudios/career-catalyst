@@ -121,6 +121,7 @@ from scripts.prospect_intake import ProspectIntakeError, create_prospect
 from scripts.resume_foundation import canonical_resume_foundation_info
 from scripts.score_match import persisted_match_fields, score_job_data, score_job_match
 from scripts.role_lifecycle import filter_live_records, lifecycle_counts
+from scripts.role_state_resolver import resolve_selected_evidence, selected_evidence_ids
 from scripts.storage_paths import canonical_archive_root, canonical_export_root
 
 
@@ -1227,10 +1228,30 @@ def _match_score_html(
     )
 
 
+def _stable_widget_key(
+    context: str,
+    owner_id: str,
+    label: str,
+    artifact: Path | str,
+) -> str:
+    """Build a deterministic, page-global key for one artifact action."""
+    normalized_context = re.sub(r"[^a-z0-9]+", "_", str(context).lower()).strip("_")
+    normalized_owner = re.sub(r"[^a-z0-9]+", "_", str(owner_id).lower()).strip("_")
+    normalized_label = re.sub(r"[^a-z0-9]+", "_", str(label).lower()).strip("_")
+    try:
+        artifact_id = str(Path(artifact).expanduser().resolve())
+    except (OSError, TypeError, ValueError):
+        artifact_id = str(artifact)
+    digest = hashlib.sha256(artifact_id.encode("utf-8")).hexdigest()[:12]
+    return f"cc_{normalized_context}_{normalized_owner}_{normalized_label}_{digest}"
+
+
 def _material_button_rows(
     st: Any,
     tracker_id: str,
     files: Dict[str, Path],
+    *,
+    context: str = "existing_material_open",
 ) -> None:
     materials = [
         (source_label, display_label, Path(files[source_label]))
@@ -1254,7 +1275,7 @@ def _material_button_rows(
             for index, (source_label, label, path) in enumerate(row):
                 if columns[index].button(
                     f"{label} .{path.suffix.lower().lstrip('.')}",
-                    key=f"material_{tracker_id}_{source_label}_{row_start}_{index}",
+                    key=_stable_widget_key(context, tracker_id, source_label, path),
                     use_container_width=True,
                     help=str(path),
                 ):
@@ -1370,7 +1391,7 @@ def _render_source_verification_panel(
             st.warning(str(error))
             return
         selected_ids = {
-            str(value) for value in application.get("evidence_project_ids") or []
+            str(value) for value in selected_evidence_ids(application)
         }
         try:
             selected_projects = [
@@ -1447,9 +1468,16 @@ def _render_relevant_evidence_panel(
         _render_missing_posting_notice(st, job_health)
     labels = _project_option_labels(active_projects)
     options = list(labels)
+    evidence_resolution = resolve_selected_evidence(application, active_projects)
+    if evidence_resolution["missing_ids"]:
+        st.warning(
+            "Saved Evidence could not be resolved for this role: "
+            + ", ".join(evidence_resolution["missing_ids"])
+            + ". Restore those records before generating materials."
+        )
     current = [
         str(project_id)
-        for project_id in application.get("evidence_project_ids", [])
+        for project_id in evidence_resolution["selected_ids"]
         if str(project_id) in labels
     ]
     selected = st.multiselect(
@@ -1641,7 +1669,7 @@ def _render_role_card(
         if match_details:
             with st.expander("Match details", expanded=False):
                 st.markdown(_match_score_html(application), unsafe_allow_html=True)
-        with st.expander("Relevant Evidence", expanded=bool(application.get("evidence_project_ids"))):
+        with st.expander("Relevant Evidence", expanded=bool(selected_evidence_ids(application))):
             st.caption("Choose projects here to prioritize specific accomplishments in generated resumes and cover letters; Career Intelligence filters do not control materials.")
             _render_relevant_evidence_panel(st, application, tracker_id)
 
@@ -1669,7 +1697,12 @@ def _render_role_card(
                 or "Materials not verified"
             )
             st.caption(materials_label)
-            _material_button_rows(st, tracker_id, files)
+            _material_button_rows(
+                st,
+                tracker_id,
+                files,
+                context="dashboard_existing_material_open",
+            )
             route = material_route(get_record_status(application))
             if route.get("archived") and material_count and not archived_materials:
                 st.caption("Archive recommended")
@@ -1678,7 +1711,12 @@ def _render_role_card(
                 library_actions = st.columns(2)
                 if library_actions[0].button(
                     "Open Package Folder",
-                    key=f"materials_open_folder_{tracker_id}",
+                    key=_stable_widget_key(
+                        "dashboard_package_folder_open",
+                        tracker_id,
+                        "package_folder",
+                        package_folder,
+                    ),
                     use_container_width=True,
                 ):
                     opened, message = open_local_path(Path(package_folder))
@@ -2082,14 +2120,18 @@ def _show_output_paths(st: Any, outputs: Dict[str, str], key_prefix: str) -> Non
                 st,
                 f"Open {display_label.lower()}",
                 path,
-                f"{key_prefix}_{label}",
+                _stable_widget_key(key_prefix, "generated", label, path),
             )
         else:
             st.caption("Missing / not generated.")
 
 
 def _render_persistent_package_controls(
-    st: Any, tracker_id: str, application: Dict[str, Any]
+    st: Any,
+    tracker_id: str,
+    application: Dict[str, Any],
+    *,
+    context: str = "package_existing_material_open",
 ) -> None:
     """Render durable material actions from the exact manifest, not session state."""
     package = find_exact_role_package(PROJECT_ROOT, application)
@@ -2105,13 +2147,23 @@ def _render_persistent_package_controls(
     st.markdown("### Current package materials")
     if package.get("archived"):
         st.caption("An archived package is available; generating again will create the current role-scoped version.")
-    _material_button_rows(st, tracker_id, existing)
+    _material_button_rows(
+        st,
+        tracker_id,
+        existing,
+        context=context,
+    )
     if folder and Path(folder).is_dir():
         _show_open_button(
             st,
             "Open package folder",
             Path(folder),
-            f"persistent_package_folder_{tracker_id}",
+            _stable_widget_key(
+                f"{context}_folder",
+                tracker_id,
+                "package_folder",
+                folder,
+            ),
         )
 
 
@@ -2210,7 +2262,17 @@ def _render_package_summary(st: Any, package_result: Dict[str, Any]) -> None:
                 path = Path(str(path_value))
                 row = st.columns((3, 1))
                 row[0].caption(f"Generated / available: {label} (.{path.suffix.lower().lstrip('.')})")
-                _show_open_button(row[1], "Open", path, f"package_check_{index}_{label}")
+                _show_open_button(
+                    row[1],
+                    "Open",
+                    path,
+                    _stable_widget_key(
+                        "generated_checklist_open",
+                        str(package_result.get("tracker_id") or "package"),
+                        label,
+                        path,
+                    ),
+                )
             else:
                 reason = str(item.get("missing_reason") or "Missing / not generated")
                 st.caption(f"{reason}: {label}")
@@ -3100,7 +3162,12 @@ def _render_package_recovery(
             _render_package_summary(st, result)
             refreshed = find_dashboard_role(load_application_tracker(PROJECT_ROOT), tracker_id)
             if refreshed is not None:
-                _render_persistent_package_controls(st, tracker_id, refreshed)
+                _render_persistent_package_controls(
+                    st,
+                    tracker_id,
+                    refreshed,
+                    context="recovery_existing_material_open",
+                )
     if col2.button(
         "View conflicting material",
         key=_package_recovery_action_key(tracker_id, "view"),
@@ -3294,6 +3361,17 @@ def _render_generation_preflight(st: Any, preflight: Dict[str, Any]) -> None:
         st.info("Automatic repair: " + str(item))
     for item in preflight.get("blocking_issues") or []:
         st.warning(str(item))
+    selected_ids = list(preflight.get("selected_evidence_ids") or [])
+    resolved_ids = list(preflight.get("resolved_evidence_ids") or [])
+    missing_ids = list(preflight.get("missing_evidence_ids") or [])
+    if selected_ids:
+        st.caption(
+            f"Tracker-selected Evidence: {len(resolved_ids)} of {len(selected_ids)} resolved."
+        )
+    if missing_ids:
+        st.warning(
+            "Selected Evidence could not be resolved: " + ", ".join(missing_ids)
+        )
     limits = preflight.get("evidence_limits") or {}
     if limits:
         st.caption(
@@ -3324,7 +3402,7 @@ def _render_generate_package(st: Any) -> None:
     application = by_id[tracker_id]
     _render_persistent_package_controls(st, tracker_id, application)
     reset_package_preview_for_selection(
-        st.session_state, tracker_id, application.get("evidence_project_ids") or []
+        st.session_state, tracker_id, selected_evidence_ids(application)
     )
     recovery_key = _package_recovery_key(tracker_id)
     if not st.session_state.get(recovery_key):
@@ -3419,7 +3497,7 @@ def _render_generate_package(st: Any) -> None:
             st.session_state["package_preview_prospect_id"] = tracker_id
             st.session_state["package_preview_selection_fingerprint"] = (
                 package_preview_fingerprint(
-                    tracker_id, application.get("evidence_project_ids") or []
+                    tracker_id, selected_evidence_ids(application)
                 )
             )
             focus_dashboard_role(st.session_state, tracker_id)
