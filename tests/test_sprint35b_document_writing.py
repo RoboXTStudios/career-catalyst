@@ -111,7 +111,7 @@ def test_isolated_candidate_documents_follow_writing_standard(
 
     assert headline in resume
     assert 55 <= len(profile.split()) <= 90
-    assert 350 <= _word_count(cover) <= 500
+    assert 300 <= _word_count(cover) <= 400
     assert 900 <= len(additional) <= 1400
     assert not additional.lower().startswith("additional information")
     assert "Dear " not in additional and "Best," not in additional
@@ -120,6 +120,8 @@ def test_isolated_candidate_documents_follow_writing_standard(
     assert not re.search(r"\b(?:20\+ years|two decades|nearly two decades|seasoned|veteran)\b", resume + cover + additional, re.I)
     assert "OMD Entertainment" not in resume + cover + additional
     assert "calm senior judgment" not in cover.lower()
+    assert "i bring a practical operating style:" not in cover.lower()
+    assert "the through line in my experience" not in cover.lower()
     assert "caught my attention" not in cover.lower() + additional.lower()
     restricted = (
         "administered salesforce", "owned quotas", "owned territories", "owned compensation plans",
@@ -134,11 +136,48 @@ def test_isolated_candidate_documents_follow_writing_standard(
         else {"Just for Us Podcast", "RoboXT Studios", "Enterprise Media Operations Transformation"}
     )
     assert all(title in summary for title in expected_titles)
+    if role_id.startswith("twitch"):
+        competency_section = resume.split("Core Competencies\n\n", 1)[1].split(
+            "Platforms & Technologies", 1
+        )[0]
+        competencies = [
+            line[2:].strip() for line in competency_section.splitlines() if line.startswith("- ")
+        ]
+        assert competencies == [
+            "Media Operations",
+            "Entertainment Marketing",
+            "Cross-Functional Leadership",
+            "Partner Coordination",
+            "Workflow Governance",
+            "Quality Assurance",
+            "Executive Stakeholder Management",
+            "Creative Operations",
+        ]
 
     for docx_key in ("ats_docx", "styled_docx"):
         doc_text = "\n".join(paragraph.text for paragraph in Document(files[docx_key]).paragraphs)
         assert headline in doc_text
         assert "—" not in doc_text
+
+
+def test_twitch_competencies_are_music_partnership_relevant():
+    parsed = parse_job_description(FIXTURES / "twitch_senior_label_relations_manager.md")
+    role_family = detect_role_family(parsed["job_title"], parsed["raw_text"])
+    intent = build_role_intent({**parsed, "role_family": role_family}, ROOT)
+    assert intent["resume"]["competency_priorities"] == [
+        "Media Operations",
+        "Entertainment Marketing",
+        "Cross-Functional Leadership",
+        "Partner Coordination",
+        "Workflow Governance",
+        "Quality Assurance",
+        "Executive Stakeholder Management",
+        "Creative Operations",
+    ]
+    assert not any(
+        re.search(r"\b(?:AI|MarTech|AdTech|Product Operations)\b", competency, re.I)
+        for competency in intent["resume"]["competency_priorities"]
+    )
 
 
 def test_additional_information_formatter_is_copy_ready():

@@ -336,7 +336,7 @@ def repair_cover_letter_content(content: str, context: Dict[str, Any]) -> str:
         or (context.get("role_intelligence") or {}).get("role_family")
         or ""
     )
-    minimum = 350 if role_family in {
+    minimum = 300 if role_family in {
         "strategy_gtm_operations", "music_partnerships_label_relations"
     } else 250
     if count < minimum:
@@ -344,6 +344,31 @@ def repair_cover_letter_content(content: str, context: Dict[str, Any]) -> str:
     if count > 400:
         return _trim_cover_letter(content)
     return content
+
+
+def _remove_repeated_dynamic_closing(content: str, context: Dict[str, Any]) -> str:
+    """Remove the generic operating-style paragraph from dynamic letters only."""
+    role_family = str(
+        (context.get("role_intent") or {}).get("package_role_family")
+        or (context.get("role_intelligence") or {}).get("role_family")
+        or ""
+    )
+    if role_family not in {"strategy_gtm_operations", "music_partnerships_label_relations"}:
+        return content
+    generic_markers = (
+        "i bring a practical operating style:",
+        "the through line in my experience is building operating conditions",
+    )
+    paragraphs = [
+        paragraph.strip()
+        for paragraph in re.split(r"\n\s*\n", str(content or "").strip())
+        if paragraph.strip()
+    ]
+    return "\n\n".join(
+        paragraph
+        for paragraph in paragraphs
+        if not any(marker in paragraph.lower() for marker in generic_markers)
+    )
 
 
 def _ground_cover_letter_in_selected_evidence(
@@ -1381,13 +1406,14 @@ def generate_cover_letter(
     grounded_content = _ground_cover_letter_in_selected_evidence(
         _cover_letter_content(context), context
     )
+    grounded_content = _remove_repeated_dynamic_closing(grounded_content, context)
     role_family = str(
         (context.get("role_intent") or {}).get("package_role_family")
         or (context.get("role_intelligence") or {}).get("role_family")
         or ""
     )
     minimum_words, maximum_words = (
-        (350, 500)
+        (300, 400)
         if role_family in {"strategy_gtm_operations", "music_partnerships_label_relations"}
         else (250, 325)
     )

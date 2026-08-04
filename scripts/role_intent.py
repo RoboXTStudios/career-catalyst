@@ -63,8 +63,8 @@ DYNAMIC_ROLE_WRITING = {
         ),
         "competency_priorities": [
             "Media Operations", "Entertainment Marketing", "Cross-Functional Leadership",
-            "Workflow Governance", "Quality Assurance", "Executive Stakeholder Management",
-            "Creative Operations", "Process Excellence",
+            "Partner Coordination", "Workflow Governance", "Quality Assurance",
+            "Executive Stakeholder Management", "Creative Operations",
         ],
         "tools": {
             "Operations & Program Management": [
