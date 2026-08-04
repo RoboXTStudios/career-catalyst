@@ -283,9 +283,9 @@ def test_music_role_prioritizes_direct_podcast_evidence_for_resume_and_letter():
 
 def test_additional_information_is_concise_and_has_no_letter_furniture():
     value = additional_information_content("I bring grounded operations and product experience.")
-    assert value.startswith("Additional Information\n")
+    assert not value.startswith("Additional Information")
     assert "Dear " not in value and "Sincerely" not in value
-    assert len(value.split()) <= 100
+    assert 900 <= len(value) <= 1400
 
 
 def test_success_ui_requires_complete_final_package():
@@ -415,9 +415,9 @@ def test_sanitized_role_package_completes_transactionally(
     summary = Path(files["package_summary"]).read_text(encoding="utf-8")
     assert missing_subject_prose_fragments(cover_letter) == []
     assert missing_subject_prose_fragments(additional) == []
-    assert additional.startswith("Additional Information\n")
+    assert not additional.startswith("Additional Information")
     assert "Dear " not in additional and "Best," not in additional
-    assert 900 <= len(additional.split("\n", 1)[1]) <= 1400
+    assert 900 <= len(additional) <= 1400
     assert "systems at scale" not in candidate_text.lower()
 
     if role_id.startswith("twitch"):

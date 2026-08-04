@@ -32,7 +32,12 @@ def rewrite_banned_voice_phrases(text: str) -> tuple[str, list[dict[str, str]]]:
     rewritten = str(text or "")
     rewrites: list[dict[str, str]] = []
     for phrase, replacement in BANNED_VOICE_PHRASE_REWRITES.items():
-        pattern = re.compile(re.escape(phrase), re.IGNORECASE)
+        # Match complete phrases only so "clear plan" does not rewrite the
+        # unrelated word "planning" inside otherwise correct candidate copy.
+        pattern = re.compile(
+            rf"(?<!\w){re.escape(phrase)}(?!\w)",
+            re.IGNORECASE,
+        )
         if pattern.search(rewritten):
             rewritten = pattern.sub(replacement, rewritten)
             rewrites.append({"phrase": phrase, "replacement": replacement})
@@ -41,8 +46,13 @@ def rewrite_banned_voice_phrases(text: str) -> tuple[str, list[dict[str, str]]]:
 
 def remaining_banned_voice_phrases(text: str, banned_phrases: list[str]) -> list[str]:
     """Return banned phrases that remain after deterministic rewrite attempts."""
-    lowered = str(text or "").lower()
-    return [str(phrase) for phrase in banned_phrases if str(phrase).lower() in lowered]
+    value = str(text or "")
+    remaining: list[str] = []
+    for phrase in banned_phrases:
+        candidate = str(phrase or "").strip()
+        if candidate and re.search(rf"(?<!\w){re.escape(candidate)}(?!\w)", value, re.IGNORECASE):
+            remaining.append(candidate)
+    return remaining
 
 
 def _role_text(role: dict[str, Any]) -> str:

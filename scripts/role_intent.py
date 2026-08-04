@@ -26,6 +26,56 @@ PACKAGE_ROLE_FAMILIES = {
     "general_operations": ("business_operations", "Senior Operations Leadership"),
 }
 
+# Dynamic families are resolved from the posting, then use the same shared
+# role-intent object to drive candidate-facing writing. These descriptions are
+# conservative and avoid implying restricted sales or music responsibilities.
+DYNAMIC_ROLE_WRITING = {
+    "strategy_gtm_operations": {
+        "headline": "Senior Strategy & Operations Leader | Transformation | AI Systems | Marketing Operations",
+        "summary": (
+            "Senior strategy and operations leader who translates go-to-market priorities into clear planning rhythms, "
+            "workflow visibility, data quality, and cross-functional execution. At OMG23 (Omnicom Media Group), I led "
+            "10 direct reports and provided strategic and operational leadership across an integrated 64-person organization. "
+            "My strengths include operating model design, stakeholder alignment, workflow governance, and disciplined delivery "
+            "in complex organizations."
+        ),
+        "competency_priorities": [
+            "Strategic Operations", "Business Operations", "Operating Model Design",
+            "Executive Stakeholder Management", "Cross-Functional Leadership",
+            "Workflow Governance", "Measurement & Data Governance", "Quality Assurance",
+        ],
+        "tools": {
+            "Business Productivity & Collaboration": ["Airtable", "Microsoft Teams", "Microsoft 365"],
+            "Operations & Program Management": [
+                "Workflow Design", "Operating Models", "Process Documentation",
+                "Reporting Workflows", "Quality-Assurance Frameworks",
+            ],
+        },
+    },
+    "music_partnerships_label_relations": {
+        "headline": "Senior Operations & Entertainment Partnerships Leader | Media Operations | Creator Platforms",
+        "summary": (
+            "Senior operations and entertainment-media leader with direct audio production experience and a record of "
+            "coordinating complex work across creative, media, analytics, technology, vendors, and client stakeholders. "
+            "At OMG23 (Omnicom Media Group), I led 10 direct reports and provided strategic and operational leadership "
+            "across an integrated 64-person organization. I bring strengths in partner coordination, release readiness, "
+            "workflow governance, and cross-functional execution."
+        ),
+        "competency_priorities": [
+            "Media Operations", "Entertainment Marketing", "Cross-Functional Leadership",
+            "Workflow Governance", "Quality Assurance", "Executive Stakeholder Management",
+            "Creative Operations", "Process Excellence",
+        ],
+        "tools": {
+            "Operations & Program Management": [
+                "Workflow Design", "Process Documentation", "Quality-Assurance Frameworks",
+                "Reporting Workflows",
+            ],
+            "Publishing & Creative": ["Editorial Production", "Post-Production Workflows"],
+        },
+    },
+}
+
 
 def load_role_intent_rules(project_root: str | Path | None = None) -> dict[str, Any]:
     root = Path(project_root) if project_root is not None else Path.cwd()
@@ -214,6 +264,16 @@ def build_role_intent(
             "priorities and cross-functional delivery, connecting streaming launch readiness, active "
             "product development, and hands-on media production with practical product judgment."
         )
+    dynamic_writing = DYNAMIC_ROLE_WRITING.get(dynamic_family)
+    if dynamic_writing:
+        resume["headline"] = dynamic_writing["headline"]
+        resume["summary"] = dynamic_writing["summary"]
+        resume["competency_priorities"] = list(dynamic_writing["competency_priorities"])
+        resume["tools"] = deepcopy(dynamic_writing["tools"])
+        resume["omg23_bullet_limit"] = 4 if dynamic_family == "strategy_gtm_operations" else 6
+        resume["selected_project_limit"] = 0
+        resume["earlier_career_policy"] = "omit"
+        resume["target_max_pages"] = 2
     resume.setdefault("headline_profile", resume.pop("headline", ""))
     if "headline" in resume:
         resume.pop("headline")

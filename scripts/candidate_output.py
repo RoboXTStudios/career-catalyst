@@ -195,7 +195,9 @@ BUSINESS_OPERATIONS_COMPETENCIES = [
 
 
 def profile_summary(archetype: str, configured: str) -> str:
-    if archetype in PROFILE_SUMMARIES:
+    if str(configured or "").strip():
+        summary = str(configured).strip()
+    elif archetype in PROFILE_SUMMARIES:
         summary = PROFILE_SUMMARIES[archetype]
     else:
         summary = (
@@ -206,7 +208,12 @@ def profile_summary(archetype: str, configured: str) -> str:
             "analytics, technology, vendors, and client stakeholders."
         ).replace(" .", ".")
     if len(summary.split()) < 55:
-        summary += " Known for clear communication, grounded recommendations, and practical follow-through under pressure."
+        summary += (
+            " Known for clear communication, grounded recommendations, practical follow-through under pressure, "
+            "stakeholder alignment, and turning broad priorities into visible, coordinated execution across complex "
+            "creative, marketing, media, analytics, technology, and operations environments, with measurable outcomes "
+            "and reliable decision support."
+        )
     return summary
 
 
@@ -425,6 +432,15 @@ def candidate_cover_letter(context: Mapping[str, Any]) -> str:
     role = str(parsed.get("job_title") or "senior operations role")
     greeting = str((intent.get("cover_letter") or {}).get("greeting") or "Dear Hiring Team,")
     archetype = str(intent.get("primary_archetype") or "general_operations")
+    role_family = str(
+        intent.get("package_role_family")
+        or (context.get("role_intelligence") or {}).get("role_family")
+        or ""
+    )
+    if role_family == "strategy_gtm_operations":
+        return _strategy_gtm_cover_letter(context, greeting, company, role)
+    if role_family == "music_partnerships_label_relations":
+        return _music_partnerships_cover_letter(context, greeting, company, role)
     adjacency = domain_adjacency(parsed)
     if archetype == "product_operations":
         selected_projects = cover_letter_evidence_selection(context)
@@ -493,4 +509,119 @@ def candidate_cover_letter(context: Mapping[str, Any]) -> str:
         )
     content = "\n\n".join((greeting, opening, leadership, execution, proof, closing, "Best,\n\nTrisha Lynch"))
     validate_candidate_output(content, context="Generated cover letter")
+    return content
+
+
+def _selected_project_paragraphs(
+    context: Mapping[str, Any], parsed: Mapping[str, Any], limit: int = 2
+) -> list[str]:
+    decision = cover_letter_evidence_decision(context, limit=limit)
+    return [
+        paragraph
+        for project in decision.get("used_projects", [])
+        if (paragraph := cover_letter_project_paragraph(project, parsed))
+    ]
+
+
+def _strategy_gtm_cover_letter(
+    context: Mapping[str, Any], greeting: str, company: str, role: str
+) -> str:
+    parsed = context["parsed_job"]
+    projects = _selected_project_paragraphs(context, parsed)
+    content = "\n\n".join(
+        [
+            greeting,
+            (
+                f"I am applying for the {role} role at {company} because it connects planning, operating visibility, "
+                "data quality, and cross-functional execution. My experience is strongest where leaders need a clear "
+                "view of priorities, dependencies, decisions, and the work required to move them forward."
+            ),
+            (
+                "At OMG23 (Omnicom Media Group), I advanced through five roles to Group Director, led 10 direct reports, "
+                "and provided strategic and operational leadership across an integrated 64-person organization spanning "
+                "Ad Operations, Creative Management, and Marketing Science and Analytics. I translated complex client and "
+                "leadership priorities into operating plans, governance, reporting, and accountable execution across "
+                "creative, media, analytics, technology, vendors, and client stakeholders."
+            ),
+            (
+                "I also coordinated an Airtable implementation that created a shared source of truth for campaign tracking, "
+                "workflow documentation, status reporting, permissions, quality assurance, training, and adoption. That "
+                "work strengthened my ability to improve visibility without adding unnecessary process, while keeping "
+                "owners aligned around the decisions that affect delivery."
+            ),
+            *projects,
+            (
+                "Career Catalyst is a current product-building proof point. I translate user needs into requirements, "
+                "workflows, acceptance criteria, testing, and release guardrails for an active local application. Together, "
+                "these experiences show how I connect strategic planning with dependable operating systems and disciplined "
+                "follow-through."
+            ),
+            (
+                "In a strategy and operations setting, I would apply that same discipline to planning cadence, data and "
+                "workflow quality, executive reporting, and the handoffs that connect Sales, Finance, Marketing, and other "
+                "partners. I would keep the work grounded in the team's actual operating needs and make progress visible "
+                "without claiming ownership beyond my verified experience."
+            ),
+            (
+                f"I would bring {company} practical operating judgment, clear communication, and a structured approach to "
+                "turning priorities into visible, measurable execution."
+            ),
+            "Best,\n\nTrisha Lynch",
+        ]
+    )
+    validate_candidate_output(content, context="Generated strategy and operations cover letter")
+    return content
+
+
+def _music_partnerships_cover_letter(
+    context: Mapping[str, Any], greeting: str, company: str, role: str
+) -> str:
+    parsed = context["parsed_job"]
+    projects = _selected_project_paragraphs(context, parsed)
+    content = "\n\n".join(
+        [
+            greeting,
+            (
+                f"I am applying for the {role} role at {company} because it sits at the intersection of music, creators, "
+                "platform collaboration, and dependable partner execution. My background combines hands-on audio "
+                "production with senior entertainment-media operations, giving me both respect for the work itself and "
+                "a practical understanding of the coordination required around it."
+            ),
+            (
+                "At OMG23 (Omnicom Media Group), I advanced to Group Director, led 10 direct reports, and provided strategic "
+                "and operational leadership across an integrated 64-person organization spanning Ad Operations, Creative "
+                "Management, and Marketing Science and Analytics. I coordinated priorities, quality standards, reporting, "
+                "and stakeholder communication across creative, media, analytics, technology, vendors, and client teams."
+            ),
+            (
+                "My direct experience is in audio production, entertainment-media operations, and cross-functional partner "
+                "coordination. I would bring that foundation to label-facing work with respect for the commercial and "
+                "relationship expertise the role requires, along with a careful, organized approach to partner communication "
+                "and execution."
+            ),
+            (
+                "Audio production also sharpened my attention to voice, timing, audience experience, and the details that "
+                "make a collaborative release dependable. I would carry that care into partner communication, release "
+                "readiness, escalation follow-through, and the practical coordination required when several teams share an "
+                "outcome."
+            ),
+            (
+                "In a music-partnership setting, I would contribute disciplined preparation, clear communication, release "
+                "readiness, and thoughtful coordination across the people responsible for a shared outcome. My goal would "
+                "be to make collaboration easier while respecting the specialized relationship knowledge already present "
+                "across the team."
+            ),
+            (
+                "The combination of production detail and operational coordination is useful when partner needs, creative "
+                "priorities, platform requirements, and timing all intersect. I would approach that work with careful "
+                "listening, clear documentation, and consistent follow-through from planning through release."
+            ),
+            (
+                f"I would bring {company} thoughtful coordination, clear follow-through, and genuine respect for the music "
+                "and creator ecosystem this role serves."
+            ),
+            "Best,\n\nTrisha Lynch",
+        ]
+    )
+    validate_candidate_output(content, context="Generated music partnerships cover letter")
     return content

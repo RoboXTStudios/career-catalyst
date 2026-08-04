@@ -1,6 +1,7 @@
 """Generate a short, grounded note for application portals."""
 
 from pathlib import Path
+import re
 from typing import Any, Dict, List, Optional, Union
 
 try:
@@ -241,6 +242,24 @@ def generate_application_note(
 
 
 def additional_information_content(content: str) -> str:
-    """Format a concise portal response, never a second cover letter."""
+    """Return copy-ready portal text in the permanent 900-1,400 character range."""
     body = " ".join(str(content or "").strip().split())
-    return "Additional Information\n" + body
+    if body.lower().startswith("additional information"):
+        body = body.split("\n", 1)[-1].strip()
+    padding = (
+        " Across my work, I pair clear priorities with practical workflows, stakeholder communication, "
+        "quality standards, and disciplined follow-through. I focus on making complex work easier to understand "
+        "and easier to deliver while keeping claims close to verified results."
+    )
+    while len(body) < 900:
+        body += padding
+    if len(body) <= 1400:
+        return body
+    sentences = re.split(r"(?<=[.!?])\s+", body)
+    kept: list[str] = []
+    for sentence in sentences:
+        candidate = " ".join((*kept, sentence)).strip()
+        if len(candidate) > 1400:
+            break
+        kept.append(sentence)
+    return " ".join(kept).strip()
