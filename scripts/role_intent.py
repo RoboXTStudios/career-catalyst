@@ -101,6 +101,8 @@ def _contains(text: str, phrase: str) -> bool:
 
 def _seniority(role: Mapping[str, Any]) -> str:
     title = str(role.get("job_title") or role.get("title") or role.get("role") or "").lower()
+    if "senior" in title and "manager" in title:
+        return "senior_manager"
     for label, terms in (
         ("executive", ("chief", "vice president", "vp", "head of")),
         ("director", ("director",)),
@@ -226,6 +228,13 @@ def build_role_intent(
         primary,
         (default_family, humanize_identifier(default_family or primary)),
     )
+    dynamic_package_labels = {
+        "music_partnerships_label_relations": "Music Partnerships & Label Relations",
+        "strategy_gtm_operations": "Strategy & GTM Operations",
+    }
+    if dynamic_family in dynamic_package_labels:
+        package_family = dynamic_family
+        package_label = dynamic_package_labels[dynamic_family]
     return {
         "primary_archetype": primary,
         "package_role_family": package_family,

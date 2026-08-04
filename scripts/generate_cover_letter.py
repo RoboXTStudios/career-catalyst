@@ -47,7 +47,7 @@ try:
         rewrite_banned_voice_phrases,
     )
     from .score_match import score_job_match
-    from .text_cleanup import cleanup_repeated_words
+    from .text_cleanup import cleanup_repeated_words, missing_subject_prose_fragments
     from .role_intent import build_role_intent
 except ImportError:
     from candidate_output import (
@@ -84,7 +84,7 @@ except ImportError:
         rewrite_banned_voice_phrases,
     )
     from score_match import score_job_match
-    from text_cleanup import cleanup_repeated_words
+    from text_cleanup import cleanup_repeated_words, missing_subject_prose_fragments
     from role_intent import build_role_intent
 
 
@@ -173,6 +173,12 @@ def save_material(
         raise ApplicationMaterialError("Generated application materials must not contain em dashes.")
     if "placeholder" in content.lower():
         raise ApplicationMaterialError("Generated application materials must not contain placeholder text.")
+    if suffix in {"Cover_Letter", "Application_Note"}:
+        fragments = missing_subject_prose_fragments(content)
+        if fragments:
+            raise ApplicationMaterialError(
+                f"Generated {suffix} contains prose without an explicit subject: {fragments[0]}"
+            )
 
     if rewrite_notes:
         context.setdefault("material_warnings", []).append(
@@ -726,6 +732,14 @@ def _ai_transformation_cover_letter_content(context: Dict[str, Any]) -> str:
 
 
 def _campaignos_is_relevant(context: Dict[str, Any]) -> bool:
+    associated = context.get("associated_evidence_projects")
+    if associated is not None and not any(
+        str(project.get("id") or project.get("name") or project.get("title") or "").lower()
+        == "campaignos"
+        for project in associated
+    ):
+        return False
+
     top_projects = context["match_report"].get("top_matching_projects", [])
     if any(project.get("name") == "CampaignOS" for project in top_projects):
         return True

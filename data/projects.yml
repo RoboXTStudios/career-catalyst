@@ -3,7 +3,7 @@ projects:
     role: Creator & Product Lead
     timeframe: Working Prototype
     category: AI campaign operations prototype
-    summary: "Designed an AI-powered campaign operations concept focused on readiness, workflow governance, quality assurance, validation, reporting, and operational risk detection."
+    summary: "Built and iterated CampaignOS as a working prototype for campaign readiness, workflow governance, quality assurance, validation, reporting, and operational risk detection."
     highlights:
       - "Built schema-driven workflows and product logic grounded in recurring enterprise entertainment operations challenges."
       - "Further development depends on representative campaign data and practical testing environments."

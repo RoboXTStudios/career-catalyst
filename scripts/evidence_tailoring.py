@@ -79,6 +79,18 @@ def role_text(parsed_job: Mapping[str, Any]) -> str:
     ).lower()
 
 
+def is_music_partnerships_role(parsed_job: Mapping[str, Any]) -> bool:
+    """Return whether direct music/audio release Evidence should lead."""
+    text = role_text(parsed_job)
+    return bool(
+        re.search(
+            r"\b(label relations|music partnerships?|music content|audio|creator|artists?|"
+            r"streaming platform)\b",
+            text,
+        )
+    )
+
+
 def evidence_relevance(
     project: Mapping[str, Any], parsed_job: Mapping[str, Any]
 ) -> dict[str, Any]:
@@ -107,15 +119,20 @@ def evidence_relevance(
         text,
     ):
         phrase_matches.append("product development")
-    if kind == "podcast" and any(
-        phrase in text
-        for phrase in ("podcast", "emerging format", "audio", "content lifecycle")
+    priority_bonus = 0
+    if kind == "podcast" and (
+        is_music_partnerships_role(parsed_job)
+        or any(
+            phrase in text
+            for phrase in ("podcast", "emerging format", "audio", "content lifecycle")
+        )
     ):
-        phrase_matches.append("emerging audio formats")
+        phrase_matches.append("direct music/audio release experience")
+        priority_bonus = 6 if is_music_partnerships_role(parsed_job) else 0
     matched_signals = list(dict.fromkeys([*phrase_matches, *matched]))
     return {
-        "score": len(matched) + (3 * len(phrase_matches)),
-        "specific_score": len(specific_matches) + (3 * len(phrase_matches)),
+        "score": len(matched) + (3 * len(phrase_matches)) + priority_bonus,
+        "specific_score": len(specific_matches) + (3 * len(phrase_matches)) + priority_bonus,
         "matched_signals": matched_signals[:10],
     }
 
@@ -140,6 +157,55 @@ def relevant_selected_evidence(
 
 def _project_id(project: Mapping[str, Any]) -> str:
     return str(project.get("id") or project_title(project)).strip()
+
+
+def deduplicate_evidence_projects(
+    projects: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    """Deduplicate recommendations by stable Evidence ID, preserving order."""
+    seen: set[str] = set()
+    result: list[dict[str, Any]] = []
+    for project in projects:
+        identity = _project_id(project)
+        if not identity or identity in seen:
+            continue
+        seen.add(identity)
+        result.append(dict(project))
+    return result
+
+
+def recommend_evidence_ids(
+    parsed_job: Mapping[str, Any],
+    projects: Sequence[Mapping[str, Any]],
+    *,
+    limit: int = 3,
+) -> list[str]:
+    """Return deterministic, role-aware suggestions without changing selection."""
+    unique = deduplicate_evidence_projects(projects)
+    text = role_text(parsed_job)
+    preferred: list[str] = []
+    if "label relations" in text or ("music partnerships" in text and "label" in text):
+        preferred = [
+            "just_for_us_podcast",
+            "roboxt_studios",
+            "enterprise_media_operations_transformation",
+        ]
+    elif "sales strategy" in text or "sales operations" in text or "revenue operations" in text:
+        preferred = [
+            "enterprise_media_operations_transformation",
+            "career_catalyst",
+            "disney_plus_launch_readiness",
+        ]
+    available = {_project_id(project): project for project in unique}
+    ordered = [identity for identity in preferred if identity in available]
+    if len(ordered) < limit:
+        ranked = relevant_selected_evidence(unique, parsed_job, limit=len(unique))
+        ordered.extend(
+            identity
+            for project in ranked
+            if (identity := _project_id(project)) not in ordered
+        )
+    return ordered[: max(0, limit)]
 
 
 def _verified_detail(project: Mapping[str, Any]) -> bool:
@@ -444,8 +510,15 @@ def cover_letter_project_paragraph(
     result = _first_sentence(project.get("results"))
     if not actions:
         return ""
+    explicit_subject = re.compile(r"^(?:I|We|This|That|The|My)\b", flags=re.IGNORECASE)
+    if not explicit_subject.search(actions):
+        actions = "I " + actions[:1].lower() + actions[1:]
+    if result and result != actions and not explicit_subject.search(result):
+        result = "This work " + result[:1].lower() + result[1:]
     proof = f" {result}" if result and result != actions else ""
-    return f"In {project_title(project)}, {actions[:1].lower() + actions[1:]}{proof}"
+    title = project_title(project)
+    lead = "At" if "RoboXT Studios" in title else "Through"
+    return f"{lead} {title}, {actions}{proof}"
 
 
 def evidence_score_contribution(

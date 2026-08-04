@@ -1,5 +1,7 @@
 """Score a parsed job description against Career Catalyst data."""
 
+import hashlib
+import json
 import re
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Union
@@ -126,6 +128,7 @@ OBVIOUS_NON_FIT_SIGNALS = (
 )
 
 MINIMUM_MEANINGFUL_DESCRIPTION_LENGTH = 80
+SCORING_ENGINE_VERSION = "sprint35-v1"
 
 
 def incomplete_match_report(job_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -632,22 +635,25 @@ def _work_arrangement(parsed_job: Dict[str, Any]) -> Tuple[int, str, Optional[st
         r"^\s*Work arrangement\s*:\s*(.+?)\s*$", raw_text, flags=re.I | re.M
     )
     arrangement = labeled.group(1).strip() if labeled else ""
-    combined = f"{arrangement} {parsed_job.get('location') or ''} {raw_text}".lower()
+    explicit = str(parsed_job.get("work_arrangement") or arrangement or "").strip()
+    # Once the posting provides a labeled arrangement, unrelated mentions of
+    # remote collaboration must not award remote-role credit.
+    combined = (explicit or f"{parsed_job.get('location') or ''} {raw_text}").lower()
     heavy_onsite = bool(
         re.search(r"(?:minimum of\s+)?[4-5]\s+days?\s+per week\s+in (?:the )?office", combined)
         or "#li-onsite" in combined
     )
     if heavy_onsite:
-        return 25, arrangement or "Heavy on-site", "The heavy on-site requirement is a practical constraint, especially at lower pay."
+        return 25, explicit or "Heavy on-site", "The heavy on-site requirement is a practical constraint, especially at lower pay."
     if "remote" in combined:
-        return 100, arrangement or "Remote", None
+        return 100, explicit or "Remote", None
     if "hybrid" in combined:
-        return 88, arrangement or "Hybrid", None
+        return 88, explicit or "Hybrid", None
     if any(signal in combined for signal in ("on-site", "onsite", "in office", "in-office")):
-        return 45, arrangement or "On-site", "The on-site requirement should be weighed against commute and compensation."
+        return 45, explicit or "On-site", "The on-site requirement should be weighed against commute and compensation."
     if "flexible" in combined:
-        return 82, arrangement or "Flexible", None
-    return 55, arrangement or "Not specified", "Work arrangement is not specified."
+        return 82, explicit or "Flexible", None
+    return 55, explicit or "Not specified", "Work arrangement is not specified."
 
 
 def _confidence(
@@ -768,6 +774,16 @@ def _decision_match_report(parsed_job: Dict[str, Any], legacy_report: Dict[str, 
         gaps.append(f"The listing includes a likely hard non-fit requirement: {non_fit_signals[0]}.")
     if not functional_matches:
         gaps.append("The listing shows limited alignment with Trisha's core operations background.")
+    title = str(parsed_job.get("job_title") or "").lower()
+    if "label relations" in title:
+        gaps.append(
+            "Direct label-relations and music-partnership ownership should be validated; "
+            "adjacent media and partner-management experience is not the same as label-side experience."
+        )
+    if "sales strategy" in title and "operations" in title:
+        gaps.append(
+            "Direct sales-operations depth in territory planning, pipeline governance, and forecasting should be validated."
+        )
     if not gaps:
         gaps.append("Confirm the reporting line and decision authority before generating the package.")
 
@@ -811,6 +827,7 @@ def _decision_match_report(parsed_job: Dict[str, Any], legacy_report: Dict[str, 
             "match_gaps": _dedupe(gaps)[:5],
             "recommended_action": action,
             "confidence": _confidence(parsed_job, compensation_state, work_label, freshness),
+            "work_arrangement": work_label,
         }
     )
     return legacy_report
@@ -871,6 +888,57 @@ def _score_parsed_job(parsed_job: Dict[str, Any], root: Path, associated_evidenc
     return report
 
 
+def _evaluation_fingerprint(value: Any) -> str:
+    payload = json.dumps(value, sort_keys=True, separators=(",", ":"), default=str)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _score_with_snapshot(
+    parsed_job: Dict[str, Any],
+    root: Path,
+    associated_evidence_projects: Optional[List[Dict[str, Any]]] = None,
+) -> Dict[str, Any]:
+    """Score one immutable posting/profile snapshot with Evidence separated."""
+    selected = list(associated_evidence_projects or [])
+    base = _score_parsed_job(parsed_job, root, [])
+    report = _score_parsed_job(parsed_job, root, selected) if selected else dict(base)
+    evidence_ids = sorted(
+        str(item.get("id") or item.get("title") or "") for item in selected
+    )
+    posting_inputs = {
+        key: parsed_job.get(key)
+        for key in (
+            "job_title", "company", "location", "work_arrangement", "salary_range",
+            "posting_date", "raw_text", "responsibilities", "qualifications",
+        )
+    }
+    profile_paths = [
+        root / "data" / name
+        for name in ("skills.yml", "achievements.yml", "positions.yml", "projects.yml", "personal_brand.yml")
+    ]
+    profile_hashes = {
+        path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in profile_paths
+        if path.is_file()
+    }
+    base_score = int(base.get("match_score") or 0)
+    final_score = int(report.get("match_score") or 0)
+    report.update(
+        {
+            "base_match_score": base_score,
+            "evidence_score_delta": final_score - base_score,
+            "evaluation_snapshot": {
+                "engine_version": SCORING_ENGINE_VERSION,
+                "posting_fingerprint": _evaluation_fingerprint(posting_inputs),
+                "profile_fingerprint": _evaluation_fingerprint(profile_hashes),
+                "evidence_fingerprint": _evaluation_fingerprint(evidence_ids),
+                "evidence_ids": evidence_ids,
+            },
+        }
+    )
+    return report
+
+
 def score_job_data(job_data: Dict[str, Any], project_root: Optional[PathInput] = None, associated_evidence_projects: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
     """Score unsaved intake data so the UI can show the gate before generation."""
     incomplete = incomplete_match_report(job_data)
@@ -908,7 +976,7 @@ def score_job_data(job_data: Dict[str, Any], project_root: Optional[PathInput] =
         "qualifications": extract_qualifications(canonical_text),
         "preferred_qualifications": extract_preferred_qualifications(canonical_text),
     }
-    return _score_parsed_job(parsed_job, root, associated_evidence_projects)
+    return _score_with_snapshot(parsed_job, root, associated_evidence_projects)
 
 
 def score_job_match(job_path: PathInput, project_root: Optional[PathInput] = None, associated_evidence_projects: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
@@ -929,4 +997,4 @@ def score_job_match(job_path: PathInput, project_root: Optional[PathInput] = Non
     )
     if incomplete:
         return incomplete
-    return _score_parsed_job(parsed_job, root, associated_evidence_projects)
+    return _score_with_snapshot(parsed_job, root, associated_evidence_projects)

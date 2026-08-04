@@ -1,7 +1,7 @@
 """Generate a short, grounded note for application portals."""
 
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 try:
     from .career_claims import leadership_claim, public_omg23_name
@@ -11,6 +11,7 @@ try:
         save_material,
     )
     from .role_context import is_google_youtube_role
+    from .evidence_tailoring import project_kind
 except ImportError:
     from career_claims import leadership_claim, public_omg23_name
     from generate_cover_letter import (
@@ -19,6 +20,7 @@ except ImportError:
         save_material,
     )
     from role_context import is_google_youtube_role
+    from evidence_tailoring import project_kind
 
 
 PathInput = Union[str, Path]
@@ -36,6 +38,59 @@ DYNAMIC_NOTE_FOCUS = {
     "creative_marketing_ops": "creative and marketing priorities, workflow, quality, capacity, and delivery",
     "generic_senior_operator": "strategic clarity, stakeholder alignment, scalable systems, and execution",
 }
+
+
+def _has_selected_project(context: Dict[str, Any], kind: str) -> bool:
+    return any(
+        project_kind(project) == kind
+        for project in context.get("associated_evidence_projects") or []
+    )
+
+
+def _openai_sales_operations_note(context: Dict[str, Any]) -> str:
+    career_catalyst = (
+        " Through Career Catalyst, I am actively developing an AI-enabled career intelligence and "
+        "application-operations product, translating user needs into product requirements, tested "
+        "workflows, acceptance criteria, and release guardrails."
+        if _has_selected_project(context, "career_catalyst")
+        else ""
+    )
+    return (
+        "OpenAI's Sales Strategy & Operations - Central role interests me because it brings disciplined "
+        "planning, operating visibility, and cross-functional execution to a fast-moving go-to-market "
+        "environment. At OMG23 (Omnicom Media Group), I advanced through five roles to Group Director, "
+        "led 10 direct reports, and provided strategic and operational leadership across an integrated "
+        "64-person organization spanning Ad Operations, Creative Management, and Marketing Science and "
+        "Analytics. I also coordinated an Airtable implementation that created a shared source of truth "
+        "for campaign tracking, reporting, workflow governance, quality assurance, training, and adoption, "
+        "and I helped operationalize Disney+ launch readiness across multiple functions."
+        f"{career_catalyst} These are direct examples of enterprise operating discipline and hands-on AI "
+        "product development. My background is adjacent to traditional sales operations, with direct "
+        "strength in enterprise operating systems, data and workflow visibility, cross-functional "
+        "planning, and disciplined execution in complex organizations."
+    )
+
+
+def _twitch_label_relations_note(context: Dict[str, Any]) -> str:
+    podcast = (
+        " I served as audio producer and editor for Just for Us, a ten-episode, multi-host podcast series "
+        "released on Spotify. I handled dialogue editing, pacing, audio balancing, revisions, quality "
+        "control, and release-ready delivery."
+        if _has_selected_project(context, "podcast")
+        else ""
+    )
+    return (
+        "Twitch's Senior Label Relations Manager role interests me because it connects music, creators, "
+        "platform collaboration, and dependable partner execution."
+        f"{podcast} At OMG23 (Omnicom Media Group), I led 10 direct reports and provided strategic and "
+        "operational leadership across an integrated 64-person organization while coordinating work "
+        "across creative, media, analytics, technology, vendors, and client stakeholders. Through "
+        "Enterprise Media Operations Transformation, I led workflow design and stakeholder alignment, "
+        "and this work improved visibility, execution quality, and delivery consistency. My direct "
+        "experience is in audio production, entertainment-media operations, and cross-functional partner "
+        "coordination. I would bring that foundation to label-facing work with respect for the commercial "
+        "and relationship expertise the role requires."
+    )
 
 
 def _profile_application_note(context: Dict[str, Any]) -> str:
@@ -100,6 +155,12 @@ def _application_note_content(context: Dict[str, Any]) -> str:
     role_reference = f"The {role} role" if role else "This opportunity"
     position = _position(career_data, "OMG23")
     position_company = public_omg23_name(career_data)
+    title = str(role or "").lower()
+
+    if company.lower() == "openai" and "sales strategy" in title and "operations" in title:
+        return _openai_sales_operations_note(context)
+    if company.lower() == "twitch" and "label relations" in title:
+        return _twitch_label_relations_note(context)
 
     if is_google_youtube_role(parsed_job):
         return (
@@ -161,13 +222,25 @@ def generate_application_note(
     job_path: PathInput,
     project_root: Optional[PathInput] = None,
     role_intent: Optional[Dict[str, Any]] = None,
+    associated_evidence_projects: Optional[List[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """Generate and save a short application portal note."""
-    context = load_generation_context(job_path, project_root, role_intent=role_intent)
+    context = load_generation_context(
+        job_path,
+        project_root,
+        associated_evidence_projects=associated_evidence_projects,
+        role_intent=role_intent,
+    )
     return save_material(
         context,
         "Application_Note",
-        _application_note_content(context),
+        additional_information_content(_application_note_content(context)),
         minimum_words=60,
-        maximum_words=100,
+        maximum_words=230,
     )
+
+
+def additional_information_content(content: str) -> str:
+    """Format a concise portal response, never a second cover letter."""
+    body = " ".join(str(content or "").strip().split())
+    return "Additional Information\n" + body

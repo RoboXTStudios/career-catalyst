@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import hashlib
+import sys
 import tempfile
 from pathlib import Path
 from typing import Optional, Union
@@ -20,6 +21,20 @@ REPORT_ROOT_ENV = "CAREER_CATALYST_REPORT_ROOT"
 
 class StoragePathError(ValueError):
     """Raised when a production package path escapes the configured library."""
+
+
+def canonical_storage_path(path: PathInput) -> Path:
+    """Return one filesystem identity for stored paths and macOS user aliases.
+
+    macOS can surface an otherwise identical user path with a leading
+    ``/private`` component.  Only that documented user-root alias is folded;
+    arbitrary path text is never rewritten.
+    """
+    expanded = Path(path).expanduser()
+    parts = expanded.parts
+    if sys.platform == "darwin" and len(parts) >= 3 and parts[:3] == ("/", "private", "Users"):
+        expanded = Path("/Users", *parts[3:])
+    return expanded.resolve(strict=False)
 
 
 def _repository_main_root(project_root: Path) -> Path:
@@ -78,8 +93,8 @@ def canonical_export_root(
 
 def require_beneath_export_root(path: PathInput, export_root: PathInput) -> Path:
     """Resolve and validate a production output beneath its canonical root."""
-    resolved = Path(path).expanduser().resolve()
-    root = Path(export_root).expanduser().resolve()
+    resolved = canonical_storage_path(path)
+    root = canonical_storage_path(export_root)
     if resolved != root and root not in resolved.parents:
         raise StoragePathError(
             f"Package path '{resolved}' is outside canonical export root '{root}'."
@@ -115,8 +130,8 @@ def canonical_report_root(project_root: Optional[PathInput] = None) -> Path:
 
 def require_beneath(path: PathInput, root: PathInput, *, label: str) -> Path:
     """Resolve and validate a path beneath a configured storage root."""
-    resolved = Path(path).expanduser().resolve()
-    boundary = Path(root).expanduser().resolve()
+    resolved = canonical_storage_path(path)
+    boundary = canonical_storage_path(root)
     if resolved != boundary and boundary not in resolved.parents:
         raise StoragePathError(
             f"{label} path '{resolved}' is outside configured root '{boundary}'."

@@ -15,7 +15,7 @@ evidence_cards:
     label: CampaignOS
     short_description: Working prototype for AI-powered campaign operations focused on workflow governance, QA, validation, and reporting.
     proof_points:
-      - Designed an AI-powered campaign operations concept around schema-driven workflows, validation frameworks, and operational reporting.
+      - Built and iterated CampaignOS as a working prototype using schema-driven workflows, validation frameworks, and operational reporting.
       - Built from recurring enterprise entertainment operations problems and retained as a working prototype pending representative campaign data and practical testing.
     tags: [ai_workflows, product_thinking, martech, governance, qa, builder]
     strongest_role_fits: [builder role, martech operations, product operations, AI operations]

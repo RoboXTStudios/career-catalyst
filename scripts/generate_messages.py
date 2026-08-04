@@ -1,7 +1,7 @@
 """Generate grounded recruiter and hiring manager messages."""
 
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 try:
     from .career_claims import leadership_claim, public_omg23_name
@@ -68,11 +68,21 @@ DYNAMIC_MESSAGE_PROOF = {
 def _dynamic_message_copy(context: Dict[str, Any]) -> tuple[str, str]:
     effective = context.get("effective_voice_profile", context.get("profile", {}))
     role_family = str(effective.get("role_family") or "generic_senior_operator")
+    proof = DYNAMIC_MESSAGE_PROOF.get(
+        role_family, DYNAMIC_MESSAGE_PROOF["generic_senior_operator"]
+    ).format(leadership=leadership_claim(context["career_data"]))
+    selected_ids = {
+        str(project.get("id") or project.get("title") or project.get("name") or "").lower()
+        for project in context.get("associated_evidence_projects") or []
+    }
+    if "campaignos" in proof.lower() and not any("campaignos" in value for value in selected_ids):
+        proof = (
+            f"I {leadership_claim(context['career_data'])} and built workflow governance, "
+            "execution standards, dashboards, and operational reporting."
+        )
     return (
         DYNAMIC_MESSAGE_FOCUS.get(role_family, DYNAMIC_MESSAGE_FOCUS["generic_senior_operator"]),
-        DYNAMIC_MESSAGE_PROOF.get(role_family, DYNAMIC_MESSAGE_PROOF["generic_senior_operator"]).format(
-            leadership=leadership_claim(context["career_data"])
-        ),
+        proof,
     )
 
 
@@ -311,6 +321,7 @@ def generate_message(
     job_path: PathInput,
     project_root: Optional[PathInput] = None,
     role_intent: Optional[Dict[str, Any]] = None,
+    associated_evidence_projects: Optional[List[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """Generate and save a recruiter or hiring manager message."""
     normalized_type = message_type.replace("-", "_").lower()
@@ -318,7 +329,12 @@ def generate_message(
         valid = ", ".join(message_type.replace("_", "-") for message_type in MESSAGE_TYPES)
         raise ApplicationMaterialError(f"Unknown message type '{message_type}'. Valid types: {valid}")
 
-    context = load_generation_context(job_path, project_root, role_intent=role_intent)
+    context = load_generation_context(
+        job_path,
+        project_root,
+        associated_evidence_projects=associated_evidence_projects,
+        role_intent=role_intent,
+    )
     if normalized_type == "recruiter":
         return save_material(
             context,
