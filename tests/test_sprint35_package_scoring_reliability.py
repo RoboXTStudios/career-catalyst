@@ -10,7 +10,12 @@ import pytest
 import app
 import yaml
 from scripts.dynamic_role_intelligence import detect_role_family
-from scripts.evidence_tailoring import deduplicate_evidence_projects, recommend_evidence_ids
+from scripts.evidence_tailoring import (
+    cover_letter_project_paragraph,
+    deduplicate_evidence_projects,
+    recommend_evidence_ids,
+    select_evidence_for_artifact,
+)
 from scripts.generate_application_note import additional_information_content
 from scripts.package_generator import generate_package
 from scripts.package_materials import validate_complete_package
@@ -18,7 +23,11 @@ from scripts.parse_job import parse_job_description
 from scripts.role_intent import build_role_intent
 from scripts.score_match import score_job_data, score_job_match
 from scripts.storage_paths import canonical_storage_path, require_beneath_export_root
-from scripts.text_cleanup import normalize_candidate_text
+from scripts.text_cleanup import (
+    missing_subject_prose_fragments,
+    normalize_campaignos_claims,
+    normalize_candidate_text,
+)
 from scripts.role_state_resolver import selected_evidence_ids
 
 
@@ -42,6 +51,50 @@ def _complete_outputs(folder: Path) -> dict[str, str]:
         encoding="utf-8",
     )
     return {**{key: str(path) for key, path in paths.items()}, "manifest_path": str(manifest)}
+
+
+def _fixture_evidence(selected_ids: list[str]) -> list[dict[str, object]]:
+    records = {
+        "just_for_us_podcast": {
+            "id": "just_for_us_podcast",
+            "title": "Just for Us Podcast",
+            "problem": "A multi-host audio series required consistent editorial and release quality.",
+            "actions": (
+                "Served as audio producer and editor for a ten-episode, multi-host series, managing "
+                "dialogue editing, pacing, audio balancing, revisions, and quality control."
+            ),
+            "results": "Released ten release-ready episodes on Spotify.",
+        },
+        "roboxt_studios": {
+            "id": "roboxt_studios",
+            "title": "RoboXT Studios",
+            "problem": "A public creative practice required a coherent operating foundation.",
+            "actions": "Founded the studio and built creative production workflows.",
+            "results": "Established a working creative and technology practice.",
+        },
+        "enterprise_media_operations_transformation": {
+            "id": "enterprise_media_operations_transformation",
+            "title": "Enterprise Media Operations Transformation",
+            "problem": "Cross-functional media operations required clearer governance and delivery.",
+            "actions": "Led cross-functional operations, workflow design, and stakeholder alignment.",
+            "results": "Improved visibility, execution quality, and reliable delivery.",
+        },
+        "career_catalyst": {
+            "id": "career_catalyst",
+            "title": "Career Catalyst",
+            "problem": "Job-search work required role-aware product workflows and quality controls.",
+            "actions": "Created and led development of an active AI-enabled career intelligence product.",
+            "results": "Built and iterated tested local workflows, acceptance criteria, and release guardrails.",
+        },
+        "disney_plus_launch_readiness": {
+            "id": "disney_plus_launch_readiness",
+            "title": "Disney+ Launch Readiness",
+            "problem": "The launch required coordinated governance and measurement readiness.",
+            "actions": "Coordinated governance, QA, and cross-functional execution.",
+            "results": "Improved launch readiness and measurement coordination.",
+        },
+    }
+    return [{**records[identity], "status": "Active"} for identity in selected_ids]
 
 
 def test_false_success_is_rejected_when_required_artifacts_are_absent(tmp_path: Path):
@@ -163,8 +216,69 @@ def test_candidate_language_repairs_missing_subject_and_protected_claims():
     )
     assert "At RoboXT Studios, I founded" in text
     assert "integrated 64-person organization" in text
-    assert "working prototype" in text
+    assert "working campaign-operations prototype" in text
     assert "—" not in text and "OMD Entertainment" not in text
+
+
+@pytest.mark.parametrize(
+    "claim",
+    (
+        "CampaignOS systems at scale",
+        "an enterprise rollout of CampaignOS",
+        "CampaignOS production platform",
+        "CampaignOS shipped at scale",
+        "CampaignOS live customer adoption",
+        "CampaignOS proven business outcomes",
+    ),
+)
+def test_campaignos_guard_repairs_prohibited_scale_and_deployment_claims(claim: str):
+    repaired = normalize_campaignos_claims(f"I built {claim}.")
+    assert "prototype" in repaired.lower()
+    assert not any(
+        phrase in repaired.lower()
+        for phrase in (
+            "systems at scale", "enterprise rollout", "production platform",
+            "shipped at scale", "live customer adoption", "proven business outcomes",
+        )
+    )
+
+
+def test_campaignos_guard_identifies_every_reference_as_a_working_prototype():
+    repaired = normalize_candidate_text(
+        "CampaignOS reflects my workflow approach. I built CampaignOS to improve QA and validation.\n\n### CampaignOS"
+    )
+    assert repaired.lower().count("prototype") == 3
+    assert "built and iterated" in repaired.lower()
+    assert "### CampaignOS (Working Prototype)" in repaired
+
+
+def test_cover_letter_project_prose_has_explicit_subjects_and_resume_bullets_remain_allowed():
+    project = _fixture_evidence(["enterprise_media_operations_transformation"])[0]
+    paragraph = cover_letter_project_paragraph(project, {})
+    assert paragraph.startswith("Through Enterprise Media Operations Transformation, I led")
+    assert "This work improved" in paragraph
+    assert missing_subject_prose_fragments(paragraph) == []
+    assert missing_subject_prose_fragments(
+        "In Enterprise Media Operations Transformation, led operations. Improved delivery."
+    )
+    assert missing_subject_prose_fragments("- Led operations.\n- Improved delivery.") == []
+
+
+def test_music_role_prioritizes_direct_podcast_evidence_for_resume_and_letter():
+    parsed = parse_job_description(FIXTURES / "twitch_senior_label_relations_manager.md")
+    evidence = _fixture_evidence(
+        ["just_for_us_podcast", "roboxt_studios", "enterprise_media_operations_transformation"]
+    )
+    resume = select_evidence_for_artifact(
+        parsed, evidence, artifact_type="ats_resume", capacity=3
+    )
+    letter = select_evidence_for_artifact(
+        parsed, evidence, artifact_type="cover_letter", capacity=2
+    )
+    assert [item["id"] for item in resume["used"]][0] == "just_for_us_podcast"
+    assert [item["id"] for item in letter["used"]] == [
+        "just_for_us_podcast", "enterprise_media_operations_transformation"
+    ]
 
 
 def test_additional_information_is_concise_and_has_no_letter_furniture():
@@ -261,17 +375,7 @@ def test_sanitized_role_package_completes_transactionally(
     job = root / "jobs" / fixture_name
     shutil.copy2(FIXTURES / fixture_name, job)
     parsed = parse_job_description(job)
-    evidence = [
-        {
-            "id": identity,
-            "title": identity.replace("_", " ").title(),
-            "problem": "A complex role-relevant operating need required clear ownership.",
-            "actions": "I led cross-functional strategy, partner management, and operational delivery.",
-            "results": "The work improved decision quality and reliable execution.",
-            "status": "Active",
-        }
-        for identity in selected_ids
-    ]
+    evidence = _fixture_evidence(selected_ids)
     (root / "data" / "evidence_projects.yml").write_text(
         yaml.safe_dump({"evidence_projects": evidence}, sort_keys=False), encoding="utf-8"
     )
@@ -304,3 +408,42 @@ def test_sanitized_role_package_completes_transactionally(
     assert "—" not in candidate_text
     assert "OMD Entertainment" not in candidate_text
     assert "team of 64" not in candidate_text.lower()
+
+    files = result["manifest"]["files"]
+    cover_letter = Path(files["cover_letter"]).read_text(encoding="utf-8")
+    additional = Path(files["application_note"]).read_text(encoding="utf-8")
+    summary = Path(files["package_summary"]).read_text(encoding="utf-8")
+    assert missing_subject_prose_fragments(cover_letter) == []
+    assert missing_subject_prose_fragments(additional) == []
+    assert additional.startswith("Additional Information\n")
+    assert "Dear " not in additional and "Best," not in additional
+    assert 900 <= len(additional.split("\n", 1)[1]) <= 1400
+    assert "systems at scale" not in candidate_text.lower()
+
+    if role_id.startswith("twitch"):
+        assert "Just for Us" in cover_letter
+        assert "Enterprise Media Operations Transformation" in cover_letter
+        assert "Just for Us Podcast" in summary
+        assert "ATS résumé: Used" in summary.split("Just for Us Podcast", 1)[1].splitlines()[0]
+        assert "cover letter: Used" in summary.split("Just for Us Podcast", 1)[1].splitlines()[0]
+        restricted = (
+            "owned label accounts", "negotiated label or artist deals", "managed artists",
+            "owned commercial forecasting", "music-industry business-development responsibility",
+        )
+        assert all(phrase not in cover_letter.lower() for phrase in restricted)
+    else:
+        assert "CampaignOS" not in "\n".join(
+            Path(files[key]).read_text(encoding="utf-8", errors="ignore")
+            for key in (
+                "resume_text", "cover_letter", "application_note",
+                "recruiter_message", "hiring_manager_message", "package_summary",
+                "strategy_pack", "interview_prep",
+            )
+            if files.get(key)
+        )
+        restricted = (
+            "administered salesforce", "owned quotas", "owned territories",
+            "owned compensation plans", "owned sales forecasts", "sql expertise",
+            "owned p&l", "owned revenue operations",
+        )
+        assert all(phrase not in cover_letter.lower() for phrase in restricted)

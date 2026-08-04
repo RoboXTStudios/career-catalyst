@@ -177,8 +177,17 @@ def generate_career_intelligence(
     company = str(parsed.get("company") or "the company")
     role = str(parsed.get("job_title") or "the role")
     signals = _posting_signals(parsed)
-    evidence = _evidence_catalogue()
     extra_projects = list(associated_evidence_projects or [])
+    campaignos_selected = any(
+        str(project.get("id") or project.get("name") or project.get("title") or "").lower()
+        == "campaignos"
+        for project in extra_projects
+    )
+    evidence = [
+        item
+        for item in _evidence_catalogue()
+        if campaignos_selected or item["id"] != "campaignos_working_prototype"
+    ]
     project_evidence = []
     for project in extra_projects[:3]:
         label = str(project.get("title") or project.get("name") or "").strip()
@@ -212,7 +221,11 @@ def generate_career_intelligence(
                         "Product judgment, problem framing, and disciplined choice-making.",
                         "Describe how you clarify the user and business need, define decision criteria, surface tradeoffs, and align stakeholders before committing to a path.",
                         (evidence[3], evidence[1]),
-                        "Frame Career Catalyst as active product development and CampaignOS only as a working prototype; keep prior title history precise.",
+                        (
+                            "Frame Career Catalyst as active product development and CampaignOS only as a working prototype; keep prior title history precise."
+                            if campaignos_selected
+                            else "Frame Career Catalyst as active product development; keep prior title history precise."
+                        ),
                     )
                 ],
             }

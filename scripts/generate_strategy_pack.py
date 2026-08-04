@@ -391,11 +391,7 @@ def _interview_talking_points(context: Dict[str, Any]) -> List[Tuple[str, str]]:
             ),
         ]
 
-    campaignos_point = (
-        "CampaignOS shows how I approach recurring operational problems: map the workflow, build "
-        "validation and quality into the process, and improve visibility without adding noise."
-    )
-    return [
+    points = [
         (
             "Connecting entertainment IP to execution",
             "I can discuss how franchise and creative priorities become practical workflows, milestones, owners, quality standards, and operating rhythms.",
@@ -413,10 +409,6 @@ def _interview_talking_points(context: Dict[str, Any]) -> List[Tuple[str, str]]:
             "I introduced scalable workflows, governance practices, and execution standards across marketing, technology, analytics, and creative teams.",
         ),
         (
-            "Applying AI without making it gimmicky",
-            campaignos_point,
-        ),
-        (
             "Understanding entertainment marketing scale",
             "My primary experience includes Disney Studios Theatrical and Disney Streaming/DSS campaign operations across Pixar, Lucasfilm, Marvel, 20th Century Studios, Searchlight Pictures, Disney+, and franchise/IP priorities.",
         ),
@@ -425,6 +417,17 @@ def _interview_talking_points(context: Dict[str, Any]) -> List[Tuple[str, str]]:
             "My operational systems work emphasizes quality assurance, validation, and reporting that help teams see risks, dependencies, and next actions more clearly.",
         ),
     ]
+    if _campaignos_is_relevant(context):
+        points.insert(
+            4,
+            (
+                "Applying AI without making it gimmicky",
+                "CampaignOS, a working campaign-operations prototype, shows how I approach recurring "
+                "operational problems: map the workflow, build validation and quality into the process, "
+                "and improve visibility without adding noise.",
+            ),
+        )
+    return points
 
 
 def _smart_questions(context: Dict[str, Any]) -> List[str]:
@@ -519,9 +522,15 @@ def generate_strategy_pack(
     job_path: PathInput,
     project_root: Optional[PathInput] = None,
     role_intent: Optional[Dict[str, Any]] = None,
+    associated_evidence_projects: Optional[List[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """Generate and save a Markdown Standout Strategy Pack."""
-    context = load_generation_context(job_path, project_root, role_intent=role_intent)
+    context = load_generation_context(
+        job_path,
+        project_root,
+        associated_evidence_projects=associated_evidence_projects,
+        role_intent=role_intent,
+    )
     content = cleanup_repeated_words(_render_strategy_pack(context))
     _validate_strategy_pack(context, content)
     validate_material_context(content, context["parsed_job"], "Strategy_Pack")

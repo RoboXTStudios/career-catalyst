@@ -797,16 +797,30 @@ def _generate_package_in_place(
         )
         shared_role_intent["output_use_metadata"] = tailoring_metadata
         recruiter = generate_message(
-            "recruiter", job_reference, root, shared_role_intent
+            "recruiter",
+            job_reference,
+            root,
+            shared_role_intent,
+            context.get("associated_evidence_projects", []),
         )
         hiring_manager = generate_message(
-            "hiring-manager", job_reference, root, shared_role_intent
+            "hiring-manager",
+            job_reference,
+            root,
+            shared_role_intent,
+            context.get("associated_evidence_projects", []),
         )
         application_note = generate_application_note(
-            job_reference, root, shared_role_intent
+            job_reference,
+            root,
+            shared_role_intent,
+            context.get("associated_evidence_projects", []),
         )
         strategy_pack = generate_strategy_pack(
-            job_reference, root, shared_role_intent
+            job_reference,
+            root,
+            shared_role_intent,
+            context.get("associated_evidence_projects", []),
         )
         try:
             interview_prep = generate_interview_prep(
