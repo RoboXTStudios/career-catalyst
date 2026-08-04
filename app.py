@@ -146,6 +146,10 @@ CLEANUP_TRACKER_GROUPS = (
     "Stale / Cannot Verify",
 )
 PRIORITY_OPTIONS = ("High", "Medium", "Low", "Do Not Pursue")
+ARCHIVED_ONLY_STATUS_FILTERS = frozenset({"Withdrawn / Closed"})
+ACTIVE_STATUS_FILTERS = tuple(
+    status for status in VALID_STATUSES if status not in ARCHIVED_ONLY_STATUS_FILTERS
+)
 FALLBACK_VERIFICATION_STATUSES = (
     "Not Verified",
     "Employer Source",
@@ -420,6 +424,26 @@ def summarize_applications(applications: list[Dict[str, Any]]) -> Dict[str, int]
         "Total": counts["All"],
         **{status: counts[status] for status in VALID_STATUSES if counts[status]},
     }
+
+
+def application_summary_navigation(summary: Dict[str, int]) -> list[tuple[str, str, int]]:
+    """Return user-facing summary labels and their canonical dashboard filters."""
+    return [("Active", "All", summary["Total"])] + [
+        (status, status, summary[status])
+        for status in ACTIVE_STATUS_FILTERS
+        if summary.get(status)
+    ]
+
+
+def active_application_status_options() -> tuple[str, ...]:
+    """Return filters backed by the active tracker view, not the Archive tab."""
+    return ("All",) + ACTIVE_STATUS_FILTERS
+
+
+def archive_confirmation_message(final_status: Any) -> str:
+    """Return the persistent confirmation shown after an archive transaction."""
+    status = str(final_status or "Final status").strip()
+    return f"Archived as {status}. Open the Archive tab to view this retained record."
 
 
 def group_applications_by_status(
@@ -1034,14 +1058,12 @@ def _status_badges(application: Dict[str, Any]) -> str:
 def _render_summary_metrics(st: Any, applications: list[Dict[str, Any]]) -> None:
     st.markdown('<h2 class="cc-section-heading">Application Summary</h2>', unsafe_allow_html=True)
     summary = summarize_applications(applications)
-    navigation = [("All", summary["Total"])] + [
-        (status, summary[status]) for status in VALID_STATUSES if summary.get(status)
-    ]
+    navigation = application_summary_navigation(summary)
     active_status = str(st.session_state.get("dashboard_status") or "All")
     for row_start in range(0, len(navigation), 4):
         columns = st.columns(4)
-        for column, (status, count) in zip(columns, navigation[row_start : row_start + 4]):
-            label = f"{status}\n{count}"
+        for column, (label, status, count) in zip(columns, navigation[row_start : row_start + 4]):
+            label = f"{label}\n{count}"
             if column.button(
                 label,
                 key=f"summary_{status.lower().replace(' ', '_').replace('/', '_')}",
@@ -4191,16 +4213,19 @@ def _render_update_status(st: Any) -> None:
             key=f"archive_reason_{tracker_id}",
         )
         if st.button("Archive Role", key=f"archive_role_{tracker_id}"):
+            final_status = "Rejected" if current_status == "Rejected" else reason
             try:
                 archive_role(
                     tracker_id,
-                    "Rejected" if current_status == "Rejected" else reason,
+                    final_status,
                     PROJECT_ROOT,
                 )
             except (TrackerValidationError, ValueError, OSError) as error:
                 st.error(str(error))
             else:
-                st.success("Role moved to the local archive and removed from live workflows.")
+                st.session_state["status_update_notice"] = archive_confirmation_message(
+                    final_status
+                )
                 st.rerun()
     if st.button("Save Status Update", type="primary"):
         try:
@@ -4278,7 +4303,7 @@ def _render_dashboard(st: Any) -> None:
         st.success(st.session_state.pop("dashboard_notice"))
 
     st.session_state.setdefault("dashboard_status", "All")
-    if st.session_state["dashboard_status"] not in ("All",) + VALID_STATUSES:
+    if st.session_state["dashboard_status"] not in active_application_status_options():
         st.session_state["dashboard_status"] = "All"
     _render_summary_metrics(st, applications)
 
@@ -4292,7 +4317,7 @@ def _render_dashboard(st: Any) -> None:
     )
     filter_columns = st.columns(3)
     application_status = filter_columns[0].selectbox(
-        "Application Status", ("All",) + VALID_STATUSES, key="dashboard_status"
+        "Application Status", active_application_status_options(), key="dashboard_status"
     )
     match_tier = filter_columns[1].selectbox(
         "Match Tier", MATCH_TIER_FILTERS, key="dashboard_match_tier"
@@ -4306,6 +4331,10 @@ def _render_dashboard(st: Any) -> None:
     active_filters = []
     if application_status != "All":
         active_filters.append(f"Status: {application_status}")
+    archive_hint, archive_button = st.columns((5, 1))
+    archive_hint.caption("Withdrawn / Closed roles are retained in the Archive tab.")
+    if archive_button.button("View Archive", key="dashboard_view_archive"):
+        st.info("Select the Archive tab above to view retained final-status records.")
     if match_tier != "All":
         active_filters.append(f"Match: {match_tier}")
     if search:
