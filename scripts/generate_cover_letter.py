@@ -331,11 +331,44 @@ def _trim_cover_letter(content: str, target: int = 325) -> str:
 def repair_cover_letter_content(content: str, context: Dict[str, Any]) -> str:
     """Repair cover-letter length while preserving its existing language and order."""
     count = _word_count(content)
-    if count < 250:
-        return _expand_cover_letter(content, context)
+    role_family = str(
+        (context.get("role_intent") or {}).get("package_role_family")
+        or (context.get("role_intelligence") or {}).get("role_family")
+        or ""
+    )
+    minimum = 300 if role_family in {
+        "strategy_gtm_operations", "music_partnerships_label_relations"
+    } else 250
+    if count < minimum:
+        return _expand_cover_letter(content, context, target=minimum + 10)
     if count > 400:
         return _trim_cover_letter(content)
     return content
+
+
+def _remove_repeated_dynamic_closing(content: str, context: Dict[str, Any]) -> str:
+    """Remove the generic operating-style paragraph from dynamic letters only."""
+    role_family = str(
+        (context.get("role_intent") or {}).get("package_role_family")
+        or (context.get("role_intelligence") or {}).get("role_family")
+        or ""
+    )
+    if role_family not in {"strategy_gtm_operations", "music_partnerships_label_relations"}:
+        return content
+    generic_markers = (
+        "i bring a practical operating style:",
+        "the through line in my experience is building operating conditions",
+    )
+    paragraphs = [
+        paragraph.strip()
+        for paragraph in re.split(r"\n\s*\n", str(content or "").strip())
+        if paragraph.strip()
+    ]
+    return "\n\n".join(
+        paragraph
+        for paragraph in paragraphs
+        if not any(marker in paragraph.lower() for marker in generic_markers)
+    )
 
 
 def _ground_cover_letter_in_selected_evidence(
@@ -370,14 +403,25 @@ def _ground_cover_letter_in_selected_evidence(
         if not any(title and title in paragraph.lower() for title in evidence_titles)
     ]
     opening_context = narrative[:2]
-    closing = narrative[-1:] if narrative[2:] else []
+    role_family = str(
+        (context.get("role_intent") or {}).get("package_role_family")
+        or (context.get("role_intelligence") or {}).get("role_family")
+        or ""
+    )
+    # Dynamic role letters carry additional role-specific transfer paragraphs;
+    # established archetype letters retain their concise historical shape.
+    remaining_narrative = (
+        narrative[2:]
+        if role_family in {"strategy_gtm_operations", "music_partnerships_label_relations"}
+        else []
+    )
     grounded = [
         value
         for value in (
             greeting,
             *opening_context,
             *evidence_paragraphs,
-            *closing,
+            *remaining_narrative,
             *signoff,
         )
         if value
@@ -1362,12 +1406,23 @@ def generate_cover_letter(
     grounded_content = _ground_cover_letter_in_selected_evidence(
         _cover_letter_content(context), context
     )
+    grounded_content = _remove_repeated_dynamic_closing(grounded_content, context)
+    role_family = str(
+        (context.get("role_intent") or {}).get("package_role_family")
+        or (context.get("role_intelligence") or {}).get("role_family")
+        or ""
+    )
+    minimum_words, maximum_words = (
+        (300, 400)
+        if role_family in {"strategy_gtm_operations", "music_partnerships_label_relations"}
+        else (250, 325)
+    )
     result = save_material(
         context,
         "Cover_Letter",
         grounded_content,
-        minimum_words=250,
-        maximum_words=325,
+        minimum_words=minimum_words,
+        maximum_words=maximum_words,
         repair_content=repair_cover_letter_content,
         repair_attempts=3,
     )

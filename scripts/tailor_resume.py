@@ -268,6 +268,10 @@ def _select_core_competencies(
     prescribed = competency_recipe(archetype)
     if prescribed:
         return prescribed
+    if (role_intent or {}).get("package_role_family") == "music_partnerships_label_relations":
+        # Music-partnerships materials use only the eight role-relevant,
+        # evidence-grounded competencies configured for that role family.
+        return list((role_intent or {}).get("resume", {}).get("competency_priorities", []))[:8]
     skills = _all_skills(career_data)
     job_keywords = [str(keyword) for keyword in parsed_job.get("keywords", [])]
     intent_priorities = list(
