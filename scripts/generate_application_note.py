@@ -65,10 +65,9 @@ def _openai_sales_operations_note(context: Dict[str, Any]) -> str:
         "for campaign tracking, reporting, workflow governance, quality assurance, training, and adoption, "
         "and I helped operationalize Disney+ launch readiness across multiple functions."
         f"{career_catalyst} These are direct examples of enterprise operating discipline and hands-on AI "
-        "product development. My experience is transferable rather than identical to sales operations: "
-        "I have not owned quotas, territory design, compensation plans, sales forecasts, Salesforce "
-        "administration, or revenue operations, and I would bring a clear learning approach to those "
-        "domain-specific responsibilities."
+        "product development. My background is adjacent to traditional sales operations, with direct "
+        "strength in enterprise operating systems, data and workflow visibility, cross-functional "
+        "planning, and disciplined execution in complex organizations."
     )
 
 
@@ -88,11 +87,9 @@ def _twitch_label_relations_note(context: Dict[str, Any]) -> str:
         "across creative, media, analytics, technology, vendors, and client stakeholders. Through "
         "Enterprise Media Operations Transformation, I led workflow design and stakeholder alignment, "
         "and this work improved visibility, execution quality, and delivery consistency. My direct "
-        "experience is in audio production, entertainment-media operations, and stakeholder coordination; "
-        "it is transferable to label-facing work, but I am not presenting myself as an established "
-        "label-relations executive. I have not owned label accounts, managed artists, negotiated label or "
-        "artist deals, owned commercial forecasting, or held direct music-industry business-development "
-        "responsibility."
+        "experience is in audio production, entertainment-media operations, and cross-functional partner "
+        "coordination. I would bring that foundation to label-facing work with respect for the commercial "
+        "and relationship expertise the role requires."
     )
 
 
