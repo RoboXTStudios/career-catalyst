@@ -1144,21 +1144,18 @@ def _primary_facts_html(application: Dict[str, Any], package: Dict[str, Any]) ->
         if status in {"Applied", "Under Consideration", "Interviewing"}
         else None
     )
-    facts = (
+    status_fact = _status_date_fact(application, package)
+    facts = [
         ("Location", application.get("location") or package.get("location")),
         ("Work arrangement", application.get("work_arrangement")),
         ("Salary", _compensation_display(application, package)),
         ("Source type", application.get("source_type") or "Unknown Source"),
         ("Verification", application.get("verification_status") or "Not Verified"),
         ("Posting date", application.get("posting_date") or "Posting date unknown"),
-        (
-            "Applied / status date",
-            application.get("submitted_date")
-            or application.get("applied_date")
-            or application.get("status_updated_at"),
-        ),
-        ("Follow-up", relevant_follow_up),
-    )
+    ]
+    if status_fact:
+        facts.append(status_fact)
+    facts.append(("Follow-up", relevant_follow_up))
     items = "".join(
         '<span class="cc-meta-item">'
         f'<span class="cc-meta-label">{html.escape(label)}</span>'
@@ -1167,6 +1164,34 @@ def _primary_facts_html(application: Dict[str, Any], package: Dict[str, Any]) ->
         if value
     )
     return f'<div class="cc-metadata">{items}</div>' if items else ""
+
+
+def _status_date_fact(
+    application: Dict[str, Any], package: Dict[str, Any] | None = None
+) -> tuple[str, str] | None:
+    """Return a truthful status-date label/value pair for a role card."""
+    status = get_record_status(application)
+    if status == "Prospect":
+        return None
+    if package and package.get("archived"):
+        label = "Archived date"
+    else:
+        label = {
+            "Applied": "Applied date",
+            "Considered": "Status date",
+            "Under Consideration": "Status date",
+            "Interviewing": "Interviewing date",
+            "Offer": "Offer date",
+            "Rejected": "Rejected date",
+            "Withdrawn / Closed": "Withdrawn date",
+        }.get(status, "Status date")
+    fields = (
+        ("submitted_date", "applied_date", "application_date")
+        if status == "Applied"
+        else ("status_updated_at", "created_at")
+    )
+    value = next((str(application.get(field) or "").strip() for field in fields if str(application.get(field) or "").strip()), "")
+    return (label, value[:10]) if value else None
 
 
 def _match_score_html(
@@ -2178,6 +2203,87 @@ def _render_persistent_package_controls(
                 folder,
             ),
         )
+
+
+def _persisted_package_result(
+    project_root: Path, application: Dict[str, Any]
+) -> Dict[str, Any] | None:
+    """Rebuild the completed-results model from the role-owned manifest."""
+    package = find_exact_role_package(project_root, application)
+    manifest = package.get("manifest")
+    folder = package.get("folder")
+    if not isinstance(manifest, dict) or not folder:
+        return None
+    tracker_id = str(application.get("id") or "")
+    if str(manifest.get("prospect_id") or "") != tracker_id:
+        return None
+    manifest_path = Path(folder) / "manifest.json"
+    files = {
+        str(key): Path(value)
+        for key, value in dict(package.get("files") or {}).items()
+        if value
+    }
+    materials = dict(manifest.get("materials") or {})
+
+    def _find_material(*labels: str) -> Path | None:
+        candidates = [materials.get(label) for label in labels]
+        candidates.extend(files.get(label) for label in labels)
+        for value in candidates:
+            if value:
+                path = Path(value)
+                if path.is_file():
+                    return path
+        return None
+
+    required = (
+        ("ATS Resume DOCX", ("ATS Resume", "ATS DOCX", "ats_docx"), ".docx"),
+        ("Styled Resume DOCX", ("Styled Resume", "Styled DOCX", "styled_docx"), ".docx"),
+        ("Cover Letter DOCX", ("Cover Letter", "Cover Letter DOCX", "cover_letter_docx"), ".docx"),
+        ("Package Summary", ("Package Summary", "package_summary_text", "package_summary"), ""),
+        ("Canonical Manifest", ("Canonical Manifest", "manifest_path"), ".json"),
+    )
+    checklist = []
+    for label, aliases, suffix in required:
+        path = manifest_path if label == "Canonical Manifest" and manifest_path.is_file() else _find_material(*aliases)
+        if path is not None and suffix and path.suffix.lower() != suffix:
+            path = None
+        checklist.append(
+            {
+                "material_type": label,
+                "display_label": label,
+                "exists": path is not None,
+                "preferred_open_path": str(path) if path else None,
+                "missing_reason": None if path else "Missing, empty, or invalid final artifact",
+            }
+        )
+    if not all(item["exists"] for item in checklist):
+        return None
+    outputs = {key: str(path) for key, path in files.items() if path.is_file()}
+    outputs["manifest_path"] = str(manifest_path)
+    return {
+        "tracker_id": tracker_id,
+        "status": application.get("status"),
+        "job_title": application.get("role"),
+        "company": application.get("company"),
+        "canonical_export_root": str(package.get("canonical_export_root") or manifest_path.parents[2]),
+        "saved_package_location": str(Path(folder)),
+        "match_score": application.get("match_score"),
+        "match_band": application.get("match_band"),
+        "match_tier": application.get("match_tier"),
+        "match_summary": application.get("match_summary"),
+        "match_strengths": application.get("match_strengths") or [],
+        "match_gaps": application.get("match_gaps") or [],
+        "recommended_action": application.get("recommended_action"),
+        "confidence": application.get("confidence"),
+        "freshness": {},
+        "opportunity": {},
+        "package_quality": manifest.get("package_quality") or {},
+        "tailoring_metadata": manifest.get("tailoring_metadata") or {},
+        "outputs": outputs,
+        "package_checklist": checklist,
+        "manifest": manifest,
+        "package_complete": True,
+    }
 
 
 def _render_package_summary(st: Any, package_result: Dict[str, Any]) -> None:
@@ -3534,7 +3640,16 @@ def _render_generate_package(st: Any) -> None:
             )
             focus_dashboard_role(st.session_state, tracker_id)
             st.session_state["dashboard_materials_role_id"] = tracker_id
-    package_result = st.session_state.get("last_package_result")
+    persisted_result = _persisted_package_result(PROJECT_ROOT, application)
+    if persisted_result:
+        previous_result = st.session_state.get("last_package_result")
+        if isinstance(previous_result, dict) and previous_result.get("tracker_id") == tracker_id:
+            persisted_result = {**previous_result, **persisted_result}
+        st.session_state["last_package_result"] = persisted_result
+        st.session_state["last_package_outputs"] = persisted_result["outputs"]
+        package_result = persisted_result
+    else:
+        package_result = st.session_state.get("last_package_result")
     if package_result and package_result.get("tracker_id") != tracker_id:
         package_result = None
     if package_result:
