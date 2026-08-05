@@ -107,7 +107,10 @@ from scripts.package_generator import (
     preflight_package_generation,
     resolve_job_reference,
 )
-from scripts.role_intent import tailoring_plan
+from scripts.role_intent import (
+    normalize_role_intelligence_overrides,
+    tailoring_plan,
+)
 from scripts.parse_job import (
     COMPENSATION_DISCLOSURE_STATES,
     COMPENSATION_STATE_LABELS,
@@ -747,6 +750,10 @@ def update_dashboard_role(
             for project_id in values.get("evidence_project_ids", [])
             if str(project_id).strip()
         ]
+    if "role_intelligence_overrides" in values:
+        updates["role_intelligence_overrides"] = normalize_role_intelligence_overrides(
+            values.get("role_intelligence_overrides")
+        )
     if "show_on_dashboard" in values:
         updates["show_on_dashboard"] = bool(values["show_on_dashboard"])
     if "source_verified" in values:
@@ -822,6 +829,148 @@ def move_dashboard_role_materials(
         project_root,
     )
     return result
+
+
+def _render_role_intelligence_editor(
+    st: Any,
+    application: Dict[str, Any],
+    tracker_id: str,
+) -> None:
+    """Render the persisted, role-scoped intelligence override editor."""
+    overrides = normalize_role_intelligence_overrides(
+        application.get("role_intelligence_overrides")
+    )
+    focused = str(
+        st.session_state.get("dashboard_edit_role_intelligence_id") or ""
+    ) == tracker_id
+    with st.expander("Edit Role Intelligence", expanded=focused):
+        if not focused:
+            if overrides:
+                st.caption(
+                    "Explicit role-intelligence overrides are active. Inferred source data remains preserved."
+                )
+            else:
+                st.caption(
+                    "Role intelligence is inferred from the posting. Open this section to add a targeted override."
+                )
+            if st.button(
+                "Edit Role Intelligence",
+                key=f"role_intelligence_edit_{tracker_id}",
+                use_container_width=True,
+            ):
+                st.session_state["dashboard_edit_role_intelligence_id"] = tracker_id
+                st.rerun()
+            return
+
+        inferred_intelligence: Dict[str, Any] = {}
+        try:
+            context = build_package_context(
+                tracker_id, load_application_tracker(PROJECT_ROOT), PROJECT_ROOT
+            )
+            inferred_intelligence = dict(
+                context.get("inferred_role_intelligence") or {}
+            )
+        except Exception as error:
+            st.warning(f"Inferred intelligence is unavailable until the posting is restored: {error}")
+
+        def inferred_label(*keys: str) -> str:
+            for key in keys:
+                value = str(inferred_intelligence.get(key) or "").strip()
+                if value:
+                    return value
+            return "Not available"
+
+        st.caption(
+            "Blank fields fall back to inferred values. Saving overrides does not change match score, status, Evidence, or history."
+        )
+        with st.form(key=f"role_intelligence_form_{tracker_id}"):
+            company_voice = st.text_input(
+                "Company voice",
+                value=str(overrides.get("company_voice") or ""),
+                key=f"role_intelligence_company_voice_{tracker_id}",
+            )
+            category = st.text_input(
+                "Category",
+                value=str(overrides.get("category") or ""),
+                key=f"role_intelligence_category_{tracker_id}",
+            )
+            role_family = st.text_input(
+                "Role family",
+                value=str(overrides.get("role_family") or ""),
+                key=f"role_intelligence_role_family_{tracker_id}",
+            )
+            primary_need = st.text_area(
+                "Primary hiring need",
+                value=str(overrides.get("primary_hiring_need") or ""),
+                key=f"role_intelligence_primary_need_{tracker_id}",
+                height=90,
+            )
+            leading = st.text_area(
+                "Leading themes",
+                value="; ".join(overrides.get("leading_themes") or []),
+                key=f"role_intelligence_leading_themes_{tracker_id}",
+                height=90,
+                help="Separate themes with semicolons.",
+            )
+            supporting = st.text_area(
+                "Supporting themes",
+                value="; ".join(overrides.get("supporting_themes") or []),
+                key=f"role_intelligence_supporting_themes_{tracker_id}",
+                height=90,
+                help="Separate themes with semicolons.",
+            )
+            st.markdown(
+                "**Inferred values**  \\nCompany voice: "
+                + inferred_label("company_voice_label", "profile_name")
+                + " · Category: "
+                + inferred_label("company_category_label", "company_category")
+                + " · Role family: "
+                + inferred_label("role_family_label", "role_family")
+            )
+            controls = st.columns(3)
+            save_clicked = controls[0].form_submit_button(
+                "Save overrides", type="primary", use_container_width=True
+            )
+            cancel_clicked = controls[1].form_submit_button(
+                "Cancel", use_container_width=True
+            )
+            clear_clicked = controls[2].form_submit_button(
+                "Clear overrides", use_container_width=True
+            )
+        if cancel_clicked:
+            st.session_state.pop("dashboard_edit_role_intelligence_id", None)
+            st.rerun()
+        if clear_clicked or save_clicked:
+            next_values = (
+                {}
+                if clear_clicked
+                else normalize_role_intelligence_overrides(
+                    {
+                        "company_voice": company_voice,
+                        "category": category,
+                        "role_family": role_family,
+                        "primary_hiring_need": primary_need,
+                        "leading_themes": leading,
+                        "supporting_themes": supporting,
+                    }
+                )
+            )
+            try:
+                update_dashboard_role(
+                    tracker_id,
+                    {"role_intelligence_overrides": next_values},
+                    PROJECT_ROOT,
+                )
+            except (TrackerValidationError, OSError) as error:
+                st.error(str(error))
+            else:
+                st.session_state.pop("dashboard_edit_role_intelligence_id", None)
+                st.session_state["dashboard_notice"] = (
+                    "Role intelligence overrides cleared."
+                    if clear_clicked
+                    else "Role intelligence overrides saved."
+                )
+                st.rerun()
 
 
 def dashboard_status_actions(record: Dict[str, Any]) -> tuple[tuple[str, str], ...]:
@@ -2045,6 +2194,8 @@ def _render_role_card(
                     st.session_state.pop("dashboard_edit_role_id", None)
                     st.rerun()
 
+        _render_role_intelligence_editor(st, application, tracker_id)
+
 
 def _render_application_tracker(
     st: Any,
@@ -2831,6 +2982,9 @@ def _render_tailoring_plan(st: Any, role_intent: Dict[str, Any]) -> None:
         st.markdown("### Tailoring Plan")
         rows = (
             ("Detected role", plan["detected_role"]),
+            ("Company voice", plan.get("company_voice") or "Inferred"),
+            ("Category", plan.get("company_category") or "Inferred"),
+            ("Role family", plan.get("role_family") or plan["detected_role"]),
             ("Primary hiring need", plan["primary_hiring_need"]),
             (
                 "Selected Relevant Evidence",
