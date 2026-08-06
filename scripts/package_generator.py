@@ -54,6 +54,7 @@ try:
         output_use_metadata,
     )
     from .role_intent import (
+        apply_role_intelligence_overrides,
         build_role_intent,
         reconcile_package_role_intelligence,
         role_intent_snapshot,
@@ -102,6 +103,7 @@ except ImportError:
     from resume_foundation import load_resume_foundation
     from evidence_tailoring import evidence_score_contribution, output_use_metadata
     from role_intent import (
+        apply_role_intelligence_overrides,
         build_role_intent,
         reconcile_package_role_intelligence,
         role_intent_snapshot,
@@ -566,6 +568,11 @@ def build_package_context(
         },
         root,
     )
+    inferred_role_intelligence = dict(intelligence)
+    inferred_role_intent = dict(role_intent)
+    intelligence, role_intent = apply_role_intelligence_overrides(
+        application, intelligence, role_intent
+    )
     intelligence = reconcile_package_role_intelligence(intelligence, role_intent)
     baseline_match = score_job_match(job_reference, root, [])
     adjusted_match = score_job_match(job_reference, root, associated_evidence)
@@ -585,6 +592,8 @@ def build_package_context(
         "source_url": source_url,
         "job_description": job_description,
         "role_intelligence": intelligence,
+        "inferred_role_intelligence": inferred_role_intelligence,
+        "inferred_role_intent": inferred_role_intent,
         "selected_package_paths": selected_package_paths,
         "associated_evidence_projects": associated_evidence,
         "role_intent": role_intent,
@@ -712,15 +721,22 @@ def _generate_package_in_place(
             raise PackageGenerationError(
                 "Package generation paused: paste the complete job description and re-score first."
             )
-        application = update_prospect(
-            str(application["id"]),
-            {
+        intelligence_updates = {
                 "company_category": intelligence["company_category"],
                 "role_family": intelligence["role_family"],
                 "company_voice_profile": intelligence["profile_name"],
                 "company_voice_source": intelligence["source"],
                 "company_voice_label": intelligence.get("company_voice_label", intelligence["profile_name"]),
                 "company_inference_confidence": intelligence.get("confidence_label", "Medium"),
+        }
+        # Explicit role-intelligence overrides live in their own tracker field;
+        # do not replace the inferred source fields when generation runs.
+        if intelligence.get("role_intelligence_overrides"):
+            intelligence_updates = {}
+        application = update_prospect(
+            str(application["id"]),
+            {
+                **intelligence_updates,
                 "salary_range": str(
                     parsed.get("salary_range")
                     or application.get("salary_range")
@@ -795,6 +811,18 @@ def _generate_package_in_place(
                 "cover_letter": cover_letter.get("evidence_selection") or {},
             },
         )
+        tailoring_metadata["role_intelligence"] = {
+            "overrides": dict(
+                context["role_intelligence"].get("role_intelligence_overrides") or {}
+            ),
+            "inferred": dict(context.get("inferred_role_intelligence") or {}),
+            "effective": {
+                "company_voice": context["role_intelligence"].get("company_voice_label"),
+                "category": context["role_intelligence"].get("company_category_label"),
+                "role_family": context["role_intelligence"].get("role_family_label"),
+                "primary_hiring_need": shared_role_intent.get("primary_hiring_need"),
+            },
+        }
         shared_role_intent["output_use_metadata"] = tailoring_metadata
         recruiter = generate_message(
             "recruiter",
@@ -1086,6 +1114,12 @@ def _generate_package_in_place(
         "company_voice_profile": intelligence["profile_name"],
         "company_voice_source": intelligence["source"],
         "company_voice_label": intelligence.get("company_voice_label", intelligence["profile_name"]),
+        "role_intelligence_overrides": dict(
+            intelligence.get("role_intelligence_overrides") or {}
+        ),
+        "inferred_role_intelligence": dict(
+            context.get("inferred_role_intelligence") or {}
+        ),
         "freshness": freshness,
         "opportunity": opportunity,
         "package_quality": quality,

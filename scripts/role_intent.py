@@ -26,6 +26,15 @@ PACKAGE_ROLE_FAMILIES = {
     "general_operations": ("business_operations", "Senior Operations Leadership"),
 }
 
+ROLE_INTELLIGENCE_OVERRIDE_FIELDS = (
+    "company_voice",
+    "category",
+    "role_family",
+    "primary_hiring_need",
+    "leading_themes",
+    "supporting_themes",
+)
+
 # Dynamic families are resolved from the posting, then use the same shared
 # role-intent object to drive candidate-facing writing. These descriptions are
 # conservative and avoid implying restricted sales or music responsibilities.
@@ -316,6 +325,127 @@ def build_role_intent(
     }
 
 
+def _theme_values(value: Any) -> list[str]:
+    """Normalize editable theme input without changing inferred source data."""
+    if isinstance(value, (list, tuple, set)):
+        values = value
+    else:
+        values = re.split(r"[;\n]+", str(value or ""))
+    return [str(item).strip() for item in values if str(item).strip()]
+
+
+def normalize_role_intelligence_overrides(value: Any) -> dict[str, Any]:
+    """Return the small, stable override schema persisted on one tracker record."""
+    if not isinstance(value, Mapping):
+        return {}
+    resolved: dict[str, Any] = {}
+    for field in ROLE_INTELLIGENCE_OVERRIDE_FIELDS:
+        raw = value.get(field)
+        if field in {"leading_themes", "supporting_themes"}:
+            themes = _theme_values(raw)
+            if themes:
+                resolved[field] = themes
+            continue
+        text = str(raw or "").strip()
+        if text:
+            resolved[field] = text
+    return resolved
+
+
+def _generation_family_for_override(
+    overrides: Mapping[str, Any], inferred: Mapping[str, Any]
+) -> str:
+    """Map free-form editorial labels to an existing conservative writing profile."""
+    text = " ".join(
+        str(overrides.get(field) or "")
+        for field in ("category", "role_family", "primary_hiring_need", "leading_themes")
+    ).lower()
+    if "music" in text or "label" in text or "artist" in text:
+        return "music_partnerships_label_relations"
+    if "marketing" in text and ("strategy" in text or "operations" in text):
+        return "strategy_gtm_operations"
+    if "product" in text and ("strategy" in text or "operations" in text):
+        return "product_strategy_ops"
+    return str(inferred.get("package_role_family") or "business_operations")
+
+
+def _intelligence_snapshot(intelligence: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        key: intelligence.get(key)
+        for key in (
+            "profile_name",
+            "source",
+            "company_category",
+            "company_category_label",
+            "role_family",
+            "role_family_label",
+            "company_voice_label",
+            "confidence_label",
+        )
+        if intelligence.get(key) is not None
+    }
+
+
+def apply_role_intelligence_overrides(
+    application: Mapping[str, Any],
+    intelligence: Mapping[str, Any],
+    role_intent: Mapping[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Overlay explicit role intelligence while retaining complete inferred provenance."""
+    overrides = normalize_role_intelligence_overrides(
+        application.get("role_intelligence_overrides")
+    )
+    resolved_intelligence = deepcopy(dict(intelligence))
+    resolved_intent = deepcopy(dict(role_intent))
+    inferred_intelligence = _intelligence_snapshot(intelligence)
+    inferred_intent = role_intent_snapshot(role_intent)
+    generation_family = _generation_family_for_override(overrides, role_intent)
+
+    if overrides.get("company_voice"):
+        resolved_intelligence["company_voice_label"] = overrides["company_voice"]
+        resolved_intelligence["company_voice_override"] = overrides["company_voice"]
+        resolved_intent["effective_company_voice"] = overrides["company_voice"]
+    if overrides.get("category"):
+        resolved_intelligence["company_category"] = overrides["category"]
+        resolved_intelligence["company_category_label"] = overrides["category"]
+        resolved_intent["effective_company_category"] = overrides["category"]
+    if overrides.get("role_family"):
+        resolved_intelligence["role_family"] = overrides["role_family"]
+        resolved_intelligence["role_family_label"] = overrides["role_family"]
+        resolved_intent["effective_role_family"] = overrides["role_family"]
+    if overrides.get("primary_hiring_need"):
+        resolved_intent["primary_hiring_need"] = overrides["primary_hiring_need"]
+    if overrides.get("leading_themes"):
+        resolved_intent["lead_evidence"] = list(overrides["leading_themes"])
+    if overrides.get("supporting_themes"):
+        resolved_intent["supporting_evidence"] = list(overrides["supporting_themes"])
+
+    if overrides:
+        # Keep existing, tested writing profiles in charge of candidate-facing copy.
+        # The free-form labels remain visible in the plan and manifest, while the
+        # generation family selects conservative, evidence-grounded templates.
+        writing = DYNAMIC_ROLE_WRITING.get(generation_family)
+        if writing:
+            resume = deepcopy(writing)
+            resume["headline_profile"] = resume.pop("headline")
+            resume["summary_profile"] = resume.pop("summary")
+            resume.setdefault("selected_project_limit", 0)
+            resume.setdefault("earlier_career_policy", "omit")
+            resume.setdefault("target_max_pages", 2)
+            resolved_intent["resume"] = resume
+        resolved_intent["package_role_family"] = generation_family
+        if overrides.get("role_family"):
+            resolved_intent["package_role_label"] = overrides["role_family"]
+        resolved_intelligence["generation_role_family"] = generation_family
+
+    resolved_intelligence["role_intelligence_overrides"] = overrides
+    resolved_intelligence["inferred_role_intelligence"] = inferred_intelligence
+    resolved_intent["role_intelligence_overrides"] = overrides
+    resolved_intent["inferred_role_intelligence"] = inferred_intelligence
+    resolved_intent["inferred_role_intent"] = inferred_intent
+    return resolved_intelligence, resolved_intent
+
+
 def role_intent_snapshot(role_intent: Mapping[str, Any]) -> dict[str, Any]:
     resume = role_intent.get("resume") or {}
     cover = role_intent.get("cover_letter") or {}
@@ -338,6 +468,12 @@ def role_intent_snapshot(role_intent: Mapping[str, Any]) -> dict[str, Any]:
         "primary_cover_letter_story": cover.get("primary_story"),
         "secondary_cover_letter_story": cover.get("secondary_story"),
         "generated_greeting": cover.get("greeting"),
+        "effective_company_category": role_intent.get("effective_company_category"),
+        "effective_company_voice": role_intent.get("effective_company_voice"),
+        "effective_role_family": role_intent.get("effective_role_family"),
+        "role_intelligence_overrides": normalize_role_intelligence_overrides(
+            role_intent.get("role_intelligence_overrides")
+        ),
     }
 
 
@@ -357,8 +493,15 @@ def reconcile_package_role_intelligence(
         or humanize_identifier(family)
     )
     resolved["dynamic_role_family"] = intelligence.get("role_family")
-    resolved["role_family"] = family
-    resolved["role_family_label"] = label
+    resolved["generation_role_family"] = family
+    resolved["role_family"] = str(
+        role_intent.get("effective_role_family")
+        or resolved.get("role_family")
+        or family
+    )
+    resolved["role_family_label"] = str(
+        role_intent.get("effective_role_family") or label
+    )
     resolved["package_role_archetype"] = role_intent.get("primary_archetype")
     return resolved
 
@@ -374,6 +517,13 @@ def tailoring_plan(role_intent: Mapping[str, Any]) -> dict[str, Any]:
         "detected_role": str(role_intent.get("package_role_label") or "")
         or humanize_identifier(role_intent.get("primary_archetype") or DEFAULT_ARCHETYPE),
         "primary_hiring_need": role_intent.get("primary_hiring_need"),
+        "company_voice": role_intent.get("effective_company_voice"),
+        "company_category": role_intent.get("effective_company_category"),
+        "role_family": role_intent.get("effective_role_family")
+        or role_intent.get("package_role_label"),
+        "intelligence_overrides": normalize_role_intelligence_overrides(
+            role_intent.get("role_intelligence_overrides")
+        ),
         "leading_with": humanize_values(role_intent.get("lead_evidence") or []),
         "supporting_with": humanize_values(role_intent.get("supporting_evidence") or []),
         "de_emphasizing": humanize_values(suppressed),

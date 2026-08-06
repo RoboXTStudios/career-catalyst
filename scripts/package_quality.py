@@ -122,6 +122,17 @@ def save_package_summary(
     ]
     evidence_section = "\n".join(evidence_lines) or "- No Relevant Evidence was selected."
     fallback_section = "\n".join(fallback_lines) or "- None"
+    role_intelligence = evidence_metadata.get("role_intelligence") or {}
+    overrides = role_intelligence.get("overrides") or {}
+    effective = role_intelligence.get("effective") or {}
+    inferred = role_intelligence.get("inferred") or {}
+    intelligence_lines = [
+        f"- Company voice: {effective.get('company_voice') or inferred.get('company_voice_label') or inferred.get('profile_name') or 'Inferred'}",
+        f"- Category: {effective.get('category') or inferred.get('company_category_label') or inferred.get('company_category') or 'Inferred'}",
+        f"- Role family: {effective.get('role_family') or inferred.get('role_family_label') or inferred.get('role_family') or 'Inferred'}",
+        f"- Resolution: {'Explicit override applied; inferred source retained.' if overrides else 'Inferred from the posting.'}",
+    ]
+    intelligence_section = "\n".join(intelligence_lines)
     report = dict(quality.get("quality_report") or {})
     quality_report = "\n".join(
         f"- {label}: {report.get(key, 'Not evaluated')}"
@@ -170,6 +181,10 @@ def save_package_summary(
 ### Unselected Fallback Evidence
 
 {fallback_section}
+
+## Role Intelligence
+
+{intelligence_section}
 
 ## Candidate-Facing Quality Report
 
