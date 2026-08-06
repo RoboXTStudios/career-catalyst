@@ -2321,12 +2321,18 @@ def _show_open_button(st: Any, label: str, path: Path, key: str) -> None:
 
 
 def _show_output_paths(st: Any, outputs: Dict[str, str], key_prefix: str) -> None:
+    seen_paths: set[Path] = set()
     for label, value in outputs.items():
         path = Path(value)
         display_label = OUTPUT_LABELS.get(label, label.replace("_", " ").title())
         st.markdown(f"**{display_label}**")
         st.code(str(path), language=None)
         if path.exists():
+            resolved_path = path.expanduser().resolve()
+            if resolved_path in seen_paths:
+                st.caption("Same final artifact as another output entry.")
+                continue
+            seen_paths.add(resolved_path)
             _show_open_button(
                 st,
                 f"Open {display_label.lower()}",

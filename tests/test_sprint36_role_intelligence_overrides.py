@@ -219,3 +219,35 @@ def test_dashboard_save_persists_only_role_intelligence_and_preserves_score_hist
     assert after["match_score"] == before["match_score"]
     assert after["evidence_project_ids"] == before["evidence_project_ids"]
     assert after["application_history"] == before["application_history"]
+
+
+def test_generated_output_aliases_do_not_create_duplicate_open_keys(tmp_path: Path):
+    from app import _show_output_paths
+
+    artifact = tmp_path / "application_note.txt"
+    artifact.write_text("isolated output", encoding="utf-8")
+
+    class FakeStreamlit:
+        def __init__(self):
+            self.buttons = []
+
+        def markdown(self, *_args, **_kwargs):
+            return None
+
+        def code(self, *_args, **_kwargs):
+            return None
+
+        def caption(self, *_args, **_kwargs):
+            return None
+
+        def button(self, label, key):
+            self.buttons.append((label, key))
+            return False
+
+    st = FakeStreamlit()
+    _show_output_paths(
+        st,
+        {"application_note": str(artifact), "Application Note": str(artifact)},
+        "generated_output",
+    )
+    assert len(st.buttons) == 1
