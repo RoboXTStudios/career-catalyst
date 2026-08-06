@@ -1,6 +1,7 @@
 """Generate grounded cover letters from Career Catalyst data and job analysis."""
 
 import re
+from html import unescape
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
 
@@ -25,6 +26,7 @@ try:
     from .company_voice import company_voice_context
     from .evidence_engine import evidence_generation_context, load_evidence_cards, load_writing_voice_profile, select_evidence_cards
     from .evidence_tailoring import (
+        candidate_project_reference_violations,
         cover_letter_project_paragraph,
         project_title,
         public_artifact_selection,
@@ -47,7 +49,11 @@ try:
         rewrite_banned_voice_phrases,
     )
     from .score_match import score_job_match
-    from .text_cleanup import cleanup_repeated_words, missing_subject_prose_fragments
+    from .text_cleanup import (
+        cleanup_repeated_words,
+        missing_subject_prose_fragments,
+        normalize_candidate_text,
+    )
     from .role_intent import build_role_intent
 except ImportError:
     from candidate_output import (
@@ -65,6 +71,7 @@ except ImportError:
     from company_voice import company_voice_context
     from evidence_engine import evidence_generation_context, load_evidence_cards, load_writing_voice_profile, select_evidence_cards
     from evidence_tailoring import (
+        candidate_project_reference_violations,
         cover_letter_project_paragraph,
         project_title,
         public_artifact_selection,
@@ -84,7 +91,7 @@ except ImportError:
         rewrite_banned_voice_phrases,
     )
     from score_match import score_job_match
-    from text_cleanup import cleanup_repeated_words, missing_subject_prose_fragments
+    from text_cleanup import cleanup_repeated_words, missing_subject_prose_fragments, normalize_candidate_text
     from role_intent import build_role_intent
 
 
@@ -108,7 +115,10 @@ def load_generation_context(
         resolved_job_path = root / resolved_job_path
 
     career_data = load_resume_foundation(root)
-    parsed_job = parse_job_description(resolved_job_path)
+    parsed_job = dict(parse_job_description(resolved_job_path))
+    for field in ("job_title", "company", "role"):
+        if field in parsed_job and parsed_job[field] is not None:
+            parsed_job[field] = unescape(str(parsed_job[field]))
     voice_context = company_voice_context(
         parsed_job,
         career_data["config"].get("company_voice_profiles", {}),
@@ -119,6 +129,9 @@ def load_generation_context(
     evidence_cards = load_evidence_cards(root)
     writing_voice = load_writing_voice_profile(root)
     selected_evidence = select_evidence_cards(parsed_job, evidence_cards)
+    # An explicit non-empty tracker selection is the provenance boundary. An
+    # empty legacy pool retains the established system-recommended behavior.
+    evidence_scope_enforced = bool(associated_evidence_projects)
     associated_evidence_projects = associated_evidence_projects or []
     shared_role_intent = role_intent or build_role_intent(parsed_job, root)
     editing_plan = material_editing_plan(parsed_job, root, shared_role_intent)
@@ -130,6 +143,7 @@ def load_generation_context(
         "evidence_cards": evidence_cards,
         "selected_evidence_cards": selected_evidence,
         "associated_evidence_projects": associated_evidence_projects,
+        "evidence_scope_enforced": evidence_scope_enforced,
         "associated_evidence_context": evidence_generation_context(associated_evidence_projects),
         "material_editing_plan": editing_plan,
         "role_intent": shared_role_intent,
@@ -157,6 +171,22 @@ def save_material(
     repair_attempts: int = 3,
 ) -> Dict[str, Any]:
     """Validate and save one Markdown application material, repairing length when configured."""
+    content = normalize_candidate_text(content)
+    artifact_type = {
+        "Cover_Letter": "cover_letter",
+        "Application_Note": "application_note",
+        "Recruiter_Message": "recruiter_message",
+        "Hiring_Manager_Message": "hiring_manager_message",
+    }.get(suffix, suffix.lower())
+    provenance_violations = candidate_project_reference_violations(
+        content, context, artifact_type
+    )
+    if provenance_violations:
+        raise ApplicationMaterialError(
+            f"Generated {suffix} references unselected Evidence/project(s): "
+            + ", ".join(provenance_violations)
+            + ". Select the project for this artifact or record an allowed fallback."
+        )
     content = cleanup_repeated_words(content)
     rewrite_notes: list[dict[str, str]] = []
     content, initial_rewrites = rewrite_banned_voice_phrases(content)
@@ -165,10 +195,21 @@ def save_material(
     attempts = 0
     while not minimum_words <= word_count <= maximum_words and repair_content and attempts < repair_attempts:
         content = cleanup_repeated_words(repair_content(content, context))
+        content = normalize_candidate_text(content)
         content, attempt_rewrites = rewrite_banned_voice_phrases(content)
         rewrite_notes.extend(attempt_rewrites)
         word_count = _word_count(content)
         attempts += 1
+    content = normalize_candidate_text(content)
+    provenance_violations = candidate_project_reference_violations(
+        content, context, artifact_type
+    )
+    if provenance_violations:
+        raise ApplicationMaterialError(
+            f"Generated {suffix} references unselected Evidence/project(s): "
+            + ", ".join(provenance_violations)
+            + ". Select the project for this artifact or record an allowed fallback."
+        )
     if "—" in content:
         raise ApplicationMaterialError("Generated application materials must not contain em dashes.")
     if "placeholder" in content.lower():

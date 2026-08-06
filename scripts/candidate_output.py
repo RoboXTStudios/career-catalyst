@@ -7,6 +7,7 @@ employer.
 
 from __future__ import annotations
 
+from html import unescape
 import re
 from typing import Any, Mapping, Sequence
 
@@ -426,7 +427,10 @@ def cover_letter_evidence_selection(
 
 def candidate_cover_letter(context: Mapping[str, Any]) -> str:
     """Build natural, grounded general-role copy without exposing orchestration data."""
-    parsed = context["parsed_job"]
+    parsed = dict(context["parsed_job"])
+    for field in ("job_title", "company", "role"):
+        if field in parsed and parsed[field] is not None:
+            parsed[field] = unescape(str(parsed[field]))
     intent = context["role_intent"]
     company = str(parsed.get("company") or "your organization")
     role = str(parsed.get("job_title") or "senior operations role")
@@ -528,6 +532,11 @@ def _strategy_gtm_cover_letter(
 ) -> str:
     parsed = context["parsed_job"]
     projects = _selected_project_paragraphs(context, parsed)
+    decision = cover_letter_evidence_decision(context, limit=2)
+    allowed_projects = list(decision.get("used_projects") or [])
+    career_catalyst_selected = any(
+        project_kind(project) == "career_catalyst" for project in allowed_projects
+    )
     content = "\n\n".join(
         [
             greeting,
@@ -555,6 +564,9 @@ def _strategy_gtm_cover_letter(
                 "workflows, acceptance criteria, testing, and release guardrails for an active local application. Together, "
                 "these experiences show how I connect strategic planning with dependable operating systems and disciplined "
                 "follow-through."
+                if career_catalyst_selected
+                else "These selected Evidence records show how I connect strategic planning with dependable operating "
+                "systems and disciplined follow-through."
             ),
             (
                 "In a strategy and operations setting, I would apply that same discipline to planning cadence, data and "

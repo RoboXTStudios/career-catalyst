@@ -20,6 +20,7 @@ try:
     )
     from .evidence_engine import evidence_generation_context, load_writing_voice_profile
     from .evidence_tailoring import (
+        candidate_project_reference_violations,
         project_kind,
         project_title,
         public_artifact_selection,
@@ -36,7 +37,7 @@ try:
         rewrite_banned_voice_phrases,
     )
     from .score_match import score_job_match
-    from .text_cleanup import cleanup_repeated_words
+    from .text_cleanup import cleanup_repeated_words, normalize_candidate_text
     from .role_intent import build_role_intent
 except ImportError:
     from candidate_output import (
@@ -54,6 +55,7 @@ except ImportError:
     )
     from evidence_engine import evidence_generation_context, load_writing_voice_profile
     from evidence_tailoring import (
+        candidate_project_reference_violations,
         project_kind,
         project_title,
         public_artifact_selection,
@@ -70,7 +72,7 @@ except ImportError:
         rewrite_banned_voice_phrases,
     )
     from score_match import score_job_match
-    from text_cleanup import cleanup_repeated_words
+    from text_cleanup import cleanup_repeated_words, normalize_candidate_text
     from role_intent import build_role_intent
 
 
@@ -1090,6 +1092,9 @@ def tailor_resume(
 
     root = Path(project_root) if project_root is not None else Path.cwd()
     career_data = load_resume_foundation(root)
+    # Preserve legacy system-recommended projects when no tracker Evidence was
+    # supplied; explicit selections receive the strict provenance check.
+    evidence_scope_enforced = bool(associated_evidence_projects)
     associated_evidence_projects = associated_evidence_projects or []
     verified_evidence_context = evidence_generation_context(associated_evidence_projects)
     manual_evidence_selected = bool(associated_evidence_projects)
@@ -1103,7 +1108,7 @@ def tailor_resume(
     )
     resume_evidence_projects = evidence_selection["used_projects"]
     match_report = score_job_match(job_path, root, associated_evidence_projects)
-    markdown = cleanup_repeated_words(
+    markdown = normalize_candidate_text(
         _render_markdown(
             career_data,
             parsed_job,
@@ -1114,6 +1119,22 @@ def tailor_resume(
             manual_evidence_selected=manual_evidence_selected,
         )
     )
+    provenance_context = {
+        "career_data": career_data,
+        "associated_evidence_projects": associated_evidence_projects,
+        "evidence_scope_enforced": evidence_scope_enforced,
+        "resume_evidence_selection": evidence_selection,
+    }
+    provenance_violations = candidate_project_reference_violations(
+        markdown, provenance_context, "ats_resume"
+    )
+    if provenance_violations:
+        raise ResumeTailoringError(
+            "Generated tailored resume references unselected Evidence/project(s): "
+            + ", ".join(provenance_violations)
+            + ". Select the project for this artifact or record an allowed fallback."
+        )
+    markdown = cleanup_repeated_words(markdown)
     markdown, rewrite_notes = rewrite_banned_voice_phrases(markdown)
     validate_public_career_claims(markdown)
     banned_phrases = list(career_data["config"].get("voice", {}).get("avoid", []))
@@ -1131,6 +1152,15 @@ def tailor_resume(
     except CandidateLanguageError as error:
         raise ResumeTailoringError(str(error)) from error
     validate_material_context(markdown, parsed_job, "Tailored_Resume")
+    provenance_violations = candidate_project_reference_violations(
+        markdown, provenance_context, "ats_resume"
+    )
+    if provenance_violations:
+        raise ResumeTailoringError(
+            "Generated tailored resume references unselected Evidence/project(s): "
+            + ", ".join(provenance_violations)
+            + ". Select the project for this artifact or record an allowed fallback."
+        )
 
     export_dir = root / "exports" / "internal" / "resumes"
     export_dir.mkdir(parents=True, exist_ok=True)

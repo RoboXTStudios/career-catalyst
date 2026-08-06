@@ -193,15 +193,15 @@ def _application_note_content(context: Dict[str, Any]) -> str:
             "editorial_content_strategy",
             "community_growth",
         }:
-            proof = (
-                "I created and managed Multiverse, continue developing creative publishing systems through RoboXT Studios, "
-                "and bring large-scale entertainment marketing experience."
-            )
+            proof = "I bring large-scale entertainment marketing experience."
+            if _has_selected_project(context, "multiverse"):
+                proof = "I created and managed Multiverse, an editorial publication centered on creativity, culture, music, and innovation, and bring large-scale entertainment marketing experience."
+            if _has_selected_project(context, "roboxt_studios"):
+                proof = proof.rstrip(".") + " and continue developing creative publishing systems through RoboXT Studios."
         else:
-            proof = (
-                f"I {leadership_claim(career_data)} and built workflow governance, execution "
-                "standards, dashboards, and CampaignOS systems at scale."
-            )
+            proof = f"I {leadership_claim(career_data)} and built workflow governance, execution standards, and dashboards at scale."
+            if _has_selected_project(context, "campaignos"):
+                proof = proof.rstrip(".") + " I also built CampaignOS systems at scale."
         return (
             f"The {role} role at {company} caught my attention because it centers on {focus}. "
             f"{proof} I would bring calm senior judgment, practical systems thinking, and a grounded "
