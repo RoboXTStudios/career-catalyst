@@ -1,6 +1,7 @@
 """Small text cleanup safeguards shared by generated career materials."""
 
 import re
+from html import unescape
 
 
 REPEATABLE_CLEANUP_WORDS = (
@@ -154,7 +155,11 @@ def normalize_candidate_text(text: str) -> str:
     rendered material only; source Evidence titles and historical records are not
     rewritten.
     """
-    cleaned = re.sub(r"[ \t]*\u2014+[ \t]*", " - ", str(text or ""))
+    # Job boards commonly double-escape role titles and prose (for example,
+    # ``&amp;``). Decode standard HTML entities only at the candidate-facing
+    # boundary; source tracker/Evidence records remain unchanged.
+    cleaned = unescape(str(text or ""))
+    cleaned = re.sub(r"[ \t]*\u2014+[ \t]*", " - ", cleaned)
     replacements = (
         (r"\bOMG23\s*/\s*OMD Entertainment\b", "OMG23 (Omnicom Media Group)"),
         (r"\bOMD Entertainment\b", "OMG23 (Omnicom Media Group)"),

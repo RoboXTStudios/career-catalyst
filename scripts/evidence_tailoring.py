@@ -39,12 +39,89 @@ def project_title(project: Mapping[str, Any]) -> str:
     return str(project.get("title") or project.get("name") or "Untitled Evidence").strip()
 
 
+def _candidate_project_records(context: Mapping[str, Any]) -> list[Mapping[str, Any]]:
+    """Return known project records without changing source Evidence."""
+    data = (context.get("career_data") or {}).get("data", {})
+    records: list[Mapping[str, Any]] = []
+    for section, key in (("projects", "projects"), ("evidence_projects", "evidence_projects")):
+        values = data.get(section, {})
+        if isinstance(values, Mapping):
+            values = values.get(key, [])
+        if isinstance(values, list):
+            records.extend(item for item in values if isinstance(item, Mapping))
+    return records
+
+
+def artifact_allowed_project_ids(
+    context: Mapping[str, Any], artifact_type: str
+) -> set[str]:
+    """Resolve the exact project IDs authorized for one candidate artifact."""
+    associated = list(context.get("associated_evidence_projects") or [])
+    decision_key = {
+        "ats_resume": "resume_evidence_selection",
+        "styled_resume": "resume_evidence_selection",
+        "cover_letter": "cover_letter_evidence_selection",
+    }.get(artifact_type)
+    decision = context.get(decision_key) if decision_key else None
+    if not isinstance(decision, Mapping):
+        return {_project_id(project) for project in associated}
+    allowed: set[str] = set()
+    for entry in [*(decision.get("used_projects") or []), *(decision.get("fallback_used") or [])]:
+        project = entry.get("_project") if isinstance(entry, Mapping) else None
+        allowed.add(_project_id(project or entry))
+    return {value for value in allowed if value}
+
+
+def candidate_project_reference_violations(
+    text: str, context: Mapping[str, Any], artifact_type: str
+) -> list[str]:
+    """Find known unselected project names in candidate-facing text.
+
+    This is intentionally a final provenance check. It only blocks a known
+    project reference that is not authorized for the artifact; ordinary prose
+    and source Evidence titles are not rewritten.
+    """
+    if not context.get("evidence_scope_enforced"):
+        # Preserve compatibility for direct legacy builder callers that do not
+        # provide a non-empty tracker-selected Evidence pool. Legacy packages
+        # without a tracker selection retain their system-recommended behavior.
+        return []
+
+    try:
+        from .text_cleanup import normalize_candidate_text
+    except ImportError:
+        from text_cleanup import normalize_candidate_text
+
+    normalized = normalize_candidate_text(text).lower()
+    allowed = artifact_allowed_project_ids(context, artifact_type)
+    aliases: dict[str, set[str]] = {}
+    for project in _candidate_project_records(context):
+        project_id = _project_id(project)
+        if not project_id:
+            continue
+        for raw in (project.get("id"), project.get("title"), project.get("name")):
+            alias = normalize_candidate_text(str(raw or "")).strip().lower()
+            if len(alias) >= 4:
+                aliases.setdefault(alias, set()).add(project_id)
+        human_id = normalize_candidate_text(project_id.replace("_", " ")).strip().lower()
+        if len(human_id) >= 4:
+            aliases.setdefault(human_id, set()).add(project_id)
+    violations = [
+        alias
+        for alias, project_ids in sorted(aliases.items(), key=lambda item: -len(item[0]))
+        if not (project_ids & allowed) and alias in normalized
+    ]
+    return list(dict.fromkeys(violations))
+
+
 def project_kind(project: Mapping[str, Any]) -> str:
     identity = " ".join(
         str(project.get(key) or "") for key in ("id", "title", "name")
     ).lower()
     if "career catalyst" in identity or "career_catalyst" in identity:
         return "career_catalyst"
+    if "campaignos" in identity:
+        return "campaignos"
     if "just for us" in identity or "podcast" in identity:
         return "podcast"
     return "other"
