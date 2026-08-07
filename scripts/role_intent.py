@@ -39,6 +39,29 @@ ROLE_INTELLIGENCE_OVERRIDE_FIELDS = (
 # role-intent object to drive candidate-facing writing. These descriptions are
 # conservative and avoid implying restricted sales or music responsibilities.
 DYNAMIC_ROLE_WRITING = {
+    "experiential_live_event_production": {
+        "headline": "Experiential Production & Live Events Leader | Activations | Production Operations",
+        "summary": (
+            "Experiential production and live-events operator who coordinates budgets, timelines, vendors, fabrication, "
+            "venues, logistics, and onsite execution from planning through load-out. I bring structured production "
+            "management, creative-production coordination, and dependable cross-functional delivery."
+        ),
+        "competency_priorities": [
+            "Experiential Production", "Live-Event Execution", "Production Management",
+            "Budget & Timeline Management", "Vendor & Fabrication Management",
+            "Venue & Logistics Coordination", "Onsite Execution", "Creative Production",
+        ],
+        "tools": {
+            "Operations & Program Management": [
+                "Production Workflows", "Budget Tracking", "Timeline Management",
+                "Vendor Coordination", "Production Logistics",
+            ],
+            "Creative & Experiential": [
+                "Experiential Activations", "Fabrication Coordination", "Venue Management",
+                "Onsite Builds", "Load-In / Load-Out",
+            ],
+        },
+    },
     "strategy_gtm_operations": {
         "headline": "Senior Strategy & Operations Leader | Transformation | AI Systems | Marketing Operations",
         "summary": (
@@ -193,6 +216,25 @@ def _explicit_operational_guidance(
         _contains(title_text, signal)
         for signal in ("campaign management", "campaign infrastructure")
     )
+    if dynamic_family == "experiential_live_event_production":
+        return (
+            "Plan and execute live-event and experiential activations, managing production workflows, budgets, timelines, vendors and fabrication, venues, logistics, and onsite execution from planning through load-out.",
+            [
+                "experiential production", "live-event execution", "production/project management",
+                "budget management", "timeline management", "vendor/fabrication management",
+                "venue/logistics coordination", "creative-production coordination", "onsite execution",
+            ],
+            [
+                "sponsorship activations", "client/stakeholder management",
+                "cross-functional coordination", "problem solving", "production operations",
+                "creative collaboration",
+            ],
+            [
+                "MarTech campaign execution", "measurement readiness", "platform implementation",
+                "editorial leadership", "content systems", "Career Catalyst",
+                "generic tracking and training themes",
+            ],
+        )
     if dynamic_family == "strategy_gtm_operations" and campaign_management_title and any(
         _contains(text, signal) for signal in campaign_signals
     ):
@@ -372,6 +414,7 @@ def build_role_intent(
     )
     dynamic_package_labels = {
         "music_partnerships_label_relations": "Music Partnerships & Label Relations",
+        "experiential_live_event_production": "Experiential Production / Live Event Production",
         "strategy_gtm_operations": "Strategy & GTM Operations",
     }
     if dynamic_family in dynamic_package_labels:
