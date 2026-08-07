@@ -31,7 +31,11 @@ try:
     from .generate_strategy_pack import generate_strategy_pack
     from .job_freshness import detect_job_freshness
     from .opportunity_scoring import score_opportunity
-    from .package_quality import calculate_package_quality, save_package_summary
+    from .package_quality import (
+        calculate_package_quality,
+        evaluate_candidate_facing_quality,
+        save_package_summary,
+    )
     from .package_materials import (
         create_text_companion,
         preferred_material_paths,
@@ -83,7 +87,11 @@ except ImportError:
     from generate_strategy_pack import generate_strategy_pack
     from job_freshness import detect_job_freshness
     from opportunity_scoring import score_opportunity
-    from package_quality import calculate_package_quality, save_package_summary
+    from package_quality import (
+        calculate_package_quality,
+        evaluate_candidate_facing_quality,
+        save_package_summary,
+    )
     from package_materials import (
         create_text_companion,
         preferred_material_paths,
@@ -882,28 +890,12 @@ def _generate_package_in_place(
             "punctuation_check": "passed" if "—" not in cover_text else "failed",
             "page_length_result": "one page / within word limit",
         }
-        package_summary = save_package_summary(
-            root,
-            parsed,
-            freshness,
-            opportunity,
-            quality,
-            tailoring_metadata=tailoring_metadata,
-        )
-
         tracker_id = str(application["id"])
+        # Keep the local package owner in sync for organization without
+        # persisting tracker changes until candidate-facing QA passes.
         if get_record_status(application) == "Prospect":
-            application = update_status(tracker_id, "Considered", root)
-        application = update_prospect(
-            tracker_id,
-            {
-                "opportunity_score": opportunity["overall_score"],
-                "apply_recommendation": opportunity["apply_recommendation"],
-                "opportunity_dimensions": opportunity["dimensions"],
-                "package_quality": quality,
-            },
-            root,
-        )
+            application = dict(application)
+            application["status"] = "Considered"
         followup_outputs: Dict[str, str] = {}
         followup_error = None
         if should_generate_followups:
@@ -937,7 +929,6 @@ def _generate_package_in_place(
             "application_note_text": application_note.get("txt_output_path"),
             "strategy_pack": _output_path(strategy_pack),
             "interview_prep": _output_path(interview_prep),
-            "package_summary": _output_path(package_summary),
             **followup_outputs,
         }
         for source_key, text_key in (
@@ -954,6 +945,40 @@ def _generate_package_in_place(
             companion = create_text_companion(outputs.get(source_key))
             if companion:
                 outputs[text_key] = companion
+        outputs = {key: value for key, value in outputs.items() if value}
+        career_data = load_resume_foundation(root)
+        candidate_qa = evaluate_candidate_facing_quality(
+            {
+                "ats_resume": outputs.get("resume_markdown") or resume.get("output_path"),
+                "styled_resume": outputs.get("resume_markdown") or resume.get("output_path"),
+                "cover_letter": outputs.get("cover_letter_text") or outputs.get("cover_letter"),
+                "application_note": outputs.get("application_note_text") or outputs.get("application_note"),
+            },
+            parsed_job=parsed,
+            tailoring_metadata=tailoring_metadata,
+            associated_evidence_projects=list(context.get("associated_evidence_projects") or []),
+            known_projects=list(
+                (career_data.get("data", {}).get("projects", {}) or {}).get("projects", [])
+            ) + list(
+                (career_data.get("data", {}).get("evidence_projects", {}) or {}).get("evidence_projects", [])
+            ),
+        )
+        quality["candidate_facing_qa"] = candidate_qa
+        if candidate_qa["status"] == "BLOCKED":
+            raise PackageGenerationError(
+                "Candidate-facing QA blocked package generation:\n- "
+                + "\n- ".join(candidate_qa["blocking_reasons"]),
+                details={"candidate_facing_qa": candidate_qa, "blocking": True},
+            )
+        package_summary = save_package_summary(
+            root,
+            parsed,
+            freshness,
+            opportunity,
+            quality,
+            tailoring_metadata=tailoring_metadata,
+        )
+        outputs["package_summary"] = _output_path(package_summary)
         outputs = {key: value for key, value in outputs.items() if value}
         material_errors = {
             key: value
@@ -981,6 +1006,20 @@ def _generate_package_in_place(
                 + ", ".join(missing_required),
                 checklist=precheck,
             )
+        if get_record_status(application) == "Considered" and get_record_status(
+            context["application"]
+        ) == "Prospect":
+            update_status(tracker_id, "Considered", root)
+        update_prospect(
+            tracker_id,
+            {
+                "opportunity_score": opportunity["overall_score"],
+                "apply_recommendation": opportunity["apply_recommendation"],
+                "opportunity_dimensions": opportunity["dimensions"],
+                "package_quality": quality,
+            },
+            root,
+        )
         organized = organize_package_outputs(
             root,
             application,
