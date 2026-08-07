@@ -61,6 +61,24 @@ def test_starz_explicit_campaign_title_and_seniority_win():
     assert _seniority_fit("VP, Campaign Management & Marketing Infrastructure")[0] == 100
 
 
+def test_campaign_title_wins_over_conflicting_marketing_operations_body_signals():
+    title = "VP, Campaign Management & Marketing Infrastructure"
+    posting = (
+        "Campaign management, campaign workflows, and scalable execution. "
+        "Also partner on marketing operations, analytics, planning, and resource management."
+    )
+    profile = build_dynamic_voice_profile("STARZ Entertainment", title, posting)
+    assert profile["seniority"] == "Vice President"
+    assert profile["role_family_label"] == "Marketing Operations / Campaign Management"
+    assert profile["company_category_label"] == "Entertainment Marketing"
+    intent = build_role_intent(
+        {"company": "STARZ Entertainment", "job_title": title, "raw_text": posting}
+    )
+    assert intent["package_role_label"] == "Marketing Operations / Campaign Management"
+    assert "campaign-management infrastructure" in intent["primary_hiring_need"]
+    assert "Strategy & Business Operations" not in intent["package_role_label"]
+
+
 def test_title_seniority_extraction_does_not_hallucinate():
     assert extract_seniority("Senior Director, Digital Activation")["label"] == "Senior Director"
     assert extract_seniority("Director of Media and Sponsorship")["label"] == "Director"
@@ -121,3 +139,24 @@ def test_saved_override_suppresses_inferred_role_warning_in_ui_context():
     }
     warnings = prospect_warning_messages(intelligence)
     assert not any("role family was inferred" in value.lower() for value in warnings)
+
+
+def test_saved_override_reaches_package_summary_without_stale_inference(tmp_path):
+    from pathlib import Path
+
+    from scripts.application_tracker import update_prospect
+    from scripts.package_generator import generate_package
+    from tests.test_sprint36_role_intelligence_overrides import (
+        _airbnb_overrides,
+        _isolated_root,
+    )
+
+    root, tracker_id = _isolated_root(tmp_path)
+    update_prospect(tracker_id, {"role_intelligence_overrides": _airbnb_overrides()}, root)
+    result = generate_package(tracker_id, root, export_root=tmp_path / "exports")
+    effective = result["tailoring_metadata"]["role_intelligence"]["effective"]
+    assert effective["role_family"] == "Marketing Strategy & Operations"
+    summary = Path(result["manifest"]["files"]["package_summary"]).read_text(encoding="utf-8")
+    assert "Marketing Strategy & Operations" in summary
+    assert "Nonprofit Social Impact" not in summary
+    assert "Multiverse" not in summary

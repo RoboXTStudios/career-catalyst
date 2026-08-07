@@ -175,9 +175,10 @@ def _seniority(role: Mapping[str, Any]) -> str:
 
 
 def _explicit_operational_guidance(
-    text: str, dynamic_family: str
+    text: str, dynamic_family: str, title: str = ""
 ) -> tuple[str | None, list[str], list[str], list[str]]:
     """Return deterministic hiring guidance from explicit posting responsibilities."""
+    title_text = str(title or "").lower()
     marketing_signals = (
         "annual planning", "budgeting", "forecasting", "resource planning",
         "resource allocation", "finance", "analytics", "marketing operations",
@@ -188,6 +189,22 @@ def _explicit_operational_guidance(
         "campaign management", "campaign infrastructure", "marketing infrastructure",
         "workflow governance", "scalable execution", "campaign workflows",
     )
+    campaign_management_title = any(
+        _contains(title_text, signal)
+        for signal in ("campaign management", "campaign infrastructure")
+    )
+    if dynamic_family == "strategy_gtm_operations" and campaign_management_title and any(
+        _contains(text, signal) for signal in campaign_signals
+    ):
+        return (
+            "Build and govern campaign-management infrastructure, workflows, systems, accountability, and scalable execution across marketing teams.",
+            [
+                "campaign management", "marketing infrastructure", "workflow governance",
+                "scalable execution", "cross-functional leadership",
+            ],
+            ["planning", "measurement", "stakeholder alignment"],
+            ["nonprofit social impact", "editorial storytelling", "Multiverse"],
+        )
     if dynamic_family == "strategy_gtm_operations" and any(
         _contains(text, signal) for signal in marketing_signals
     ):
@@ -204,18 +221,6 @@ def _explicit_operational_guidance(
                 "project tracking", "global marketing operations",
                 "creative and production workflows", "stakeholder alignment",
             ],
-            ["nonprofit social impact", "editorial storytelling", "Multiverse"],
-        )
-    if dynamic_family == "strategy_gtm_operations" and any(
-        _contains(text, signal) for signal in campaign_signals
-    ):
-        return (
-            "Build and govern campaign-management infrastructure, workflows, systems, accountability, and scalable execution across marketing teams.",
-            [
-                "campaign management", "marketing infrastructure", "workflow governance",
-                "scalable execution", "cross-functional leadership",
-            ],
-            ["planning", "measurement", "stakeholder alignment"],
             ["nonprofit social impact", "editorial storytelling", "Multiverse"],
         )
     return None, [], [], []
@@ -334,7 +339,9 @@ def build_role_intent(
         )
     dynamic_writing = DYNAMIC_ROLE_WRITING.get(dynamic_family)
     explicit_need, explicit_lead, explicit_support, explicit_suppressed = _explicit_operational_guidance(
-        text, dynamic_family
+        text,
+        dynamic_family,
+        str(role.get("job_title") or role.get("title") or role.get("role") or ""),
     )
     primary_hiring_need = explicit_need or str(rule.get("primary_hiring_need") or "")
     lead_evidence = explicit_lead or list(rule.get("lead_evidence") or [])
@@ -370,10 +377,16 @@ def build_role_intent(
     if dynamic_family in dynamic_package_labels:
         package_family = dynamic_family
         package_label = dynamic_package_labels[dynamic_family]
-        if dynamic_family == "strategy_gtm_operations" and _contains(text, "marketing operations"):
-            package_label = "Marketing Operations / Strategy & Business Operations"
-        elif dynamic_family == "strategy_gtm_operations" and _contains(text, "campaign management"):
+        if dynamic_family == "strategy_gtm_operations" and any(
+            _contains(
+                str(role.get("job_title") or role.get("title") or role.get("role") or "").lower(),
+                signal,
+            )
+            for signal in ("campaign management", "campaign infrastructure")
+        ):
             package_label = "Marketing Operations / Campaign Management"
+        elif dynamic_family == "strategy_gtm_operations" and _contains(text, "marketing operations"):
+            package_label = "Marketing Operations / Strategy & Business Operations"
     return {
         "primary_archetype": primary,
         "package_role_family": package_family,
