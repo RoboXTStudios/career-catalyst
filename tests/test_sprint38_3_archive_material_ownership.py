@@ -125,4 +125,6 @@ def test_reopened_live_nation_identity_remains_unchanged_and_unowned(tmp_path: P
     assert find_exact_role_package(root, old, export_root=exports)["folder"] == old_package
     current = next(item for item in load_application_tracker(root) if item["id"] == new_id)
     assert current == before
+    assert len(load_application_tracker(root)) == 2
+    assert not (exports / "active" / "in_progress" / new_id).exists()
     assert (old_package / "ats_resume.docx").is_file()
