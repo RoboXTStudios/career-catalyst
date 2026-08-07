@@ -537,7 +537,12 @@ def _functional_fit(text: str) -> Tuple[int, List[str]]:
 
 def _seniority_fit(title: Any) -> Tuple[int, str, bool]:
     lowered = str(title or "").lower()
-    if any(signal in lowered for signal in ("chief ", "vice president", "vp ", "head of", "group director", "director")):
+    # Match explicit title tokens even when punctuation follows the token,
+    # e.g. "VP, Campaign Management".
+    if any(
+        re.search(rf"(?<!\w){re.escape(signal.strip())}(?!\w)", lowered)
+        for signal in ("chief", "vice president", "vp", "head of", "group director", "director")
+    ):
         return 100, "The seniority is aligned with Trisha's director/head-of target level.", False
     if any(signal in lowered for signal in ("senior manager", "sr. manager", "sr manager", "principal", "lead")):
         return 90, "The seniority is aligned with Trisha's senior manager/lead target range.", False

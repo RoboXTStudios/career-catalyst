@@ -174,6 +174,58 @@ def _seniority(role: Mapping[str, Any]) -> str:
     return "unspecified"
 
 
+def _explicit_operational_guidance(
+    text: str, dynamic_family: str, title: str = ""
+) -> tuple[str | None, list[str], list[str], list[str]]:
+    """Return deterministic hiring guidance from explicit posting responsibilities."""
+    title_text = str(title or "").lower()
+    marketing_signals = (
+        "annual planning", "budgeting", "forecasting", "resource planning",
+        "resource allocation", "finance", "analytics", "marketing operations",
+        "creative production", "process design", "process optimization",
+        "scalable process", "performance visibility",
+    )
+    campaign_signals = (
+        "campaign management", "campaign infrastructure", "marketing infrastructure",
+        "workflow governance", "scalable execution", "campaign workflows",
+    )
+    campaign_management_title = any(
+        _contains(title_text, signal)
+        for signal in ("campaign management", "campaign infrastructure")
+    )
+    if dynamic_family == "strategy_gtm_operations" and campaign_management_title and any(
+        _contains(text, signal) for signal in campaign_signals
+    ):
+        return (
+            "Build and govern campaign-management infrastructure, workflows, systems, accountability, and scalable execution across marketing teams.",
+            [
+                "campaign management", "marketing infrastructure", "workflow governance",
+                "scalable execution", "cross-functional leadership",
+            ],
+            ["planning", "measurement", "stakeholder alignment"],
+            ["nonprofit social impact", "editorial storytelling", "Multiverse"],
+        )
+    if dynamic_family == "strategy_gtm_operations" and any(
+        _contains(text, signal) for signal in marketing_signals
+    ):
+        return (
+            "Build and optimize the frameworks, processes, tools, planning systems, and operating practices that help global Marketing and Creative teams scale efficiently and increase business impact.",
+            [
+                "marketing operations", "strategy and business operations",
+                "annual planning and budgeting", "resource planning",
+                "operating-system and process design", "process optimization",
+                "executive communication", "cross-functional leadership",
+            ],
+            [
+                "Finance and Analytics partnership", "measurement frameworks",
+                "project tracking", "global marketing operations",
+                "creative and production workflows", "stakeholder alignment",
+            ],
+            ["nonprofit social impact", "editorial storytelling", "Multiverse"],
+        )
+    return None, [], [], []
+
+
 def _score_archetype(
     text: str,
     rule: Mapping[str, Any],
@@ -229,6 +281,18 @@ def build_role_intent(
     dynamic_family = str(
         role.get("role_family") or role.get("dynamic_role_family") or ""
     ).strip()
+    if not dynamic_family:
+        # Keep direct callers (CLI/tests/intake) on the same title-and-posting
+        # classification path as package generation without introducing a module
+        # dependency cycle at import time.
+        try:
+            from .dynamic_role_intelligence import detect_role_family
+        except ImportError:
+            from dynamic_role_intelligence import detect_role_family
+        dynamic_family = detect_role_family(
+            str(role.get("job_title") or role.get("title") or role.get("role") or ""),
+            str(role.get("raw_text") or role.get("job_description") or ""),
+        )
     product_override = _product_management_title(role) or (
         dynamic_family == "product_strategy_ops"
         and not _product_management_title_excluded(role)
@@ -274,6 +338,15 @@ def build_role_intent(
             "product development, and hands-on media production with practical product judgment."
         )
     dynamic_writing = DYNAMIC_ROLE_WRITING.get(dynamic_family)
+    explicit_need, explicit_lead, explicit_support, explicit_suppressed = _explicit_operational_guidance(
+        text,
+        dynamic_family,
+        str(role.get("job_title") or role.get("title") or role.get("role") or ""),
+    )
+    primary_hiring_need = explicit_need or str(rule.get("primary_hiring_need") or "")
+    lead_evidence = explicit_lead or list(rule.get("lead_evidence") or [])
+    supporting_evidence = explicit_support or list(rule.get("supporting_evidence") or [])
+    suppressed_evidence = explicit_suppressed or list(rule.get("suppressed_evidence") or [])
     if dynamic_writing:
         resume["headline"] = dynamic_writing["headline"]
         resume["summary"] = dynamic_writing["summary"]
@@ -304,6 +377,16 @@ def build_role_intent(
     if dynamic_family in dynamic_package_labels:
         package_family = dynamic_family
         package_label = dynamic_package_labels[dynamic_family]
+        if dynamic_family == "strategy_gtm_operations" and any(
+            _contains(
+                str(role.get("job_title") or role.get("title") or role.get("role") or "").lower(),
+                signal,
+            )
+            for signal in ("campaign management", "campaign infrastructure")
+        ):
+            package_label = "Marketing Operations / Campaign Management"
+        elif dynamic_family == "strategy_gtm_operations" and _contains(text, "marketing operations"):
+            package_label = "Marketing Operations / Strategy & Business Operations"
     return {
         "primary_archetype": primary,
         "package_role_family": package_family,
@@ -312,13 +395,13 @@ def build_role_intent(
         "confidence": confidence,
         "seniority": _seniority(role),
         "business_environment": secondary + [primary],
-        "primary_hiring_need": str(rule.get("primary_hiring_need") or ""),
+        "primary_hiring_need": primary_hiring_need,
         "required_outcomes": list(rule.get("required_outcomes") or []),
         "work_motions": list(rule.get("work_motions") or []),
         "reasoning_signals": [phrase for _weight, phrase in selected_matches[:12]],
-        "lead_evidence": list(rule.get("lead_evidence") or []),
-        "supporting_evidence": list(rule.get("supporting_evidence") or []),
-        "suppressed_evidence": list(rule.get("suppressed_evidence") or []),
+        "lead_evidence": lead_evidence,
+        "supporting_evidence": supporting_evidence,
+        "suppressed_evidence": suppressed_evidence,
         "resume": resume,
         "cover_letter": cover_letter,
         "scores": {archetype: score for score, archetype, _matches in ranked},
@@ -437,6 +520,23 @@ def apply_role_intelligence_overrides(
         if overrides.get("role_family"):
             resolved_intent["package_role_label"] = overrides["role_family"]
         resolved_intelligence["generation_role_family"] = generation_family
+        # A saved override is the active source for UI guidance as well as
+        # generation. Keep inferred values only in the provenance snapshots.
+        resolved_intelligence["source"] = "saved_override"
+        resolved_intelligence["confidence_label"] = "Confirmed"
+        if generation_family == "strategy_gtm_operations":
+            resolved_intelligence["cover_letter_angle"] = [
+                "Connect planning, process design, measurement, and cross-functional execution to the role's stated operating priorities.",
+                "Emphasize scalable systems, workflow visibility, and disciplined delivery without importing unrelated mission or editorial themes.",
+            ]
+            resolved_intelligence["proof_points_to_emphasize"] = [
+                "enterprise media operations transformation",
+                "workflow governance and cross-functional execution",
+                "planning and measurement readiness",
+            ]
+            resolved_intelligence["proof_points_to_avoid"] = [
+                "unrelated nonprofit, mission, or editorial storytelling examples",
+            ]
 
     resolved_intelligence["role_intelligence_overrides"] = overrides
     resolved_intelligence["inferred_role_intelligence"] = inferred_intelligence
