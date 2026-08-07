@@ -3,15 +3,42 @@
 from __future__ import annotations
 
 import re
+from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any, Dict, Mapping
 
 try:
     from .filename_utils import build_upload_filename
     from .text_cleanup import normalize_candidate_text
+    from .candidate_output import validate_candidate_output
+    from .career_claims import validate_public_career_claims
+    from .evidence_tailoring import candidate_project_reference_violations
+    from .package_context import PackageContextMismatchError, validate_material_context
+    from .resume_foundation import validate_candidate_language
 except ImportError:
     from filename_utils import build_upload_filename
     from text_cleanup import normalize_candidate_text
+    from candidate_output import validate_candidate_output
+    from career_claims import validate_public_career_claims
+    from evidence_tailoring import candidate_project_reference_violations
+    from package_context import PackageContextMismatchError, validate_material_context
+    from resume_foundation import validate_candidate_language
+
+
+_QUALITY_STOP_WORDS = {
+    "a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "in",
+    "into", "is", "it", "of", "on", "or", "that", "the", "their", "this",
+    "to", "was", "were", "will", "with", "i", "my", "we", "our", "would",
+}
+_GENERIC_ROLE_LABELS = {
+    "default", "general operations", "general_operations", "operations", "inferred",
+}
+_KNOWN_GENERIC_FILLER = (
+    "i am writing to express my interest",
+    "perfect fit",
+    "synergies",
+    "thrilled to apply",
+)
 
 
 def _bounded(value: float) -> int:
@@ -23,6 +50,226 @@ def _read(path_value: Any) -> str:
     if not path.is_file():
         return ""
     return path.read_text(encoding="utf-8", errors="replace")
+
+
+def _candidate_text(value: Any) -> str:
+    """Read a generated artifact and apply the final candidate-text boundary."""
+    if isinstance(value, (str, Path)):
+        try:
+            if Path(str(value)).is_file():
+                return normalize_candidate_text(_read(value))
+        except OSError:
+            # Long candidate text is not a filesystem path.
+            pass
+    return normalize_candidate_text(str(value or ""))
+
+
+def _paragraphs(text: str) -> list[str]:
+    return [
+        re.sub(r"\s+", " ", block).strip()
+        for block in re.split(r"\n\s*\n", text)
+        if len(re.findall(r"\b\w+\b", block)) >= 10
+    ]
+
+
+def _tokens(text: str, excluded: set[str] | None = None) -> set[str]:
+    excluded = excluded or set()
+    return {
+        token
+        for token in re.findall(r"[a-z0-9]+", text.lower())
+        if len(token) > 2 and token not in _QUALITY_STOP_WORDS and token not in excluded
+    }
+
+
+def _project_aliases(project: Mapping[str, Any]) -> tuple[str, ...]:
+    values = []
+    for key in ("title", "name", "id"):
+        raw = str(project.get(key) or "").strip()
+        if raw:
+            values.extend((raw, raw.replace("_", " ")))
+    return tuple(dict.fromkeys(normalize_candidate_text(value).lower() for value in values if value))
+
+
+def _duplicate_proof_reasons(
+    cover_text: str, projects: list[Mapping[str, Any]]
+) -> list[str]:
+    """Find materially repeated proof, anchored to a named Evidence project."""
+    paragraphs = _paragraphs(cover_text)
+    reasons: list[str] = []
+    for project in projects:
+        title = str(project.get("title") or project.get("name") or project.get("id") or "").strip()
+        aliases = _project_aliases(project)
+        if not title or not aliases:
+            continue
+        anchor_terms = set()
+        for alias in aliases:
+            anchor_terms.update(_tokens(alias))
+        matching = []
+        for index, paragraph in enumerate(paragraphs):
+            lower = paragraph.lower()
+            if any(alias in lower for alias in aliases):
+                matching.append((index, paragraph))
+                continue
+            if anchor_terms and len(_tokens(paragraph) & anchor_terms) >= max(1, len(anchor_terms) // 2):
+                matching.append((index, paragraph))
+        for left_index in range(len(matching)):
+            index_a, paragraph_a = matching[left_index]
+            for index_b, paragraph_b in matching[left_index + 1 :]:
+                excluded = set(anchor_terms)
+                tokens_a = _tokens(paragraph_a, excluded)
+                tokens_b = _tokens(paragraph_b, excluded)
+                if not tokens_a or not tokens_b:
+                    continue
+                jaccard = len(tokens_a & tokens_b) / len(tokens_a | tokens_b)
+                sequence = SequenceMatcher(
+                    None,
+                    " ".join(sorted(tokens_a)),
+                    " ".join(sorted(tokens_b)),
+                ).ratio()
+                if jaccard >= 0.32 and sequence >= 0.58:
+                    reasons.append(
+                        f"Cover letter repeats the \u201c{title}\u201d proof in multiple paragraphs."
+                    )
+                    break
+            if reasons and reasons[-1].endswith(f"\u201c{title}\u201d proof in multiple paragraphs."):
+                break
+    return list(dict.fromkeys(reasons))
+
+
+def _override_conflict_reasons(
+    combined_text: str, tailoring_metadata: Mapping[str, Any]
+) -> list[str]:
+    role_intelligence = tailoring_metadata.get("role_intelligence") or {}
+    inferred = role_intelligence.get("inferred") or {}
+    effective = role_intelligence.get("effective") or {}
+    reasons: list[str] = []
+    for field, label in (
+        ("company_voice", "company voice"),
+        ("category", "category"),
+        ("role_family", "role family"),
+    ):
+        inferred_value = str(
+            inferred.get(field)
+            or inferred.get({"company_voice": "company_voice_label", "category": "company_category_label", "role_family": "role_family_label"}[field])
+            or ""
+        ).strip()
+        effective_value = str(effective.get(field) or "").strip()
+        if not inferred_value or not effective_value:
+            continue
+        if inferred_value.lower().replace("_", " ") == effective_value.lower().replace("_", " "):
+            continue
+        if inferred_value.lower() in _GENERIC_ROLE_LABELS:
+            continue
+        if inferred_value.lower() in combined_text.lower():
+            reasons.append(
+                f"Candidate-facing copy contains stale inferred {label} language \u201c{inferred_value}\u201d despite the effective override \u201c{effective_value}\u201d."
+            )
+    return reasons
+
+
+def evaluate_candidate_facing_quality(
+    artifacts: Mapping[str, Any],
+    *,
+    parsed_job: Mapping[str, Any] | None = None,
+    tailoring_metadata: Mapping[str, Any] | None = None,
+    associated_evidence_projects: list[Mapping[str, Any]] | None = None,
+    known_projects: list[Mapping[str, Any]] | None = None,
+) -> Dict[str, Any]:
+    """Return the authoritative PASS/BLOCKED state for staged candidate copy.
+
+    This is deliberately deterministic and runs after each artifact has been
+    normalized, but before the package is organized or promoted.
+    """
+    tailoring_metadata = tailoring_metadata or {}
+    associated = list(associated_evidence_projects or [])
+    projects = list(known_projects or associated)
+    texts = {key: _candidate_text(value) for key, value in artifacts.items() if value}
+    reasons: list[str] = []
+    cover_text = texts.get("cover_letter", "")
+    reasons.extend(_duplicate_proof_reasons(cover_text, associated or projects))
+
+    artifact_usage = tailoring_metadata.get("artifact_usage") or {}
+    provenance_context = {
+        "career_data": {"data": {"projects": {"projects": projects}}},
+        "associated_evidence_projects": associated,
+        "evidence_scope_enforced": bool(associated),
+    }
+    for artifact_type, text in texts.items():
+        if not text:
+            continue
+        selection_key = artifact_type
+        if selection_key in artifact_usage:
+            selection = dict(artifact_usage[selection_key] or {})
+            if not selection.get("used_projects"):
+                selected_by_id = {
+                    str(project.get("id") or project.get("title") or ""): project
+                    for project in projects
+                }
+                selection["used_projects"] = [
+                    dict(
+                        selected_by_id.get(
+                            str(entry.get("id") or entry.get("title") or ""), entry
+                        )
+                    )
+                    for entry in selection.get("used") or []
+                ]
+            provenance_context[
+                {
+                    "ats_resume": "resume_evidence_selection",
+                    "styled_resume": "resume_evidence_selection",
+                    "cover_letter": "cover_letter_evidence_selection",
+                }.get(selection_key, selection_key)
+            ] = selection
+        violations = candidate_project_reference_violations(
+            text, provenance_context, artifact_type
+        )
+        reasons.extend(
+            f"{artifact_type.replace('_', ' ').title()} references unselected Evidence/project: {value}."
+            for value in violations
+        )
+        try:
+            validate_candidate_language(text, context=f"Generated {artifact_type}")
+            validate_public_career_claims(text)
+            validate_candidate_output(text, context=f"Generated {artifact_type}")
+        except Exception as error:
+            reasons.append(str(error))
+        if "\u2014" in text:
+            reasons.append(f"{artifact_type.replace('_', ' ').title()} contains an em dash.")
+        lower = text.lower()
+        reasons.extend(
+            f"{artifact_type.replace('_', ' ').title()} contains prohibited filler: {phrase}."
+            for phrase in _KNOWN_GENERIC_FILLER
+            if phrase in lower
+        )
+        if parsed_job:
+            try:
+                validate_material_context(text, dict(parsed_job), artifact_type)
+            except PackageContextMismatchError as error:
+                reasons.append(
+                    f"{artifact_type.replace('_', ' ').title()} contains stale role context: "
+                    + ", ".join(error.violations)
+                    + "."
+                )
+    combined = "\n\n".join(texts.values())
+    reasons.extend(_override_conflict_reasons(combined, tailoring_metadata))
+    return {
+        "status": "BLOCKED" if reasons else "PASS",
+        "blocking_reasons": list(dict.fromkeys(reasons)),
+        "artifacts_checked": list(texts),
+        "checks": {
+            "duplicate_proof": not any("repeats the" in reason for reason in reasons),
+            "evidence_provenance": not any("unselected Evidence/project" in reason for reason in reasons),
+            "role_intelligence": not any("stale inferred" in reason for reason in reasons),
+            "candidate_language": not any(
+                "em dash" in reason or "candidate-language" in reason.lower() or "internal orchestration" in reason.lower()
+                for reason in reasons
+            ),
+        },
+    }
+
+
+# Short alias for callers that prefer the gate terminology.
+candidate_facing_quality_gate = evaluate_candidate_facing_quality
 
 
 def calculate_package_quality(
@@ -147,6 +394,13 @@ def save_package_summary(
             ("page_length_result", "Page-length result"),
         )
     )
+    candidate_qa = dict(quality.get("candidate_facing_qa") or {})
+    qa_status = str(candidate_qa.get("status") or "Not evaluated")
+    qa_lines = [f"Candidate-facing QA: {qa_status}"]
+    qa_lines.extend(
+        f"- {reason}" for reason in candidate_qa.get("blocking_reasons") or []
+    )
+    qa_section = "\n".join(qa_lines)
     content = f"""# Application Package Summary
 
 ## Opportunity
@@ -187,6 +441,8 @@ def save_package_summary(
 {intelligence_section}
 
 ## Candidate-Facing Quality Report
+
+{qa_section}
 
 {quality_report}
 """
