@@ -45,6 +45,31 @@ ROLE_FAMILIES = (
     "generic_senior_operator",
 )
 
+
+def extract_seniority(job_title: str = "") -> dict[str, str | None]:
+    """Extract only seniority stated explicitly in the title.
+
+    This intentionally does not infer seniority from responsibilities or company
+    language.  The compact result is safe for UI provenance and diagnostics.
+    """
+    title = " ".join(str(job_title or "").split())
+    lowered = title.lower()
+    patterns = (
+        ("Vice President", r"\b(?:vice\s+president|vp)\b"),
+        ("Senior Director", r"\bsenior\s+director\b"),
+        ("Director", r"\bdirector\b"),
+        ("Senior Manager", r"\bsenior\s+(?:manager|mgr)\b"),
+        ("Manager", r"\bmanager\b"),
+        ("Lead", r"\blead\b"),
+        ("Principal", r"\bprincipal\b"),
+        ("Chief", r"\bchief\b"),
+        ("Head", r"\bhead\s+of\b"),
+    )
+    for label, pattern in patterns:
+        if re.search(pattern, lowered):
+            return {"label": label, "source": "explicit_title"}
+    return {"label": None, "source": "not_explicit"}
+
 CATEGORY_SIGNALS = {
     "music_live_events": (
         "bandsintown",
@@ -528,6 +553,34 @@ def detect_role_family(job_title: str = "", job_description: str = "") -> str:
         )
     )
 
+    # Explicit operational responsibilities outrank broad creative, mission, or
+    # company-theme signals.  Keep the existing family vocabulary so all current
+    # writing profiles and package consumers remain compatible.
+    marketing_operations_title = any(
+        signal in title
+        for signal in ("marketing operations", "marketing-operations", "marketing ops")
+    )
+    marketing_operations_signals = (
+        "annual planning", "budgeting", "forecasting", "resource planning",
+        "resource allocation", "operating system", "process design",
+        "process optimization", "finance", "analytics", "global marketing",
+        "creative production", "scalable process", "performance visibility",
+    )
+    campaign_infrastructure_signals = (
+        "campaign management", "campaign infrastructure", "campaign workflows",
+        "marketing infrastructure", "workflow governance", "scalable execution",
+    )
+    if (
+        marketing_operations_title
+        and not any(signal in title for signal in ("integration", "shared services", "multi-brand"))
+        and any(signal in combined for signal in marketing_operations_signals)
+    ):
+        return "strategy_gtm_operations"
+    if any(signal in title for signal in ("campaign management", "campaign infrastructure")) and any(
+        signal in combined for signal in campaign_infrastructure_signals
+    ):
+        return "strategy_gtm_operations"
+
     if "label relations" in title or (
         "music partnerships" in combined and any(signal in title for signal in ("manager", "lead", "director"))
     ):
@@ -650,12 +703,34 @@ def build_dynamic_voice_profile(
         "business_operations", "product_strategy_ops", "transformation_advisory", "generic_senior_operator"
     }
     confidence_label = "High" if context["confidence"] >= 0.8 else "Medium"
+    explicit_seniority = extract_seniority(job_title)
+    normalized_text = _combined_text(job_title, job_description)
+    if role_family == "strategy_gtm_operations" and "marketing operations" in normalized_text:
+        category_label = "Global Marketing Operations"
+        family_label = "Marketing Operations / Strategy & Business Operations"
+        # Keep the inferred voice label generic; a saved company-voice override
+        # remains the only authoritative candidate-facing company voice.
+        voice_label = f"Dynamic {category.replace('_', ' ').title()}"
+    elif role_family == "strategy_gtm_operations" and "campaign management" in normalized_text:
+        category_label = "Entertainment Marketing"
+        family_label = "Marketing Operations / Campaign Management"
+        voice_label = "Entertainment Marketing Operations"
+    else:
+        category_label = (
+            "Music / Entertainment Operations"
+            if category == "music_entertainment_operations"
+            else category.replace("_", " ").title()
+        )
+        family_label = "Strategic Operations" if is_music_operations else role_family.replace("_", " ").title()
+        voice_label = "Music + Operational Transformation" if is_music_operations else f"Dynamic {category.replace('_', ' ').title()}"
     return {
         "profile_name": f"dynamic_{category}",
         "company_name": str(company_name or "").strip(),
         "source": "dynamic_inference",
         "company_category": category,
         "role_family": role_family,
+        "seniority": explicit_seniority["label"],
+        "seniority_source": explicit_seniority["source"],
         "tone": _dedupe((*category_guidance["tone"], *role_guidance["tone"])),
         "cover_letter_angle": _dedupe((*category_guidance["cover_letter_angle"], role_guidance["angle"])),
         "proof_points_to_emphasize": emphasize,
@@ -664,9 +739,9 @@ def build_dynamic_voice_profile(
         "confidence": context["confidence"],
         "confidence_label": confidence_label,
         "reasoning_summary": context["reasoning_summary"],
-        "company_voice_label": "Music + Operational Transformation" if is_music_operations else f"Dynamic {category.replace('_', ' ').title()}",
-        "company_category_label": "Music / Entertainment Operations" if category == "music_entertainment_operations" else category.replace("_", " ").title(),
-        "role_family_label": "Strategic Operations" if is_music_operations else role_family.replace("_", " ").title(),
+        "company_voice_label": voice_label,
+        "company_category_label": category_label,
+        "role_family_label": family_label,
     }
 
 
