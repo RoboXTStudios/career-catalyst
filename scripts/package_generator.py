@@ -68,6 +68,7 @@ try:
         resolve_selected_evidence,
         resolve_tracker_record,
     )
+    from .role_lifecycle import TERMINAL_STATUSES
 except ImportError:
     from application_tracker import (
         TrackerValidationError,
@@ -121,6 +122,7 @@ except ImportError:
         resolve_selected_evidence,
         resolve_tracker_record,
     )
+    from role_lifecycle import TERMINAL_STATUSES
 
 
 PathInput = Union[str, Path]
@@ -218,6 +220,11 @@ def _duplicate_posting_conflicts(
     for record in records:
         record_id = str(record.get("id") or "")
         if not record_id or record_id == current_id:
+            continue
+        # Terminal/archived records are historical ownership, not active
+        # duplicate opportunities. Their stable-ID packages remain recoverable
+        # from archive context without blocking a separately reopened role.
+        if get_record_status(record) in TERMINAL_STATUSES or record.get("archived") is True:
             continue
         if _posting_identity(record) != current_posting:
             continue
