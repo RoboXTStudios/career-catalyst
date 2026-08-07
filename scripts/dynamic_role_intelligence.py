@@ -41,6 +41,7 @@ ROLE_FAMILIES = (
     "editorial_content_strategy",
     "community_growth",
     "music_partnerships_label_relations",
+    "experiential_live_event_production",
     "strategy_gtm_operations",
     "generic_senior_operator",
 )
@@ -301,6 +302,11 @@ CATEGORY_GUIDANCE = {
 }
 
 ROLE_GUIDANCE = {
+    "experiential_live_event_production": {
+        "tone": ["experiential", "production-minded", "calm", "execution-focused"],
+        "angle": "connect live-event and experiential production management with budgets, timelines, vendors, venues, logistics, and onsite delivery",
+        "proof_points": ["production management and execution standards", "creative-production coordination", "cross-functional stakeholder and vendor coordination"],
+    },
     "music_partnerships_label_relations": {
         "tone": ["music-aware", "partner-centered", "commercial", "senior"],
         "angle": "connect label relations and music partnerships with trusted partner management, negotiation, and cross-functional delivery",
@@ -570,8 +576,38 @@ def detect_role_family(job_title: str = "", job_description: str = "") -> str:
         "process optimization", "finance", "analytics", "global marketing",
         "creative production", "scalable process", "performance visibility",
     )
+    experiential_title = (
+        ("producer" in title and any(
+            signal in title
+            for signal in ("experiential", "live event", "event producer", "experiential production")
+        ))
+        or "experiential production manager" in title
+        or ("executive producer" in title and "experiential" in title)
+        or "experiential project manager" in title
+    )
+    production_signals = (
+        "experiential producer", "experiential production", "live event producer",
+        "live event production", "event producer", "event production",
+        "production management", "branded activation", "brand activation",
+        "experiential activation", "sponsorship activation", "fabrication",
+        "venue search", "venue sourcing", "onsite production", "on site production",
+        "load in", "load out", "production budget", "production budgets",
+        "production timeline", "production timelines", "vendor management",
+        "production logistics", "on site builds", "onsite builds",
+        "production schedule", "venue management",
+    )
+    production_hits = [signal for signal in production_signals if _contains_phrase(combined, signal)]
+    production_density = len(production_hits)
     if campaign_management_title:
         return "strategy_gtm_operations"
+    if (experiential_title and production_density >= 2) or (
+        production_density >= 5
+        and any(_contains_phrase(combined, signal) for signal in (
+            "event production", "experiential production", "production management",
+            "fabrication", "onsite production", "production logistics",
+        ))
+    ):
+        return "experiential_live_event_production"
     if (
         marketing_operations_title
         and not any(signal in title for signal in ("integration", "shared services", "multi-brand"))
@@ -683,6 +719,21 @@ def _proof_guidance(company_category: str, role_family: str) -> Tuple[list[str],
     return emphasize, avoid
 
 
+def _effective_proof_guidance(company_category: str, role_family: str) -> Tuple[list[str], list[str]]:
+    """Keep experiential roles grounded in production proof rather than generic music content."""
+    emphasize, avoid = _proof_guidance(company_category, role_family)
+    if role_family == "experiential_live_event_production":
+        emphasize = [
+            "production management and execution standards",
+            "creative-production coordination",
+            "cross-functional stakeholder and vendor coordination",
+            "budget and timeline management",
+            "venue, fabrication, and onsite logistics",
+        ]
+        avoid = _dedupe((*avoid, "unrelated editorial or content systems", "MarTech campaign execution"))
+    return emphasize, avoid
+
+
 def build_dynamic_voice_profile(
     company_name: str = "",
     job_title: str = "",
@@ -695,7 +746,7 @@ def build_dynamic_voice_profile(
     role_family = detect_role_family(job_title, job_description)
     category_guidance = CATEGORY_GUIDANCE[category]
     role_guidance = ROLE_GUIDANCE[role_family]
-    emphasize, proof_avoid = _proof_guidance(category, role_family)
+    emphasize, proof_avoid = _effective_proof_guidance(category, role_family)
     is_music_operations = category == "music_entertainment_operations" and role_family in {
         "business_operations", "product_strategy_ops", "transformation_advisory", "generic_senior_operator"
     }
@@ -703,7 +754,11 @@ def build_dynamic_voice_profile(
     explicit_seniority = extract_seniority(job_title)
     normalized_title = _normalize(job_title)
     normalized_text = _combined_text(job_title, job_description)
-    if role_family == "strategy_gtm_operations" and any(
+    if role_family == "experiential_live_event_production":
+        category_label = "Music / Live Events & Experiential"
+        family_label = "Experiential Production / Live Event Production"
+        voice_label = "Music + Experiential Production"
+    elif role_family == "strategy_gtm_operations" and any(
         signal in normalized_title
         for signal in ("campaign management", "campaign infrastructure")
     ):
@@ -728,6 +783,12 @@ def build_dynamic_voice_profile(
         )
         family_label = "Strategic Operations" if is_music_operations else role_family.replace("_", " ").title()
         voice_label = "Music + Operational Transformation" if is_music_operations else f"Dynamic {category.replace('_', ' ').title()}"
+    cover_letter_angles = _dedupe((*category_guidance["cover_letter_angle"], role_guidance["angle"]))
+    if role_family == "experiential_live_event_production":
+        cover_letter_angles = [
+            "connect experiential production with disciplined budgets, timelines, vendors, venues, and onsite execution",
+            "balance creative activation goals with reliable production workflows, logistics, and cross-functional delivery",
+        ]
     return {
         "profile_name": f"dynamic_{category}",
         "company_name": str(company_name or "").strip(),
@@ -737,7 +798,7 @@ def build_dynamic_voice_profile(
         "seniority": explicit_seniority["label"],
         "seniority_source": explicit_seniority["source"],
         "tone": _dedupe((*category_guidance["tone"], *role_guidance["tone"])),
-        "cover_letter_angle": _dedupe((*category_guidance["cover_letter_angle"], role_guidance["angle"])),
+        "cover_letter_angle": cover_letter_angles,
         "proof_points_to_emphasize": emphasize,
         "proof_points_to_avoid": proof_avoid,
         "avoid": _dedupe(category_guidance["avoid"]),
@@ -783,7 +844,7 @@ def get_effective_voice_profile(
     profile_name, profile, match_type = match
     category = dynamic["company_category"]
     role_family = dynamic["role_family"]
-    emphasize, proof_avoid = _proof_guidance(category, role_family)
+    emphasize, proof_avoid = _effective_proof_guidance(category, role_family)
     confidence = 0.99 if match_type == "exact" else 0.9
     article = "an" if match_type == "exact" else "a"
     return {
