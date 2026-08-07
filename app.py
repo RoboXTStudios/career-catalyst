@@ -11,6 +11,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any, Dict
 
@@ -108,6 +109,8 @@ from scripts.package_generator import (
     resolve_job_reference,
 )
 from scripts.role_intent import (
+    apply_role_intelligence_overrides,
+    build_role_intent,
     normalize_role_intelligence_overrides,
     tailoring_plan,
 )
@@ -741,6 +744,10 @@ def update_dashboard_role(
         "match_summary",
         "recommended_action",
         "confidence",
+        "company_category",
+        "role_family",
+        "company_voice_profile",
+        "company_voice_source",
     ):
         if field in values:
             updates[field] = str(values.get(field) or "")
@@ -766,6 +773,9 @@ def update_dashboard_role(
     for field in ("match_strengths", "match_gaps"):
         if field in values:
             updates[field] = list(values.get(field) or [])
+    for field in ("inferred_role_intelligence", "inferred_role_intent"):
+        if field in values and isinstance(values[field], dict):
+            updates[field] = dict(values[field])
     if "compensation_manual_override" in values:
         updates["compensation_manual_override"] = bool(
             values["compensation_manual_override"]
@@ -804,6 +814,142 @@ def update_dashboard_role(
         return update_status(clean_id, status, project_root, **updates)
     # Unknown legacy statuses remain readable and notes can still be edited safely.
     return update_prospect(clean_id, updates, project_root)
+
+
+def _job_description_body(value: Any) -> str:
+    """Return editable posting text without duplicating the stored Markdown header."""
+    text = str(value or "").strip()
+    heading = re.search(r"^##\s+Job Description\s*$", text, flags=re.IGNORECASE | re.MULTILINE)
+    if heading:
+        return text[heading.end() :].strip()
+    return text
+
+
+def reparse_dashboard_role(
+    tracker_id: str,
+    refreshed_job_description: Any = "",
+    project_root: Path = PROJECT_ROOT,
+) -> Dict[str, Any]:
+    """Reparse and rescore one existing role without changing its identity or workflow state."""
+    clean_id = str(tracker_id or "").strip()
+    if not clean_id:
+        raise TrackerValidationError("A stable tracker id is required to re-parse a role.")
+    existing = find_dashboard_role(load_application_tracker(project_root), clean_id)
+    if existing is None:
+        raise TrackerValidationError(f"Tracker entry not found: {clean_id}")
+    resolved = resolve_job_reference(clean_id, project_root)
+    job_path = Path(resolved["job_path"])
+    current_parsed = parse_job_description(job_path)
+    current_body = _job_description_body(current_parsed.get("raw_text"))
+    requested_body = _job_description_body(refreshed_job_description)
+    use_refresh = bool(requested_body and requested_body != current_body)
+
+    parsed = current_parsed
+    temporary_path: Path | None = None
+    if use_refresh:
+        original = job_path.read_text(encoding="utf-8", errors="replace")
+        header = original.split("\n\n", 1)[0].rstrip()
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            suffix=job_path.suffix or ".md",
+            prefix=f".{clean_id}.reparse-",
+            dir=job_path.parent,
+            delete=False,
+        ) as temporary:
+            temporary.write(header + "\n\n" + requested_body + "\n")
+            temporary_path = Path(temporary.name)
+        try:
+            parsed = parse_job_description(temporary_path)
+        finally:
+            temporary_path.unlink(missing_ok=True)
+
+    source_url = str(
+        parsed.get("source_url")
+        or existing.get("posting_url")
+        or existing.get("official_url")
+        or existing.get("source_url")
+        or ""
+    )
+    raw_text = str(parsed.get("raw_text") or "")
+    inferred_intelligence = get_effective_voice_profile(
+        company_name=str(existing.get("company") or parsed.get("company") or ""),
+        job_title=str(existing.get("role") or parsed.get("job_title") or ""),
+        job_description=raw_text,
+        source_url=source_url,
+    )
+    inferred_intent = build_role_intent(
+        {
+            **parsed,
+            "company": existing.get("company") or parsed.get("company"),
+            "job_title": existing.get("role") or parsed.get("job_title"),
+            "role_family": inferred_intelligence.get("role_family"),
+        },
+        project_root,
+    )
+    effective_intelligence, _effective_intent = apply_role_intelligence_overrides(
+        existing, inferred_intelligence, inferred_intent
+    )
+    selected_ids = {
+        str(value)
+        for value in selected_evidence_ids(existing)
+        if str(value).strip()
+    }
+    try:
+        selected_projects = [
+            project
+            for project in load_evidence_projects(project_root)
+            if str(project.get("id") or "") in selected_ids
+        ]
+    except EvidenceEngineError:
+        selected_projects = []
+    match_report = score_job_data(
+        {
+            **existing,
+            "company": existing.get("company") or parsed.get("company"),
+            "job_title": existing.get("role") or parsed.get("job_title"),
+            "job_description": raw_text,
+        },
+        project_root,
+        selected_projects,
+    )
+    previous_inferred = existing.get("inferred_role_intelligence") or {}
+    previous_family = (
+        previous_inferred.get("role_family_label")
+        or previous_inferred.get("role_family")
+        or existing.get("role_family")
+        or "Not recorded"
+    )
+    updates: Dict[str, Any] = {
+        **persisted_match_fields(match_report),
+        "company_category": effective_intelligence.get("company_category"),
+        "role_family": effective_intelligence.get("role_family"),
+        "company_voice_profile": effective_intelligence.get("profile_name"),
+        "company_voice_source": effective_intelligence.get("source"),
+        "inferred_role_intelligence": dict(inferred_intelligence),
+        "inferred_role_intent": dict(inferred_intent),
+    }
+    if use_refresh:
+        updates["job_description"] = requested_body
+    refreshed = update_dashboard_role(clean_id, updates, project_root)
+    return {
+        "tracker_id": clean_id,
+        "previous_score": existing.get("match_score"),
+        "new_score": match_report.get("match_score"),
+        "previous_role_family": previous_family,
+        "new_role_family": (
+            effective_intelligence.get("role_family_label")
+            or effective_intelligence.get("role_family")
+            or "Not available"
+        ),
+        "inferred_role_family": (
+            inferred_intelligence.get("role_family_label")
+            or inferred_intelligence.get("role_family")
+            or "Not available"
+        ),
+        "used_refreshed_description": use_refresh,
+        "application": refreshed,
+    }
 
 
 def move_dashboard_role_materials(
@@ -2165,6 +2311,33 @@ def _render_role_card(
                 save_clicked = st.form_submit_button(
                     "Save role updates", type="primary", use_container_width=True
                 )
+            reparse_clicked = st.button(
+                "Re-parse details and re-score",
+                key=f"dashboard_reparse_{tracker_id}",
+                use_container_width=True,
+                help="Rerun the current parser, Role Intelligence, and scoring pipeline for this existing role without generating materials.",
+            )
+            if reparse_clicked:
+                try:
+                    reparse_result = reparse_dashboard_role(
+                        tracker_id,
+                        st.session_state.get(f"dashboard_job_description_{tracker_id}", ""),
+                        PROJECT_ROOT,
+                    )
+                except (TrackerValidationError, PackageGenerationError, OSError, ValueError) as error:
+                    st.error(f"Role could not be reparsed: {error}")
+                else:
+                    previous_score = reparse_result.get("previous_score")
+                    new_score = reparse_result.get("new_score")
+                    st.session_state["dashboard_notice"] = (
+                        "Role successfully reparsed and re-scored. "
+                        f"Score: {previous_score if previous_score is not None else 'Not scored'} → "
+                        f"{new_score if new_score is not None else 'Not scored'}; "
+                        f"inferred role family: {reparse_result['previous_role_family']} → "
+                        f"{reparse_result['new_role_family']}."
+                    )
+                    st.session_state.pop("dashboard_edit_role_id", None)
+                    st.rerun()
             if save_clicked:
                 try:
                     update_dashboard_role(
