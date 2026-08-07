@@ -211,6 +211,55 @@ def _index_payload(archive_root: Path) -> list[dict[str, Any]]:
     return list(payload.get("archives") or []) if isinstance(payload, dict) else []
 
 
+def _archive_bundle_for_role(archive_root: Path, tracker_id: str) -> Optional[Path]:
+    """Find an existing archive bundle by its stable role identity only."""
+    root = archive_root.resolve()
+    if not root.is_dir():
+        return None
+    for manifest_path in sorted(root.glob("*/*/role_manifest.json")):
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            if str(manifest.get("original_role_id") or "") == str(tracker_id):
+                return require_beneath(manifest_path.parent, root, label="Archive")
+        except (OSError, json.JSONDecodeError, ValueError):
+            continue
+    return None
+
+
+def _merge_archive_bundle(staged: Path, destination: Path, tracker_id: str) -> None:
+    """Complete a partial bundle without replacing existing historical files."""
+    destination.mkdir(parents=True, exist_ok=True)
+    existing_manifest_path = destination / "role_manifest.json"
+    if existing_manifest_path.is_file():
+        try:
+            existing_manifest = json.loads(existing_manifest_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as error:
+            raise TrackerUpdateError(f"Existing archive manifest is unreadable: {existing_manifest_path}") from error
+        owner = str(existing_manifest.get("original_role_id") or "")
+        if owner and owner != str(tracker_id):
+            raise TrackerUpdateError(
+                f"Archive bundle belongs to role '{owner}', not '{tracker_id}'."
+            )
+    for source in sorted(staged.rglob("*")):
+        if not source.is_file():
+            continue
+        relative = source.relative_to(staged)
+        target = destination / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if target.exists():
+            if relative.as_posix() == "role_manifest.json":
+                existing = json.loads(target.read_text(encoding="utf-8"))
+                incoming = json.loads(source.read_text(encoding="utf-8"))
+                merged = dict(existing)
+                for key, value in incoming.items():
+                    if key not in merged or merged[key] in (None, "", [], {}):
+                        merged[key] = value
+                _atomic_json(target, merged)
+            # Existing historical files are authoritative; never overwrite them.
+            continue
+        shutil.copy2(source, target)
+
+
 def _write_index(archive_root: Path, entries: list[dict[str, Any]]) -> None:
     _atomic_json(
         archive_root / "archive_index.json",
@@ -233,7 +282,17 @@ def archive_role(
     exports = canonical_export_root(root, injected_root=export_root)
     archives = Path(archive_root).resolve() if archive_root else canonical_archive_root(root)
     applications = load_application_tracker(root)
-    entry = _record(applications, tracker_id)
+    try:
+        entry = _record(applications, tracker_id)
+    except TrackerUpdateError:
+        existing_bundle = _archive_bundle_for_role(archives, tracker_id)
+        if existing_bundle:
+            return {
+                "skipped": True,
+                "reason": "Role is already archived.",
+                "folder": str(existing_bundle),
+            }
+        raise
     legacy_archived = entry.get("archived") is True
     if not is_archive_eligible(entry) and not (allow_legacy_archived and legacy_archived):
         raise TrackerUpdateError(
@@ -251,8 +310,10 @@ def archive_role(
         archives,
         label="Archive",
     )
-    if final_directory.exists():
-        raise TrackerUpdateError(f"Archive destination already exists: {final_directory}")
+    existing_bundle = _archive_bundle_for_role(archives, tracker_id)
+    if existing_bundle:
+        final_directory = existing_bundle
+    archive_preexisted = final_directory.exists()
     archives.mkdir(parents=True, exist_ok=True)
     temporary = Path(tempfile.mkdtemp(prefix=".sprint32-archive-", dir=archives))
     staged_package: Optional[Path] = None
@@ -312,7 +373,11 @@ def archive_role(
             if not copied.is_file() or _sha256(copied) != item["sha256"]:
                 raise TrackerUpdateError(f"Archive verification failed for {copied}.")
         final_directory.parent.mkdir(parents=True, exist_ok=True)
-        os.replace(bundle, final_directory)
+        if archive_preexisted:
+            _merge_archive_bundle(bundle, final_directory, tracker_id)
+            shutil.rmtree(bundle)
+        else:
+            os.replace(bundle, final_directory)
 
         minimal = {
             "original_role_id": str(entry.get("id") or tracker_id),
@@ -323,9 +388,13 @@ def archive_role(
             "archive_folder": str(final_directory),
             "manifest_path": str(final_directory / "role_manifest.json"),
         }
+        deduped_index = [
+            item for item in old_index
+            if str(item.get("original_role_id") or "") != str(tracker_id)
+        ]
         _write_index(
             archives,
-            sorted(old_index + [minimal], key=lambda item: (item["archived_at"], item["original_role_id"])),
+            sorted(deduped_index + [minimal], key=lambda item: (item["archived_at"], item["original_role_id"])),
         )
 
         staging_root = exports / ".sprint32_archive_staging"
@@ -397,7 +466,7 @@ def archive_role(
                 save_application_tracker(applications, root)
             except Exception as rollback_error:
                 rollback_errors.append(f"tracker restore failed: {rollback_error}")
-        if final_directory.exists():
+        if final_directory.exists() and not archive_preexisted:
             try:
                 shutil.rmtree(final_directory)
             except OSError as rollback_error:
