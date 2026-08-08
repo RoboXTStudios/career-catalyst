@@ -48,7 +48,11 @@ try:
     from .filename_utils import company_display_name
     from .parse_job import JobParseError, parse_job_description
     from .prospect_intake import add_prospect_from_job_file
-    from .score_match import persisted_match_fields, score_job_match
+    from .score_match import (
+        MATCH_PERSISTENCE_FIELDS,
+        persisted_match_fields,
+        score_job_match,
+    )
     from .tailor_resume import tailor_resume
     from .evidence_engine import evidence_projects_for_role
     from .evidence_engine import load_evidence_projects
@@ -105,7 +109,7 @@ except ImportError:
     from filename_utils import company_display_name
     from parse_job import JobParseError, parse_job_description
     from prospect_intake import add_prospect_from_job_file
-    from score_match import persisted_match_fields, score_job_match
+    from score_match import MATCH_PERSISTENCE_FIELDS, persisted_match_fields, score_job_match
     from tailor_resume import tailor_resume
     from evidence_engine import evidence_projects_for_role
     from evidence_engine import load_evidence_projects
@@ -531,6 +535,15 @@ def build_package_context(
             f"No exact local job file is associated with tracker entry '{prospect_id}'."
         )
     parsed = parse_job_description(job_path)
+    # A saved prospect is the authoritative source for manually verified
+    # location/work-arrangement metadata.  Posting text can contain a newer or
+    # lower-confidence inference, but it must not replace a value already
+    # persisted on the stable tracker record during a rerun.
+    parsed = dict(parsed)
+    for field in ("location", "work_arrangement"):
+        saved_value = str(application.get(field) or "").strip()
+        if saved_value:
+            parsed[field] = saved_value
     raw_company = str(parsed.get("company") or application.get("company") or "")
     role_title = str(parsed.get("job_title") or application.get("role") or "")
     tracker_company = company_display_name(application.get("company"))
@@ -589,6 +602,19 @@ def build_package_context(
         application, intelligence, role_intent
     )
     intelligence = reconcile_package_role_intelligence(intelligence, role_intent)
+    # Dynamic role intelligence is already resolved for this exact posting.
+    # Expose those labels to the shared Tailoring Plan even when no manual
+    # override exists; otherwise the plan falls back to the misleading
+    # placeholder "Inferred".
+    role_intent.setdefault(
+        "effective_company_voice", intelligence.get("company_voice_label")
+    )
+    role_intent.setdefault(
+        "effective_company_category", intelligence.get("company_category_label")
+    )
+    role_intent.setdefault(
+        "effective_role_family", intelligence.get("role_family_label")
+    )
     baseline_match = score_job_match(
         job_reference,
         root,
@@ -601,6 +627,30 @@ def build_package_context(
         associated_evidence,
         role_intelligence=intelligence,
     )
+    # Reparse/rescore persists the canonical score on the stable tracker
+    # record.  With no selected Evidence, diagnostics and generation must use
+    # that same score rather than silently recomputing a different value from
+    # posting metadata on a later rerun.
+    has_canonical_match = (
+        application.get("match_score") is not None
+        and any(
+            field in application and application[field] is not None
+            for field in MATCH_PERSISTENCE_FIELDS
+            if field != "match_score"
+        )
+    )
+    if not associated_evidence and has_canonical_match:
+        for field in MATCH_PERSISTENCE_FIELDS:
+            if field in application and application[field] is not None:
+                baseline_match[field] = application[field]
+                adjusted_match[field] = application[field]
+        canonical_score = int(application["match_score"])
+        baseline_match["match_score"] = canonical_score
+        adjusted_match["match_score"] = canonical_score
+        baseline_match["base_match_score"] = canonical_score
+        adjusted_match["base_match_score"] = canonical_score
+        baseline_match["evidence_score_delta"] = 0
+        adjusted_match["evidence_score_delta"] = 0
     score_contribution = evidence_score_contribution(baseline_match, adjusted_match)
     role_intent["manual_evidence_projects"] = [dict(project) for project in associated_evidence]
     role_intent["evidence_score_contribution"] = score_contribution
