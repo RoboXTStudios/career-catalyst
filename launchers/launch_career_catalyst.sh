@@ -9,14 +9,12 @@ LOG_DIR="${CAREER_CATALYST_LOG_DIR:-$HOME/Library/Logs/Career Catalyst}"
 CONFIG_FILE="${CAREER_CATALYST_CONFIG_FILE:-$STATE_DIR/launcher.conf}"
 BASE_PORT="${CAREER_CATALYST_BASE_PORT:-8503}"
 DEFAULT_PYTHON_BIN="$STATE_DIR/venv/bin/python"
-if [ ! -x "$DEFAULT_PYTHON_BIN" ]; then
-  DEFAULT_PYTHON_BIN="python3"
-fi
 PYTHON_BIN="${CAREER_CATALYST_PYTHON:-$DEFAULT_PYTHON_BIN}"
 OPEN_COMMAND="${CAREER_CATALYST_OPEN_COMMAND:-open}"
 LOCK_DIR="$STATE_DIR/launch.lock"
 STATE_FILE="$STATE_DIR/runtime.state"
 LAUNCH_LOG="$LOG_DIR/launcher-$(date +%Y-%m-%d).log"
+JOB_PREFIX="com.roboxtstudios.careercatalyst"
 
 load_config() {
   [ -f "$CONFIG_FILE" ] || return 0
@@ -105,6 +103,7 @@ state_value() {
 record_state() {
   pid="$1"
   port="$2"
+  job_label="${3:-}"
   temporary="$STATE_FILE.tmp.$$"
   {
     printf 'pid=%s\n' "$pid"
@@ -112,8 +111,17 @@ record_state() {
     printf 'url=http://127.0.0.1:%s\n' "$port"
     printf 'code_root=%s\n' "$CODE_ROOT"
     printf 'entrypoint=%s\n' "$ENTRYPOINT"
+    [ -n "$job_label" ] && printf 'job_label=%s\n' "$job_label"
   } > "$temporary"
   mv "$temporary" "$STATE_FILE"
+}
+
+launcher_process() {
+  command_line="$(process_command "$1")"
+  case "$command_line" in
+    *"launch_career_catalyst.sh"*) return 0 ;;
+    *) return 1 ;;
+  esac
 }
 
 choose_target() {
@@ -152,7 +160,11 @@ acquire_lock() {
     return 0
   fi
   owner_pid="$(sed -n '1p' "$LOCK_DIR/pid" 2>/dev/null)"
-  if [ -n "$owner_pid" ] && ! kill -0 "$owner_pid" 2>/dev/null; then
+  if [ -n "$owner_pid" ] && kill -0 "$owner_pid" 2>/dev/null &&
+    launcher_process "$owner_pid"; then
+    return 1
+  fi
+  if [ -n "$owner_pid" ]; then
     rmdir "$LOCK_DIR" 2>/dev/null || true
     if mkdir "$LOCK_DIR" 2>/dev/null; then
       printf '%s\n' "$$" > "$LOCK_DIR/pid"
@@ -165,6 +177,33 @@ acquire_lock() {
 release_lock() {
   rm -f "$LOCK_DIR/pid"
   rmdir "$LOCK_DIR" 2>/dev/null || true
+}
+
+submit_detached_streamlit() {
+  port="$1"
+  job_label="$2"
+  streamlit_log="$3"
+  streamlit_error_log="$4"
+
+  # launchctl creates a per-user launchd job, so the process is no longer a
+  # child of the Finder/Terminal/Codex shell that invoked this launcher.
+  launchctl remove "$job_label" >/dev/null 2>&1 || true
+  launchctl submit -l "$job_label" \
+    -o "$streamlit_log" \
+    -e "$streamlit_error_log" \
+    -- /bin/sh -c '
+      cd "$1" || exit 1
+      export CAREER_CATALYST_CODE_ROOT="$1"
+      export CAREER_CATALYST_RUNTIME_ROOT="$2"
+      export CAREER_CATALYST_EXPORT_ROOT="$3"
+      export PYTHONDONTWRITEBYTECODE=1
+      exec "$4" -m streamlit run "$5" \
+        --server.port "$6" \
+        --server.address 127.0.0.1 \
+        --server.headless true \
+        --browser.gatherUsageStats false
+    ' career-catalyst "$CODE_ROOT" "$RUNTIME_ROOT" "$EXPORT_ROOT" \
+      "$PYTHON_BIN" "$ENTRYPOINT" "$port"
 }
 
 main() {
@@ -185,7 +224,7 @@ main() {
   url="http://127.0.0.1:$port"
 
   if [ "$action" = "reuse" ]; then
-    record_state "$pid" "$port"
+    record_state "$pid" "$port" "$(state_value job_label)"
     log_message "Reusing Career Catalyst pid=$pid url=$url"
     open_url "$url"
     return 0
@@ -199,30 +238,23 @@ main() {
     show_error "The reconciled Career Catalyst runtime is unavailable: $RUNTIME_ROOT"
     return 1
   fi
+  if [ ! -x "$PYTHON_BIN" ]; then
+    show_error "The durable Career Catalyst Python is unavailable: $PYTHON_BIN"
+    return 1
+  fi
   if ! "$PYTHON_BIN" -c "import streamlit" >/dev/null 2>&1; then
     show_error "Python can run, but Streamlit is not installed for $PYTHON_BIN."
     return 1
   fi
 
   streamlit_log="$LOG_DIR/streamlit-$(date +%Y-%m-%d)-$port.log"
+  streamlit_error_log="$LOG_DIR/streamlit-$(date +%Y-%m-%d)-$port.error.log"
+  job_label="$JOB_PREFIX.$port"
   log_message "Starting Career Catalyst code_root=$CODE_ROOT runtime_root=$RUNTIME_ROOT url=$url"
-  (
-    cd "$CODE_ROOT" || exit 1
-    CAREER_CATALYST_CODE_ROOT="$CODE_ROOT" \
-      CAREER_CATALYST_RUNTIME_ROOT="$RUNTIME_ROOT" \
-      CAREER_CATALYST_EXPORT_ROOT="$EXPORT_ROOT" \
-      PYTHONDONTWRITEBYTECODE=1 \
-      nohup "$PYTHON_BIN" -m streamlit run "$ENTRYPOINT" \
-        --server.port "$port" \
-        --server.address 127.0.0.1 \
-        --server.headless true \
-        --browser.gatherUsageStats false \
-        >> "$streamlit_log" 2>&1 &
-    printf '%s\n' "$!" > "$STATE_DIR/starting.pid"
-  )
-  pid="$(sed -n '1p' "$STATE_DIR/starting.pid")"
-  rm -f "$STATE_DIR/starting.pid"
-  record_state "$pid" "$port"
+  if ! submit_detached_streamlit "$port" "$job_label" "$streamlit_log" "$streamlit_error_log"; then
+    show_error "Career Catalyst could not be submitted to launchd. See: $streamlit_error_log"
+    return 1
+  fi
 
   attempts=0
   while [ "$attempts" -lt 120 ]; do
@@ -231,16 +263,15 @@ main() {
       # process. Require the recorded PID to remain alive before reporting a
       # successful launch, avoiding false positives and stale runtime.state.
       sleep 0.5
-      if kill -0 "$pid" 2>/dev/null && is_healthy "$port"; then
-        log_message "Career Catalyst healthy pid=$pid url=$url"
+      pid="$(listener_pid "$port")"
+      if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null &&
+        is_career_catalyst_process "$pid" "$port" && is_healthy "$port"; then
+        record_state "$pid" "$port" "$job_label"
+        log_message "Career Catalyst healthy pid=$pid url=$url job=$job_label"
         open_url "$url"
         return 0
       fi
-      show_error "Career Catalyst stopped immediately after becoming healthy. See: $streamlit_log"
-      return 1
-    fi
-    if ! kill -0 "$pid" 2>/dev/null; then
-      show_error "Career Catalyst stopped during startup. See: $streamlit_log"
+      show_error "Career Catalyst stopped immediately after becoming healthy or did not expose the expected persistent process. See: $streamlit_log"
       return 1
     fi
     attempts=$((attempts + 1))
