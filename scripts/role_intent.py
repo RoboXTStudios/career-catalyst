@@ -430,6 +430,12 @@ def build_role_intent(
             package_label = "Marketing Operations / Campaign Management"
         elif dynamic_family == "strategy_gtm_operations" and _contains(text, "marketing operations"):
             package_label = "Marketing Operations / Strategy & Business Operations"
+    reasoning_signals = [phrase for _weight, phrase in selected_matches[:12]]
+    if explicit_lead:
+        # Dynamic families expose the same explicit production or operating
+        # signals used by the Tailoring Plan instead of generic archetype
+        # matches such as "creative" or "tracking".
+        reasoning_signals = list(explicit_lead)
     return {
         "primary_archetype": primary,
         "package_role_family": package_family,
@@ -441,7 +447,7 @@ def build_role_intent(
         "primary_hiring_need": primary_hiring_need,
         "required_outcomes": list(rule.get("required_outcomes") or []),
         "work_motions": list(rule.get("work_motions") or []),
-        "reasoning_signals": [phrase for _weight, phrase in selected_matches[:12]],
+        "reasoning_signals": reasoning_signals,
         "lead_evidence": lead_evidence,
         "supporting_evidence": supporting_evidence,
         "suppressed_evidence": suppressed_evidence,

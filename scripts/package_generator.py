@@ -589,8 +589,18 @@ def build_package_context(
         application, intelligence, role_intent
     )
     intelligence = reconcile_package_role_intelligence(intelligence, role_intent)
-    baseline_match = score_job_match(job_reference, root, [])
-    adjusted_match = score_job_match(job_reference, root, associated_evidence)
+    baseline_match = score_job_match(
+        job_reference,
+        root,
+        [],
+        role_intelligence=intelligence,
+    )
+    adjusted_match = score_job_match(
+        job_reference,
+        root,
+        associated_evidence,
+        role_intelligence=intelligence,
+    )
     score_contribution = evidence_score_contribution(baseline_match, adjusted_match)
     role_intent["manual_evidence_projects"] = [dict(project) for project in associated_evidence]
     role_intent["evidence_score_contribution"] = score_contribution
