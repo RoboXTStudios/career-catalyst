@@ -1866,14 +1866,24 @@ def _render_relevant_evidence_panel(
         match_report = score_job_match(
             resolved["job_path"], PROJECT_ROOT, selected_projects
         )
-        update_prospect(
-            tracker_id,
-            {
-                "evidence_project_ids": list(selected),
-                **persisted_match_fields(match_report),
-            },
-            PROJECT_ROOT,
-        )
+        try:
+            update_prospect(
+                tracker_id,
+                {
+                    "evidence_project_ids": list(selected),
+                    **persisted_match_fields(match_report),
+                },
+                PROJECT_ROOT,
+            )
+        except TrackerValidationError as error:
+            # Strict validation remains authoritative.  A legacy malformed
+            # snapshot must produce an actionable UI message, never a rerun
+            # traceback or a partial Evidence write.
+            st.error(
+                "Evidence was not saved because the existing tracker record "
+                f"needs repair before it can accept changes: {error}"
+            )
+            return
         reset_package_preview_for_selection(
             st.session_state, tracker_id, list(selected)
         )

@@ -17,6 +17,7 @@ try:
         TrackerValidationError,
         get_record_status,
         load_application_tracker,
+        save_application_tracker,
         normalize_tracker_value,
         update_prospect,
         update_status,
@@ -77,6 +78,7 @@ except ImportError:
         TrackerValidationError,
         get_record_status,
         load_application_tracker,
+        save_application_tracker,
         normalize_tracker_value,
         update_prospect,
         update_status,
@@ -1463,7 +1465,20 @@ def generate_package(
                 record["package_manifest"] = rewritten_manifest
                 record["material_paths"] = dict(rewritten_manifest.get("materials") or {})
                 break
-        tracker_path.write_text(yaml.safe_dump(tracker_payload, sort_keys=False), encoding="utf-8")
+        if not isinstance(tracker_records, list):
+            raise PackageGenerationError(
+                "Package generation produced an invalid tracker payload."
+            )
+        # Keep the final promotion behind the same strict, atomic tracker
+        # validation boundary as every other write path.  A package may not
+        # report success while bypassing canonical tracker serialization.
+        try:
+            save_application_tracker(tracker_records, root)
+        except TrackerValidationError as error:
+            raise PackageGenerationError(
+                "Package generation produced an incomplete tracker payload: "
+                f"{error}"
+            ) from error
 
         final_completion = _package_result_completion(rewritten, destination)
         if not final_completion["complete"]:
