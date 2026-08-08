@@ -49,7 +49,6 @@ try:
     from .parse_job import JobParseError, parse_job_description
     from .prospect_intake import add_prospect_from_job_file
     from .score_match import (
-        MATCH_PERSISTENCE_FIELDS,
         persisted_match_fields,
         score_job_match,
     )
@@ -109,7 +108,7 @@ except ImportError:
     from filename_utils import company_display_name
     from parse_job import JobParseError, parse_job_description
     from prospect_intake import add_prospect_from_job_file
-    from score_match import MATCH_PERSISTENCE_FIELDS, persisted_match_fields, score_job_match
+    from score_match import persisted_match_fields, score_job_match
     from tailor_resume import tailor_resume
     from evidence_engine import evidence_projects_for_role
     from evidence_engine import load_evidence_projects
@@ -628,29 +627,40 @@ def build_package_context(
         role_intelligence=intelligence,
     )
     # Reparse/rescore persists the canonical score on the stable tracker
-    # record.  With no selected Evidence, diagnostics and generation must use
-    # that same score rather than silently recomputing a different value from
-    # posting metadata on a later rerun.
-    has_canonical_match = (
-        application.get("match_score") is not None
-        and any(
-            field in application and application[field] is not None
-            for field in MATCH_PERSISTENCE_FIELDS
-            if field != "match_score"
-        )
-    )
-    if not associated_evidence and has_canonical_match:
-        for field in MATCH_PERSISTENCE_FIELDS:
-            if field in application and application[field] is not None:
-                baseline_match[field] = application[field]
-                adjusted_match[field] = application[field]
-        canonical_score = int(application["match_score"])
-        baseline_match["match_score"] = canonical_score
-        adjusted_match["match_score"] = canonical_score
+    # record.  Package context must keep that score as the base even when an
+    # Evidence evaluation is incomplete or contributes no new requirements.
+    # Only a complete, positively matched Evidence report may provide a valid
+    # adjusted score; genuinely unscored records do not inherit anything.
+    canonical_match = persisted_match_fields(application)
+    adjusted_fields = persisted_match_fields(adjusted_match)
+    evidence_matches = list(adjusted_match.get("associated_evidence_matches") or [])
+    if canonical_match:
+        canonical_score = int(canonical_match["match_score"])
+        for field, value in canonical_match.items():
+            baseline_match[field] = value
+        baseline_match["match_band"] = canonical_match["match_tier"]
+        baseline_match.pop("incomplete_import", None)
+        baseline_match.pop("missing_required_fields", None)
         baseline_match["base_match_score"] = canonical_score
-        adjusted_match["base_match_score"] = canonical_score
         baseline_match["evidence_score_delta"] = 0
-        adjusted_match["evidence_score_delta"] = 0
+
+        if not adjusted_fields or not evidence_matches:
+            # An incomplete/no-op Evidence evaluation must not turn a valid
+            # persisted score into 0 or “Not scored”.
+            for field, value in canonical_match.items():
+                adjusted_match[field] = value
+            adjusted_match["match_band"] = canonical_match["match_tier"]
+            adjusted_match.pop("incomplete_import", None)
+            adjusted_match.pop("missing_required_fields", None)
+            adjusted_match["base_match_score"] = canonical_score
+            adjusted_match["evidence_score_delta"] = 0
+        else:
+            # Keep the canonical persisted score as the “changed from” value
+            # even when selected Evidence produces a valid adjustment.
+            adjusted_match["base_match_score"] = canonical_score
+            adjusted_match["evidence_score_delta"] = (
+                int(adjusted_match["match_score"]) - canonical_score
+            )
     score_contribution = evidence_score_contribution(baseline_match, adjusted_match)
     role_intent["manual_evidence_projects"] = [dict(project) for project in associated_evidence]
     role_intent["evidence_score_contribution"] = score_contribution
