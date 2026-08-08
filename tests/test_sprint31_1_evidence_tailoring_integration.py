@@ -238,7 +238,15 @@ def test_save_relevant_evidence_recomputes_score_without_touching_files(
     monkeypatch.setattr(
         app,
         "score_job_match",
-        lambda *_args: {"match_score": 81, "match_tier": "Strong Match"},
+        lambda *_args: {
+            "match_score": 81,
+            "match_tier": "Strong Match",
+            "match_summary": "A complete test scoring report.",
+            "match_strengths": ["Strength one", "Strength two", "Strength three"],
+            "match_gaps": ["Gap one"],
+            "recommended_action": "Generate Package",
+            "confidence": "High",
+        },
     )
     monkeypatch.setattr(
         app,
@@ -255,6 +263,11 @@ def test_save_relevant_evidence_recomputes_score_without_touching_files(
             "evidence_project_ids": [CAREER_CATALYST["id"], PODCAST["id"]],
             "match_score": 81,
             "match_tier": "Strong Match",
+            "match_summary": "A complete test scoring report.",
+            "match_strengths": ["Strength one", "Strength two", "Strength three"],
+            "match_gaps": ["Gap one"],
+            "recommended_action": "Generate Package",
+            "confidence": "High",
         }
     ]
     assert protected.read_bytes() == before

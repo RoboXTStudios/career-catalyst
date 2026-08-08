@@ -7,6 +7,11 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Union
 
 try:
+    from .application_tracker import (
+        VALID_MATCH_ACTIONS,
+        VALID_MATCH_CONFIDENCE,
+        VALID_MATCH_TIERS,
+    )
     from .load_data import DataLoadError
     from .resume_foundation import load_resume_foundation
     from .job_freshness import detect_job_freshness
@@ -19,6 +24,11 @@ try:
         parse_job_description,
     )
 except ImportError:
+    from application_tracker import (
+        VALID_MATCH_ACTIONS,
+        VALID_MATCH_CONFIDENCE,
+        VALID_MATCH_TIERS,
+    )
     from load_data import DataLoadError
     from resume_foundation import load_resume_foundation
     from job_freshness import detect_job_freshness
@@ -494,12 +504,45 @@ def _tailoring_notes(
 
 
 def persisted_match_fields(report: Dict[str, Any]) -> Dict[str, Any]:
-    """Return only the Sprint 13 fields stored on a tracker record."""
-    return {
-        field: report[field]
-        for field in MATCH_PERSISTENCE_FIELDS
-        if field in report and report[field] is not None
-    }
+    """Return a complete, tracker-valid match snapshot or no match fields.
+
+    Scoring is allowed to produce an incomplete import/no-score report for
+    previews.  That transient state is not a tracker state: returning an empty
+    mapping lets the caller persist an unrelated mutation (such as Evidence
+    selection) while preserving the previously saved canonical match fields.
+    A report is persisted only when every field required by the strict tracker
+    validator is present and valid, so every scoring write path shares one
+    persistence boundary.
+    """
+    if not isinstance(report, dict) or report.get("incomplete_import"):
+        return {}
+
+    score = report.get("match_score")
+    tier = report.get("match_tier")
+    summary = report.get("match_summary")
+    strengths = report.get("match_strengths")
+    gaps = report.get("match_gaps")
+    action = report.get("recommended_action")
+    confidence = report.get("confidence")
+    if (
+        isinstance(score, bool)
+        or not isinstance(score, int)
+        or not 0 <= score <= 100
+        or tier not in VALID_MATCH_TIERS
+        or not isinstance(summary, str)
+        or not summary.strip()
+        or not isinstance(strengths, list)
+        or not 3 <= len(strengths) <= 5
+        or not all(isinstance(value, str) and value.strip() for value in strengths)
+        or not isinstance(gaps, list)
+        or not 1 <= len(gaps) <= 5
+        or not all(isinstance(value, str) and value.strip() for value in gaps)
+        or action not in VALID_MATCH_ACTIONS
+        or confidence not in VALID_MATCH_CONFIDENCE
+    ):
+        return {}
+
+    return {field: report[field] for field in MATCH_PERSISTENCE_FIELDS}
 
 
 def _empty_career_data() -> Dict[str, Any]:
