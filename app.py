@@ -912,6 +912,7 @@ def reparse_dashboard_role(
         },
         project_root,
         selected_projects,
+        role_intelligence=effective_intelligence,
     )
     previous_inferred = existing.get("inferred_role_intelligence") or {}
     previous_family = (
@@ -2837,7 +2838,11 @@ def detect_prospect_intelligence(values: Dict[str, Any]) -> Dict[str, Any]:
         manual_override=bool(values.get("compensation_manual_override")),
         disclosure_state=values.get("compensation_disclosure_state"),
     )
-    intelligence["match_report"] = score_job_data(values, PROJECT_ROOT)
+    intelligence["match_report"] = score_job_data(
+        values,
+        PROJECT_ROOT,
+        role_intelligence=intelligence,
+    )
     intelligence["job_description"] = str(values.get("job_description") or "")
     intelligence["location"] = str(values.get("location") or "")
     intelligence["work_arrangement"] = str(values.get("work_arrangement") or "")

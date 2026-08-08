@@ -528,6 +528,51 @@ def _signal_groups(text: str) -> List[str]:
     ]
 
 
+def _role_diagnostic_signals(
+    parsed_job: Dict[str, Any],
+    role_intelligence: Optional[Dict[str, Any]] = None,
+) -> List[str]:
+    """Return candidate-facing diagnostics from the effective role profile.
+
+    The numeric score continues to use the canonical posting signals.  These
+    labels explain that score using the same effective role family shown in the
+    Tailoring Plan, so a re-parsed role cannot retain stale MarTech or generic
+    skill wording in its explanation.
+    """
+    intelligence = role_intelligence or {}
+    family = str(
+        intelligence.get("role_family")
+        or intelligence.get("generation_role_family")
+        or ""
+    ).strip().lower()
+    label = str(intelligence.get("role_family_label") or "").strip().lower()
+    if family == "experiential_live_event_production" or "experiential production" in label:
+        return [
+            "experiential production",
+            "live-event execution",
+            "production management",
+            "budget and timeline management",
+            "vendor and fabrication coordination",
+            "venue and logistics coordination",
+            "onsite execution",
+        ]
+    if family == "music_partnerships_label_relations" or "label relations" in label:
+        return [
+            "media operations",
+            "entertainment partnerships",
+            "partner coordination",
+            "workflow governance",
+        ]
+    if family == "strategy_gtm_operations" or "strategy" in label and "operations" in label:
+        return [
+            "strategy and operations",
+            "planning and resource allocation",
+            "workflow governance",
+            "cross-functional execution",
+        ]
+    return []
+
+
 def _functional_fit(text: str) -> Tuple[int, List[str]]:
     matched = _signal_groups(text)
     if not matched:
@@ -700,7 +745,11 @@ def _match_tier(score: int) -> str:
     return "Pass"
 
 
-def _decision_match_report(parsed_job: Dict[str, Any], legacy_report: Dict[str, Any]) -> Dict[str, Any]:
+def _decision_match_report(
+    parsed_job: Dict[str, Any],
+    legacy_report: Dict[str, Any],
+    role_intelligence: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
     raw_text = str(parsed_job.get("raw_text") or "")
     title = str(parsed_job.get("job_title") or "")
     combined = f"{title}\n{parsed_job.get('company') or ''}\n{raw_text}"
@@ -715,6 +764,7 @@ def _decision_match_report(parsed_job: Dict[str, Any], legacy_report: Dict[str, 
     work_score, work_label, work_gap = _work_arrangement(parsed_job)
     freshness = detect_job_freshness(raw_text)
     non_fit_signals = [signal for signal in OBVIOUS_NON_FIT_SIGNALS if signal in combined.lower()]
+    diagnostic_signals = _role_diagnostic_signals(parsed_job, role_intelligence)
 
     weighted_score = (
         (legacy_report["match_score"] * 0.30)
@@ -734,7 +784,9 @@ def _decision_match_report(parsed_job: Dict[str, Any], legacy_report: Dict[str, 
     tier = "Pass" if freshness.get("is_closed") else _match_tier(score)
 
     strengths: List[str] = []
-    if functional_matches:
+    if diagnostic_signals:
+        strengths.append("Functional alignment includes " + ", ".join(diagnostic_signals[:3]) + ".")
+    elif functional_matches:
         strengths.append("Functional alignment includes " + ", ".join(functional_matches[:3]) + ".")
     if seniority_strength:
         strengths.append(seniority_strength)
@@ -744,7 +796,9 @@ def _decision_match_report(parsed_job: Dict[str, Any], legacy_report: Dict[str, 
         strengths.append("The disclosed compensation is aligned with or near Trisha's target.")
     if work_score >= 82:
         strengths.append(f"The {work_label.lower()} arrangement supports practical fit.")
-    if legacy_report.get("top_matching_skills"):
+    if diagnostic_signals:
+        strengths.append("Matched role signals include " + ", ".join(diagnostic_signals[:3]) + ".")
+    elif legacy_report.get("top_matching_skills"):
         strengths.append(
             "Career evidence overlaps in "
             + ", ".join(str(value) for value in legacy_report["top_matching_skills"][:3])
@@ -833,12 +887,18 @@ def _decision_match_report(parsed_job: Dict[str, Any], legacy_report: Dict[str, 
             "recommended_action": action,
             "confidence": _confidence(parsed_job, compensation_state, work_label, freshness),
             "work_arrangement": work_label,
+            "matched_signals": diagnostic_signals or functional_matches,
         }
     )
     return legacy_report
 
 
-def _score_parsed_job(parsed_job: Dict[str, Any], root: Path, associated_evidence_projects: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+def _score_parsed_job(
+    parsed_job: Dict[str, Any],
+    root: Path,
+    associated_evidence_projects: Optional[List[Dict[str, Any]]] = None,
+    role_intelligence: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
     try:
         career_data = load_resume_foundation(root)
     except DataLoadError:
@@ -886,7 +946,7 @@ def _score_parsed_job(parsed_job: Dict[str, Any], root: Path, associated_evidenc
         "recommended_resume_profile": _recommended_resume_profile(parsed_job),
         "tailoring_notes": [],
     }
-    report = _decision_match_report(parsed_job, report)
+    report = _decision_match_report(parsed_job, report, role_intelligence)
     report["tailoring_notes"] = _tailoring_notes(
         report, top_skills, top_projects, top_experience
     )
@@ -902,11 +962,12 @@ def _score_with_snapshot(
     parsed_job: Dict[str, Any],
     root: Path,
     associated_evidence_projects: Optional[List[Dict[str, Any]]] = None,
+    role_intelligence: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Score one immutable posting/profile snapshot with Evidence separated."""
     selected = list(associated_evidence_projects or [])
-    base = _score_parsed_job(parsed_job, root, [])
-    report = _score_parsed_job(parsed_job, root, selected) if selected else dict(base)
+    base = _score_parsed_job(parsed_job, root, [], role_intelligence)
+    report = _score_parsed_job(parsed_job, root, selected, role_intelligence) if selected else dict(base)
     evidence_ids = sorted(
         str(item.get("id") or item.get("title") or "") for item in selected
     )
@@ -944,7 +1005,12 @@ def _score_with_snapshot(
     return report
 
 
-def score_job_data(job_data: Dict[str, Any], project_root: Optional[PathInput] = None, associated_evidence_projects: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+def score_job_data(
+    job_data: Dict[str, Any],
+    project_root: Optional[PathInput] = None,
+    associated_evidence_projects: Optional[List[Dict[str, Any]]] = None,
+    role_intelligence: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
     """Score unsaved intake data so the UI can show the gate before generation."""
     incomplete = incomplete_match_report(job_data)
     if incomplete:
@@ -981,10 +1047,15 @@ def score_job_data(job_data: Dict[str, Any], project_root: Optional[PathInput] =
         "qualifications": extract_qualifications(canonical_text),
         "preferred_qualifications": extract_preferred_qualifications(canonical_text),
     }
-    return _score_with_snapshot(parsed_job, root, associated_evidence_projects)
+    return _score_with_snapshot(parsed_job, root, associated_evidence_projects, role_intelligence)
 
 
-def score_job_match(job_path: PathInput, project_root: Optional[PathInput] = None, associated_evidence_projects: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+def score_job_match(
+    job_path: PathInput,
+    project_root: Optional[PathInput] = None,
+    associated_evidence_projects: Optional[List[Dict[str, Any]]] = None,
+    role_intelligence: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
     """Return the legacy tailoring report plus the Sprint 13 decision gate."""
     root = Path(project_root) if project_root is not None else Path.cwd()
     parsed_job = parse_job_description(root / job_path)
@@ -1002,4 +1073,4 @@ def score_job_match(job_path: PathInput, project_root: Optional[PathInput] = Non
     )
     if incomplete:
         return incomplete
-    return _score_with_snapshot(parsed_job, root, associated_evidence_projects)
+    return _score_with_snapshot(parsed_job, root, associated_evidence_projects, role_intelligence)
