@@ -8,7 +8,11 @@ STATE_DIR="${CAREER_CATALYST_STATE_DIR:-$HOME/Library/Application Support/Career
 LOG_DIR="${CAREER_CATALYST_LOG_DIR:-$HOME/Library/Logs/Career Catalyst}"
 CONFIG_FILE="${CAREER_CATALYST_CONFIG_FILE:-$STATE_DIR/launcher.conf}"
 BASE_PORT="${CAREER_CATALYST_BASE_PORT:-8503}"
-PYTHON_BIN="${CAREER_CATALYST_PYTHON:-python3}"
+DEFAULT_PYTHON_BIN="$STATE_DIR/venv/bin/python"
+if [ ! -x "$DEFAULT_PYTHON_BIN" ]; then
+  DEFAULT_PYTHON_BIN="python3"
+fi
+PYTHON_BIN="${CAREER_CATALYST_PYTHON:-$DEFAULT_PYTHON_BIN}"
 OPEN_COMMAND="${CAREER_CATALYST_OPEN_COMMAND:-open}"
 LOCK_DIR="$STATE_DIR/launch.lock"
 STATE_FILE="$STATE_DIR/runtime.state"
@@ -223,9 +227,17 @@ main() {
   attempts=0
   while [ "$attempts" -lt 120 ]; do
     if is_healthy "$port"; then
-      log_message "Career Catalyst healthy pid=$pid url=$url"
-      open_url "$url"
-      return 0
+      # Health can briefly succeed while Streamlit is still handing off its
+      # process. Require the recorded PID to remain alive before reporting a
+      # successful launch, avoiding false positives and stale runtime.state.
+      sleep 0.5
+      if kill -0 "$pid" 2>/dev/null && is_healthy "$port"; then
+        log_message "Career Catalyst healthy pid=$pid url=$url"
+        open_url "$url"
+        return 0
+      fi
+      show_error "Career Catalyst stopped immediately after becoming healthy. See: $streamlit_log"
+      return 1
     fi
     if ! kill -0 "$pid" 2>/dev/null; then
       show_error "Career Catalyst stopped during startup. See: $streamlit_log"
