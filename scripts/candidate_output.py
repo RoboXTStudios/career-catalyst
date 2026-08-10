@@ -445,6 +445,8 @@ def candidate_cover_letter(context: Mapping[str, Any]) -> str:
         return _strategy_gtm_cover_letter(context, greeting, company, role)
     if role_family == "music_partnerships_label_relations":
         return _music_partnerships_cover_letter(context, greeting, company, role)
+    if role_family == "experiential_live_event_production":
+        return _experiential_cover_letter(context, greeting, company, role)
     adjacency = domain_adjacency(parsed)
     if archetype == "product_operations":
         selected_projects = cover_letter_evidence_selection(context)
@@ -513,6 +515,46 @@ def candidate_cover_letter(context: Mapping[str, Any]) -> str:
         )
     content = "\n\n".join((greeting, opening, leadership, execution, proof, closing, "Best,\n\nTrisha Lynch"))
     validate_candidate_output(content, context="Generated cover letter")
+    return content
+
+
+def _experiential_cover_letter(
+    context: Mapping[str, Any], greeting: str, company: str, role: str
+) -> str:
+    """Translate grounded operations experience toward an experiential role."""
+    parsed = context["parsed_job"]
+    projects = _selected_project_paragraphs(context, parsed)
+    content = "\n\n".join(
+        [
+            greeting,
+            (
+                f"The {role} opportunity at {company} stands out because it brings together creative activation, "
+                "production coordination, and live-event delivery. My background is in senior entertainment and "
+                "marketing operations, where I have built the planning, workflow, and stakeholder practices that "
+                "help complex work move from brief to execution."
+            ),
+            (
+                "At OMG23 (Omnicom Media Group), I advanced through five roles to Group Director, led 10 direct "
+                "reports, and provided strategic and operational leadership across an integrated 64-person "
+                "organization spanning Ad Operations, Creative Management, and Marketing Science and Analytics. "
+                "I translated demanding priorities into accountable plans, quality standards, timelines, and "
+                "cross-functional delivery across creative, media, analytics, technology, vendors, and client teams."
+            ),
+            (
+                "That foundation is transferable to experiential production. I would bring structured planning, "
+                "clear ownership, timeline visibility, stakeholder coordination, and practical follow-through to "
+                "activation work while respecting the specialized production expertise already on the team."
+            ),
+            *projects,
+            (
+                f"I would welcome the chance to learn how {company} is shaping this work and where the team needs "
+                "the most dependable operating support. I would bring calm senior judgment, creative respect, and "
+                "a disciplined approach to helping people coordinate complex delivery."
+            ),
+            "Best,\n\nTrisha Lynch",
+        ]
+    )
+    validate_candidate_output(content, context="Generated experiential cover letter")
     return content
 
 

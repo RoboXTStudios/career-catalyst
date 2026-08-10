@@ -40,25 +40,24 @@ ROLE_INTELLIGENCE_OVERRIDE_FIELDS = (
 # conservative and avoid implying restricted sales or music responsibilities.
 DYNAMIC_ROLE_WRITING = {
     "experiential_live_event_production": {
-        "headline": "Experiential Production & Live Events Leader | Activations | Production Operations",
+        "headline": "Senior Operations Leader | Entertainment | Activations | Cross-Functional Delivery",
         "summary": (
-            "Experiential production and live-events operator who coordinates budgets, timelines, vendors, fabrication, "
-            "venues, logistics, and onsite execution from planning through load-out. I bring structured production "
-            "management, creative-production coordination, and dependable cross-functional delivery."
+            "Senior operations leader with entertainment, creative-production, and activation-adjacent experience. "
+            "I bring structured planning, stakeholder coordination, timeline visibility, and cross-functional delivery "
+            "to live-event environments through dependable, practical execution."
         ),
         "competency_priorities": [
-            "Experiential Production", "Live-Event Execution", "Production Management",
-            "Budget & Timeline Management", "Vendor & Fabrication Management",
-            "Venue & Logistics Coordination", "Onsite Execution", "Creative Production",
+            "Production Operations", "Project & Program Management", "Stakeholder Management",
+            "Cross-Functional Leadership", "Creative Operations", "Entertainment Marketing",
+            "Workflow Governance", "Quality Assurance",
         ],
         "tools": {
             "Operations & Program Management": [
-                "Production Workflows", "Budget Tracking", "Timeline Management",
-                "Vendor Coordination", "Production Logistics",
+                "Workflow Design", "Timeline Management", "Stakeholder Coordination",
+                "Production Planning", "Quality-Assurance Frameworks",
             ],
             "Creative & Experiential": [
-                "Experiential Activations", "Fabrication Coordination", "Venue Management",
-                "Onsite Builds", "Load-In / Load-Out",
+                "Creative Collaboration", "Activation Planning", "Cross-Functional Delivery",
             ],
         },
     },
