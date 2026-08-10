@@ -300,6 +300,33 @@ def _cover_letter_value_sentences(context: Dict[str, Any]) -> List[str]:
     parsed_job = context.get("parsed_job", {})
     company = str(parsed_job.get("company") or "the team")
     role_family = str(context.get("role_family") or "business_operations")
+    intent_family = str(
+        (context.get("role_intent") or {}).get("package_role_family") or ""
+    )
+    if intent_family == "strategy_gtm_operations":
+        return [
+            "I would apply that discipline to planning cadence, workflow quality, executive reporting, and the handoffs that connect teams.",
+            "My goal is to make progress visible while keeping recommendations close to verified operating experience.",
+            "I value practical systems that improve decisions without adding process that teams cannot sustain.",
+        ]
+    if intent_family == "music_partnerships_label_relations":
+        return [
+            "I would bring careful preparation, clear communication, and consistent follow-through to partner coordination.",
+            "I value release readiness that respects creative voice and the specialized relationship knowledge already on the team.",
+            "My approach is organized, collaborative, and attentive to the details that make shared delivery dependable.",
+        ]
+    if intent_family == "experiential_live_event_production":
+        return [
+            "I would bring structured planning, visible timelines, clear ownership, and steady coordination to activation work.",
+            "I value practical support that helps creative and production partners stay aligned as delivery details change.",
+            "My approach keeps the operating foundation clear while respecting the specialized expertise of the event team.",
+        ]
+    if intent_family:
+        return [
+            "I would apply that discipline to the role's stated priorities, with clear decisions, visible dependencies, and practical follow-through.",
+            "I value operating systems that improve quality and momentum without adding process teams cannot sustain.",
+            "My approach is grounded in verified experience, direct communication, and respect for the people closest to the work.",
+        ]
     role_sentence = {
         "creative_marketing_ops": "I know how much strong creative work depends on clear intake, thoughtful prioritization, and practical systems that help teams protect quality under pressure.",
         "business_operations": "My best work has been making complex operations easier to see and run, with clear ownership, useful decision rhythms, and systems people can actually maintain.",
@@ -394,7 +421,15 @@ def _remove_repeated_dynamic_closing(content: str, context: Dict[str, Any]) -> s
         or (context.get("role_intelligence") or {}).get("role_family")
         or ""
     )
-    if role_family not in {"strategy_gtm_operations", "music_partnerships_label_relations"}:
+    if role_family not in {
+        "strategy_gtm_operations",
+        "music_partnerships_label_relations",
+        "experiential_live_event_production",
+        "product_strategy_ops",
+        "product_operations",
+        "gtm_product_activation",
+        "ai_operations_systems",
+    }:
         return content
     generic_markers = (
         "i bring a practical operating style:",
@@ -453,7 +488,11 @@ def _ground_cover_letter_in_selected_evidence(
     # established archetype letters retain their concise historical shape.
     remaining_narrative = (
         narrative[2:]
-        if role_family in {"strategy_gtm_operations", "music_partnerships_label_relations"}
+        if role_family in {
+            "strategy_gtm_operations",
+            "music_partnerships_label_relations",
+            "experiential_live_event_production",
+        }
         else []
     )
     grounded = [

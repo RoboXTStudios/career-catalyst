@@ -274,6 +274,11 @@ def _select_core_competencies(
         # Music-partnerships materials use only the eight role-relevant,
         # evidence-grounded competencies configured for that role family.
         return list((role_intent or {}).get("resume", {}).get("competency_priorities", []))[:8]
+    if (role_intent or {}).get("package_role_family") == "experiential_live_event_production":
+        # Stretch experiential roles use the conservative, transferable profile
+        # configured by role intent instead of copying unsupported posting terms
+        # from the general skills inventory.
+        return list((role_intent or {}).get("resume", {}).get("competency_priorities", []))[:8]
     skills = _all_skills(career_data)
     job_keywords = [str(keyword) for keyword in parsed_job.get("keywords", [])]
     intent_priorities = list(

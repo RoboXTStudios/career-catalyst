@@ -40,6 +40,100 @@ _KNOWN_GENERIC_FILLER = (
     "thrilled to apply",
 )
 
+_PLACEHOLDER_PATTERNS = (
+    r"\[\s*(?:company|role|hiring manager)\s*\]",
+    r"\b(?:COMPANY_NAME|ROLE_TITLE|INSERT\s+(?:COMPANY|ROLE)|TBD|TODO)\b",
+    r"\bHiring Manager\b",
+    r"\bRole Title\b",
+    r"(?:\bat|for|to|from)\s+Company\b",
+    r"(?m)^\s*Company\s*$",
+    r"(?m)^\s*<!--[^>]*company:\s*Company\s*-->\s*$",
+)
+_EXPERIENTIAL_STALE_TERMS = (
+    "martech",
+    "adtech",
+    "marketing technology",
+    "platform implementation",
+)
+_EXPERIENTIAL_DIRECT_CLAIM_RE = re.compile(
+    r"\b(?:led|managed|owned|directed|produced|executed|oversaw|operated|coordinated)\b"
+    r"[^.!?\n]{0,100}\b(?:fabrication|venues?|venue logistics|production logistics|"
+    r"load[- ]?in|load[- ]?out|onsite execution|onsite builds?)\b",
+    flags=re.IGNORECASE,
+)
+
+
+def _effective_role_family(
+    parsed_job: Mapping[str, Any], tailoring_metadata: Mapping[str, Any]
+) -> str:
+    role_intelligence = tailoring_metadata.get("role_intelligence") or {}
+    effective = role_intelligence.get("effective") or {}
+    raw = str(
+        effective.get("role_family")
+        or parsed_job.get("role_family")
+        or parsed_job.get("generation_role_family")
+        or ""
+    ).strip().lower()
+    if "experiential" in raw and "live event" in raw:
+        return "experiential_live_event_production"
+    if "strategy" in raw and "operations" in raw:
+        return "strategy_gtm_operations"
+    return raw.replace(" ", "_")
+
+
+def _readiness_reasons(
+    artifact_type: str,
+    text: str,
+    parsed_job: Mapping[str, Any],
+    tailoring_metadata: Mapping[str, Any],
+) -> list[str]:
+    """Apply narrow candidate-facing checks that belong at the final boundary."""
+    reasons: list[str] = []
+    for pattern in _PLACEHOLDER_PATTERNS:
+        if re.search(pattern, text):
+            reasons.append(
+                f"{artifact_type.replace('_', ' ').title()} contains unresolved placeholder text."
+            )
+            break
+
+    family = _effective_role_family(parsed_job, tailoring_metadata)
+    if family == "experiential_live_event_production":
+        if artifact_type == "cover_letter" and any(
+            term in text.lower() for term in _EXPERIENTIAL_STALE_TERMS
+        ):
+            reasons.append(
+                "Cover Letter uses stale MarTech/AdTech or platform language for an experiential role."
+            )
+        if _EXPERIENTIAL_DIRECT_CLAIM_RE.search(text):
+            reasons.append(
+                "Candidate-facing copy makes an unsupported direct experiential-production ownership claim."
+            )
+        lowered = text.lower()
+        if "experiential production & live events leader" in lowered or "live-events operator" in lowered:
+            reasons.append(
+                "Candidate-facing copy replaces the candidate's supported operations identity with a direct live-event identity."
+            )
+
+    if artifact_type == "cover_letter":
+        company = str(parsed_job.get("company") or "").strip()
+        if (
+            company
+            and company.lower() not in {"company", "unknown", "unknown company"}
+            and tailoring_metadata.get("role_intelligence")
+            and len(str(parsed_job.get("raw_text") or "")) > 200
+        ):
+            normalized_company = normalize_candidate_text(company).lower()
+            normalized_text = normalize_candidate_text(text).lower()
+            if normalized_company not in normalized_text:
+                reasons.append(
+                    f"Cover Letter does not name the known employer '{company}'."
+                )
+        if "i bring a practical operating style:" in text.lower() and "the through line in my experience" in text.lower():
+            reasons.append(
+                "Cover Letter contains repetitive generic operating-style closing paragraphs."
+            )
+    return reasons
+
 
 def _bounded(value: float) -> int:
     return int(max(0, min(100, round(value))))
@@ -197,6 +291,9 @@ def evaluate_candidate_facing_quality(
     for artifact_type, text in texts.items():
         if not text:
             continue
+        reasons.extend(
+            _readiness_reasons(artifact_type, text, parsed_job or {}, tailoring_metadata)
+        )
         selection_key = artifact_type
         if selection_key in artifact_usage:
             selection = dict(artifact_usage[selection_key] or {})
@@ -264,6 +361,12 @@ def evaluate_candidate_facing_quality(
                 "em dash" in reason or "candidate-language" in reason.lower() or "internal orchestration" in reason.lower()
                 for reason in reasons
             ),
+            "placeholders": not any("placeholder" in reason.lower() for reason in reasons),
+            "employer_specificity": not any("known employer" in reason.lower() for reason in reasons),
+            "role_family_consistency": not any("stale martech" in reason.lower() for reason in reasons),
+            "supported_experience": not any("unsupported direct experiential" in reason.lower() for reason in reasons),
+            "candidate_identity": not any("supported operations identity" in reason.lower() for reason in reasons),
+            "cover_letter_repetition": not any("repetitive generic" in reason.lower() for reason in reasons),
         },
     }
 
