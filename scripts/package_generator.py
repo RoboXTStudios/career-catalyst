@@ -63,6 +63,7 @@ try:
     )
     from .role_intent import (
         apply_role_intelligence_overrides,
+        align_role_intent_to_effective_intelligence,
         build_role_intent,
         reconcile_package_role_intelligence,
         role_intent_snapshot,
@@ -118,6 +119,7 @@ except ImportError:
     from evidence_tailoring import evidence_score_contribution, output_use_metadata
     from role_intent import (
         apply_role_intelligence_overrides,
+        align_role_intent_to_effective_intelligence,
         build_role_intent,
         reconcile_package_role_intelligence,
         role_intent_snapshot,
@@ -546,6 +548,8 @@ def build_package_context(
         if saved_value:
             parsed[field] = saved_value
     raw_company = str(parsed.get("company") or application.get("company") or "")
+    if raw_company and not str(parsed.get("company") or "").strip():
+        parsed["company"] = company_display_name(raw_company)
     role_title = str(parsed.get("job_title") or application.get("role") or "")
     tracker_company = company_display_name(application.get("company"))
     parsed_company = company_display_name(raw_company)
@@ -603,6 +607,7 @@ def build_package_context(
         application, intelligence, role_intent
     )
     intelligence = reconcile_package_role_intelligence(intelligence, role_intent)
+    role_intent = align_role_intent_to_effective_intelligence(role_intent, intelligence)
     # Dynamic role intelligence is already resolved for this exact posting.
     # Expose those labels to the shared Tailoring Plan even when no manual
     # override exists; otherwise the plan falls back to the misleading
@@ -863,6 +868,7 @@ def _generate_package_in_place(
             root,
             context.get("associated_evidence_projects", []),
             shared_role_intent,
+            parsed_job_override=context.get("parsed_job"),
         )
         styled = _safe_docx_export(
             export_styled_docx, resume["output_path"], root, "Styled resume DOCX"
@@ -875,6 +881,7 @@ def _generate_package_in_place(
             root,
             context.get("associated_evidence_projects", []),
             shared_role_intent,
+            parsed_job_override=context.get("parsed_job"),
         )
         resume_selection = dict(resume.get("evidence_selection") or {})
         styled_selection = dict(resume_selection)
@@ -930,6 +937,7 @@ def _generate_package_in_place(
             root,
             shared_role_intent,
             context.get("associated_evidence_projects", []),
+            parsed_job_override=context.get("parsed_job"),
         )
         strategy_pack = generate_strategy_pack(
             job_reference,
