@@ -2003,7 +2003,9 @@ def _render_role_card(
         )
         badge_column.markdown(_status_badges(application), unsafe_allow_html=True)
         try:
-            readiness = preflight_package_generation(tracker_id, [application], PROJECT_ROOT)
+            readiness = preflight_package_generation(
+                tracker_id, [application], PROJECT_ROOT, export_root=canonical_export_root(PROJECT_ROOT)
+            )
             readiness_label = {
                 "ready": "Ready to Generate",
                 "repairable": "Ready with Automatic Repairs",
@@ -3904,7 +3906,9 @@ def _render_generate_package(st: Any) -> None:
     )
     recovery_key = _package_recovery_key(tracker_id)
     if not st.session_state.get(recovery_key):
-        preflight = preflight_package_generation(tracker_id, applications, PROJECT_ROOT)
+        preflight = preflight_package_generation(
+            tracker_id, applications, PROJECT_ROOT, export_root=canonical_export_root(PROJECT_ROOT)
+        )
         if preflight.get("status") == "conflict":
             st.session_state[recovery_key] = {
                 "conflicts": preflight.get("conflicts") or []
@@ -3947,7 +3951,9 @@ def _render_generate_package(st: Any) -> None:
         type="primary",
         key=_package_recovery_action_key(tracker_id, "generate"),
     ):
-        preflight = preflight_package_generation(tracker_id, applications, PROJECT_ROOT)
+        preflight = preflight_package_generation(
+            tracker_id, applications, PROJECT_ROOT, export_root=canonical_export_root(PROJECT_ROOT)
+        )
         if preflight.get("status") == "conflict":
             st.session_state[recovery_key] = {
                 "conflicts": preflight.get("conflicts") or []
@@ -3969,6 +3975,7 @@ def _render_generate_package(st: Any) -> None:
                     PROJECT_ROOT,
                     generate_followups_too=False,
                     override_closed=override_closed,
+                    export_root=canonical_export_root(PROJECT_ROOT),
                 )
         except PackageGenerationError as error:
             if error.details and error.details.get("recovery"):

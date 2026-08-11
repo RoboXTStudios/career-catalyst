@@ -630,14 +630,43 @@ def reconcile_package_role_intelligence(
 ) -> dict[str, Any]:
     """Make dynamic intelligence and package generation expose one role family."""
     resolved = dict(intelligence)
+    overrides = normalize_role_intelligence_overrides(
+        role_intent.get("role_intelligence_overrides")
+    )
+    stale_experiential_intent = (
+        not overrides
+        and str(
+            role_intent.get("package_role_family")
+            or role_intent.get("primary_archetype")
+            or ""
+        )
+        == "martech_governance_adoption"
+        and str(resolved.get("role_family") or "")
+        == "experiential_live_event_production"
+    )
     family = str(
-        role_intent.get("package_role_family")
-        or resolved.get("role_family")
+        resolved.get("role_family")
+        if stale_experiential_intent
+        else (
+            (role_intent.get("package_role_family") if overrides else None)
+            or role_intent.get("package_role_family")
+            or resolved.get("role_family")
+        )
         or "business_operations"
     )
+    dynamic_labels = {
+        "music_partnerships_label_relations": "Music Partnerships & Label Relations",
+        "experiential_live_event_production": "Experiential Production / Live Event Production",
+        "strategy_gtm_operations": "Strategy & GTM Operations",
+    }
     label = str(
-        role_intent.get("package_role_label")
+        (
+            None
+            if stale_experiential_intent
+            else role_intent.get("package_role_label")
+        )
         or resolved.get("role_family_label")
+        or dynamic_labels.get(family)
         or humanize_identifier(family)
     )
     resolved["dynamic_role_family"] = intelligence.get("role_family")
@@ -651,6 +680,62 @@ def reconcile_package_role_intelligence(
         role_intent.get("effective_role_family") or label
     )
     resolved["package_role_archetype"] = role_intent.get("primary_archetype")
+    return resolved
+
+
+def align_role_intent_to_effective_intelligence(
+    role_intent: Mapping[str, Any], intelligence: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Keep candidate-facing writing on the resolved role family.
+
+    Persisted role-intent snapshots are retained for provenance, but a package
+    must not let a stale archetype or writing profile override current dynamic
+    Role Intelligence. Saved manual overrides remain authoritative.
+    """
+    resolved = deepcopy(dict(role_intent))
+    stale_experiential_intent = (
+        str(
+            resolved.get("package_role_family")
+            or resolved.get("primary_archetype")
+            or ""
+        )
+        == "martech_governance_adoption"
+        and str(intelligence.get("role_family") or "")
+        == "experiential_live_event_production"
+    )
+    if normalize_role_intelligence_overrides(
+        resolved.get("role_intelligence_overrides")
+    ) or not stale_experiential_intent:
+        return resolved
+    family = str(
+        intelligence.get("role_family")
+        or resolved.get("effective_role_family")
+        or resolved.get("package_role_family")
+        or ""
+    )
+    if not family:
+        return resolved
+    labels = {
+        "music_partnerships_label_relations": "Music Partnerships & Label Relations",
+        "experiential_live_event_production": "Experiential Production / Live Event Production",
+        "strategy_gtm_operations": "Strategy & GTM Operations",
+    }
+    resolved["package_role_family"] = family
+    resolved["effective_role_family"] = str(
+        intelligence.get("role_family_label") or labels.get(family) or family
+    )
+    resolved["package_role_label"] = str(
+        intelligence.get("role_family_label") or labels.get(family) or family
+    )
+    writing = DYNAMIC_ROLE_WRITING.get(family)
+    if writing:
+        resume = deepcopy(writing)
+        resume["headline_profile"] = resume.pop("headline")
+        resume["summary_profile"] = resume.pop("summary")
+        resume.setdefault("selected_project_limit", 0)
+        resume.setdefault("earlier_career_policy", "omit")
+        resume.setdefault("target_max_pages", 2)
+        resolved["resume"] = resume
     return resolved
 
 

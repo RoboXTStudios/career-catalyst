@@ -224,6 +224,7 @@ def generate_application_note(
     project_root: Optional[PathInput] = None,
     role_intent: Optional[Dict[str, Any]] = None,
     associated_evidence_projects: Optional[List[Dict[str, Any]]] = None,
+    parsed_job_override: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Generate and save a short application portal note."""
     context = load_generation_context(
@@ -231,6 +232,7 @@ def generate_application_note(
         project_root,
         associated_evidence_projects=associated_evidence_projects,
         role_intent=role_intent,
+        parsed_job_override=parsed_job_override,
     )
     return save_material(
         context,

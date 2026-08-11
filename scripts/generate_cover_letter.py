@@ -28,6 +28,7 @@ try:
     from .evidence_tailoring import (
         candidate_project_reference_violations,
         cover_letter_project_paragraph,
+        project_kind,
         project_title,
         public_artifact_selection,
     )
@@ -73,6 +74,7 @@ except ImportError:
     from evidence_tailoring import (
         candidate_project_reference_violations,
         cover_letter_project_paragraph,
+        project_kind,
         project_title,
         public_artifact_selection,
     )
@@ -107,6 +109,7 @@ def load_generation_context(
     project_root: Optional[PathInput] = None,
     associated_evidence_projects: Optional[List[Dict[str, Any]]] = None,
     role_intent: Optional[Dict[str, Any]] = None,
+    parsed_job_override: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Load career data, parsed job details, and the match report."""
     root = Path(project_root) if project_root is not None else Path.cwd()
@@ -115,7 +118,11 @@ def load_generation_context(
         resolved_job_path = root / resolved_job_path
 
     career_data = load_resume_foundation(root)
-    parsed_job = dict(parse_job_description(resolved_job_path))
+    parsed_job = dict(
+        parsed_job_override
+        if parsed_job_override is not None
+        else parse_job_description(resolved_job_path)
+    )
     for field in ("job_title", "company", "role"):
         if field in parsed_job and parsed_job[field] is not None:
             parsed_job[field] = unescape(str(parsed_job[field]))
@@ -453,10 +460,24 @@ def _ground_cover_letter_in_selected_evidence(
     """Keep the established narrative while making selected proof explicit."""
     decision = context.get("cover_letter_evidence_selection") or {}
     projects = list(decision.get("used_projects") or [])
+    existing_text = str(content or "").lower()
+
+    def already_allocated(project: Dict[str, Any]) -> bool:
+        aliases = {
+            str(project.get("id") or "").strip().lower(),
+            project_title(project).strip().lower(),
+        }
+        if project_kind(project) == "podcast":
+            aliases.add("just for us")
+        if project_kind(project) == "career_catalyst":
+            aliases.add("career catalyst")
+        return any(alias and alias in existing_text for alias in aliases)
+
     evidence_paragraphs = [
         paragraph
         for project in projects
-        if (paragraph := cover_letter_project_paragraph(project, context["parsed_job"]))
+        if not already_allocated(project)
+        and (paragraph := cover_letter_project_paragraph(project, context["parsed_job"]))
     ]
     if not evidence_paragraphs:
         return content
@@ -1478,10 +1499,15 @@ def generate_cover_letter(
     project_root: Optional[PathInput] = None,
     associated_evidence_projects: Optional[List[Dict[str, Any]]] = None,
     role_intent: Optional[Dict[str, Any]] = None,
+    parsed_job_override: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Generate and save a concise TXT cover letter with safe DOCX when available."""
     context = load_generation_context(
-        job_path, project_root, associated_evidence_projects, role_intent
+        job_path,
+        project_root,
+        associated_evidence_projects,
+        role_intent,
+        parsed_job_override=parsed_job_override,
     )
     grounded_content = _ground_cover_letter_in_selected_evidence(
         _cover_letter_content(context), context

@@ -1089,6 +1089,7 @@ def tailor_resume(
     project_root: Optional[PathInput] = None,
     associated_evidence_projects: Optional[List[Dict[str, Any]]] = None,
     role_intent: Optional[Dict[str, Any]] = None,
+    parsed_job_override: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Generate and save a tailored Markdown resume."""
     if resume_profile not in VALID_RESUME_PROFILES:
@@ -1103,7 +1104,11 @@ def tailor_resume(
     associated_evidence_projects = associated_evidence_projects or []
     verified_evidence_context = evidence_generation_context(associated_evidence_projects)
     manual_evidence_selected = bool(associated_evidence_projects)
-    parsed_job = parse_job_description(root / job_path)
+    parsed_job = dict(
+        parsed_job_override
+        if parsed_job_override is not None
+        else parse_job_description(root / job_path)
+    )
     shared_role_intent = role_intent or build_role_intent(parsed_job, root)
     evidence_selection = select_evidence_for_artifact(
         parsed_job,
