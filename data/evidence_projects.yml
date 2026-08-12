@@ -106,3 +106,33 @@ evidence_projects:
   links: []
   notes: ''
   status: Active
+- id: multiverse_editorial
+  title: OMG23 Multiverse Newsletter
+  employer: OMG23
+  industry: Entertainment & Media
+  function: Internal Communications
+  project_type: Internal Editorial Publication
+  timeframe: 2023-2026
+  problem: Multiverse was a company-wide internal publication spanning creativity, innovation, culture, music, emerging media, and employee storytelling.
+  actions: Created and served as Managing Editor of Multiverse, developing its editorial voice, recurring content strategy, and contributor framework.
+  results: Reached more than 400 employees through an internal publication highlighting creativity, innovation, culture, music, emerging media, and employee storytelling.
+  skills:
+  - Internal Communications
+  - Editorial Operations
+  - Cross-Functional Coordination
+  - Employee Engagement
+  technologies: []
+  tags:
+  - Editorial
+  - Storytelling
+  - Creative Operations
+  - Employee Communication
+  - Content Strategy
+  - Contributor Coordination
+  - Internal Communications
+  supporting_evidence:
+  - data/achievements.yml:multiverse_editorial
+  - data/projects.yml:OMG23 Multiverse Newsletter
+  links: []
+  notes: ''
+  status: Active
