@@ -1793,24 +1793,33 @@ def _project_option_labels(projects: list[Dict[str, Any]]) -> Dict[str, str]:
     return labels
 
 
+def _relevant_evidence_options(
+    project_root: Path,
+) -> tuple[list[Dict[str, Any]], Dict[str, str], list[str]]:
+    """Build the exact active Evidence option collection used by Streamlit."""
+    projects = load_evidence_projects(project_root)
+    active_projects = [
+        project for project in projects if project.get("status") != "Archived"
+    ]
+    labels = _project_option_labels(active_projects)
+    return active_projects, labels, list(labels)
+
+
 def _render_relevant_evidence_panel(
     st: Any, application: Dict[str, Any], tracker_id: str
 ) -> None:
     """Attach evidence projects to a role without modifying the evidence records."""
     try:
-        projects = load_evidence_projects(PROJECT_ROOT)
+        active_projects, labels, options = _relevant_evidence_options(PROJECT_ROOT)
     except EvidenceEngineError as error:
         st.warning(f"Evidence projects could not be loaded: {error}")
         return
-    active_projects = [project for project in projects if project.get("status") != "Archived"]
     if not active_projects:
         st.caption("No active evidence projects available yet.")
         return
     job_health = _safe_job_reference_health(application, PROJECT_ROOT)
     if job_health.get("status") != "valid":
         _render_missing_posting_notice(st, job_health)
-    labels = _project_option_labels(active_projects)
-    options = list(labels)
     evidence_resolution = resolve_selected_evidence(application, active_projects)
     if evidence_resolution["missing_ids"]:
         st.warning(

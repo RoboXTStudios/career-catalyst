@@ -164,6 +164,7 @@ def test_existing_evidence_ids_and_provenance_are_preserved():
         "enterprise_collaboration_platform_adoption_stakeholder_enablement",
         "operational_workflow_design_airtable_implementation",
         "enterprise_employee_engagement_community_fundraising_initiative",
+        "multiverse_editorial",
     }
     assert {(record["id"], record["source"]) for record in cards} == {
         (

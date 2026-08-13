@@ -18,6 +18,7 @@ try:
         load_resume_foundation,
         validate_candidate_language,
     )
+    from .resume_platforms import filter_resume_platform_items
     from .evidence_engine import evidence_generation_context, load_writing_voice_profile
     from .evidence_tailoring import (
         candidate_project_reference_violations,
@@ -53,6 +54,7 @@ except ImportError:
         load_resume_foundation,
         validate_candidate_language,
     )
+    from resume_platforms import filter_resume_platform_items
     from evidence_engine import evidence_generation_context, load_writing_voice_profile
     from evidence_tailoring import (
         candidate_project_reference_violations,
@@ -869,6 +871,10 @@ def _render_markdown(
             career_data, parsed_job, resume_profile, role_intent
         )
     )
+    platforms = [
+        (group_name, filter_resume_platform_items(tools))
+        for group_name, tools in platforms
+    ]
     positions = career_data["data"]["positions"].get("positions", [])
     omg_position = next(
         (position for position in positions if "OMG23" in position.get("company", "")),

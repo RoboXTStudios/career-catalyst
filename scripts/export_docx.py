@@ -18,10 +18,12 @@ try:
     from .filename_utils import build_upload_filename, short_company_name
     from .load_data import DataLoadError, load_yaml_file
     from .parse_job import JobParseError, parse_job_description
+    from .resume_platforms import filter_resume_platform_items
 except ImportError:
     from filename_utils import build_upload_filename, short_company_name
     from load_data import DataLoadError, load_yaml_file
     from parse_job import JobParseError, parse_job_description
+    from resume_platforms import filter_resume_platform_items
 
 
 PathInput = Union[str, Path]
@@ -141,7 +143,13 @@ def _load_platform_categories(project_root: Path) -> List[Dict[str, Any]]:
             raise DocxExportError(
                 f"Canonical platform category '{category['name']}' must contain an items list."
             )
-    return categories
+    return [
+        {
+            **category,
+            "items": filter_resume_platform_items(category.get("items", [])),
+        }
+        for category in categories
+    ]
 
 
 def _set_style_font(
@@ -664,7 +672,7 @@ def _platform_categories_from_blocks(
         next_block = blocks[index + 1] if index + 1 < len(blocks) else None
         if not next_block or next_block["type"] != "paragraph":
             continue
-        items = [item.strip() for item in next_block["text"].split(",") if item.strip()]
+        items = filter_resume_platform_items(next_block["text"].split(","))
         if items:
             categories.append({"name": block["text"], "items": items})
     return categories or fallback

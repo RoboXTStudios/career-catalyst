@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any
 
@@ -241,9 +242,8 @@ def validate_evidence_project(project: dict[str, Any]) -> None:
         raise EvidenceEngineError(f"Evidence project missing required fields: {', '.join(missing)}")
 
 
-def load_evidence_projects(project_root: str | Path | None = None) -> list[dict[str, Any]]:
-    """Load reusable project-based career evidence from YAML storage."""
-    path = _evidence_project_path(project_root)
+def _load_evidence_project_file(path: Path) -> list[dict[str, Any]]:
+    """Load one Evidence project file without applying durable-root overlays."""
     if not path.exists():
         return []
     try:
@@ -256,6 +256,36 @@ def load_evidence_projects(project_root: str | Path | None = None) -> list[dict[
     if not isinstance(projects, list):
         raise EvidenceEngineError("data/evidence_projects.yml must contain evidence_projects list")
     return [normalize_evidence_project(project) for project in projects if isinstance(project, dict)]
+
+
+def load_evidence_projects(project_root: str | Path | None = None) -> list[dict[str, Any]]:
+    """Load runtime Evidence plus missing canonical records from the code root.
+
+    Durable installations intentionally keep user-owned runtime data separate
+    from deployed code. Runtime records remain authoritative; newly shipped
+    canonical records are exposed by stable ID without rewriting runtime data.
+    """
+    path = _evidence_project_path(project_root)
+    projects = _load_evidence_project_file(path)
+    code_root_value = str(os.environ.get("CAREER_CATALYST_CODE_ROOT") or "").strip()
+    if not code_root_value:
+        return projects
+
+    code_path = _evidence_project_path(Path(code_root_value).expanduser())
+    try:
+        same_file = code_path.resolve() == path.resolve()
+    except OSError:
+        same_file = code_path == path
+    if same_file:
+        return projects
+
+    known_ids = {str(project.get("id") or "") for project in projects}
+    for project in _load_evidence_project_file(code_path):
+        project_id = str(project.get("id") or "")
+        if project_id not in known_ids:
+            projects.append(project)
+            known_ids.add(project_id)
+    return projects
 
 
 def save_evidence_projects(projects: list[dict[str, Any]], project_root: str | Path | None = None) -> Path:
