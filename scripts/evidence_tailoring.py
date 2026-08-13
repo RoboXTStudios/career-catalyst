@@ -42,7 +42,11 @@ def project_title(project: Mapping[str, Any]) -> str:
 def _candidate_project_records(context: Mapping[str, Any]) -> list[Mapping[str, Any]]:
     """Return known project records without changing source Evidence."""
     data = (context.get("career_data") or {}).get("data", {})
-    records: list[Mapping[str, Any]] = []
+    records: list[Mapping[str, Any]] = [
+        item
+        for item in (context.get("associated_evidence_projects") or [])
+        if isinstance(item, Mapping)
+    ]
     for section, key in (("projects", "projects"), ("evidence_projects", "evidence_projects")):
         values = data.get(section, {})
         if isinstance(values, Mapping):
