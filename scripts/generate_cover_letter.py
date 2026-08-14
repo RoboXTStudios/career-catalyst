@@ -178,7 +178,8 @@ def save_material(
     repair_attempts: int = 3,
 ) -> Dict[str, Any]:
     """Validate and save one Markdown application material, repairing length when configured."""
-    content = normalize_candidate_text(content)
+    employer = str(context.get("parsed_job", {}).get("company") or "")
+    content = normalize_candidate_text(content, employer=employer)
     artifact_type = {
         "Cover_Letter": "cover_letter",
         "Application_Note": "application_note",
@@ -194,20 +195,22 @@ def save_material(
             + ", ".join(provenance_violations)
             + ". Select the project for this artifact or record an allowed fallback."
         )
-    content = cleanup_repeated_words(content)
+    content = cleanup_repeated_words(content, employer=employer)
     rewrite_notes: list[dict[str, str]] = []
     content, initial_rewrites = rewrite_banned_voice_phrases(content)
     rewrite_notes.extend(initial_rewrites)
     word_count = _word_count(content)
     attempts = 0
     while not minimum_words <= word_count <= maximum_words and repair_content and attempts < repair_attempts:
-        content = cleanup_repeated_words(repair_content(content, context))
-        content = normalize_candidate_text(content)
+        content = cleanup_repeated_words(
+            repair_content(content, context), employer=employer
+        )
+        content = normalize_candidate_text(content, employer=employer)
         content, attempt_rewrites = rewrite_banned_voice_phrases(content)
         rewrite_notes.extend(attempt_rewrites)
         word_count = _word_count(content)
         attempts += 1
-    content = normalize_candidate_text(content)
+    content = normalize_candidate_text(content, employer=employer)
     provenance_violations = candidate_project_reference_violations(
         content, context, artifact_type
     )

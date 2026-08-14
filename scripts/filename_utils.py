@@ -208,6 +208,36 @@ def company_display_name(company: Any) -> str:
     ).strip().rstrip(" ,.")
 
 
+def canonicalize_employer_mentions(text: Any, company: Any) -> str:
+    """Canonicalize only recognized aliases of the current employer in prose."""
+    content = str(text or "")
+    display_name = company_display_name(company)
+    display_key = _key(display_name)
+    if not content or not display_key:
+        return content
+
+    aliases = {
+        alias
+        for alias, canonical in CANONICAL_EMPLOYER_NAMES.items()
+        if _key(company_display_name(canonical)) == display_key
+    }
+    company_key = _key(str(company or ""))
+    if not aliases or company_key not in aliases | {display_key}:
+        return content
+    aliases.update((company_key, display_key))
+
+    patterns = []
+    for alias in sorted(aliases, key=len, reverse=True):
+        tokens = _tokens(alias)
+        if not tokens:
+            continue
+        patterns.append(r"[\W_]+".join(re.escape(token) for token in tokens))
+    if not patterns:
+        return content
+    pattern = r"(?<![A-Za-z0-9])(?:" + "|".join(patterns) + r")(?![A-Za-z0-9])"
+    return re.sub(pattern, display_name, content, flags=re.IGNORECASE)
+
+
 def short_company_name(company: str) -> str:
     """Return a concise company label, preferring known public-facing names."""
     display_name = company_display_name(company)

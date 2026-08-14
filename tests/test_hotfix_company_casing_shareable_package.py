@@ -4,7 +4,12 @@ import hashlib
 import json
 from pathlib import Path
 
-from scripts.filename_utils import build_upload_filename, company_display_name
+from scripts.filename_utils import (
+    build_upload_filename,
+    canonicalize_employer_mentions,
+    company_display_name,
+)
+from scripts.generate_cover_letter import save_material
 from scripts.materials_library import (
     copy_role_package_for_sharing,
     organize_package_outputs,
@@ -22,6 +27,66 @@ def test_company_display_preserves_only_approved_acronym_casing():
     assert company_display_name("Ordinary Company") == "Ordinary Company"
     assert company_display_name("Cascade") == "Cascade"
     assert company_display_name("OMG23") == "OMG23 (Omnicom Media Group)"
+
+
+def test_candidate_employer_boundary_repairs_only_the_current_known_employer():
+    source = (
+        "Dear Axs Hiring Team,\n\n"
+        "I would bring Axs grounded product thinking. "
+        "Netflix and Paramount are market examples, while short words stay as written."
+    )
+
+    repaired = canonicalize_employer_mentions(source, "AXS")
+
+    assert "Dear AXS Hiring Team," in repaired
+    assert "I would bring AXS" in repaired
+    assert "Axs" not in repaired
+    assert "Netflix and Paramount" in repaired
+    assert "short words stay as written" in repaired
+
+
+def test_known_employer_mappings_remain_stable_in_candidate_prose():
+    assert canonicalize_employer_mentions("Gitlab role", "GitLab") == "GitLab role"
+    assert canonicalize_employer_mentions(
+        "OMD Entertainment role", "OMG23 (Omnicom Media Group)"
+    ) == "OMG23 (Omnicom Media Group) role"
+    assert canonicalize_employer_mentions("netflix role", "Netflix") == "netflix role"
+
+
+def test_saved_cover_letter_canonicalizes_greeting_and_body_after_repair(tmp_path: Path):
+    context = {
+        "root": tmp_path,
+        "parsed_job": {
+            "job_title": "Sr. Manager, Product Marketing",
+            "company": "AXS",
+            "raw_text": "Lead product marketing and cross-functional launch planning at AXS.",
+        },
+        "career_data": {
+            "data": {"personal_brand": {"candidate": {"name": "Trisha Lynch"}}}
+        },
+        "match_report": {"match_score": 80},
+        "voice": {"avoid": []},
+        "writing_voice": {"banned_phrases": []},
+        "material_editing_plan": {"banned_phrases": []},
+    }
+
+    result = save_material(
+        context,
+        "Cover_Letter",
+        "Too short.",
+        minimum_words=12,
+        maximum_words=80,
+        repair_content=lambda _content, _context: (
+            "Dear Axs Hiring Team,\n\n"
+            "I would bring Axs grounded product thinking, clear priorities, and dependable "
+            "cross-functional execution for this role."
+        ),
+    )
+    saved = Path(result["output_path"]).read_text(encoding="utf-8")
+
+    assert "Dear AXS Hiring Team," in saved
+    assert "I would bring AXS" in saved
+    assert "Axs" not in saved
 
 
 def test_axs_filename_slug_remains_lowercase():

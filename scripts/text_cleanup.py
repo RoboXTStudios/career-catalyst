@@ -3,6 +3,11 @@
 import re
 from html import unescape
 
+try:
+    from .filename_utils import canonicalize_employer_mentions
+except ImportError:
+    from filename_utils import canonicalize_employer_mentions
+
 
 REPEATABLE_CLEANUP_WORDS = (
     "role",
@@ -148,7 +153,7 @@ def missing_subject_prose_fragments(text: str) -> list[str]:
     return fragments
 
 
-def normalize_candidate_text(text: str) -> str:
+def normalize_candidate_text(text: str, *, employer: str = "") -> str:
     """Normalize non-factual candidate-facing language at the output boundary.
 
     This function is deliberately limited to presentation policy.  It is used on
@@ -191,12 +196,13 @@ def normalize_candidate_text(text: str) -> str:
     )
     cleaned = normalize_campaignos_claims(cleaned)
     cleaned = re.sub(r"\ba\s+experienced\b", "an experienced", cleaned, flags=re.IGNORECASE)
+    cleaned = canonicalize_employer_mentions(cleaned, employer)
     return cleaned
 
 
-def cleanup_repeated_words(text: str) -> str:
+def cleanup_repeated_words(text: str, *, employer: str = "") -> str:
     """Collapse adjacent repeats for a small set of safe, common words."""
-    cleaned = normalize_candidate_text(text)
+    cleaned = normalize_candidate_text(text, employer=employer)
     for word in REPEATABLE_CLEANUP_WORDS:
         pattern = re.compile(rf"\b({re.escape(word)})\b(\s+)\1\b", re.IGNORECASE)
         while pattern.search(cleaned):

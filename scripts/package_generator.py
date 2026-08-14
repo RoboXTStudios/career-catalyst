@@ -548,7 +548,7 @@ def build_package_context(
         if saved_value:
             parsed[field] = saved_value
     raw_company = str(parsed.get("company") or application.get("company") or "")
-    if raw_company and not str(parsed.get("company") or "").strip():
+    if raw_company:
         parsed["company"] = company_display_name(raw_company)
     role_title = str(parsed.get("job_title") or application.get("role") or "")
     tracker_company = company_display_name(application.get("company"))
