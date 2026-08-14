@@ -341,6 +341,7 @@ def _cover_letter_value_sentences(context: Dict[str, Any]) -> List[str]:
         "creative_marketing_ops": "I know how much strong creative work depends on clear intake, thoughtful prioritization, and practical systems that help teams protect quality under pressure.",
         "business_operations": "My best work has been making complex operations easier to see and run, with clear ownership, useful decision rhythms, and systems people can actually maintain.",
         "product_strategy_ops": "I am comfortable translating product and business priorities into roadmaps, decisions, feedback loops, and operating rhythms that keep cross-functional work moving.",
+        "product_marketing": "I connect audience insight and product value with clear positioning, messaging, launch readiness, enablement, and adoption across cross-functional teams.",
         "ai_operations_systems": "I build AI-enabled workflows with a practical bias: reduce repetitive work, surface risks earlier, and leave important judgment with the people closest to the work.",
     }.get(
         role_family,
@@ -436,6 +437,7 @@ def _remove_repeated_dynamic_closing(content: str, context: Dict[str, Any]) -> s
         "music_partnerships_label_relations",
         "experiential_live_event_production",
         "product_strategy_ops",
+        "product_marketing",
         "product_operations",
         "gtm_product_activation",
         "ai_operations_systems",
@@ -1366,7 +1368,7 @@ def _dynamic_cover_letter_content(context: Dict[str, Any]) -> str:
             "that reached 400+ employees. Through RoboXT Studios, I continue to develop creative, "
             "photography, editorial, and web-publishing systems with an independent builder perspective."
         )
-    elif role_family in {"product_strategy_ops", "gtm_product_activation"}:
+    elif role_family in {"product_strategy_ops", "gtm_product_activation", "product_marketing"}:
         experience = (
             f"At {public_omg23_name(context.get('career_data', {}))}, I worked across business priorities, "
             "platform activation, analytics, technology, measurement, and delivery for large entertainment "

@@ -244,6 +244,29 @@ role_intent:
         secondary_story: campaignos_working_prototype
         framing: Connect product and technology strategy, product activation, active product building, requirements, feedback loops, quality, GTM enablement, and adoption.
 
+    product_marketing:
+      signals:
+        action_outcome: [product marketing, product positioning, positioning and messaging, product messaging, go-to-market strategy, go-to-market plans, product launch, product adoption, product education, sales enablement, partner enablement, integrated product communications]
+        supporting: [audience insights, customer insights, launch readiness, content strategy, editorial strategy, marketing technology, measurement, cross-functional product marketing]
+        generic: [messaging, go-to-market, adoption]
+      primary_hiring_need: Translate product value and audience insight into positioning, messaging, go-to-market plans, launch readiness, product education, enablement, and adoption.
+      required_outcomes: [clarify_positioning, strengthen_messaging, plan_go_to_market, improve_launch_readiness, drive_product_adoption]
+      work_motions: [audience_insight, positioning, messaging, launch_planning, content_enablement, stakeholder_coordination, measurement]
+      lead_evidence: [enterprise_campaign_delivery, disney_plus_launch_support, multiverse]
+      supporting_evidence: [enterprise_collaboration_platform_adoption_stakeholder_enablement, martech_campaign_execution, workflow_governance]
+      suppressed_evidence: [unselected_product_projects, unrelated_ai_workflows, requirements_schemas]
+      resume:
+        <<: *shared_services_resume
+        headline: Senior Marketing Operations & Product Enablement Leader | Entertainment | GTM | Adoption
+        summary: Marketing operations and product-enablement leader who connects audience insight, product value, positioning, messaging, launch readiness, stakeholder communications, and adoption through disciplined cross-functional execution.
+        competency_priorities: [Entertainment Marketing, Go-to-Market Enablement, Product Adoption, Positioning & Messaging, Launch Readiness, Audience & Stakeholder Communications, Cross-Functional Leadership, Marketing Operations]
+        selected_project_limit: 0
+        earlier_career_policy: compact_relevant_only
+      cover_letter:
+        primary_story: enterprise_campaign_delivery
+        secondary_story: disney_plus_launch_support
+        framing: Lead with transferable entertainment marketing, audience insight, positioning, messaging, launch readiness, product education, enablement, adoption, measurement, and cross-functional execution.
+
     creative_operations:
       signals:
         action_outcome: [creative workflow, creative capacity, asset delivery, creative resource management, creative intake, studio operations, production workflow, asset coordination]

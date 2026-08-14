@@ -31,6 +31,7 @@ COMPANY_CATEGORIES = (
 
 ROLE_FAMILIES = (
     "creative_marketing_ops",
+    "product_marketing",
     "product_strategy_ops",
     "transformation_advisory",
     "music_content_strategy",
@@ -337,6 +338,11 @@ ROLE_GUIDANCE = {
         "angle": "align product, technology, data, and business priorities through decisions, roadmaps, OKRs, and operating rhythms",
         "proof_points": ["CampaignOS product thinking", "executive operating clarity", "technology partnerships"],
     },
+    "product_marketing": {
+        "tone": ["audience-aware", "product-aware", "clear", "commercial"],
+        "angle": "connect audience insight and product value with positioning, messaging, go-to-market plans, launch readiness, product education, enablement, and adoption",
+        "proof_points": ["entertainment marketing delivery", "launch readiness and adoption", "audience and stakeholder communications"],
+    },
     "gtm_product_activation": {
         "tone": ["precise", "commercial", "product-aware"],
         "angle": "connect product priorities with GTM activation, seller enablement, adoption, feedback loops, and measurable learning",
@@ -558,6 +564,17 @@ def detect_role_family(job_title: str = "", job_description: str = "") -> str:
             "product organization",
         )
     )
+    product_marketing_title = any(
+        _contains_phrase(title, signal)
+        for signal in (
+            "product marketing", "product marketing manager",
+            "product marketing lead", "product marketing director",
+        )
+    )
+    product_operations_title = any(
+        _contains_phrase(title, signal)
+        for signal in ("product operations", "product ops")
+    )
 
     # Explicit operational responsibilities outrank broad creative, mission, or
     # company-theme signals.  Keep the existing family vocabulary so all current
@@ -598,6 +615,10 @@ def detect_role_family(job_title: str = "", job_description: str = "") -> str:
     )
     production_hits = [signal for signal in production_signals if _contains_phrase(combined, signal)]
     production_density = len(production_hits)
+    if product_marketing_title:
+        return "product_marketing"
+    if product_operations_title:
+        return "product_strategy_ops"
     if campaign_management_title:
         return "strategy_gtm_operations"
     if (experiential_title and production_density >= 2) or (
@@ -675,6 +696,17 @@ def detect_role_family(job_title: str = "", job_description: str = "") -> str:
         or any(signal in title for signal in ("gtm", "go to market"))
     ):
         return "gtm_product_activation"
+    product_marketing_responsibilities = sum(
+        1
+        for signal in (
+            "product positioning", "positioning and messaging", "product messaging",
+            "go to market strategy", "go-to-market strategy", "product education",
+            "product marketing strategy", "product launch", "sales enablement",
+        )
+        if _contains_phrase(description, signal)
+    )
+    if product_marketing_responsibilities >= 2:
+        return "product_marketing"
     if any(signal in combined for signal in ("streaming", "franchise", "content slate", "studios")) and any(
         signal in title for signal in ("strategy", "operations", "initiatives")
     ):
@@ -758,6 +790,14 @@ def build_dynamic_voice_profile(
         category_label = "Music / Live Events & Experiential"
         family_label = "Experiential Production / Live Event Production"
         voice_label = "Music + Experiential Production"
+    elif role_family == "product_marketing":
+        category_label = (
+            "Music / Entertainment Operations"
+            if category == "music_entertainment_operations"
+            else category.replace("_", " ").title()
+        )
+        family_label = "Product Marketing"
+        voice_label = f"Dynamic {category.replace('_', ' ').title()}"
     elif role_family == "strategy_gtm_operations" and any(
         signal in normalized_title
         for signal in ("campaign management", "campaign infrastructure")

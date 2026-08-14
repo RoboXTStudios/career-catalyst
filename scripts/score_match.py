@@ -59,6 +59,21 @@ GENERIC_TERMS = {
     "working",
 }
 
+# Candidate-facing Evidence diagnostics are derived from semantic requirements,
+# not arbitrary one-word overlap. Legacy token matches remain available to the
+# established scoring calculation so this presentation fix cannot manufacture a
+# score change.
+MEANINGFUL_EVIDENCE_REQUIREMENTS = (
+    "audience insights", "business operations", "campaign management",
+    "content strategy", "cross-functional collaboration", "delivery outcomes",
+    "cross-functional leadership", "executive communication",
+    "go-to-market strategy", "launch readiness", "marketing technology",
+    "measurement readiness", "partner enablement", "positioning and messaging",
+    "product adoption", "product education", "product launch", "product operations",
+    "product marketing", "sales enablement", "stakeholder alignment",
+    "workflow governance",
+)
+
 RESUME_PROFILE_KEYWORDS = {
     "executive_operations": (
         "strategy",
@@ -303,6 +318,27 @@ def _candidate_text(career_data: Dict[str, Any], associated_evidence_projects: O
 
 def _matched_keywords_for_text(keywords: Sequence[str], text: str, allow_partial: bool = False) -> List[str]:
     return [keyword for keyword in keywords if _keyword_matches_text(str(keyword), text, allow_partial)]
+
+
+def _meaningful_evidence_matches(parsed_job: Dict[str, Any], evidence_text: str) -> List[str]:
+    """Return semantic phrases explicitly present in both posting and Evidence."""
+    posting_text = "\n".join(
+        _flatten_strings(
+            [
+                parsed_job.get("job_title"), parsed_job.get("raw_text"),
+                parsed_job.get("job_description"), parsed_job.get("responsibilities"),
+                parsed_job.get("qualifications"), parsed_job.get("keywords"),
+            ]
+        )
+    )
+    normalized_posting = _normalize_text(posting_text)
+    normalized_evidence = _normalize_text(evidence_text)
+    return [
+        phrase
+        for phrase in MEANINGFUL_EVIDENCE_REQUIREMENTS
+        if _normalize_text(phrase) in normalized_posting
+        and _normalize_text(phrase) in normalized_evidence
+    ]
 
 
 def _score_from_count(matched_count: int, target_count: int) -> float:
@@ -953,7 +989,9 @@ def _score_parsed_job(
     top_skills = _top_matching_skills(career_data, parsed_job)
     top_projects = _top_matching_projects(career_data, keywords)
     top_experience = _top_matching_experience(career_data, keywords)
-    evidence_matches = _matched_keywords_for_text(keywords, _evidence_text(associated_evidence_projects))
+    evidence_text = _evidence_text(associated_evidence_projects)
+    evidence_matches = _matched_keywords_for_text(keywords, evidence_text)
+    evidence_match_details = _meaningful_evidence_matches(parsed_job, evidence_text)
     missing_keywords = _missing_keywords(keywords, candidate_text)
 
     skill_score = _score_from_count(len(top_skills), 6)
@@ -985,6 +1023,7 @@ def _score_parsed_job(
         "associated_evidence_count": len(associated_evidence_projects),
         "associated_evidence_project_titles": [str(p.get("title")) for p in associated_evidence_projects if p.get("title")],
         "associated_evidence_matches": evidence_matches[:8],
+        "associated_evidence_match_details": evidence_match_details[:8],
         "missing_keywords": missing_keywords,
         "recommended_resume_profile": _recommended_resume_profile(parsed_job),
         "tailoring_notes": [],

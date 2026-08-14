@@ -194,7 +194,7 @@ def test_sanitized_openai_score_is_deterministic_and_unchanged_by_generation(tmp
     contribution = evidence_score_contribution(baseline, adjusted)
     assert baseline["match_score"] == expected["base_score"] == 75
     assert contribution["delta"] == expected["evidence_contribution"] == 0
-    assert contribution["matched_requirements"] == ["lead", "delivery", "product"]
+    assert contribution["matched_requirements"] == ["delivery outcomes", "product operations"]
     assert adjusted["match_score"] == expected["final_score"] == 75
 
     generate_package(

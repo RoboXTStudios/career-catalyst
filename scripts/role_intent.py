@@ -22,6 +22,7 @@ ROLE_INTENT_RULES_PATH = Path("config/role_intent_rules.yml")
 SOURCE_ROLE_INTENT_RULES_PATH = Path(__file__).resolve().parents[1] / ROLE_INTENT_RULES_PATH
 PACKAGE_ROLE_FAMILIES = {
     "product_operations": ("product_strategy_ops", "Product Strategy & Operations"),
+    "product_marketing": ("product_marketing", "Product Marketing"),
     "business_operations_chief_of_staff": ("business_operations", "Business Operations & Strategy"),
     "general_operations": ("business_operations", "Senior Operations Leadership"),
 }
@@ -150,6 +151,13 @@ def _product_management_title(role: Mapping[str, Any]) -> bool:
             r"^product lead\b",
         )
     )
+
+
+def _product_marketing_title(role: Mapping[str, Any]) -> bool:
+    title = re.sub(
+        r"\s+", " ", str(role.get("job_title") or role.get("title") or role.get("role") or "")
+    ).strip().lower()
+    return _contains(title, "product marketing")
 
 
 def _product_management_title_excluded(title_or_role: Any) -> bool:
@@ -334,11 +342,23 @@ def build_role_intent(
             str(role.get("job_title") or role.get("title") or role.get("role") or ""),
             str(role.get("raw_text") or role.get("job_description") or ""),
         )
+    product_marketing_override = _product_marketing_title(role)
     product_override = _product_management_title(role) or (
         dynamic_family == "product_strategy_ops"
         and not _product_management_title_excluded(role)
     )
-    if product_override:
+    if product_marketing_override:
+        primary = "product_marketing"
+        product_marketing_entry = next(
+            (item for item in ranked if item[1] == "product_marketing"),
+            (0, "product_marketing", []),
+        )
+        best_score = max(best_score, threshold * 2)
+        selected_matches = list(product_marketing_entry[2])
+        title = str(role.get("job_title") or role.get("title") or role.get("role") or "")
+        selected_matches.insert(0, (threshold * 2, title or "product marketing title"))
+        confidence = "high"
+    elif product_override:
         primary = "product_operations"
         product_entry = next(
             (item for item in ranked if item[1] == "product_operations"),
@@ -412,6 +432,7 @@ def build_role_intent(
         (default_family, humanize_identifier(default_family or primary)),
     )
     dynamic_package_labels = {
+        "product_marketing": "Product Marketing",
         "music_partnerships_label_relations": "Music Partnerships & Label Relations",
         "experiential_live_event_production": "Experiential Production / Live Event Production",
         "strategy_gtm_operations": "Strategy & GTM Operations",

@@ -607,7 +607,10 @@ def evidence_score_contribution(
 ) -> dict[str, Any]:
     before_score = int(before.get("match_score") or 0)
     after_score = int(after.get("match_score") or 0)
-    matched = list(after.get("associated_evidence_matches") or [])
+    details = after.get("associated_evidence_match_details")
+    matched = list(details if isinstance(details, list) else after.get("associated_evidence_matches") or [])
+    noise = {"more", "than", "cross-functional", "cross functional"}
+    matched = [value for value in matched if str(value).strip().lower() not in noise]
     if not matched:
         explanation = "No additional role requirements were matched by the selected Evidence."
     elif after_score == before_score:

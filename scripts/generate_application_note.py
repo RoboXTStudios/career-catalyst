@@ -30,6 +30,7 @@ DYNAMIC_NOTE_FOCUS = {
     "music_content_strategy": "music, audience understanding, editorial voice, and content systems",
     "editorial_content_strategy": "editorial judgment, audience clarity, voice, and dependable content operations",
     "transformation_advisory": "transformation, stakeholder recommendations, operating models, and implementation",
+    "product_marketing": "product positioning, messaging, go-to-market planning, launch readiness, product education, and adoption",
     "product_strategy_ops": "product and technology priorities, roadmaps, OKRs, and operating rhythms",
     "gtm_product_activation": "GTM activation, adoption, enablement, feedback loops, and measurement",
     "ai_operations_systems": "matrix operations, capacity visibility, dashboards, automation, and governance",

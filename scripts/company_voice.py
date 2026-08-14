@@ -20,6 +20,7 @@ except ImportError:
 
 ROLE_FAMILY_LABELS = {
     "creative_marketing_ops": "Creative & Marketing Operations",
+    "product_marketing": "Product Marketing",
     "product_strategy_ops": "Product Strategy & Operations",
     "transformation_advisory": "Transformation Advisory",
     "music_content_strategy": "Music Content Strategy",

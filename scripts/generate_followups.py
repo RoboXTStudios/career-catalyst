@@ -129,6 +129,12 @@ def _intelligent_role_angle(
             "workflow_governance",
             "I translate broad product and business priorities into clear operating systems and accountable execution.",
         ),
+        "product_marketing": (
+            "product positioning, messaging, go-to-market planning, launch readiness, product education, and adoption",
+            "connecting audience insight and product value with clear messaging, enablement, and cross-functional launch execution",
+            "disney_plus_launch_support",
+            "I connect entertainment marketing and launch-readiness experience with the positioning, communications, and adoption work that helps products reach their audiences.",
+        ),
         "gtm_product_activation": (
             "GTM activation, seller enablement, adoption, feedback loops, and measurable learning",
             "turning product priorities into activation plans, enablement, useful feedback loops, and clear measures of adoption",
@@ -186,6 +192,7 @@ def _intelligent_role_angle(
         "editorial_content_strategy": "content or editorial leader",
         "transformation_advisory": "transformation or advisory leader",
         "product_strategy_ops": "product strategy or operations leader",
+        "product_marketing": "product marketing leader",
         "gtm_product_activation": "GTM or product activation leader",
         "ai_operations_systems": "business, product, or organizational operations leader",
         "streaming_strategy": "streaming, content strategy, or operations leader",
