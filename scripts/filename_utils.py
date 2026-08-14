@@ -27,6 +27,7 @@ COMPANY_SHORT_NAMES: Dict[str, str] = {
 # ATS board tokens are aliases, not employer names, so keep their normalization here
 # instead of adding role-specific exceptions to scoring or generation.
 CANONICAL_EMPLOYER_NAMES: Dict[str, str] = {
+    "axs": "AXS",
     "beast industries": "Beast Industries",
     "mrbeast": "Beast Industries",
     "mr beast": "Beast Industries",

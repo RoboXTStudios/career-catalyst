@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import json
 import hashlib
+import os
 import re
 import shutil
+import tempfile
 import time
 import zipfile
 from copy import deepcopy
@@ -14,15 +16,19 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, Tuple
 
 try:
-    from .filename_utils import build_upload_filename
+    from .filename_utils import build_upload_filename, company_display_name
     from .storage_paths import (
         canonical_export_root,
         legacy_material_paths,
         require_beneath_export_root,
     )
 except ImportError:  # pragma: no cover - direct script imports
-    from filename_utils import build_upload_filename
-    from storage_paths import canonical_export_root, legacy_material_paths, require_beneath_export_root
+    from filename_utils import build_upload_filename, company_display_name
+    from storage_paths import (
+        canonical_export_root,
+        legacy_material_paths,
+        require_beneath_export_root,
+    )
 
 
 ACTIVE_ROUTES = {
@@ -439,7 +445,7 @@ def write_role_manifest(
             application.get("id") or application.get("prospect_id") or ""
         ),
         "slug": role_slug(application),
-        "company": str(application.get("company") or ""),
+        "company": company_display_name(application.get("company")),
         "role_title": str(
             application.get("role") or application.get("job_title") or ""
         ),
@@ -765,6 +771,102 @@ def find_exact_role_package(
         "archived": False,
         "legacy_paths": legacy_material_paths(application, library_root),
         "canonical_export_root": str(library_root),
+    }
+
+
+def copy_role_package_for_sharing(
+    project_root: Path,
+    application: Dict[str, Any],
+    *,
+    destination_root: Path | None = None,
+    export_root: Path | None = None,
+) -> Dict[str, Any]:
+    """Copy one manifest-owned package to a stable, user-shareable folder.
+
+    The canonical package remains authoritative. The destination is rebuilt in
+    staging and promoted atomically so repeat copies refresh the same role folder
+    without creating suffix-numbered duplicates.
+    """
+    root = Path(project_root).resolve()
+    library_root = canonical_export_root(root, injected_root=export_root)
+    found = find_exact_role_package(root, application, export_root=library_root)
+    manifest = found.get("manifest")
+    folder = found.get("folder")
+    expected_id = str(application.get("id") or application.get("prospect_id") or "")
+    if not isinstance(manifest, dict) or not folder:
+        raise ValueError("No exact canonical package is available to copy.")
+    if str(manifest.get("prospect_id") or "") != expected_id:
+        raise ValueError("Package ownership check failed; no files were copied.")
+
+    source_folder = require_beneath_export_root(Path(folder), library_root)
+    manifest_path = source_folder / "manifest.json"
+    if not manifest_path.is_file():
+        raise ValueError("The canonical package manifest is missing.")
+
+    artifacts: list[Path] = []
+    seen: set[Path] = set()
+    for path in dict(found.get("files") or {}).values():
+        resolved = Path(path).resolve()
+        if not resolved.is_file() or source_folder not in resolved.parents:
+            continue
+        if resolved not in seen:
+            artifacts.append(resolved)
+            seen.add(resolved)
+    if not artifacts:
+        raise ValueError("The canonical package manifest has no available files to copy.")
+    artifacts.append(manifest_path.resolve())
+
+    share_root = Path(destination_root or (Path.home() / "Downloads" / "Career Catalyst"))
+    share_root.mkdir(parents=True, exist_ok=True)
+    destination = share_root / role_slug(application)
+    staging = Path(
+        tempfile.mkdtemp(
+            prefix=f".{role_slug(application)}.staging-", dir=share_root
+        )
+    )
+    previous = share_root / f".{role_slug(application)}.previous"
+    copied: list[Dict[str, str]] = []
+    try:
+        for source in artifacts:
+            relative = source.relative_to(source_folder)
+            target = staging / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, target)
+            source_hash = _sha256(source)
+            copied_hash = _sha256(target)
+            if copied_hash != source_hash:
+                raise OSError(f"Checksum mismatch while copying {relative.as_posix()}.")
+            copied.append(
+                {
+                    "relative_path": relative.as_posix(),
+                    "source": str(source),
+                    "destination": str(destination / relative),
+                    "sha256": source_hash,
+                }
+            )
+
+        if previous.exists():
+            shutil.rmtree(previous)
+        if destination.exists():
+            os.replace(destination, previous)
+        try:
+            os.replace(staging, destination)
+        except Exception:
+            if previous.exists() and not destination.exists():
+                os.replace(previous, destination)
+            raise
+        if previous.exists():
+            shutil.rmtree(previous)
+    except Exception:
+        if staging.exists():
+            shutil.rmtree(staging)
+        raise
+
+    return {
+        "prospect_id": expected_id,
+        "source_folder": str(source_folder),
+        "destination_folder": str(destination),
+        "files": copied,
     }
 
 

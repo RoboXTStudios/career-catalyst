@@ -135,7 +135,7 @@ def test_all_material_controls_get_unique_keys_across_sections(tmp_path: Path):
     assert len(fake.keys) == len(set(fake.keys))
 
 
-def test_persistent_package_renders_five_controls_without_key_collisions(tmp_path: Path, monkeypatch):
+def test_persistent_package_renders_six_controls_without_key_collisions(tmp_path: Path, monkeypatch):
     folder = tmp_path / "package"
     folder.mkdir()
     files = {}
@@ -160,6 +160,7 @@ def test_persistent_package_renders_five_controls_without_key_collisions(tmp_pat
     class FakeStreamlit:
         def __init__(self):
             self.keys = []
+            self.session_state = {}
 
         def columns(self, count):
             return [FakeColumn(self.keys) for _ in range(count)]
@@ -182,7 +183,7 @@ def test_persistent_package_renders_five_controls_without_key_collisions(tmp_pat
     fake = FakeStreamlit()
     app._render_persistent_package_controls(fake, "role-a", {}, context="existing_material_open")
     app._render_persistent_package_controls(fake, "role-a", {}, context="generated_checklist_open")
-    assert len(fake.keys) == 10
+    assert len(fake.keys) == 12
     assert len(fake.keys) == len(set(fake.keys))
 
 

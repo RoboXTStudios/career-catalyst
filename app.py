@@ -80,6 +80,7 @@ from scripts.job_identity import infer_job_fields_from_url, preferred_role_title
 from scripts.job_freshness import detect_job_freshness
 from scripts.job_source_registry import normalize_job_source
 from scripts.materials_library import (
+    copy_role_package_for_sharing,
     find_exact_role_package,
     material_route,
     merge_role_package_outputs,
@@ -2577,6 +2578,36 @@ def _render_persistent_package_controls(
                 folder,
             ),
         )
+        share_key = f"share_package_result_{tracker_id}"
+        if st.button(
+            "Copy Package for Sharing",
+            key=_stable_widget_key(
+                f"{context}_share",
+                tracker_id,
+                "package_folder",
+                folder,
+            ),
+        ):
+            try:
+                result = copy_role_package_for_sharing(PROJECT_ROOT, application)
+            except (OSError, ValueError) as error:
+                st.error(str(error))
+            else:
+                st.session_state[share_key] = result["destination_folder"]
+        shared_folder = st.session_state.get(share_key)
+        if shared_folder:
+            st.success(f"Share copy: {shared_folder}")
+            _show_open_button(
+                st,
+                "Open Share Folder",
+                Path(str(shared_folder)),
+                _stable_widget_key(
+                    f"{context}_share_open",
+                    tracker_id,
+                    "share_folder",
+                    shared_folder,
+                ),
+            )
 
 
 def _persisted_package_result(
@@ -4770,7 +4801,7 @@ def _render_recent_outputs(st: Any) -> None:
     if not active_packages:
         st.caption("No exact active package folders yet.")
     for application, package in active_packages:
-        row = st.columns((5, 1))
+        row = st.columns((4, 1, 1))
         row[0].markdown(
             f"**{company_display_name(application.get('company'))} — {application.get('role')}**"
         )
@@ -4781,6 +4812,29 @@ def _render_recent_outputs(st: Any) -> None:
         ):
             opened, message = open_local_path(Path(package["folder"]))
             (st.success if opened else st.warning)(message)
+        tracker_id = str(application.get("id") or "")
+        if row[2].button(
+            "Copy",
+            key=_stable_widget_key(
+                "library_share_package",
+                tracker_id,
+                "package_folder",
+                package.get("folder"),
+            ),
+            help="Copy Package for Sharing",
+            use_container_width=True,
+        ):
+            try:
+                result = copy_role_package_for_sharing(PROJECT_ROOT, application)
+            except (OSError, ValueError) as error:
+                st.error(str(error))
+            else:
+                st.session_state[f"share_package_result_{tracker_id}"] = result[
+                    "destination_folder"
+                ]
+        shared_folder = st.session_state.get(f"share_package_result_{tracker_id}")
+        if shared_folder:
+            st.caption(f"Share copy: {shared_folder}")
 
     with st.expander("Needs Cleanup / Legacy Materials", expanded=False):
         st.caption(
