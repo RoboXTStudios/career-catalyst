@@ -24,6 +24,9 @@ MATERIAL_SPECS = (
     ("Strategy Pack", "Strategy/Prep", ("strategy_pack_text", "strategy_pack"), ("txt", "md")),
     ("Interview Prep", "Strategy/Prep", ("interview_prep_text", "interview_prep"), ("txt", "md")),
     ("Package Summary", "Strategy/Prep", ("package_summary_text", "package_summary"), ("txt", "md")),
+    ("ATS Parsed Preview", "Strategy/Prep", ("ats_parsed_preview",), ("txt",)),
+    ("Requirement Coverage Matrix", "Strategy/Prep", ("requirement_coverage_matrix",), ("txt",)),
+    ("Interview Conversion Gate", "Strategy/Prep", ("interview_conversion_gate",), ("txt",)),
     ("Recruiter Follow-Up", "Follow-up", ("recruiter_followup_text", "recruiter_followup"), ("txt", "md")),
     ("Hiring Manager Follow-Up", "Follow-up", ("hiring_manager_followup_text", "hiring_manager_followup"), ("txt", "md")),
     ("Warm Contact Message", "Follow-up", ("warm_contact_message_text", "warm_contact_message"), ("txt", "md")),
@@ -37,6 +40,9 @@ REQUIRED_PACKAGE_SPECS = (
     ("Styled Resume DOCX", ("styled_docx",), ".docx"),
     ("Cover Letter DOCX", ("cover_letter_docx",), ".docx"),
     ("Package Summary", ("package_summary_text", "package_summary"), None),
+    ("ATS Parsed Preview", ("ats_parsed_preview",), ".txt"),
+    ("Requirement Coverage Matrix", ("requirement_coverage_matrix",), ".txt"),
+    ("Interview Conversion Gate", ("interview_conversion_gate",), ".txt"),
     ("Canonical Manifest", ("manifest_path",), ".json"),
 )
 

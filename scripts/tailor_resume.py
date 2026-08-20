@@ -169,7 +169,7 @@ class ResumeTailoringError(Exception):
     """Raised when a tailored resume cannot be generated."""
 
 
-def _contact_line(personal_brand: Dict[str, Any]) -> str:
+def _contact_line(personal_brand: Dict[str, Any], *, include_github: bool = False) -> str:
     candidate = personal_brand.get("candidate", {})
     location = candidate.get("location", "Los Angeles, CA")
     email = candidate.get("email", "tslynch@mac.com")
@@ -179,9 +179,46 @@ def _contact_line(personal_brand: Dict[str, Any]) -> str:
         "[https://www.linkedin.com/in/trisha-lynch-3433417]"
         "(https://www.linkedin.com/in/trisha-lynch-3433417)",
     )
-    return (
+    contact = (
         f"{location} | [{email}](mailto:{email}) | "
         f"{linkedin_label}: {linkedin_url}"
+    )
+    if include_github and candidate.get("github_url"):
+        contact += (
+            f" | {candidate.get('github_label', 'GitHub')}: "
+            f"{candidate['github_url']}"
+        )
+    return contact
+
+
+def _include_github(parsed_job: Dict[str, Any], *, complete_foundation: bool) -> bool:
+    """Show verified public build evidence only when it adds role credibility."""
+    if complete_foundation:
+        return True
+    text = _normalize_text(
+        " ".join(
+            _flatten_strings(
+                [
+                    parsed_job.get("job_title"),
+                    parsed_job.get("raw_text"),
+                    parsed_job.get("keywords"),
+                ]
+            )
+        )
+    )
+    return any(
+        phrase in text
+        for phrase in (
+            "artificial intelligence",
+            "ai workflow",
+            "automation",
+            "product operations",
+            "product manager",
+            "technical program",
+            "digital transformation",
+            "systems design",
+            "builder",
+        )
     )
 
 
@@ -940,7 +977,12 @@ def _render_markdown(
         )
         or candidate.get("headline", ""),
         "",
-        _contact_line(personal_brand),
+        _contact_line(
+            personal_brand,
+            include_github=_include_github(
+                parsed_job, complete_foundation=complete_foundation
+            ),
+        ),
         "",
         "## Profile",
         "",

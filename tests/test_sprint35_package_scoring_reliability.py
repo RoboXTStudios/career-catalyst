@@ -42,6 +42,9 @@ def _complete_outputs(folder: Path) -> dict[str, str]:
         "styled_docx": folder / "resume_styled.docx",
         "cover_letter_docx": folder / "cover_letter.docx",
         "package_summary": folder / "package_summary.txt",
+        "ats_parsed_preview": folder / "ats_parsed_preview.txt",
+        "requirement_coverage_matrix": folder / "requirement_coverage_matrix.txt",
+        "interview_conversion_gate": folder / "interview_conversion_gate.txt",
     }
     for path in paths.values():
         path.write_bytes(b"complete")
@@ -101,7 +104,9 @@ def test_false_success_is_rejected_when_required_artifacts_are_absent(tmp_path: 
     report = validate_complete_package({"resume_markdown": str(tmp_path / "resume.md")})
     assert report["complete"] is False
     assert set(report["missing_required"]) == {
-        "ATS Resume DOCX", "Styled Resume DOCX", "Cover Letter DOCX", "Package Summary", "Canonical Manifest"
+        "ATS Resume DOCX", "Styled Resume DOCX", "Cover Letter DOCX", "Package Summary",
+        "ATS Parsed Preview", "Requirement Coverage Matrix", "Interview Conversion Gate",
+        "Canonical Manifest"
     }
 
 
@@ -396,7 +401,9 @@ def test_sanitized_role_package_completes_transactionally(
     assert result["match_score"] == baseline["match_score"]
     assert result["manifest"]["prospect_id"] == role_id
     assert {item["material_type"] for item in result["package_checklist"]} == {
-        "ATS Resume DOCX", "Styled Resume DOCX", "Cover Letter DOCX", "Package Summary", "Canonical Manifest"
+        "ATS Resume DOCX", "Styled Resume DOCX", "Cover Letter DOCX", "Package Summary",
+        "ATS Parsed Preview", "Requirement Coverage Matrix", "Interview Conversion Gate",
+        "Canonical Manifest"
     }
     for item in result["package_checklist"]:
         assert item["exists"] and Path(item["preferred_open_path"]).stat().st_size > 0

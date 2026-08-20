@@ -1,5 +1,6 @@
 projects:
   - name: CampaignOS
+    id: campaignos
     role: Creator & Product Lead
     timeframe: Working Prototype
     category: AI campaign operations prototype
@@ -7,7 +8,14 @@ projects:
     highlights:
       - "Built schema-driven workflows and product logic grounded in recurring enterprise entertainment operations challenges."
       - "Further development depends on representative campaign data and practical testing environments."
+    skills: [Workflow Architecture, Quality Assurance, Validation, Reporting, Product Thinking]
+    technologies: [AI-assisted workflows, Structured YAML, Schema-driven validation]
+    applicable_role_families: [campaign operations, marketing operations, product operations, AI operations]
+    confidence: high
+    visibility: role_relevant
+    repository_visibility: not_publicly_confirmed
   - name: Career Catalyst
+    id: career_catalyst
     role: Creator & Product Lead
     timeframe: 2026-Present
     category: AI-enabled career intelligence and job-search operations platform
@@ -15,17 +23,42 @@ projects:
     highlights:
       - "Developed structured workflows for opportunity intake, role-fit analysis, Evidence management, tailored application materials, status tracking, and follow-up."
       - "Continuously improves the platform through real-world use, iterative development, workflow testing, recovery controls, information architecture, and quality governance."
+      - "Defined requirements and built human-in-the-loop workflows for provenance, role intelligence, ATS document generation, transactional package promotion, failure recovery, regression testing, candidate voice, and document quality assurance."
+    skills: [Product Ownership, Product Strategy, Requirements Definition, AI Workflow Design, Human-in-the-loop Systems, Information Architecture, Quality Assurance, Regression Testing, Workflow Automation, Product Iteration]
+    technologies: [Python, Streamlit, Git, GitHub, Structured YAML, DOCX generation]
+    applicable_role_families: [AI workflow, product operations, product management, technical program management, transformation, systems and process]
+    confidence: high
+    visibility: role_relevant
+    repositories:
+      - name: career-catalyst
+        url: https://github.com/RoboXTStudios/career-catalyst
+        description: "Role-aware career intelligence, evidence provenance, grounded candidate-material generation, document QA, and application tracking."
+        visibility: public
+        relationship: primary_project_repository
   - name: RoboXT Studios
+    id: roboxt_studios
     role: Founder & Creative Director
     timeframe: 2026-Present
     category: Public creative platform
     summary: "Founded and launched a publicly accessible creative platform combining editorial work, photography, digital projects, creative direction, and technology-enabled experimentation."
     highlights:
       - "Leads site strategy, information architecture, WordPress development, visual direction, content production, brand development, and ongoing platform evolution."
+      - "Produces and packages photography, videography, concert and music media, editorial content, and social publishing across YouTube, TikTok, Instagram, and other relevant distribution channels."
+      - "Maintains media archives and post-production workflows while testing audience, content-packaging, and distribution approaches."
+    skills: [Media Production, Photography, Videography, Creative Direction, Content Operations, Digital Publishing, Editorial Development, Brand Development, Media Archive Management, Post-production Workflows]
+    technologies: [WordPress, YouTube, TikTok, Instagram]
+    applicable_role_families: [entertainment, music, media, creative operations, content operations, digital publishing, production]
+    confidence: high
+    visibility: role_relevant
   - name: OMG23 Multiverse Newsletter
+    id: multiverse_editorial
     role: Creator & Managing Editor
     timeframe: 2023-2026
     category: Internal editorial publication
     summary: "Created and served as Managing Editor of Multiverse, an internal editorial publication reaching more than 400 employees."
     highlights:
       - "Highlighted creativity, innovation, culture, music, emerging media, and employee storytelling."
+    skills: [Editorial Strategy, Internal Communications, Contributor Coordination, Content Operations]
+    applicable_role_families: [editorial, content strategy, creative operations, internal communications, music and media]
+    confidence: high
+    visibility: role_relevant

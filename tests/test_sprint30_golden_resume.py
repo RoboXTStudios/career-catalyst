@@ -175,7 +175,8 @@ def test_existing_evidence_ids_and_provenance_are_preserved():
             "campaignos",
             "data/projects.yml:CampaignOS;data/achievements.yml:campaignos_ai_operations",
         ),
-        ("career_catalyst", "repository behavior and project scope"),
+        ("career_catalyst", "data/projects.yml:Career Catalyst"),
+        ("github_product_delivery", "data/projects.yml:Career Catalyst"),
         ("roboxt_studios", "data/projects.yml:RoboXT Studios"),
         (
             "governance_qa_delivery",

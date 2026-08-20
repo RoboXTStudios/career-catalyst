@@ -21,30 +21,46 @@ evidence_cards:
     strongest_role_fits: [builder role, martech operations, product operations, AI operations]
     when_to_use: Use when AI workflows, automation, workflow systems, product thinking, martech, or builder orientation are directly relevant.
     when_to_avoid: Do not include by default for traditional PMO or generic operations roles unless the job clearly asks for automation, systems, or product thinking.
+    career_priority: supporting
     confidence_level: high
     source: data/projects.yml:CampaignOS;data/achievements.yml:campaignos_ai_operations
   - id: career_catalyst
     label: Career Catalyst
-    short_description: Personal career strategy and materials generation system demonstrating builder mindset and practical AI workflow design.
+    short_description: Active career-intelligence product demonstrating product ownership, practical AI workflow design, evidence provenance, role intelligence, document automation, quality gates, and production hardening.
     proof_points:
-      - Built a role-aware system for parsing opportunities, scoring fit, and generating application materials from structured evidence.
-    tags: [builder, ai_workflows, product_thinking, career_strategy]
-    strongest_role_fits: [human agency builder role, AI workflow role, product operations]
-    when_to_use: Use for builder-friendly, human agency, AI workflow, or product-minded roles.
+      - Built and iterates a role-aware system for parsing opportunities, scoring fit, selecting grounded Evidence, and generating ATS-safe application materials.
+      - Defined requirements and implemented human-in-the-loop workflows for provenance, transactional generation, recovery controls, regression testing, voice calibration, and document quality assurance.
+    tags: [builder, ai_workflows, product_thinking, career_strategy, human_in_the_loop, product_ownership, quality_assurance]
+    strongest_role_fits: [human agency builder role, AI workflow role, product operations, product management, technical program management, transformation]
+    when_to_use: Use as the primary current product-building proof for builder-friendly, human agency, AI workflow, transformation, technical-program, or product-minded roles.
     when_to_avoid: Avoid for traditional PMO, governance-only, or conservative enterprise roles unless tooling/building is requested.
-    confidence_level: medium
-    source: repository behavior and project scope
+    confidence_level: high
+    career_priority: primary_current_builder
+    source: data/projects.yml:Career Catalyst
   - id: roboxt_studios
     label: RoboXT Studios
-    short_description: Launched public creative platform combining editorial work, photography, digital projects, creative direction, and technology-enabled experimentation.
+    short_description: Launched public creative platform and current independent media-production practice spanning photography, videography, music and concert media, editorial work, content operations, digital publishing, and brand development.
     proof_points:
-      - Demonstrates public creative-platform strategy, information architecture, WordPress development, visual direction, content production, and brand development.
-    tags: [builder, creative_work, ai_workflows, entrepreneurship]
-    strongest_role_fits: [human agency builder role, startup operations, creative AI role]
-    when_to_use: Use only for entrepreneurial, builder-friendly, or creative AI roles.
+      - Demonstrates media production, creative direction, photography, videography, editorial development, WordPress publishing, content packaging, and post-production workflow ownership.
+    tags: [builder, creative_work, entrepreneurship, media_production, music, content_operations, digital_publishing]
+    strongest_role_fits: [media production, music and entertainment, creative operations, content operations, digital publishing]
+    when_to_use: Use for entrepreneurial, entertainment, music, media, creator, production, content-operations, or creative-technology roles.
     when_to_avoid: Avoid for traditional PMO, governance, entertainment marketing operations, or conservative enterprise roles.
-    confidence_level: medium
+    confidence_level: high
+    career_priority: primary_current_media
     source: data/projects.yml:RoboXT Studios
+  - id: github_product_delivery
+    label: GitHub product delivery
+    short_description: Public repository evidence for Career Catalyst requirements, iteration, testing, and production-hardening work.
+    proof_points:
+      - The public Career Catalyst repository shows iterative product delivery, regression protection, structured-data design, and workflow hardening.
+    tags: [github, product_delivery, ai_workflows, testing, requirements, builder]
+    strongest_role_fits: [AI workflow role, product operations, product management, technical program management, transformation]
+    when_to_use: Use when a public build record materially strengthens product, systems, transformation, or technical-program credibility.
+    when_to_avoid: Avoid adding GitHub to materials for roles where it distracts from stronger senior enterprise evidence.
+    confidence_level: high
+    career_priority: supporting
+    source: data/projects.yml:Career Catalyst
   - id: governance_qa_delivery
     label: Governance, QA, and delivery leadership
     short_description: Practical operating discipline across workflows, quality standards, risk visibility, and dependable delivery.

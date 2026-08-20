@@ -504,6 +504,13 @@ def save_package_summary(
         f"- {reason}" for reason in candidate_qa.get("blocking_reasons") or []
     )
     qa_section = "\n".join(qa_lines)
+    interview_gate = dict(quality.get("interview_conversion_gate") or {})
+    gate_lines = [
+        f"- Submission Status: {interview_gate.get('submission_status') or 'Not evaluated'}"
+    ]
+    for label, value in (interview_gate.get("diagnostics") or {}).items():
+        gate_lines.append(f"- {label}: {value}")
+    conversion_section = "\n".join(gate_lines)
     content = f"""# Application Package Summary
 
 ## Opportunity
@@ -548,6 +555,10 @@ def save_package_summary(
 {qa_section}
 
 {quality_report}
+
+## Interview Conversion Gate
+
+{conversion_section}
 """
     path.write_text(normalize_candidate_text(content), encoding="utf-8")
     return {"output_path": str(path)}

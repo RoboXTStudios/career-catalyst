@@ -24,6 +24,7 @@ if __package__:
     )
     from .generate_messages import generate_message
     from .generate_strategy_pack import StrategyPackError, generate_strategy_pack
+    from .golden_resume import GoldenResumeError, load_golden_resume
     from .export_docx import (
         ATS_MODE,
         STYLED_MODE,
@@ -66,6 +67,7 @@ else:
     )
     from generate_messages import generate_message
     from generate_strategy_pack import StrategyPackError, generate_strategy_pack
+    from golden_resume import GoldenResumeError, load_golden_resume
     from export_docx import (
         ATS_MODE,
         STYLED_MODE,
@@ -103,11 +105,13 @@ def _print_list(title: str, values: List[str]) -> None:
 def validate_data() -> int:
     try:
         load_all_yaml(PROJECT_ROOT)
-    except DataLoadError as error:
+        golden = load_golden_resume(PROJECT_ROOT)
+    except (DataLoadError, GoldenResumeError) as error:
         print(f"Data validation failed: {error}", file=sys.stderr)
         return 1
 
     print("Data validation succeeded.")
+    print(f"Golden Resume records: {len(golden['records'])}")
     _print_list("Loaded files", list(REQUIRED_YAML_FILES))
     return 0
 

@@ -96,6 +96,9 @@ OUTPUT_FILENAMES = {
     "interview_prep": "interview_prep.txt",
     "package_summary_text": "package_summary.txt",
     "package_summary": "package_summary.txt",
+    "ats_parsed_preview": "ats_parsed_preview.txt",
+    "requirement_coverage_matrix": "requirement_coverage_matrix.txt",
+    "interview_conversion_gate": "interview_conversion_gate.txt",
 }
 MATERIAL_FILENAMES = {
     "ATS Resume": "ats_resume.docx",
@@ -114,6 +117,9 @@ MATERIAL_FILENAMES = {
     "Strategy Pack": "strategy_pack.txt",
     "Interview Prep": "interview_prep.txt",
     "Package Summary": "package_summary.txt",
+    "ATS Parsed Preview": "ats_parsed_preview.txt",
+    "Requirement Coverage Matrix": "requirement_coverage_matrix.txt",
+    "Interview Conversion Gate": "interview_conversion_gate.txt",
 }
 
 LEGACY_MARKDOWN_DIRS = (

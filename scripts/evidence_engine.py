@@ -17,7 +17,7 @@ except ImportError:
 
 
 CONFIDENCE_ORDER = {"low": 1, "medium": 2, "high": 3}
-BUILDER_IDS = {"campaignos", "career_catalyst", "roboxt_studios"}
+BUILDER_IDS = {"campaignos", "career_catalyst", "roboxt_studios", "github_product_delivery"}
 DEFAULT_MAX_CARDS = 4
 
 
@@ -131,11 +131,16 @@ def select_evidence_cards(
         confidence = CONFIDENCE_ORDER[str(card["confidence_level"])]
         if confidence < minimum:
             continue
-        if category in {"traditional_pmo", "chief_of_staff_business_operations"} and card_id in {"roboxt_studios", "photography_creative_voice", "career_catalyst"}:
+        if category in {"traditional_pmo", "chief_of_staff_business_operations"} and card_id in {"roboxt_studios", "photography_creative_voice", "career_catalyst", "github_product_delivery"}:
             continue
-        if category not in {"builder_friendly", "martech_crm", "product_ai_operations", "chief_of_staff_business_operations", "creative_operations"} and card_id in {"campaignos", "career_catalyst", "roboxt_studios"}:
+        campaign_systems_fit = (
+            category == "entertainment_marketing_operations"
+            and card_id == "campaignos"
+            and _signals(text, ("workflow", "systems", "automation", "marketing technology", "martech", "campaign")) >= 2
+        )
+        if category not in {"builder_friendly", "martech_crm", "product_ai_operations", "chief_of_staff_business_operations", "creative_operations"} and card_id in BUILDER_IDS and not campaign_systems_fit:
             continue
-        if category == "creative_operations" and card_id in {"campaignos", "career_catalyst"}:
+        if category == "creative_operations" and card_id in {"campaignos", "career_catalyst", "github_product_delivery"}:
             continue
         if category == "chief_of_staff_business_operations" and card_id == "campaignos" and "campaignos" not in text and _signals(text, ("ai", "automation", "product", "systems")) == 0:
             continue
@@ -146,6 +151,8 @@ def select_evidence_cards(
             score += 5
         if category == "entertainment_marketing_operations" and card_id == "omg23_disney_leadership":
             score += 5
+        if campaign_systems_fit:
+            score += 5
         if category == "traditional_pmo" and card_id == "governance_qa_delivery":
             score += 5
         if category == "chief_of_staff_business_operations" and card_id in {"governance_qa_delivery", "omg23_disney_leadership"}:
@@ -154,6 +161,13 @@ def select_evidence_cards(
             score += 6
         if category == "product_ai_operations" and card_id == "career_catalyst":
             score += 8
+        if category == "product_ai_operations" and card_id == "github_product_delivery":
+            score += 6
+        if category in {"builder_friendly", "product_ai_operations"}:
+            score += {
+                "primary_current_builder": 4,
+                "supporting": 1,
+            }.get(str(card.get("career_priority") or ""), 0)
         if category == "creative_operations" and card_id == "roboxt_studios":
             score += 7
         if score >= 5:

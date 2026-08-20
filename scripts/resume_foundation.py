@@ -21,6 +21,7 @@ DEFAULT_BASELINE_FILES = (
     "data/skills.yml",
     "data/platforms.yml",
     "data/projects.yml",
+    "data/evidence_projects.yml",
     "data/certifications.yml",
     "data/personal_brand.yml",
 )
@@ -138,15 +139,26 @@ def _validate_active_foundation(
     active_values: list[Any] = []
     for relative_path in info["baseline_files"]:
         key = Path(relative_path).stem
-        active_values.append(loaded["data"].get(key, {}))
+        value = loaded["data"].get(key, {})
+        if relative_path == info["supplemental_evidence_source"]:
+            evidence = value.get("evidence_projects", []) if isinstance(value, dict) else []
+            active_values.extend(
+                project
+                for project in evidence
+                if isinstance(project, dict) and _evidence_is_candidate_usable(project)
+            )
+        else:
+            active_values.append(value)
 
-    evidence_key = Path(info["supplemental_evidence_source"]).stem
-    evidence = loaded["data"].get(evidence_key, {}).get("evidence_projects", [])
-    active_values.extend(
-        project
-        for project in evidence
-        if isinstance(project, dict) and _evidence_is_candidate_usable(project)
-    )
+    evidence_source = info["supplemental_evidence_source"]
+    if evidence_source not in info["baseline_files"]:
+        evidence_key = Path(evidence_source).stem
+        evidence = loaded["data"].get(evidence_key, {}).get("evidence_projects", [])
+        active_values.extend(
+            project
+            for project in evidence
+            if isinstance(project, dict) and _evidence_is_candidate_usable(project)
+        )
     validate_candidate_language(
         "\n".join(_flatten_strings(active_values)),
         context="Active canonical candidate source",

@@ -1,387 +1,61 @@
 # Career Catalyst
 
-Career Catalyst is a personal career optimization engine for Trisha Lynch. It is designed to become a structured source of truth for resume content, achievements, skills, projects, target roles, target companies, and job application materials.
+Career Catalyst is a local, evidence-grounded career operations system for Trisha Lynch. It joins a validated career source of truth to role intelligence, stable prospect records, selected Evidence, truthful candidate writing, ATS-safe document export, application tracking, and retained package history.
 
-The project exists to make career materials easier to tailor without losing consistency. Instead of rewriting resumes, cover letters, recruiter notes, hiring manager messages, and interview prep from scratch, Career Catalyst will eventually draw from a shared data layer and assemble role-specific outputs.
+The application does not treat a job description as permission to invent résumé content. Its package path is:
 
-## Folder Structure
+`canonical career history → role requirements → selected Evidence → grounded writing → candidate quality checks → DOCX hygiene → ATS round trip → Interview Conversion Gate → atomic promotion`
 
-- `config/` stores project settings, target companies, and role profiles.
-- `data/` stores the candidate source of truth in YAML.
-- `jobs/` stores job descriptions and notes for future analysis.
-- `templates/` stores starter Markdown templates for resumes, letters, messages, and interview prep.
-- `exports/` is reserved for generated documents and messages.
-- `scripts/` is reserved for future project scripts.
-- `tests/` is reserved for future validation and regression tests.
+## Current system
 
-## Sprint 0
+- `data/positions.yml`, `achievements.yml`, `skills.yml`, `platforms.yml`, `projects.yml`, `certifications.yml`, `personal_brand.yml`, and `evidence_projects.yml` remain the authoritative candidate records.
+- `scripts/golden_resume.py` assembles and validates those sources as the complete Golden Resume inventory. It does not create a second résumé or data store.
+- `config/evidence_cards.yml` provides reusable, source-linked Evidence cards. Tracker-selected Evidence is authoritative for candidate artifacts; unselected fallback must be explicit and disclosed.
+- `scripts/role_intent.py` and the role-intelligence modules resolve current role context and saved overrides.
+- `scripts/package_generator.py` generates in private staging and promotes only a complete, validated package. A failed run preserves the last valid package and tracker state.
+- `scripts/docx_quality.py` sanitizes actual OOXML packages, removes comments/revisions/generator identity, verifies visible content and hyperlinks, and parses the exported ATS résumé.
+- `scripts/submission_readiness.py` builds the requirement matrix, specificity and voice checks, recruiter-credibility review, ATS Parsed Preview, and Interview Conversion Gate.
+- `app.py` is the current Streamlit application.
 
-Sprint 0 includes only the foundational project structure and documentation:
+Detailed design and invariants are in [ARCHITECTURE.md](ARCHITECTURE.md).
 
-- Project README, project brief, architecture notes, roadmap, and changelog.
-- Starter YAML files based on Trisha Lynch's current career profile.
-- Starter Markdown templates for common job application materials.
-- Empty export folders for future generated outputs.
+## Golden Resume
 
-Sprint 0 does not include application logic, scoring, resume generation, OpenAI API integration, web scraping, a CLI, or a UI.
+The Golden Resume is the full verified inventory, not a submission résumé. Candidate-facing résumés select only evidence that earns space for the role. Established senior career evidence normally outranks recent projects, with contextual exceptions:
 
-## Sprint 1 Commands
+- Career Catalyst is primary current product and applied AI-workflow evidence for relevant product, transformation, builder, and technical-program roles.
+- RoboXT Studios is current media-production, creative, content, music, and publishing evidence when those domains matter.
+- CampaignOS is a working prototype and supporting evidence for campaign systems, workflow governance, QA, and role-relevant AI operations.
+- GitHub is included only when the verified public build record adds credibility. URLs remain visible and clickable.
 
-Validate required YAML files:
+Historical employer aliases are matching-only. Candidate-facing language uses `OMG23 (Omnicom Media Group)` and preserves the verified scope of 10 direct reports and an integrated 64-person organization.
+
+## Package outputs
+
+A complete package contains both résumé DOCX variants, a cover-letter DOCX, a Package Summary, an ATS Parsed Preview, a Requirement Coverage Matrix, an Interview Conversion Gate, and a canonical manifest. Additional notes, outreach, strategy, interview, and follow-up materials are retained when generated.
+
+The readiness artifacts are intentionally plain-language. ATS validation checks parseability; it does not pretend to reproduce a proprietary ATS score. `NOT_SUPPORTED` requirements remain gaps and are never converted into candidate claims.
+
+## Local commands
 
 ```bash
 python3 scripts/cli.py validate-data
-```
-
-Show the candidate profile summary:
-
-```bash
-python3 scripts/cli.py show-profile
-```
-
-## Sprint 2 Commands
-
-Parse a local job description:
-
-```bash
 python3 scripts/cli.py parse-job jobs/sample_job_description.md
-```
-
-## Sprint 3 Commands
-
-Score a local job description against the structured career data:
-
-```bash
 python3 scripts/cli.py score jobs/sample_job_description.md
+python3 scripts/cli.py generate-package <tracker-id>
+python3 -m streamlit run app.py --server.address 127.0.0.1 --server.port 8503
 ```
 
-## Sprint 4 Commands
-
-Generate a tailored Markdown resume:
+Run validation:
 
 ```bash
-python3 scripts/cli.py tailor executive_operations jobs/sample_job_description.md
+python3 -m pytest -q
+PYTHONPYCACHEPREFIX=/private/tmp/career-catalyst-pyc python3 -m compileall -q scripts app.py
+git diff --check
 ```
 
-## Sprint 5 Commands
+All generation or tests that exercise writes should use an isolated runtime and injected export root. Never point fixtures at durable production data.
 
-Generate the tailored Markdown resume:
+## Safety boundaries
 
-```bash
-python3 scripts/cli.py tailor executive_operations jobs/sample_job_description.md
-```
-
-Export the tailored Markdown resume to DOCX:
-
-```bash
-python3 scripts/cli.py export-docx exports/markdown/Trisha_Lynch_executive_operations_Crunchyroll_Resume.md
-```
-
-## Sprint 5.1 Commands
-
-Export a styled resume for human reviewers and direct uploads where formatting is accepted:
-
-```bash
-python3 scripts/cli.py export-docx styled exports/markdown/Trisha_Lynch_executive_operations_Crunchyroll_Resume.md
-```
-
-Export a plain resume for applicant tracking systems and portals that parse resumes aggressively:
-
-```bash
-python3 scripts/cli.py export-docx ats exports/markdown/Trisha_Lynch_executive_operations_Crunchyroll_Resume.md
-```
-
-Both versions use the same tailored Markdown content source. The original Sprint 5 command remains available and defaults to styled mode.
-
-## Sprint 5.2
-
-Styled DOCX:
-
-- Uses compact visual formatting.
-- Includes a table-style Platforms & Technologies section.
-- Is intended for human reviewers and direct uploads.
-
-ATS DOCX:
-
-- Uses no tables.
-- Uses simple headings and bullets.
-- Is intended for applicant tracking systems and portals that aggressively parse resumes.
-
-## Canonical Platforms
-
-Platforms & Technologies are controlled by `data/platforms.yml`. Styled and ATS exports must use this canonical file so important positioning language such as AI Workflow Design and Process Automation is preserved.
-
-## Resume Contact Links
-
-Career Catalyst displays the full LinkedIn URL in generated resumes so the link remains visible even if applicant tracking systems strip hyperlinks.
-
-## Sprint 6 Commands
-
-Generate a cover letter:
-
-```bash
-python3 scripts/cli.py cover-letter jobs/sample_job_description.md
-```
-
-Generate a recruiter message:
-
-```bash
-python3 scripts/cli.py message recruiter jobs/sample_job_description.md
-```
-
-Generate a hiring manager message:
-
-```bash
-python3 scripts/cli.py message hiring-manager jobs/sample_job_description.md
-```
-
-Generate a short application portal note:
-
-```bash
-python3 scripts/cli.py application-note jobs/sample_job_description.md
-```
-
-Generated messages are drafts and should be reviewed before sending. Materials are grounded in structured career data and parsed job details; contacts, referrals, personal relationships, and unsupported company-specific claims must not be invented.
-
-## Voice Calibration
-
-Career Catalyst uses `config/voice.yml` to guide generated application materials. The target voice is warm, human, confident, strategic, and grounded. Generated materials should sound like a thoughtful senior operator, not a corporate template.
-
-## Sprint 7 Commands
-
-Generate a Standout Strategy Pack:
-
-```bash
-python3 scripts/cli.py strategy-pack jobs/sample_job_description.md
-```
-
-Strategy packs are designed to help Trisha stand out beyond resume tailoring. They are grounded in the job description and structured career data, and can support interview preparation, hiring manager outreach, application notes, and follow-up messages. Each pack should be reviewed before use.
-
-## Sprint 8 Commands
-
-Generate the local application dashboard:
-
-```bash
-python3 scripts/cli.py dashboard
-```
-
-Open the generated dashboard in the default browser:
-
-```bash
-open exports/dashboard/index.html
-```
-
-The dashboard is a local static HTML file that groups generated application materials by job. It links to resumes, messages, cover letters, application notes, and strategy packs without using a server or external services. Application status can be updated manually in `data/application_tracker.yml`.
-
-## Entertainment Experience Calibration
-
-Career Catalyst emphasizes Trisha's primary entertainment experience across Disney Studios Theatrical, Disney Streaming/DSS, theatrical and streaming film campaign operations, franchise/IP priorities, and premium entertainment campaign execution.
-
-Disney Studios Theatrical includes Pixar, Lucasfilm, Marvel, 20th Century Studios, and Searchlight Pictures. Disney Streaming/DSS includes Disney+, Disney Streaming Services, streaming pushes from theatrical IP, and relevant Disney Branded Television / DBT work.
-
-Generated materials should not overemphasize Networks or make Corporate Brand Management the central headline. Corporate Brand Management should be framed as franchise/IP and brand management support where relevant.
-
-## Upload-Friendly Filenames
-
-Career Catalyst exports application materials using concise filenames designed for applicant portals.
-
-Example: `TrishaLynch_HeadGlobalCreativeOps_PlayStation_Styled.docx`
-
-Styled files are intended for human reviewers. ATS files are intended for applicant tracking systems.
-
-## Google/YouTube Positioning
-
-For Google and YouTube roles, Career Catalyst may reference Trisha's long-term hands-on experience with Google advertising products, including YouTube, dating back to the early 2000s. Generated materials should frame this as platform familiarity and campaign activation experience, not employment at Google or internal product ownership.
-
-Generated application and networking materials must not reference family connections, internal Google relationships, or unsupported referrals. Professional outreach should remain grounded in Trisha's direct work experience and professional contacts.
-
-## Application Tracker
-
-Career Catalyst uses `data/application_tracker.yml` as the source of truth for application status.
-
-Supported statuses:
-
-- Prospect
-- Considered
-- Applied
-- Under Consideration
-- Interviewing
-- Offer
-- Rejected
-- Withdrawn / Closed
-
-Validate tracker data and regenerate the dashboard:
-
-```bash
-python3 scripts/cli.py validate-tracker
-python3 scripts/cli.py dashboard
-```
-
-Tracker entries can include company and role aliases to help the dashboard match generated job packages to the correct application record. Archive is a separate local storage state, not a role status. See [Sprint 32 maintenance](docs/sprint32_maintenance.md) for safe post-merge migration, audit, and cleanup commands.
-
-## Sprint 10: Local Application Cockpit
-
-Run:
-
-```bash
-streamlit run app.py
-```
-
-Career Catalyst's local UI lets Trisha:
-
-- add role prospects
-- paste official job descriptions
-- try importing from official career page URLs
-- generate full application packages
-- update application statuses
-- refresh the dashboard
-- open output folders
-
-Manual paste is always supported because many career sites block or complicate automated import.
-
-CLI commands remain available:
-
-```bash
-python3 scripts/cli.py add-prospect jobs/paramount_director_marketing_operations.md
-python3 scripts/cli.py generate-package paramount_director_marketing_operations
-python3 scripts/cli.py update-status paramount_director_marketing_operations Applied
-python3 scripts/cli.py hide-role playstation_director_ad_ops_invalid "Broken apply flow"
-python3 scripts/cli.py validate-tracker
-python3 scripts/cli.py dashboard
-```
-
-## Sprint 10.1: Career Catalyst UI
-
-Run:
-
-```bash
-streamlit run app.py
-```
-
-The local UI mirrors the Career Catalyst dashboard and provides an interactive cockpit for:
-
-- adding prospects
-- generating application packages
-- updating statuses
-- viewing outputs
-- refreshing the dashboard
-
-## Opening Career Catalyst
-
-Recommended:
-
-Double-click the installed macOS app:
-
-```text
-~/Applications/Career Catalyst.app
-```
-
-The app invokes the repository-owned launcher:
-
-```text
-launchers/launch_career_catalyst.sh
-```
-
-Its local configuration is stored outside Git at:
-
-```text
-~/Library/Application Support/Career Catalyst/launcher.conf
-```
-
-Startup logs are stored outside Git at:
-
-```text
-~/Library/Logs/Career Catalyst/
-```
-
-Launcher details are also available from:
-
-```bash
-python3 scripts/cli.py launcher-info
-```
-
-## Sprint 11: Follow-Up, Company Voice, and Dynamic Role Intelligence
-
-Career Catalyst now supports:
-
-- follow-up and networking message generation
-- company-voice cover letters
-- dynamic company category detection
-- dynamic role family detection
-- follow-up materials for applied roles
-- role intelligence previews in the local UI
-
-Generate follow-up materials:
-
-```bash
-python3 scripts/cli.py followups paramount_director_marketing_operations
-```
-
-Or use the local UI:
-
-```bash
-streamlit run app.py
-```
-
-The Follow-Up tab generates:
-
-- recruiter follow-up
-- hiring manager follow-up
-- warm contact message
-- referral ask
-- follow-up strategy
-
-Messages should be reviewed before sending.
-
-Career Catalyst uses company voice profiles to make cover letters feel specific to the company and role. Disney, Google/YouTube, Paramount, UTA, FieldAI, Bandsintown, and Crunchyroll use different tone guidance and proof points.
-
-Career Catalyst can infer company category, role family, and voice guidance for newly added prospects without hardcoding every company.
-
-Known profiles are used when available. Unknown companies use deterministic local inference from company name, role title, source URL, and job description.
-
-Generate missing follow-ups for all applied roles:
-
-```bash
-python3 scripts/cli.py followups-all
-```
-
-Force regenerate all applied follow-ups:
-
-```bash
-python3 scripts/cli.py followups-all --force
-```
-
-Detect company and role intelligence:
-
-```bash
-python3 scripts/cli.py detect-role jobs/example.md
-```
-
-The UI also shows detected company category, role family, suggested cover letter angles, and proof points before generating packages.
-
-Cover letters and messages should be reviewed before submission, especially for creative or music-focused roles.
-
-### Sprint 34 application reliability gate
-
-Every package-generation entry point now passes through one shared preflight. The
-UI reports Ready, Automatically repaired, or Blocking factual issue states before
-generation, including posting-reference health, Evidence resolution, candidate
-source files, compensation state, and safe output paths. Candidate-facing
-formatting repairs (punctuation, age-signaling language, and historical employer
-aliases) are applied only to rendered artifacts; source Evidence and history stay
-unchanged. Résumé and cover-letter Evidence limits are disclosed in the Package
-Summary, which also records the quality checks and omission reasons.
-
-Generation runs in a private staging directory and promotes only a complete,
-validated package. A failed run restores the prior tracker and package paths and
-leaves the app running. Missing or stale job files remain visible with an
-actionable relink warning; no posting is fabricated or silently substituted.
-
-Rollback is limited to the package transaction: the prior tracker bytes and
-affected export files are restored automatically when validation or promotion
-fails. Technical details are kept in the application log rather than shown as a
-Python traceback in the normal UI.
-
-## What Comes Next
-
-Later sprints can add interview prep generation and carefully verified company or job-source workflows.
+Career Catalyst does not fabricate experience, hide keywords, inject invisible text, impersonate applications, or manipulate metadata to deceive hiring systems. It does not infer ownership from adjacency. Candidate materials require source-linked evidence and remain subject to human review before submission.

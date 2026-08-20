@@ -23,6 +23,7 @@ try:
         update_status,
     )
     from .dynamic_role_intelligence import get_effective_voice_profile
+    from .docx_quality import compare_docx_factual_parity
     from .export_docx import export_ats_docx, export_styled_docx
     from .generate_application_note import generate_application_note
     from .generate_cover_letter import generate_cover_letter
@@ -61,6 +62,17 @@ try:
         evidence_score_contribution,
         output_use_metadata,
     )
+    from .golden_resume import load_golden_resume
+    from .submission_readiness import (
+        build_interview_conversion_gate,
+        build_requirement_coverage_matrix,
+        evaluate_evidence_density,
+        evaluate_claim_provenance,
+        evaluate_human_credibility,
+        evaluate_keyword_overuse,
+        evaluate_voice_drift,
+        save_readiness_artifacts,
+    )
     from .role_intent import (
         apply_role_intelligence_overrides,
         align_role_intent_to_effective_intelligence,
@@ -85,6 +97,7 @@ except ImportError:
         update_status,
     )
     from dynamic_role_intelligence import get_effective_voice_profile
+    from docx_quality import compare_docx_factual_parity
     from export_docx import export_ats_docx, export_styled_docx
     from generate_application_note import generate_application_note
     from generate_cover_letter import generate_cover_letter
@@ -117,6 +130,17 @@ except ImportError:
     from evidence_engine import load_evidence_projects
     from resume_foundation import load_resume_foundation
     from evidence_tailoring import evidence_score_contribution, output_use_metadata
+    from golden_resume import load_golden_resume
+    from submission_readiness import (
+        build_interview_conversion_gate,
+        build_requirement_coverage_matrix,
+        evaluate_evidence_density,
+        evaluate_claim_provenance,
+        evaluate_human_credibility,
+        evaluate_keyword_overuse,
+        evaluate_voice_drift,
+        save_readiness_artifacts,
+    )
     from role_intent import (
         apply_role_intelligence_overrides,
         align_role_intent_to_effective_intelligence,
@@ -801,6 +825,7 @@ def _generate_package_in_place(
                     checklist=checklist,
                     details={"recovery": True, "conflicts": preflight.get("conflicts") or []},
                 )
+        golden_resume = load_golden_resume(root)
         context = build_package_context(selected_id, tracker, root)
         job_path = Path(context["job_path"])
         application = context["application"]
@@ -1057,6 +1082,83 @@ def _generate_package_in_place(
                 + "\n- ".join(candidate_qa["blocking_reasons"]),
                 details={"candidate_facing_qa": candidate_qa, "blocking": True},
             )
+        ats_round_trip = dict(ats.get("ats_round_trip") or {})
+        docx_hygiene = {
+            "ATS resume": dict(ats.get("docx_hygiene") or {}),
+            "Styled resume": dict(styled.get("docx_hygiene") or {}),
+            "Cover letter": dict(cover_letter.get("docx_hygiene") or {}),
+        }
+        factual_parity = (
+            compare_docx_factual_parity(styled["output_path"], ats["output_path"])
+            if styled.get("output_path") and ats.get("output_path")
+            else {"status": "BLOCKED", "visible_facts_match": False, "hyperlinks_match": False}
+        )
+        resume_text = Path(str(resume["output_path"])).read_text(
+            encoding="utf-8", errors="replace"
+        )
+        coverage_matrix = build_requirement_coverage_matrix(
+            parsed,
+            golden_resume,
+            list(context.get("associated_evidence_projects") or []),
+            resume_text,
+        )
+        specificity = evaluate_evidence_density(resume_text, golden_resume)
+        claim_provenance = evaluate_claim_provenance(resume_text, golden_resume)
+        voice_drift = evaluate_voice_drift(
+            {
+                "resume": resume_text,
+                "cover_letter": cover_text,
+                "application_note": Path(str(outputs.get("application_note_text") or outputs.get("application_note") or "")).read_text(encoding="utf-8", errors="replace")
+                if (outputs.get("application_note_text") or outputs.get("application_note"))
+                and Path(str(outputs.get("application_note_text") or outputs.get("application_note"))).is_file()
+                else "",
+            }
+        )
+        credibility = evaluate_human_credibility(resume_text, coverage_matrix)
+        keyword_overuse = evaluate_keyword_overuse(resume_text, coverage_matrix)
+        interview_gate = build_interview_conversion_gate(
+            parsed_job=parsed,
+            match_report=score,
+            coverage_matrix=coverage_matrix,
+            candidate_qa=candidate_qa,
+            voice=voice_drift,
+            specificity=specificity,
+            credibility=credibility,
+            ats_round_trip=ats_round_trip,
+            docx_hygiene=docx_hygiene,
+            factual_parity=factual_parity,
+            keyword_overuse=keyword_overuse,
+            claim_provenance=claim_provenance,
+        )
+        quality.update(
+            {
+                "golden_resume_validation": {"status": "PASS", "record_count": len(golden_resume["records"])},
+                "requirement_coverage": coverage_matrix,
+                "evidence_density": specificity,
+                "claim_provenance": claim_provenance,
+                "voice_drift": voice_drift,
+                "human_credibility": credibility,
+                "keyword_overuse": keyword_overuse,
+                "ats_round_trip": ats_round_trip,
+                "docx_hygiene": docx_hygiene,
+                "styled_ats_factual_parity": factual_parity,
+                "interview_conversion_gate": interview_gate,
+            }
+        )
+        if interview_gate["blocking_reasons"]:
+            raise PackageGenerationError(
+                "Submission-readiness validation blocked package generation:\n- "
+                + "\n- ".join(interview_gate["blocking_reasons"]),
+                details={"interview_conversion_gate": interview_gate, "blocking": True},
+            )
+        outputs.update(
+            save_readiness_artifacts(
+                root,
+                ats_preview=str(ats_round_trip.get("parsed_preview") or ""),
+                coverage_matrix=coverage_matrix,
+                gate=interview_gate,
+            )
+        )
         package_summary = save_package_summary(
             root,
             parsed,

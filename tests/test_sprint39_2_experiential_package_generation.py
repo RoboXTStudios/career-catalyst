@@ -70,6 +70,9 @@ def test_reopened_live_nation_generates_experiential_package_in_isolation(tmp_pa
         "Styled Resume DOCX",
         "Cover Letter DOCX",
         "Package Summary",
+        "ATS Parsed Preview",
+        "Requirement Coverage Matrix",
+        "Interview Conversion Gate",
         "Canonical Manifest",
     }
     for item in result["package_checklist"]:

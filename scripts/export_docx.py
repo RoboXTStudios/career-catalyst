@@ -15,11 +15,13 @@ from docx.opc.constants import RELATIONSHIP_TYPE as RT
 from docx.shared import Inches, Pt, RGBColor, Twips
 
 try:
+    from .docx_quality import require_docx_quality, sanitize_docx, validate_ats_round_trip
     from .filename_utils import build_upload_filename, short_company_name
     from .load_data import DataLoadError, load_yaml_file
     from .parse_job import JobParseError, parse_job_description
     from .resume_platforms import filter_resume_platform_items
 except ImportError:
+    from docx_quality import require_docx_quality, sanitize_docx, validate_ats_round_trip
     from filename_utils import build_upload_filename, short_company_name
     from load_data import DataLoadError, load_yaml_file
     from parse_job import JobParseError, parse_job_description
@@ -731,7 +733,7 @@ def _add_markdown_content(
     platform_categories: List[Dict[str, Any]],
 ) -> None:
     def add_text(paragraph: Any, text: str) -> None:
-        _add_inline_text(paragraph, text, hyperlinks=mode == STYLED_MODE)
+        _add_inline_text(paragraph, text, hyperlinks=True)
 
     header_paragraph_index = 0
     current_section = ""
@@ -836,6 +838,26 @@ def _output_path(
     return project_root / "exports" / "docx" / filename
 
 
+def _ats_intended_markdown(
+    blocks: List[Dict[str, str]], platform_categories: List[Dict[str, Any]]
+) -> str:
+    """Represent the approved, filtered content that the ATS exporter must preserve."""
+    lines: List[str] = []
+    prefixes = {"h1": "# ", "h2": "## ", "h3": "### ", "bullet": "- ", "paragraph": ""}
+    index = 0
+    while index < len(blocks):
+        block = blocks[index]
+        lines.append(prefixes[block["type"]] + block["text"])
+        index += 1
+        if block["type"] == "h2" and _is_section(block["text"], "Platforms & Technologies"):
+            index = _skip_platform_blocks(blocks, index)
+            for category in platform_categories:
+                lines.extend(
+                    [f"### {category['name']}", ", ".join(category["items"])]
+                )
+    return "\n\n".join(lines)
+
+
 def _export_docx(
     markdown_path: PathInput,
     mode: str,
@@ -888,12 +910,21 @@ def _export_docx(
     except OSError as error:
         raise DocxExportError(f"Unable to save DOCX resume {output_path}: {error}") from error
 
-    return {
+    hygiene = sanitize_docx(output_path)
+    result = {
         "mode": mode,
         "source_path": str(source_path),
         "output_path": str(output_path),
         "template_path": document_info["template_path"],
+        "docx_hygiene": hygiene,
     }
+    if mode == ATS_MODE:
+        ats_round_trip = validate_ats_round_trip(
+            output_path, _ats_intended_markdown(blocks, platform_categories)
+        )
+        require_docx_quality(ats_round_trip, label="ATS round-trip validation")
+        result["ats_round_trip"] = ats_round_trip
+    return result
 
 
 def export_styled_docx(

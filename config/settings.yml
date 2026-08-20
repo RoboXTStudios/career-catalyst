@@ -2,8 +2,8 @@ project:
   name: Career Catalyst
   codename: Career Catalyst
   candidate: Trisha Lynch
-  sprint: 0
-  status: foundational_documentation
+  sprint: 42
+  status: production_consolidated
 
 positioning:
   headline: "Senior Operations & Transformation Leader | MarTech | AI Systems | Entertainment"
@@ -11,18 +11,16 @@ positioning:
 
 scope:
   included_now:
-    - Folder structure
-    - Foundational documentation
-    - Starter YAML data
-    - Starter Markdown templates
+    - Canonical Golden Resume inventory
+    - Role Intelligence and semantic matching
+    - Evidence selection and provenance
+    - Transactional candidate-package generation
+    - DOCX hygiene and ATS round-trip validation
+    - Interview Conversion Gate
   excluded_now:
-    - Application logic
-    - Match scoring
-    - Resume generation
     - OpenAI API usage
     - Web scraping
-    - CLI
-    - UI
+    - Automated application impersonation
 
 paths:
   config: config
@@ -65,6 +63,7 @@ canonical_resume_foundation:
     - data/projects.yml
     - data/certifications.yml
     - data/personal_brand.yml
+    - data/evidence_projects.yml
   supplemental_evidence_source: data/evidence_projects.yml
-  last_updated: '2026-07-25'
-  last_verified: '2026-07-25'
+  last_updated: '2026-08-20'
+  last_verified: '2026-08-20'

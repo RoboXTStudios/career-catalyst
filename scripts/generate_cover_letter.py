@@ -11,6 +11,7 @@ from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
 
 try:
+    from .docx_quality import sanitize_docx
     from .candidate_output import (
         candidate_cover_letter,
         cover_letter_evidence_decision,
@@ -35,6 +36,7 @@ try:
     from .filename_utils import build_upload_filename, company_display_name
     from .resume_foundation import (
         CandidateLanguageError,
+        candidate_language_violations,
         load_resume_foundation,
         validate_candidate_language,
     )
@@ -57,6 +59,7 @@ try:
     )
     from .role_intent import build_role_intent
 except ImportError:
+    from docx_quality import sanitize_docx
     from candidate_output import (
         candidate_cover_letter,
         cover_letter_evidence_decision,
@@ -81,6 +84,7 @@ except ImportError:
     from filename_utils import build_upload_filename, company_display_name
     from resume_foundation import (
         CandidateLanguageError,
+        candidate_language_violations,
         load_resume_foundation,
         validate_candidate_language,
     )
@@ -178,6 +182,12 @@ def save_material(
     repair_attempts: int = 3,
 ) -> Dict[str, Any]:
     """Validate and save one Markdown application material, repairing length when configured."""
+    raw_violations = candidate_language_violations(content)
+    if raw_violations:
+        raise ApplicationMaterialError(
+            "Generated material violates the Golden Master candidate-language policy: "
+            + ", ".join(raw_violations)
+        )
     employer = str(context.get("parsed_job", {}).get("company") or "")
     content = normalize_candidate_text(content, employer=employer)
     artifact_type = {
@@ -1552,6 +1562,7 @@ def generate_cover_letter(
         result["docx_error"] = f"DOCX missing / unsupported: {error}"
     else:
         result["docx_output_path"] = str(docx_path)
+        result["docx_hygiene"] = sanitize_docx(docx_path)
     result["role_intent"] = context["role_intent"]
     result["associated_evidence_project_titles"] = [
         str(project.get("title")) for project in (associated_evidence_projects or [])
