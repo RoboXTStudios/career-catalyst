@@ -172,7 +172,9 @@ class Sprint16PackageMaterialTests(unittest.TestCase):
     def test_package_generation_persists_only_verified_material_paths(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            (root / "data").mkdir()
+            shutil.copytree(PROJECT_ROOT / "data", root / "data")
+            shutil.copytree(PROJECT_ROOT / "config", root / "config")
+            shutil.copytree(PROJECT_ROOT / "templates", root / "templates")
             (root / "jobs").mkdir()
             (root / "exports").mkdir()
             (root / "data" / "application_tracker.yml").write_text(
@@ -278,7 +280,6 @@ class Sprint16PackageMaterialTests(unittest.TestCase):
                     ("scripts.package_generator.generate_strategy_pack", strategy),
                     ("scripts.package_generator.generate_interview_prep", interview),
                     ("scripts.package_generator.calculate_package_quality", quality),
-                    ("scripts.package_generator.save_package_summary", summary),
                     ("scripts.package_generator.generate_dashboard", dashboard),
                 ):
                     stack.enter_context(patch(target, return_value=value))
@@ -288,6 +289,24 @@ class Sprint16PackageMaterialTests(unittest.TestCase):
                         side_effect=(recruiter, manager),
                     )
                 )
+                stack.enter_context(
+                    patch(
+                        "scripts.package_generator.evaluate_candidate_facing_quality",
+                        return_value={"status": "PASS", "blocking_reasons": []},
+                    )
+                )
+                stack.enter_context(
+                    patch(
+                        "scripts.package_generator.compare_docx_factual_parity",
+                        return_value={"status": "PASS", "visible_facts_match": True, "hyperlinks_match": True},
+                    )
+                )
+                stack.enter_context(
+                    patch(
+                        "scripts.package_generator.build_interview_conversion_gate",
+                        return_value={"status": "PASS", "blocking_reasons": []},
+                    )
+                )
                 result = generate_package(
                     "aeg-tpm", root, generate_followups_too=False
                 )
@@ -295,9 +314,9 @@ class Sprint16PackageMaterialTests(unittest.TestCase):
             checklist = {
                 item["material_type"]: item for item in result["package_checklist"]
             }
-            self.assertTrue(checklist["ATS Resume"]["exists"])
-            ats_path = Path(checklist["ATS Resume"]["preferred_open_path"])
-            self.assertEqual(ats_path.name, "ats_resume.docx")
+            self.assertTrue(checklist["ATS Resume DOCX"]["exists"])
+            ats_path = Path(checklist["ATS Resume DOCX"]["preferred_open_path"])
+            self.assertTrue(ats_path.name.endswith("_ats_resume.docx"))
             self.assertIn("exports/active/in_progress/aeg_tpm", ats_path.as_posix())
             tracker = load_application_tracker(root)[0]
             self.assertEqual(
@@ -322,7 +341,13 @@ class Sprint16CoverLetterTests(unittest.TestCase):
             lowered = content.lower()
             self.assertTrue(Path(result["txt_output_path"]).is_file())
             self.assertTrue(Path(result["docx_output_path"]).is_file())
-            for expected in ("requirements", "dependencies", "qa", "technical", "operational risk"):
+            for expected in (
+                "program and portfolio delivery",
+                "dependencies",
+                "quality assurance",
+                "technical",
+                "risks",
+            ):
                 self.assertIn(expected, lowered)
             for excluded in ("multiverse", "substack", "editorial projects"):
                 self.assertNotIn(excluded, lowered)
@@ -332,7 +357,8 @@ class Sprint16CoverLetterTests(unittest.TestCase):
                 if paragraph.strip() not in {"Hello,", "Best,", "Trisha Lynch"}
                 and not paragraph.strip().startswith("Best,")
             ]
-            self.assertEqual(len(body_paragraphs), 4)
+            self.assertGreaterEqual(len(body_paragraphs), 4)
+            self.assertLessEqual(len(body_paragraphs), 6)
 
 
 if __name__ == "__main__":

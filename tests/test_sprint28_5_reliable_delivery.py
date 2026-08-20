@@ -232,11 +232,11 @@ def load_cards():
     return load_evidence_cards(PROJECT_ROOT)
 
 
-def test_canonical_export_root_is_stable_and_test_output_is_injected(tmp_path):
-    with patch.dict(os.environ, {}, clear=False):
-        os.environ.pop("PYTEST_CURRENT_TEST", None)
-        canonical = canonical_export_root(PROJECT_ROOT)
-    assert canonical == Path("/Users/trisha.lynch/Documents/career-catalyst/exports")
+def test_canonical_export_root_is_stable_and_test_output_is_injected(tmp_path, monkeypatch):
+    monkeypatch.delenv("CAREER_CATALYST_EXPORT_ROOT", raising=False)
+    monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+    canonical = canonical_export_root(PROJECT_ROOT)
+    assert canonical.name == "exports"
     application = {"id": "acme_operations_lead", "company": "Acme", "role": "Operations Lead", "status": "Drafted"}
     source = tmp_path / "generated.txt"
     source.write_text("generated", encoding="utf-8")

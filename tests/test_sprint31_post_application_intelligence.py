@@ -300,7 +300,12 @@ def test_output_has_no_unsupported_candidate_claims(tmp_path: Path):
         "60+",
     ):
         assert phrase not in text
-    assert "campaignos working prototype" in text
+    # Current evidence selection no longer forces CampaignOS into every
+    # product-adjacent artifact. If it is selected, its prototype qualifier is
+    # mandatory; otherwise the intelligence remains grounded in career facts.
+    if "campaignos" in text:
+        assert "working prototype" in text
+    assert "omg23 (omnicom media group)" in text
 
 
 # ARCHIVE

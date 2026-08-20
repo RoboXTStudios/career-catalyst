@@ -1563,7 +1563,7 @@ def generate_cover_letter(
     else:
         result["docx_output_path"] = str(docx_path)
         result["docx_hygiene"] = sanitize_docx(docx_path)
-    result["role_intent"] = context["role_intent"]
+    result["role_intent"] = context.get("role_intent") or {}
     result["associated_evidence_project_titles"] = [
         str(project.get("title")) for project in (associated_evidence_projects or [])
     ]

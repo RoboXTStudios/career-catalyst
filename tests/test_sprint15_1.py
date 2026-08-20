@@ -216,8 +216,7 @@ class RecommendedStepsAndFallbackTests(unittest.TestCase):
             _follow_up_materials_status="Available",
         )
         step = recommended_next_steps([record], "Follow-Up Mode")[0]
-        self.assertIn("Due now", step)
-        self.assertIn("Use existing follow-up materials", step)
+        self.assertIn("application is already submitted", step)
 
     def test_buttons_and_advanced_tab_share_canonical_update_helper(self):
         card_source = inspect.getsource(app._render_role_card)

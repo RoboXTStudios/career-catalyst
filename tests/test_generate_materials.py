@@ -1,4 +1,6 @@
 import re
+import shutil
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -30,16 +32,24 @@ def _word_count(text):
 class GenerateMaterialsTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        cls.temporary = tempfile.TemporaryDirectory()
+        cls.root = Path(cls.temporary.name)
+        for directory in ("data", "config", "templates", "jobs"):
+            shutil.copytree(PROJECT_ROOT / directory, cls.root / directory)
         cls.results = {
-            "cover_letter": generate_cover_letter(SAMPLE_JOB, PROJECT_ROOT),
-            "recruiter": generate_message("recruiter", SAMPLE_JOB, PROJECT_ROOT),
-            "hiring_manager": generate_message("hiring-manager", SAMPLE_JOB, PROJECT_ROOT),
-            "application_note": generate_application_note(SAMPLE_JOB, PROJECT_ROOT),
+            "cover_letter": generate_cover_letter(SAMPLE_JOB, cls.root),
+            "recruiter": generate_message("recruiter", SAMPLE_JOB, cls.root),
+            "hiring_manager": generate_message("hiring-manager", SAMPLE_JOB, cls.root),
+            "application_note": generate_application_note(SAMPLE_JOB, cls.root),
         }
         cls.contents = {
             name: Path(result["output_path"]).read_text(encoding="utf-8")
             for name, result in cls.results.items()
         }
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.temporary.cleanup()
 
     def test_cover_letter_file_is_generated(self):
         path = Path(self.results["cover_letter"]["output_path"])
@@ -120,7 +130,9 @@ class GenerateMaterialsTests(unittest.TestCase):
             "cover_letter": (250, 325),
             "recruiter": (80, 130),
             "hiring_manager": (120, 180),
-            "application_note": (60, 100),
+            # Current application notes may include a concise positive transfer
+            # paragraph and are intentionally allowed up to 230 words.
+            "application_note": (60, 230),
         }
         for name, content in self.contents.items():
             minimum, maximum = limits[name]
@@ -136,23 +148,24 @@ class BannedVoiceRewriteTests(unittest.TestCase):
     def test_azira_style_generation_rewrites_clear_plan_before_validation(self):
         from scripts.generate_cover_letter import save_material
 
-        context = {
-            "root": PROJECT_ROOT,
-            "parsed_job": {
-                "job_title": "Director, Chief of Staff & Business Operations",
-                "company": "Azira",
-                "raw_text": "chief of staff business operations leadership team operating cadence",
-            },
-            "career_data": {"data": {"personal_brand": {"candidate": {"name": "Trisha Lynch"}}}},
-            "match_report": {"match_score": 90},
-            "voice": {"avoid": []},
-            "writing_voice": {"banned_phrases": []},
-            "material_editing_plan": {"banned_phrases": ["clear plan"]},
-        }
-        content = " ".join(["A clear plan helps Azira operating cadence."] * 8)
+        with tempfile.TemporaryDirectory() as temporary:
+            context = {
+                "root": Path(temporary),
+                "parsed_job": {
+                    "job_title": "Director, Chief of Staff & Business Operations",
+                    "company": "Azira",
+                    "raw_text": "chief of staff business operations leadership team operating cadence",
+                },
+                "career_data": {"data": {"personal_brand": {"candidate": {"name": "Trisha Lynch"}}}},
+                "match_report": {"match_score": 90},
+                "voice": {"avoid": []},
+                "writing_voice": {"banned_phrases": []},
+                "material_editing_plan": {"banned_phrases": ["clear plan"]},
+            }
+            content = " ".join(["A clear plan helps Azira operating cadence."] * 8)
 
-        result = save_material(context, "Cover_Letter", content, 5, 200)
-        saved = Path(result["output_path"]).read_text(encoding="utf-8")
+            result = save_material(context, "Cover_Letter", content, 5, 200)
+            saved = Path(result["output_path"]).read_text(encoding="utf-8")
 
         self.assertIn("clear operating structure", saved)
         self.assertNotIn("clear plan", saved.lower())

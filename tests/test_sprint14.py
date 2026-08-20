@@ -1,6 +1,7 @@
 import importlib
 import unittest
 from datetime import date, timedelta
+from pathlib import Path
 
 from scripts.generate_dashboard import (
     _render_metadata,
@@ -15,6 +16,7 @@ from scripts.job_source_registry import classify_source, normalize_job_source
 
 
 TODAY = date(2026, 6, 30)
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
 class SourceRegistryTests(unittest.TestCase):
@@ -206,7 +208,7 @@ class SourceDashboardTests(unittest.TestCase):
 
     def test_verify_first_guidance_for_aggregator(self):
         step = recommended_next_steps([self._record("aggregator")], "Apply Mode")[0]
-        self.assertIn("Verify on employer site before package generation", step)
+        self.assertIn("Verify on the employer site before generating", step)
 
     def test_apply_guidance_prioritizes_verified_source(self):
         aggregator = self._record("aggregator", match_score=95)
@@ -232,7 +234,10 @@ class SourceDashboardTests(unittest.TestCase):
     def test_html_dashboard_has_source_verification_sections(self):
         record = self._record("aggregator")
         package = {"company": record["company"], "role": record["role"], "tracker": record, "files": {}}
-        content = _render_priority_sections({"active": [], "draft": [package], "hidden": []})
+        content = _render_priority_sections(
+            {"active": [], "draft": [package], "hidden": []},
+            PROJECT_ROOT / "exports" / "dashboard",
+        )
         for heading in (
             "Verified / Employer Source Roles", "Industry Board Roles", "Aggregator - Verify First",
             "Gated / Limited Visibility", "Unknown / Cannot Verify", "Stale or Closed Risk",

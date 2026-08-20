@@ -67,12 +67,11 @@ class DashboardSimplificationTests(unittest.TestCase):
         source = inspect.getsource(app._render_role_card)
         for label in (
             'st.expander("Match details"',
-            'st.expander("Source Verification"',
-            'st.expander("Notes"',
+            'st.expander("Advanced Details"',
             'with st.expander("Advanced edit role"',
         ):
             self.assertIn(label, source)
-        self.assertIn("Use quick actions for common workflow changes", source)
+        self.assertIn("Application Links", source)
         self.assertLess(source.index('with st.expander("Advanced edit role"'), source.index("edited_status ="))
 
     def test_quick_actions_include_posting_material_and_common_status_buttons(self):
@@ -101,7 +100,7 @@ class RecommendedActionTests(unittest.TestCase):
         self.assertEqual(step["tracker_id"], record["id"])
         self.assertEqual(step["company"], "Acme")
         self.assertEqual(step["title"], "Director, Operations")
-        self.assertEqual(step["action_type"], "generate_package")
+        self.assertEqual(step["action_type"], "review_fit")
         self.assertEqual(step["priority"], 1)
         self.assertEqual(step["posting_url"], "https://careers.example/jobs/1")
         self.assertEqual(step["material_paths"]["Cover Letter"], "/tmp/cover.md")
@@ -120,10 +119,10 @@ class RecommendedActionTests(unittest.TestCase):
         hidden = structured_recommended_next_steps(
             [_record(status="Invalid/Hidden")], "Cleanup Mode"
         )[0]
-        self.assertEqual(passed["action_type"], "passed")
-        self.assertIn("Already passed", passed["recommendation"])
-        self.assertEqual(hidden["action_type"], "hidden")
-        self.assertIn("Hidden from active workflow", hidden["recommendation"])
+        self.assertEqual(passed["action_type"], "archive_learning")
+        self.assertIn("application is closed", passed["recommendation"])
+        self.assertEqual(hidden["action_type"], "archive_learning")
+        self.assertIn("application is closed", hidden["recommendation"])
 
     def test_focus_state_uses_stable_id_and_can_be_cleared(self):
         state = {"dashboard_mode": "Cleanup Mode"}

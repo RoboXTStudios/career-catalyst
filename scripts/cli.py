@@ -542,12 +542,13 @@ def hide_role_command(tracker_id: str, reason: str) -> int:
 
 
 def launcher_info_command() -> int:
-    launcher_path = PROJECT_ROOT / "launchers" / "Open_Career_Catalyst.command"
+    launcher_path = PROJECT_ROOT / "launchers" / "Career Catalyst.app"
+    shell_path = PROJECT_ROOT / "launchers" / "launch_career_catalyst.sh"
     print("Career Catalyst macOS launcher")
     print(f"Launcher path: {launcher_path}")
-    print("First time only: chmod +x launchers/Open_Career_Catalyst.command")
-    print("Launch: Double-click Open_Career_Catalyst.command in Finder.")
-    print("Stop: Close the Terminal window or press Control+C.")
+    print(f"Durable launch script: {shell_path}")
+    print("Launch: Double-click Career Catalyst.app in Finder.")
+    print("The launcher reuses the healthy launchctl-managed instance when available.")
     return 0
 
 

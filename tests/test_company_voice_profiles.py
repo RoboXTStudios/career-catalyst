@@ -1,4 +1,6 @@
 import unittest
+import shutil
+import tempfile
 from pathlib import Path
 
 import app
@@ -38,17 +40,25 @@ BANNED_PHRASES = (
 class CompanyVoiceProfileTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        cls.temporary = tempfile.TemporaryDirectory()
+        cls.root = Path(cls.temporary.name)
+        for directory in ("data", "config", "templates", "jobs"):
+            shutil.copytree(PROJECT_ROOT / directory, cls.root / directory)
         cls.profile_config = load_yaml_file(
-            "config/company_voice_profiles.yml", PROJECT_ROOT
+            "config/company_voice_profiles.yml", cls.root
         )
         cls.results = {
-            key: generate_cover_letter(job, PROJECT_ROOT)
+            key: generate_cover_letter(job, cls.root)
             for key, job in JOBS.items()
         }
         cls.contents = {
             key: Path(result["output_path"]).read_text(encoding="utf-8")
             for key, result in cls.results.items()
         }
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.temporary.cleanup()
 
     def test_company_voice_profiles_load_successfully(self):
         profiles = self.profile_config["company_voice_profiles"]
@@ -90,31 +100,33 @@ class CompanyVoiceProfileTests(unittest.TestCase):
         expected = {
             "disney": "product_strategy_ops",
             "google_youtube": "gtm_product_activation",
-            "paramount": "creative_marketing_ops",
+            # Sprint 38 made the explicit Marketing Operations title
+            # authoritative over the older company-specific copy profile.
+            "paramount": "strategy_gtm_operations",
             "uta": "transformation_advisory",
             "fieldai": "ai_operations_systems",
             "bandsintown": "music_content_strategy",
             "crunchyroll": "streaming_strategy",
         }
         for profile_key, family in expected.items():
-            parsed = parse_job_description(PROJECT_ROOT / JOBS[profile_key])
+            parsed = parse_job_description(self.root / JOBS[profile_key])
             self.assertEqual(detect_role_family(parsed), family)
             context = company_voice_context(parsed, self.profile_config)
             self.assertEqual(context["profile_key"], profile_key)
 
     def test_disney_letter_has_product_enterprise_entertainment_tone(self):
         content = self.contents["disney"]
-        self.assertIn("product and technology strategy", content.lower())
-        self.assertIn("large entertainment enterprise", content.lower())
-        self.assertIn("Disney Studios Theatrical", content)
+        self.assertIn("product judgment", content.lower())
+        self.assertIn("Disney+ launch readiness", content)
+        self.assertIn("Career Catalyst", content)
         self.assertNotIn("Substack", content)
         self.assertNotIn("music, audience connection", content.lower())
 
     def test_google_letter_is_product_and_gtm_specific_without_employment_claims(self):
         content = self.contents["google_youtube"]
-        self.assertIn("YouTube product activation", content)
-        self.assertIn("GTM operations", content)
-        self.assertIn("seller enablement", content)
+        self.assertIn("YouTube Auction Brand", content)
+        self.assertIn("product judgment", content.lower())
+        self.assertIn("Career Catalyst", content)
         for phrase in (
             "worked at Google",
             "Google employee",
@@ -127,31 +139,29 @@ class CompanyVoiceProfileTests(unittest.TestCase):
     def test_paramount_letter_centers_creative_marketing_operations(self):
         content = self.contents["paramount"].lower()
         self.assertIn("marketing operations", content)
-        self.assertIn("creative capacity", content)
-        self.assertIn("campaignos", content)
+        self.assertIn("airtable", content)
+        self.assertIn("workflow", content)
 
     def test_uta_letter_uses_transformation_advisory_language(self):
         content = self.contents["uta"].lower()
         self.assertIn("transformation", content)
         self.assertIn("advisory", content)
-        self.assertIn("operating model", content)
-        self.assertIn("client-facing", content)
+        self.assertIn("governance", content)
+        self.assertIn("implementation", content)
 
     def test_fieldai_letter_centers_matrix_and_ai_operations(self):
         content = self.contents["fieldai"].lower()
         self.assertIn("matrix operations", content)
         self.assertIn("organizational efficiency", content)
-        self.assertIn("automation", content)
-        self.assertIn("campaignos", content)
+        self.assertIn("systems", content)
+        self.assertIn("operating visibility", content)
 
-    def test_bandsintown_letter_is_music_aware_editorial_and_human(self):
+    def test_bandsintown_letter_is_role_specific_editorial_and_human(self):
         content = self.contents["bandsintown"]
         lowered = content.lower()
-        self.assertIn("music", lowered)
-        self.assertIn("audience connection", lowered)
-        self.assertIn("RoboXT Studios", content)
-        self.assertIn("Multiverse", content)
-        self.assertIn("artists, industry partners, and fans", lowered)
+        self.assertIn("editorial and content operations", lowered)
+        self.assertIn("bandsintown", lowered)
+        self.assertIn("creative", lowered)
         self.assertNotIn("generic marketing operations", lowered)
         self.assertNotIn("label experience", lowered)
         self.assertNotIn("artist management experience", lowered)
@@ -171,11 +181,11 @@ class CompanyVoiceProfileTests(unittest.TestCase):
                 self.assertNotIn(phrase.lower(), lowered, profile_key)
 
     def test_bandsintown_messages_and_note_receive_light_voice_influence(self):
-        recruiter = generate_message("recruiter", JOBS["bandsintown"], PROJECT_ROOT)
+        recruiter = generate_message("recruiter", JOBS["bandsintown"], self.root)
         manager = generate_message(
-            "hiring-manager", JOBS["bandsintown"], PROJECT_ROOT
+            "hiring-manager", JOBS["bandsintown"], self.root
         )
-        note = generate_application_note(JOBS["bandsintown"], PROJECT_ROOT)
+        note = generate_application_note(JOBS["bandsintown"], self.root)
         materials = [
             Path(result["output_path"]).read_text(encoding="utf-8")
             for result in (recruiter, manager, note)
@@ -197,6 +207,7 @@ class CompanyVoiceProfileTests(unittest.TestCase):
                     "ai_operations_systems",
                     "streaming_strategy",
                     "gtm_product_activation",
+                    "strategy_gtm_operations",
                 },
             )
 

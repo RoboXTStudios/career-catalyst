@@ -3,6 +3,7 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
+import yaml
 from docx import Document
 
 from scripts.application_tracker import load_application_tracker
@@ -13,9 +14,10 @@ from scripts.package_quality import save_package_summary
 from scripts.parse_job import parse_job_description
 from scripts.tailor_resume import tailor_resume
 from scripts.text_cleanup import normalize_candidate_text
+from tests.test_sprint34_application_reliability_gate import _write_openai_fixture_runtime
 
 
-RUNTIME_ROOT = Path("/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime")
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_normalize_spaced_and_unspaced_em_dashes():
@@ -36,9 +38,11 @@ def test_normalization_preserves_hyphens_ranges_and_urls():
 
 def isolated_runtime(tmp_path: Path) -> Path:
     root = tmp_path / "runtime"
-    shutil.copytree(RUNTIME_ROOT / "data", root / "data")
-    shutil.copytree(RUNTIME_ROOT / "config", root / "config")
-    shutil.copytree(RUNTIME_ROOT / "jobs", root / "jobs")
+    shutil.copytree(PROJECT_ROOT / "data", root / "data")
+    shutil.copytree(PROJECT_ROOT / "config", root / "config")
+    shutil.copytree(PROJECT_ROOT / "jobs", root / "jobs")
+    shutil.copytree(PROJECT_ROOT / "templates", root / "templates")
+    _write_openai_fixture_runtime(root)
     return root
 
 
@@ -61,6 +65,7 @@ def test_openai_package_qa_normalizes_all_candidate_facing_text(tmp_path, monkey
     source_before = (root / "data" / "evidence_projects.yml").read_text(encoding="utf-8")
     tracker = load_application_tracker(root)
     context = build_package_context("openai_program_manager_lead", tracker, root)
+    score_before = context["match_report"]["match_score"]
     outputs = generate_package(
         "openai_program_manager_lead",
         root,
@@ -68,7 +73,10 @@ def test_openai_package_qa_normalizes_all_candidate_facing_text(tmp_path, monkey
         export_root=root / "qa_exports",
     )
     assert "—" not in generated_text(outputs)
-    assert context["match_report"]["match_score"] == 91
+    tracker_after = {
+        record["id"]: record for record in load_application_tracker(root)
+    }
+    assert tracker_after["openai_program_manager_lead"]["match_score"] == score_before
     assert len(context["associated_evidence_projects"]) == 4
     assert (root / "data" / "evidence_projects.yml").read_text(encoding="utf-8") == source_before
 
@@ -101,7 +109,7 @@ def test_package_summary_normalizes_evidence_titles(tmp_path):
     root = isolated_runtime(tmp_path)
     summary = save_package_summary(
         root,
-        parse_job_description(root / "jobs" / "openai_program_manager_lead_e6ddb290_3585_48ec_a331_d4fc4761af20.md"),
+        parse_job_description(root / "jobs" / "openai_program_manager_lead.md"),
         {"label": "Fresh", "posting_status": "Open", "posting_date": ""},
         {"overall_score": 91, "apply_recommendation": "Generate", "dimensions": {}},
         {"resume_tailoring_score": 91, "cover_letter_score": 91, "ats_keyword_match": 91, "voice_match": 91, "confidence_level": "High"},

@@ -1,5 +1,6 @@
 import importlib
 import json
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -9,7 +10,9 @@ from urllib.error import URLError
 import yaml
 
 from scripts.application_tracker import (
+    VALID_STATUSES,
     add_prospect,
+    get_record_status,
     load_application_tracker,
     update_status,
 )
@@ -33,7 +36,10 @@ class Sprint10Tests(unittest.TestCase):
     def setUp(self):
         self.temporary_directory = tempfile.TemporaryDirectory()
         self.root = Path(self.temporary_directory.name)
-        (self.root / "data").mkdir(parents=True)
+        project_root = Path(__file__).resolve().parents[1]
+        shutil.copytree(project_root / "data", self.root / "data")
+        shutil.copytree(project_root / "config", self.root / "config")
+        shutil.copytree(project_root / "templates", self.root / "templates")
         (self.root / "jobs").mkdir(parents=True)
         (self.root / "data" / "application_tracker.yml").write_text(
             "applications: []\n", encoding="utf-8"
@@ -183,6 +189,19 @@ class Sprint10Tests(unittest.TestCase):
             "job_title": "Director, Operations",
             "company": "Acme Entertainment",
         }
+        output_dir = self.root / "exports"
+        output_dir.mkdir(exist_ok=True)
+        for relative_path in (
+            "resume.md", "styled.docx", "ats.docx", "cover.md", "cover.txt", "cover.docx",
+            "recruiter.md", "manager.md", "note.md", "strategy.md",
+            "dashboard/index.html",
+        ):
+            path = output_dir / relative_path
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                "Acme Entertainment Director, Operations candidate material.",
+                encoding="utf-8",
+            )
         return (
             patch("scripts.package_generator.parse_job_description", return_value=parsed),
             patch(
@@ -206,6 +225,7 @@ class Sprint10Tests(unittest.TestCase):
                 return_value={
                     "output_path": str(self.root / "exports/cover.md"),
                     "txt_output_path": str(self.root / "exports/cover.txt"),
+                    "docx_output_path": str(self.root / "exports/cover.docx"),
                 },
             ),
             patch(
@@ -226,6 +246,18 @@ class Sprint10Tests(unittest.TestCase):
             patch(
                 "scripts.package_generator.generate_dashboard",
                 return_value={"output_path": str(self.root / "exports/dashboard/index.html")},
+            ),
+            patch(
+                "scripts.package_generator.evaluate_candidate_facing_quality",
+                return_value={"status": "PASS", "blocking_reasons": []},
+            ),
+            patch(
+                "scripts.package_generator.compare_docx_factual_parity",
+                return_value={"status": "PASS", "visible_facts_match": True, "hyperlinks_match": True},
+            ),
+            patch(
+                "scripts.package_generator.build_interview_conversion_gate",
+                return_value={"status": "PASS", "blocking_reasons": []},
             ),
         )
 
@@ -263,15 +295,19 @@ class Sprint10Tests(unittest.TestCase):
         self.assertTrue(callable(module.main))
 
 
-class AppliedStatusRegressionTests(unittest.TestCase):
-    def test_playstation_google_and_paramount_applied_statuses_coexist(self):
+class CanonicalStatusFixtureTests(unittest.TestCase):
+    def test_committed_tracker_uses_valid_current_statuses(self):
         project_root = Path(__file__).resolve().parents[1]
         applications = load_application_tracker(project_root)
         by_id = {item["id"]: item for item in applications}
 
-        self.assertEqual(by_id["playstation_head_global_creative_ops"]["status"], "Applied")
-        self.assertEqual(by_id["google_strategy_ops_youtube_auction_brand"]["status"], "Applied")
-        self.assertEqual(by_id["paramount_director_marketing_operations"]["status"], "Applied")
+        for tracker_id in (
+            "playstation_head_global_creative_ops",
+            "google_strategy_ops_youtube_auction_brand",
+            "paramount_director_marketing_operations",
+        ):
+            self.assertIn(tracker_id, by_id)
+            self.assertIn(get_record_status(by_id[tracker_id]), VALID_STATUSES)
 
 
 if __name__ == "__main__":

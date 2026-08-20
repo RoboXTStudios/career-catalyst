@@ -21,6 +21,7 @@ from scripts.docx_quality import (
     validate_ats_round_trip,
 )
 from scripts.evidence_engine import load_evidence_cards, select_evidence_cards
+from scripts.evidence_tailoring import candidate_project_reference_violations
 from scripts.export_docx import export_ats_docx, export_styled_docx
 from scripts.golden_resume import (
     GoldenResumeError,
@@ -165,6 +166,25 @@ def test_contextual_project_priority_preserves_senior_career_and_role_relevance(
         {"job_title": "Senior Label Relations Manager", "raw_text": "Coordinate music partners and releases."},
         complete_foundation=False,
     )
+
+
+def test_legacy_and_canonical_ids_share_one_selected_project_identity():
+    selected = {
+        "id": "career_catalyst_codex_delivery",
+        "title": "Career Catalyst - AI-Enabled Career Intelligence Platform",
+    }
+    canonical = {"id": "career_catalyst", "name": "Career Catalyst"}
+    context = {
+        "career_data": {"data": {"projects": {"projects": [canonical]}}},
+        "associated_evidence_projects": [selected],
+        "evidence_scope_enforced": True,
+        "resume_evidence_selection": {"used_projects": [selected]},
+    }
+    assert candidate_project_reference_violations(
+        "Career Catalyst is a working product-building proof point.",
+        context,
+        "ats_resume",
+    ) == []
 
 
 def test_requirement_matrix_distinguishes_semantic_transfer_and_unsupported_claims():

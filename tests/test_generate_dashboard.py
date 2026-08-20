@@ -1,10 +1,13 @@
 import io
 import html
 import re
+import shutil
+import tempfile
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
 from urllib.parse import unquote
+from unittest.mock import patch
 
 from scripts.cli import main
 from scripts.application_tracker import get_record_status, load_application_tracker
@@ -23,12 +26,20 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 class GenerateDashboardTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.result = generate_dashboard(PROJECT_ROOT)
+        cls.temporary = tempfile.TemporaryDirectory()
+        cls.root = Path(cls.temporary.name)
+        for directory in ("data", "jobs", "exports"):
+            shutil.copytree(PROJECT_ROOT / directory, cls.root / directory)
+        cls.result = generate_dashboard(cls.root)
         cls.output_path = Path(cls.result["output_path"])
         cls.content = cls.output_path.read_text(encoding="utf-8")
 
+    @classmethod
+    def tearDownClass(cls):
+        cls.temporary.cleanup()
+
     def test_dashboard_is_created_at_expected_path(self):
-        expected_path = PROJECT_ROOT / "exports" / "dashboard" / "index.html"
+        expected_path = (self.root / "exports" / "dashboard" / "index.html").resolve()
         self.assertEqual(self.output_path, expected_path)
         self.assertTrue(self.output_path.is_file())
 
@@ -96,7 +107,7 @@ class GenerateDashboardTests(unittest.TestCase):
         self.assertIn('<span class="badge status-applied">Applied</span>', self.content)
 
     def test_applied_section_preserves_all_applied_roles_without_duplicate_cards(self):
-        applications = load_application_tracker(PROJECT_ROOT)
+        applications = load_application_tracker(self.root)
         expected_applied_records = [
             item
             for item in applications
@@ -120,7 +131,7 @@ class GenerateDashboardTests(unittest.TestCase):
         self.assertNotIn("closedOnAll", self.content)
 
     def test_crunchyroll_role_matches_tracker_status(self):
-        applications = load_application_tracker(PROJECT_ROOT)
+        applications = load_application_tracker(self.root)
         crunchyroll = next(
             item
             for item in applications
@@ -249,7 +260,7 @@ class GenerateDashboardTests(unittest.TestCase):
 
     def test_dashboard_cli_command_succeeds(self):
         output = io.StringIO()
-        with redirect_stdout(output):
+        with patch("scripts.cli.PROJECT_ROOT", self.root), redirect_stdout(output):
             return_code = main(["dashboard"])
 
         self.assertEqual(return_code, 0)

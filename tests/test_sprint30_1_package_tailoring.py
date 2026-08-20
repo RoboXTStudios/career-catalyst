@@ -66,7 +66,9 @@ def test_job_description_outside_export_root_is_not_legacy_material(tmp_path):
         record["id"], [record], PROJECT_ROOT, export_root=tmp_path / "exports"
     )
 
-    assert result == {"status": "ok", "conflicts": []}
+    assert result["status"] == "ready"
+    assert result["conflicts"] == []
+    assert result["blocking_issues"] == []
 
 
 def test_generated_material_outside_export_root_remains_a_conflict(tmp_path):
@@ -112,7 +114,8 @@ def test_gitlab_style_preflight_with_only_job_path_is_ok(tmp_path):
     result = preflight_package_generation(
         record["id"], [record], PROJECT_ROOT, export_root=tmp_path / "exports"
     )
-    assert result["status"] == "ok"
+    assert result["status"] == "ready"
+    assert result["conflicts"] == []
 
 
 def test_identical_regeneration_reuses_canonical_file_without_suffix(tmp_path):

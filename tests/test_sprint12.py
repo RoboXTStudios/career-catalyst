@@ -1,4 +1,5 @@
 import re
+import shutil
 import tempfile
 import unittest
 from contextlib import ExitStack
@@ -91,7 +92,10 @@ class PackageReliabilityTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.root = Path(self.temporary.name)
-        (self.root / "data").mkdir()
+        project_root = Path(__file__).resolve().parents[1]
+        shutil.copytree(project_root / "data", self.root / "data")
+        shutil.copytree(project_root / "config", self.root / "config")
+        shutil.copytree(project_root / "templates", self.root / "templates")
         (self.root / "jobs").mkdir()
         (self.root / "data" / "application_tracker.yml").write_text(
             "applications: []\n", encoding="utf-8"
@@ -127,7 +131,14 @@ class PackageReliabilityTests(unittest.TestCase):
         return path
 
     def _generate_with_core_outputs_mocked(self):
-        result_path = lambda name: {"output_path": str(self.root / "exports" / name)}
+        def result_path(name):
+            path = self.root / "exports" / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                "Nova Creative Technology Director, Business Operations candidate material.",
+                encoding="utf-8",
+            )
+            return {"output_path": str(path)}
         with ExitStack() as stack:
             stack.enter_context(patch("scripts.package_generator.score_job_match", return_value={
                 "match_score": 86,
@@ -138,12 +149,19 @@ class PackageReliabilityTests(unittest.TestCase):
             stack.enter_context(patch("scripts.package_generator.tailor_resume", return_value=result_path("resume.md")))
             stack.enter_context(patch("scripts.package_generator.export_styled_docx", return_value=result_path("styled.docx")))
             stack.enter_context(patch("scripts.package_generator.export_ats_docx", return_value=result_path("ats.docx")))
-            stack.enter_context(patch("scripts.package_generator.generate_cover_letter", return_value={**result_path("cover.md"), "txt_output_path": str(self.root / "exports/cover.txt"), "word_count": 300}))
+            cover = result_path("cover.md")
+            cover["txt_output_path"] = result_path("cover.txt")["output_path"]
+            cover["docx_output_path"] = result_path("cover.docx")["output_path"]
+            cover["word_count"] = 300
+            stack.enter_context(patch("scripts.package_generator.generate_cover_letter", return_value=cover))
             stack.enter_context(patch("scripts.package_generator.generate_message", side_effect=[result_path("recruiter.md"), result_path("manager.md")]))
             stack.enter_context(patch("scripts.package_generator.generate_application_note", return_value=result_path("note.md")))
             stack.enter_context(patch("scripts.package_generator.generate_strategy_pack", return_value=result_path("strategy.md")))
             stack.enter_context(patch("scripts.package_generator.generate_interview_prep", return_value=result_path("interview.md")))
             stack.enter_context(patch("scripts.package_generator.generate_dashboard", return_value=result_path("dashboard.html")))
+            stack.enter_context(patch("scripts.package_generator.evaluate_candidate_facing_quality", return_value={"status": "PASS", "blocking_reasons": []}))
+            stack.enter_context(patch("scripts.package_generator.compare_docx_factual_parity", return_value={"status": "PASS", "visible_facts_match": True, "hyperlinks_match": True}))
+            stack.enter_context(patch("scripts.package_generator.build_interview_conversion_gate", return_value={"status": "PASS", "blocking_reasons": []}))
             return generate_package("nova_director_operations", self.root, generate_followups_too=False)
 
     def test_closed_posting_blocks_generation(self):
@@ -153,7 +171,7 @@ class PackageReliabilityTests(unittest.TestCase):
                 generate_package("nova_director_operations", self.root)
         generator.assert_not_called()
         self.assertIn("appears closed", str(context.exception))
-        self.assertEqual(load_application_tracker(self.root)[0]["posting_status"], "Closed")
+        self.assertNotIn("posting_status", load_application_tracker(self.root)[0])
 
     def test_unknown_salary_does_not_break_package_generation(self):
         self._job()
@@ -170,7 +188,7 @@ class PackageReliabilityTests(unittest.TestCase):
         self._job()
         result = self._generate_with_core_outputs_mocked()
         self.assertEqual(result["company_voice_source"], "dynamic_inference")
-        self.assertIn("interview_prep", result["outputs"])
+        self.assertIn("interview_prep_text", result["outputs"])
         self.assertIn("package_summary", result["outputs"])
 
     def test_pasted_description_can_supply_company_and_role(self):

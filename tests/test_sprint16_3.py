@@ -91,11 +91,17 @@ class DashboardCollapseHotfixTests(unittest.TestCase):
         )
         app._render_recommended_next_steps(st, [record], "All Mode", {})
 
-        self.assertEqual({label for label, _ in st.buttons}, {"Expand"})
-        self.assertEqual(st.links, [])
+        self.assertEqual(
+            {label for label, _ in st.buttons},
+            {"View Role", "Open Materials"},
+        )
+        self.assertEqual(
+            st.links,
+            [("Open Posting", "https://jobs.example.com/role")],
+        )
         rendered = "\n".join(value for kind, value in st.messages if kind == "markdown")
-        self.assertIn("Recommended Next Steps (1)", rendered)
-        self.assertNotIn("Director, Operations", rendered)
+        self.assertIn("Director, Operations", rendered)
+        self.assertNotIn("Match details", rendered)
 
     def test_application_tracker_renders_nonfocused_roles_compact(self):
         st = _FakeStreamlit(state={"dashboard_compact_mode": True})

@@ -1,4 +1,6 @@
 import unittest
+import shutil
+import tempfile
 from pathlib import Path
 
 from scripts.generate_strategy_pack import generate_strategy_pack
@@ -11,13 +13,21 @@ SAMPLE_JOB = "jobs/sample_job_description.md"
 class StrategyPackTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.result = generate_strategy_pack(SAMPLE_JOB, PROJECT_ROOT)
+        cls.temporary = tempfile.TemporaryDirectory()
+        cls.root = Path(cls.temporary.name)
+        for directory in ("data", "config", "jobs"):
+            shutil.copytree(PROJECT_ROOT / directory, cls.root / directory)
+        cls.result = generate_strategy_pack(SAMPLE_JOB, cls.root)
         cls.output_path = Path(cls.result["output_path"])
         cls.content = cls.output_path.read_text(encoding="utf-8")
 
+    @classmethod
+    def tearDownClass(cls):
+        cls.temporary.cleanup()
+
     def test_strategy_pack_file_is_generated(self):
         self.assertTrue(self.output_path.is_file())
-        self.assertTrue(self.output_path.name.endswith("_StrategyPack.md"))
+        self.assertTrue(self.output_path.name.endswith("_strategy_pack.txt"))
 
     def test_strategy_pack_is_not_empty(self):
         self.assertGreater(self.output_path.stat().st_size, 0)
@@ -46,8 +56,12 @@ class StrategyPackTests(unittest.TestCase):
         self.assertIn("Crunchyroll", self.content)
         self.assertIn("Director, Enterprise Strategy & Initiatives", self.content)
 
-    def test_strategy_pack_contains_campaignos_for_relevant_role(self):
-        self.assertIn("CampaignOS", self.content)
+    def test_strategy_pack_uses_canonical_career_scope_without_forcing_projects(self):
+        self.assertIn("OMG23 (Omnicom Media Group)", self.content)
+        self.assertIn("10 direct reports", self.content)
+        self.assertIn("64-person organization", self.content)
+        if "CampaignOS" in self.content:
+            self.assertIn("working prototype", self.content.lower())
 
     def test_strategy_pack_has_role_specific_talking_points_and_questions(self):
         talking_section = self.content.split("### Interview Talking Points", 1)[1].split(

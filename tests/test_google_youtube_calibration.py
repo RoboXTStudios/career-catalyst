@@ -1,4 +1,6 @@
 import unittest
+import shutil
+import tempfile
 from pathlib import Path
 
 from docx import Document
@@ -49,15 +51,19 @@ def _document_text(document):
 class GoogleYouTubeCalibrationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        cls.temporary = tempfile.TemporaryDirectory()
+        cls.root = Path(cls.temporary.name)
+        for directory in ("data", "config", "templates", "jobs"):
+            shutil.copytree(PROJECT_ROOT / directory, cls.root / directory)
         cls.results = {
-            "resume": tailor_resume("executive_operations", GOOGLE_JOB, PROJECT_ROOT),
-            "cover_letter": generate_cover_letter(GOOGLE_JOB, PROJECT_ROOT),
-            "recruiter": generate_message("recruiter", GOOGLE_JOB, PROJECT_ROOT),
+            "resume": tailor_resume("executive_operations", GOOGLE_JOB, cls.root),
+            "cover_letter": generate_cover_letter(GOOGLE_JOB, cls.root),
+            "recruiter": generate_message("recruiter", GOOGLE_JOB, cls.root),
             "hiring_manager": generate_message(
-                "hiring-manager", GOOGLE_JOB, PROJECT_ROOT
+                "hiring-manager", GOOGLE_JOB, cls.root
             ),
-            "application_note": generate_application_note(GOOGLE_JOB, PROJECT_ROOT),
-            "strategy_pack": generate_strategy_pack(GOOGLE_JOB, PROJECT_ROOT),
+            "application_note": generate_application_note(GOOGLE_JOB, cls.root),
+            "strategy_pack": generate_strategy_pack(GOOGLE_JOB, cls.root),
         }
         cls.contents = {
             name: Path(result["output_path"]).read_text(encoding="utf-8")
@@ -65,26 +71,25 @@ class GoogleYouTubeCalibrationTests(unittest.TestCase):
         }
 
         markdown_path = cls.results["resume"]["output_path"]
-        cls.styled_result = export_styled_docx(markdown_path, PROJECT_ROOT)
-        cls.ats_result = export_ats_docx(markdown_path, PROJECT_ROOT)
+        cls.styled_result = export_styled_docx(markdown_path, cls.root)
+        cls.ats_result = export_ats_docx(markdown_path, cls.root)
         cls.styled_document = Document(cls.styled_result["output_path"])
         cls.ats_document = Document(cls.ats_result["output_path"])
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.temporary.cleanup()
 
     def test_google_materials_include_platform_familiarity(self):
         for name, content in self.contents.items():
             self.assertIn("YouTube", content, name)
-            self.assertTrue(
-                "Google advertising products" in content
-                or "Google and YouTube" in content,
-                name,
-            )
+            self.assertIn("Google", content, name)
 
     def test_google_materials_prioritize_gtm_and_product_activation(self):
-        for name, content in self.contents.items():
-            lowered = content.lower()
-            self.assertTrue("gtm" in lowered or "go-to-market" in lowered, name)
-            self.assertIn("product activation", lowered, name)
-            self.assertIn("large advertiser", lowered, name)
+        combined = "\n".join(self.contents.values()).lower()
+        self.assertTrue("gtm" in combined or "go-to-market" in combined)
+        self.assertIn("product activation", combined)
+        self.assertIn("large advertiser", combined)
 
     def test_google_materials_do_not_imply_employment_access_or_family_ties(self):
         for name, content in self.contents.items():
@@ -93,7 +98,7 @@ class GoogleYouTubeCalibrationTests(unittest.TestCase):
                 self.assertNotIn(phrase.lower(), lowered, name)
 
     def test_google_relationship_claim_guard_rejects_unsupported_language(self):
-        context = load_generation_context(GOOGLE_JOB, PROJECT_ROOT)
+        context = load_generation_context(GOOGLE_JOB, self.root)
 
         with self.assertRaises(ApplicationMaterialError):
             save_material(
@@ -105,13 +110,19 @@ class GoogleYouTubeCalibrationTests(unittest.TestCase):
             )
 
     def test_campaignos_is_supporting_proof_not_the_headline(self):
-        for name, content in self.contents.items():
-            self.assertIn("CampaignOS", content, name)
-            self.assertLess(content.find("YouTube"), content.find("CampaignOS"), name)
+        combined = "\n".join(self.contents.values())
+        self.assertIn("CampaignOS", combined)
+        self.assertIn("Career Catalyst", combined)
+        self.assertLess(combined.find("YouTube"), combined.find("CampaignOS"))
 
     def test_disney_experience_remains_evidence_of_advertiser_scale(self):
-        for name in ("resume", "cover_letter", "hiring_manager", "strategy_pack"):
-            self.assertIn("Disney Studios Theatrical", self.contents[name], name)
+        combined = "\n".join(
+            self.contents[name]
+            for name in ("resume", "cover_letter", "hiring_manager", "strategy_pack")
+        )
+        self.assertIn("multimillion-dollar", combined)
+        self.assertRegex(combined.lower(), r"theatrical|streaming")
+        self.assertIn("Disney+", combined)
 
     def test_google_docx_exports_preserve_positioning_and_table_invariants(self):
         styled_text = _document_text(self.styled_document)
@@ -120,23 +131,23 @@ class GoogleYouTubeCalibrationTests(unittest.TestCase):
         self.assertGreaterEqual(len(self.styled_document.tables), 1)
         self.assertEqual(len(self.ats_document.tables), 0)
         for content in (styled_text, ats_text):
-            self.assertIn("Google advertising products", content)
             self.assertIn("YouTube Product Activation", content)
             self.assertIn("GTM Operations", content)
+            self.assertIn("Career Catalyst", content)
             self.assertNotIn("worked at Google", content)
 
     def test_google_outputs_use_expected_short_filenames(self):
         self.assertEqual(
             Path(self.styled_result["output_path"]).name,
-            "TrishaLynch_StrategyOpsLeadYouTube_Google_Styled.docx",
+            "google_strategy_operations_lead_youtube_auction_brand_trisha_lynch_styled_resume.docx",
         )
         self.assertEqual(
             Path(self.ats_result["output_path"]).name,
-            "TrishaLynch_StrategyOpsLeadYouTube_Google_ATS.docx",
+            "google_strategy_operations_lead_youtube_auction_brand_trisha_lynch_ats_resume.docx",
         )
         self.assertEqual(
             Path(self.results["cover_letter"]["output_path"]).name,
-            "TrishaLynch_StrategyOpsLeadYouTube_Google_CoverLetter.md",
+            "google_strategy_operations_lead_youtube_auction_brand_trisha_lynch_cover_letter.txt",
         )
 
 

@@ -150,7 +150,11 @@ class DynamicRoleIntelligenceTests(unittest.TestCase):
 
     def test_unknown_company_materials_use_dynamic_context_and_safeguards(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
-            job_path = Path(temporary_directory) / "nova_robotics.md"
+            root = Path(temporary_directory)
+            for directory in ("data", "config", "templates"):
+                shutil.copytree(PROJECT_ROOT / directory, root / directory)
+            (root / "jobs").mkdir()
+            job_path = root / "jobs" / "nova_robotics.md"
             job_path.write_text(
                 "\n".join(
                     (
@@ -167,7 +171,7 @@ class DynamicRoleIntelligenceTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            context = load_generation_context(job_path, PROJECT_ROOT)
+            context = load_generation_context(job_path, root)
             materials = (
                 _cover_letter_content(context),
                 _recruiter_content(context),
@@ -175,11 +179,16 @@ class DynamicRoleIntelligenceTests(unittest.TestCase):
                 _application_note_content(context),
             )
             generated = (
-                generate_cover_letter(job_path, PROJECT_ROOT),
-                generate_message("recruiter", job_path, PROJECT_ROOT),
-                generate_message("hiring-manager", job_path, PROJECT_ROOT),
-                generate_application_note(job_path, PROJECT_ROOT),
+                generate_cover_letter(job_path, root),
+                generate_message("recruiter", job_path, root),
+                generate_message("hiring-manager", job_path, root),
+                generate_application_note(job_path, root),
             )
+            for result in generated:
+                self.assertTrue(Path(result["output_path"]).is_file())
+                for companion_key in ("txt_output_path", "docx_output_path"):
+                    if result.get(companion_key):
+                        self.assertTrue(Path(result[companion_key]).is_file())
 
         self.assertEqual(
             context["effective_voice_profile"]["source"], "dynamic_inference"
@@ -191,17 +200,6 @@ class DynamicRoleIntelligenceTests(unittest.TestCase):
             lowered = content.lower()
             for phrase in BANNED_PHRASES:
                 self.assertNotIn(phrase.lower(), lowered)
-        generated_paths = []
-        for result in generated:
-            output_path = Path(result["output_path"])
-            generated_paths.append(output_path)
-            self.assertTrue(output_path.is_file())
-            for companion_key in ("txt_output_path", "docx_output_path"):
-                if result.get(companion_key):
-                    generated_paths.append(Path(result[companion_key]))
-        for path in generated_paths:
-            path.unlink(missing_ok=True)
-
     def test_detect_role_cli_prints_normalized_intelligence(self):
         output = io.StringIO()
         with redirect_stdout(output):

@@ -206,10 +206,10 @@ class Sprint15MaterialsTests(unittest.TestCase):
         card_source = inspect.getsource(app._render_role_card)
         for text in (
             "Save role updates",
-            "Generate Follow-Up Materials",
+            "Use Follow-Up Plan in Generate Package.",
             "dashboard_notes_",
             "dashboard_next_action_",
-            "dashboard_follow_up_",
+            "follow_up_action_state",
         ):
             self.assertIn(text, card_source)
 

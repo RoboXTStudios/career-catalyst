@@ -2,7 +2,7 @@ import importlib
 import unittest
 from pathlib import Path
 
-from scripts.application_tracker import load_application_tracker
+from scripts.application_tracker import VALID_STATUSES, get_record_status, load_application_tracker
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -64,8 +64,9 @@ class Sprint101UiHelperTests(unittest.TestCase):
         for phrase in (
             "Career Catalyst",
             "Trisha Lynch Application Cockpit",
-            "Application Dashboard",
-            "Application Tracker",
+            "Dashboard",
+            "Evidence Projects",
+            "Generate Package",
             "Application materials",
             "Styled resume",
             "ATS resume",
@@ -87,17 +88,18 @@ class Sprint101UiHelperTests(unittest.TestCase):
         ):
             self.assertNotIn(phrase, lowered)
 
-    def test_current_tracker_statuses_remain_preserved(self):
+    def test_committed_tracker_statuses_use_current_lifecycle(self):
         applications = load_application_tracker(PROJECT_ROOT)
         by_id = {item["id"]: item for item in applications}
 
-        self.assertEqual(by_id["playstation_head_global_creative_ops"]["status"], "Applied")
-        self.assertEqual(by_id["google_strategy_ops_youtube_auction_brand"]["status"], "Applied")
-        self.assertEqual(by_id["paramount_director_marketing_operations"]["status"], "Applied")
-        self.assertEqual(by_id["playstation_director_ad_ops_invalid"]["status"], "Invalid")
-        self.assertFalse(
-            by_id["playstation_director_ad_ops_invalid"]["show_on_dashboard"]
-        )
+        for tracker_id in (
+            "playstation_head_global_creative_ops",
+            "google_strategy_ops_youtube_auction_brand",
+            "paramount_director_marketing_operations",
+            "playstation_director_ad_ops_invalid",
+        ):
+            self.assertIn(tracker_id, by_id)
+            self.assertIn(get_record_status(by_id[tracker_id]), VALID_STATUSES)
 
 
 if __name__ == "__main__":

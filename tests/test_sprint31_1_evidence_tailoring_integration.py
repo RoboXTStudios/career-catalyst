@@ -26,6 +26,7 @@ from scripts.role_intent import (
 )
 from scripts.score_match import score_job_match
 from scripts.tailor_resume import tailor_resume
+from scripts.text_cleanup import normalize_candidate_text
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -383,7 +384,9 @@ def test_netflix_resume_uses_condensed_selected_projects_in_saved_order(tmp_path
     )
     text = Path(result["output_path"]).read_text(encoding="utf-8")
     assert "Product Strategy & Operations Leader | Emerging Media" in text
-    assert text.index(CAREER_CATALYST["title"]) < text.index(PODCAST["title"])
+    assert text.index(normalize_candidate_text(CAREER_CATALYST["title"])) < text.index(
+        normalize_candidate_text(PODCAST["title"])
+    )
     assert result["resume_projects_used"] == [CAREER_CATALYST["title"], PODCAST["title"]]
     assert len(resume_project_bullets(CAREER_CATALYST, parsed)) == 2
     assert len(resume_project_bullets(PODCAST, parsed)) == 1

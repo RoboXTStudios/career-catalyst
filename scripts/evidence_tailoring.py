@@ -98,8 +98,20 @@ def candidate_project_reference_violations(
 
     normalized = normalize_candidate_text(text).lower()
     allowed = artifact_allowed_project_ids(context, artifact_type)
+    known_projects = _candidate_project_records(context)
+    # Some preserved records predate the canonical Evidence IDs. Treat a
+    # recognized project identity as selected when any of its stable legacy or
+    # canonical records is selected; this prevents a short public name such as
+    # "Career Catalyst" from being mistaken for an unselected project merely
+    # because the tracker retains its older ID.
+    allowed_kinds = {
+        project_kind(project)
+        for project in known_projects
+        if _project_id(project) in allowed and project_kind(project) != "other"
+    }
     aliases: dict[str, set[str]] = {}
-    for project in _candidate_project_records(context):
+    alias_kinds: dict[str, set[str]] = {}
+    for project in known_projects:
         project_id = _project_id(project)
         if not project_id:
             continue
@@ -107,13 +119,17 @@ def candidate_project_reference_violations(
             alias = normalize_candidate_text(str(raw or "")).strip().lower()
             if len(alias) >= 4:
                 aliases.setdefault(alias, set()).add(project_id)
+                alias_kinds.setdefault(alias, set()).add(project_kind(project))
         human_id = normalize_candidate_text(project_id.replace("_", " ")).strip().lower()
         if len(human_id) >= 4:
             aliases.setdefault(human_id, set()).add(project_id)
+            alias_kinds.setdefault(human_id, set()).add(project_kind(project))
     violations = [
         alias
         for alias, project_ids in sorted(aliases.items(), key=lambda item: -len(item[0]))
-        if not (project_ids & allowed) and alias in normalized
+        if not (project_ids & allowed)
+        and not (alias_kinds.get(alias, set()) & allowed_kinds)
+        and alias in normalized
     ]
     return list(dict.fromkeys(violations))
 

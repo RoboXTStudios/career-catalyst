@@ -16,6 +16,7 @@ from scripts.generate_dashboard import (
 
 
 TODAY = date(2026, 6, 30)
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
 def _record(identifier, **updates):
@@ -185,9 +186,9 @@ class DashboardModeTests(unittest.TestCase):
         for mode, message in expected.items():
             self.assertEqual(recommended_next_steps([], mode), [message])
 
-    def test_follow_up_steps_report_existing_materials(self):
+    def test_follow_up_steps_respect_submitted_application_state(self):
         record = dict(self.follow, _follow_up_materials_status="Available")
-        self.assertIn("Use existing follow-up materials", recommended_next_steps([record], "Follow-Up Mode")[0])
+        self.assertIn("application is already submitted", recommended_next_steps([record], "Follow-Up Mode")[0])
 
 
 class DashboardDisplayParityTests(unittest.TestCase):
@@ -215,7 +216,10 @@ class DashboardDisplayParityTests(unittest.TestCase):
     def test_html_dashboard_priority_sections_are_present(self):
         record = enrich_dashboard_record(_record("priority", match_tier="Strong Match"), TODAY)
         package = {"company": record["company"], "role": record["role"], "tracker": record, "files": {}}
-        content = _render_priority_sections({"active": [], "draft": [package], "hidden": []})
+        content = _render_priority_sections(
+            {"active": [], "draft": [package], "hidden": []},
+            PROJECT_ROOT / "exports" / "dashboard",
+        )
         for heading in (
             "Recommended Next Steps",
             "Strong Matches",

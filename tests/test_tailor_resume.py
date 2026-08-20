@@ -1,4 +1,6 @@
 import unittest
+import shutil
+import tempfile
 from pathlib import Path
 
 from scripts.load_data import load_all_yaml
@@ -13,20 +15,31 @@ OLD_LINKEDIN_URL = "https://www.linkedin.com/in/trishalynch"
 
 
 class TailorResumeTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.temporary = tempfile.TemporaryDirectory()
+        cls.root = Path(cls.temporary.name)
+        for directory in ("data", "config", "templates", "jobs"):
+            shutil.copytree(PROJECT_ROOT / directory, cls.root / directory)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.temporary.cleanup()
+
     def test_tailor_command_generates_markdown_file(self):
-        result = tailor_resume("executive_operations", SAMPLE_JOB, PROJECT_ROOT)
+        result = tailor_resume("executive_operations", SAMPLE_JOB, self.root)
 
         self.assertTrue(result["output_path"].endswith(".md"))
         self.assertTrue(Path(result["output_path"]).is_file())
 
     def test_generated_resume_contains_trisha_lynch(self):
-        result = tailor_resume("executive_operations", SAMPLE_JOB, PROJECT_ROOT)
+        result = tailor_resume("executive_operations", SAMPLE_JOB, self.root)
         content = Path(result["output_path"]).read_text(encoding="utf-8")
 
         self.assertIn("Trisha Lynch", content)
 
     def test_generated_resume_contains_full_linkedin_url(self):
-        result = tailor_resume("executive_operations", SAMPLE_JOB, PROJECT_ROOT)
+        result = tailor_resume("executive_operations", SAMPLE_JOB, self.root)
         content = Path(result["output_path"]).read_text(encoding="utf-8")
 
         self.assertIn(LINKEDIN_MARKDOWN, content)
@@ -34,25 +47,25 @@ class TailorResumeTests(unittest.TestCase):
         self.assertNotIn("LinkedIn: linkedin.com/", content)
 
     def test_generated_resume_contains_profile(self):
-        result = tailor_resume("executive_operations", SAMPLE_JOB, PROJECT_ROOT)
+        result = tailor_resume("executive_operations", SAMPLE_JOB, self.root)
         content = Path(result["output_path"]).read_text(encoding="utf-8")
 
         self.assertIn("## Profile", content)
 
     def test_generated_resume_contains_core_competencies(self):
-        result = tailor_resume("executive_operations", SAMPLE_JOB, PROJECT_ROOT)
+        result = tailor_resume("executive_operations", SAMPLE_JOB, self.root)
         content = Path(result["output_path"]).read_text(encoding="utf-8")
 
         self.assertIn("## Core Competencies", content)
 
     def test_generated_resume_does_not_force_a_project_section(self):
-        result = tailor_resume("executive_operations", SAMPLE_JOB, PROJECT_ROOT)
+        result = tailor_resume("executive_operations", SAMPLE_JOB, self.root)
         content = Path(result["output_path"]).read_text(encoding="utf-8")
 
         self.assertNotIn("## Selected Projects", content)
 
     def test_generated_resume_preserves_canonical_platform_language(self):
-        result = tailor_resume("executive_operations", SAMPLE_JOB, PROJECT_ROOT)
+        result = tailor_resume("executive_operations", SAMPLE_JOB, self.root)
         content = Path(result["output_path"]).read_text(encoding="utf-8")
 
         self.assertIn("Workflow Design", content)
@@ -63,14 +76,14 @@ class TailorResumeTests(unittest.TestCase):
         self.assertNotIn("Editorial Production", content)
 
     def test_generated_resume_does_not_contain_placeholder_text(self):
-        result = tailor_resume("executive_operations", SAMPLE_JOB, PROJECT_ROOT)
+        result = tailor_resume("executive_operations", SAMPLE_JOB, self.root)
         content = Path(result["output_path"]).read_text(encoding="utf-8")
 
         self.assertNotIn("Placeholder", content)
         self.assertNotIn("placeholder", content)
 
     def test_generated_resume_output_path_exists(self):
-        result = tailor_resume("executive_operations", SAMPLE_JOB, PROJECT_ROOT)
+        result = tailor_resume("executive_operations", SAMPLE_JOB, self.root)
 
         self.assertTrue(Path(result["output_path"]).exists())
 
