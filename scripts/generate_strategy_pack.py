@@ -164,7 +164,7 @@ def _role_opportunity_brief(context: Dict[str, Any]) -> str:
 def _why_trisha(context: Dict[str, Any]) -> str:
     career_data = context["career_data"]
     position = _position(career_data, "OMG23")
-    position_company = position.get("company") or "OMG23 (Omnicom Media Group)"
+    position_company = position.get("company") or "OMG23 / OMD Entertainment, Omnicom Media Group"
     entertainment_scope = _entertainment_scope(career_data)
     leadership = _achievement(career_data, "cross_functional_leadership")
     disney_plus = _achievement(career_data, "disney_plus_launch_support")

@@ -6,6 +6,8 @@ import shutil
 from pathlib import Path
 
 import yaml
+
+from tests.fixture_support import replace_evidence_projects
 from docx import Document
 
 from scripts.candidate_output import candidate_cover_letter
@@ -85,9 +87,8 @@ workflow design, and cross-functional delivery.
 """,
         encoding="utf-8",
     )
-    (root / "data" / "evidence_projects.yml").write_text(
-        yaml.safe_dump({"evidence_projects": [*SELECTED, CAREER_CATALYST]}, sort_keys=False),
-        encoding="utf-8",
+    replace_evidence_projects(
+        root / "data" / "evidence_projects.yml", [*SELECTED, CAREER_CATALYST]
     )
     tracker = {
         "applications": [

@@ -277,6 +277,7 @@ def build_requirement_coverage_matrix(
         *list(golden_resume.get("employment") or []),
         *list(golden_resume.get("achievements") or []),
         *list(golden_resume.get("projects") or []),
+        *list(golden_resume.get("atomic_evidence") or []),
         *list(golden_resume.get("skill_groups") or []),
         *list(golden_resume.get("platform_categories") or []),
         *list(golden_resume.get("certifications") or []),
@@ -295,6 +296,11 @@ def build_requirement_coverage_matrix(
             concepts = _matching_concepts(normalized, text)
             direct_concepts = _direct_concepts(normalized, text)
             score = len(common) + (3 * len(concepts))
+            # Prefer the atomic record when it carries the same match as a
+            # broader parent. This keeps the readiness explanation traceable
+            # to the smallest verified claim without changing match scoring.
+            if score and record.get("record_type") == "atomic_evidence":
+                score += 1
             if score:
                 matches.append((score, str(record.get("canonical_id") or record.get("id") or ""), record, concepts, direct_concepts))
         matches.sort(key=lambda value: (-value[0], value[1]))

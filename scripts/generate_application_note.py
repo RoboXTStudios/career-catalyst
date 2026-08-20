@@ -12,7 +12,7 @@ try:
         save_material,
     )
     from .role_context import is_google_youtube_role
-    from .evidence_tailoring import project_kind
+    from .evidence_tailoring import candidate_project_reference_violations, project_kind
 except ImportError:
     from career_claims import leadership_claim, public_omg23_name
     from generate_cover_letter import (
@@ -21,7 +21,7 @@ except ImportError:
         save_material,
     )
     from role_context import is_google_youtube_role
-    from evidence_tailoring import project_kind
+    from evidence_tailoring import candidate_project_reference_violations, project_kind
 
 
 PathInput = Union[str, Path]
@@ -60,7 +60,7 @@ def _openai_sales_operations_note(context: Dict[str, Any]) -> str:
     return (
         "OpenAI's Sales Strategy & Operations - Central role interests me because it brings disciplined "
         "planning, operating visibility, and cross-functional execution to a fast-moving go-to-market "
-        "environment. At OMG23 (Omnicom Media Group), I advanced through five roles to Group Director, "
+        "environment. At OMG23 / OMD Entertainment, Omnicom Media Group, I advanced through five roles to Group Director, "
         "led 10 direct reports, and provided strategic and operational leadership across an integrated "
         "64-person organization spanning Ad Operations, Creative Management, and Marketing Science and "
         "Analytics. I also coordinated an Airtable implementation that created a shared source of truth "
@@ -84,7 +84,7 @@ def _twitch_label_relations_note(context: Dict[str, Any]) -> str:
     return (
         "Twitch's Senior Label Relations Manager role interests me because it connects music, creators, "
         "platform collaboration, and dependable partner execution."
-        f"{podcast} At OMG23 (Omnicom Media Group), I led 10 direct reports and provided strategic and "
+        f"{podcast} At OMG23 / OMD Entertainment, Omnicom Media Group, I led 10 direct reports and provided strategic and "
         "operational leadership across an integrated 64-person organization while coordinating work "
         "across creative, media, analytics, technology, vendors, and client stakeholders. Through "
         "Enterprise Media Operations Transformation, I led workflow design and stakeholder alignment, "
@@ -146,7 +146,17 @@ def _profile_application_note(context: Dict[str, Any]) -> str:
             "validation, reporting, and scalable execution with a grounded audience perspective."
         ),
     }
-    return notes.get(profile_key, "")
+    note = notes.get(profile_key, "")
+    if note and context.get("associated_evidence_projects") and candidate_project_reference_violations(
+        note, context, "application_note"
+    ):
+        return (
+            f"The {role} role at {company} stood out because it connects senior priorities with "
+            f"disciplined cross-functional execution. I {leadership_claim(context['career_data'])} "
+            "while building practical workflows, governance, quality standards, and decision visibility "
+            "for complex entertainment work."
+        )
+    return note
 
 
 def _application_note_content(context: Dict[str, Any]) -> str:
@@ -165,6 +175,11 @@ def _application_note_content(context: Dict[str, Any]) -> str:
         return _twitch_label_relations_note(context)
 
     if is_google_youtube_role(parsed_job):
+        campaignos = (
+            " CampaignOS adds a current proof point for my operational systems thinking."
+            if _has_selected_project(context, "campaignos")
+            else ""
+        )
         return (
             "This Google opportunity caught my attention because it connects YouTube product "
             "activation, GTM operations, and large advertiser execution. I bring long-term hands-on "
@@ -172,8 +187,8 @@ def _application_note_content(context: Dict[str, Any]) -> str:
             "early 2000s. I have translated platform capabilities into campaign execution, "
             "measurement readiness, and operational workflows across large entertainment advertisers. "
             "That foundation aligns with Brand Auction activation, seller enablement, senior stakeholder "
-            "alignment, and product feedback loops. CampaignOS adds a current proof point for my "
-            "operational systems thinking."
+            "alignment, and product feedback loops."
+            f"{campaignos}"
         )
 
     profile_note = _profile_application_note(context)
@@ -209,14 +224,20 @@ def _application_note_content(context: Dict[str, Any]) -> str:
             "approach based on the role's stated priorities rather than assumptions about the company."
         )
 
+    campaignos = (
+        " I also built CampaignOS as a working prototype to turn recurring operational challenges "
+        "into clearer governance, validation, and reporting systems."
+        if _has_selected_project(context, "campaignos")
+        else ""
+    )
     return (
         f"{role_reference} at {company} caught my attention because it connects creative operations, "
         "product development, and entertainment IP. At "
         f"{position_company}, my primary work centered on Disney Studios Theatrical and Disney "
         "Streaming/DSS, supporting theatrical and streaming film campaigns across 20th Century "
         "Studios, Disney+, and franchise/IP priorities. I led cross-functional execution through "
-        "workflows, milestones, QA, standards, and partner coordination, and built CampaignOS to "
-        "turn recurring operational challenges into scalable systems."
+        "workflows, milestones, QA, standards, and partner coordination."
+        f"{campaignos}"
     )
 
 

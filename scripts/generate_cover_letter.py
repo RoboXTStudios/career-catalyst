@@ -346,6 +346,8 @@ def _cover_letter_value_sentences(context: Dict[str, Any]) -> List[str]:
             "I would apply that discipline to the role's stated priorities, with clear decisions, visible dependencies, and practical follow-through.",
             "I value operating systems that improve quality and momentum without adding process teams cannot sustain.",
             "My approach is grounded in verified experience, direct communication, and respect for the people closest to the work.",
+            "I would begin by learning how the team coordinates priorities today, where decisions lose context, and which operating improvements would make delivery clearer without disrupting what already works.",
+            "That approach keeps recommendations practical, proportionate, and accountable to the people responsible for execution.",
         ]
     role_sentence = {
         "creative_marketing_ops": "I know how much strong creative work depends on clear intake, thoughtful prioritization, and practical systems that help teams protect quality under pressure.",
@@ -375,10 +377,16 @@ def _cover_letter_value_sentences(context: Dict[str, Any]) -> List[str]:
 
 def _expand_cover_letter(content: str, context: Dict[str, Any], target: int = 285) -> str:
     additions: List[str] = []
+    existing = re.sub(r"\s+", " ", str(content or "")).strip().lower()
     for sentence in _cover_letter_value_sentences(context):
+        normalized = re.sub(r"\s+", " ", sentence).strip().lower()
+        if normalized and normalized in existing:
+            continue
         additions.append(sentence)
         if _word_count(content + "\n\n" + " ".join(additions)) >= target:
             break
+    if not additions:
+        return content
     paragraph = " ".join(additions)
     signoff = re.search(r"\n\n((?:Sincerely|Best|Warmly|Thank you)[\s\S]*)$", content.strip(), re.I)
     if signoff:
@@ -638,7 +646,7 @@ def _entertainment_scope(career_data: Dict[str, Any]) -> str:
 
 def _employer_names(position: Dict[str, Any]) -> tuple[str, str]:
     """Return the full employer name and a safe shorthand for later mentions."""
-    full_name = str(position.get("company") or "OMG23 (Omnicom Media Group)")
+    full_name = str(position.get("company") or "OMG23 / OMD Entertainment, Omnicom Media Group")
     shorthand = "OMG23" if "OMG23" in full_name else full_name
     return full_name, shorthand
 
@@ -1052,7 +1060,7 @@ def _marketing_integration_cover_letter_content(context: Dict[str, Any]) -> str:
         "work needs clearer intake, standards, visibility, and sustained adoption."
     )
     airtable = (
-        "At OMG23 (Omnicom Media Group), I coordinated an Airtable implementation that created a "
+        "At OMG23 / OMD Entertainment, Omnicom Media Group, I coordinated an Airtable implementation that created a "
         "shared source of truth across linked workflows. The work included naming conventions, "
         "permissions, automations, quality checks, documentation, training, and adoption support. "
         "It required translating different team needs into one maintainable structure while keeping "

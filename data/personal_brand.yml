@@ -1,6 +1,6 @@
 candidate:
   name: Trisha Lynch
-  headline: "Senior Operations & Transformation Leader | MarTech | AI Systems | Entertainment"
+  headline: "Senior Operations & Transformation Leader | Marketing Technology | AI-Enabled Systems | Entertainment"
   location: "Los Angeles, CA"
   email: "tslynch@mac.com"
   linkedin_label: "LinkedIn"
@@ -9,9 +9,9 @@ candidate:
   github_url: "[https://github.com/RoboXTStudios](https://github.com/RoboXTStudios)"
 
 career_profile:
-  summary: "Operations and transformation leader with progressive experience building scalable systems across entertainment, media, marketing technology, and digital operations. Advanced through five roles at OMG23 (Omnicom Media Group), ultimately leading 10 direct reports and providing strategic and operational leadership across a 64-person organization spanning Ad Operations, Creative Management, and Marketing Science and Analytics."
+  summary: "Senior operations and transformation leader with progressive experience building scalable operating systems across entertainment, marketing technology, media operations, and digital workflows. Advanced through five roles at OMG23 / OMD Entertainment, Omnicom Media Group from Campaign Manager to Group Director, ultimately leading 10 direct reports and providing strategic and operational leadership across an integrated 64-person organization spanning Ad Operations, Creative Management, and Marketing Science & Analytics. Combines enterprise operating experience with hands-on product thinking, workflow architecture, AI-enabled systems development, governance, quality assurance, and organizational change."
   profile_summaries:
-    executive_operations: "Operations and transformation leader with progressive experience building scalable systems across entertainment, media, marketing technology, and digital operations. Advanced through five roles at OMG23 (Omnicom Media Group), ultimately leading 10 direct reports and providing strategic and operational leadership across a 64-person organization. Trusted by senior leaders and enterprise stakeholders to diagnose complex operational problems, develop practical solutions, establish governance, and lead implementation."
+    executive_operations: "Operations and transformation leader with progressive experience building scalable systems across entertainment, media, marketing technology, and digital operations. Advanced through five roles at OMG23 / OMD Entertainment, Omnicom Media Group, ultimately leading 10 direct reports and providing strategic and operational leadership across an integrated 64-person organization. Trusted by senior leaders and enterprise stakeholders to diagnose complex operational problems, develop practical solutions, establish governance, and lead implementation."
     google_youtube_operations: "Strategy and operations leader connecting brand objectives, campaign operations, measurement, and platform activation across large entertainment advertisers. Brings hands-on experience with Google advertising products, including YouTube, and deep familiarity translating platform capabilities into execution, measurement readiness, and operational workflows."
   positioning_points:
     - "Combines enterprise leadership with hands-on MarTech expertise, product thinking, and AI-enabled workflow design."
@@ -45,3 +45,21 @@ voice:
     - Systems-minded
     - Executive-ready
   notes: "Golden Master positioning for future resume, cover letter, application messaging, fit analysis, and Evidence selection."
+
+education:
+  - id: los_angeles_valley_college_business_administration_coursework
+    institution: Los Angeles Valley College
+    timeframe: 2001-2002
+    study: Business Administration coursework
+    degree_earned: false
+    provenance: User-confirmed canonical education record
+    notes: No degree was earned; do not infer graduation or a degree.
+
+claim_guardrails:
+  adjacency: Collaboration must not be converted into ownership or direct management of adjacent functions.
+  disney_business_units: Do not claim direct ownership of FX, National Geographic, Disney Branded Television, or other adjacent Disney business units without specific evidence.
+  technical: Python is Working Knowledge; do not portray the candidate as a software, backend, data, or machine-learning engineer.
+  roboxt: Do not claim paid clients, agency services, revenue, commercial scale, external staff, or a managed creator roster.
+  music_industry: Do not infer A&R, artist management, label operations, talent buying, booking, tour management, contract negotiation, or artist-relations ownership.
+  sales_revenue: Do not infer revenue operations, territory planning, sales forecasting, pipeline ownership, quota management, or CRM administration.
+  age_signaling: Prefer capability, progression, scope, and impact over age-signaling tenure language.

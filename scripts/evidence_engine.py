@@ -238,7 +238,10 @@ def normalize_evidence_project(project: dict[str, Any]) -> dict[str, Any]:
         normalized[field] = str(normalized.get(field) or "").strip()
     status = str(normalized.get("status") or "Active").strip().title()
     normalized["status"] = status if status in EVIDENCE_PROJECT_STATUSES else "Active"
-    for field in ("skills", "technologies", "tags", "supporting_evidence", "links"):
+    for field in (
+        "skills", "technologies", "tags", "supporting_evidence", "links",
+        "atomic_evidence_ids",
+    ):
         normalized[field] = normalize_multivalue(normalized.get(field))
     for field in (
         "employer", "organization", "client", "business_unit", "timeframe", "start_date",
@@ -249,6 +252,19 @@ def normalize_evidence_project(project: dict[str, Any]) -> dict[str, Any]:
     return normalized
 
 
+def normalize_atomic_evidence(record: dict[str, Any]) -> dict[str, Any]:
+    """Normalize one canonical child record without changing its stable ID."""
+    normalized = dict(record)
+    normalized["stable_id"] = str(normalized.get("stable_id") or "").strip()
+    normalized["parent_id"] = _slug(normalized.get("parent_id"))
+    for field in (
+        "skills", "technologies", "role_families", "industries", "tags", "guardrails",
+    ):
+        normalized[field] = normalize_multivalue(normalized.get(field))
+    normalized["candidate_facing_allowed"] = normalized.get("candidate_facing_allowed") is not False
+    return normalized
+
+
 def validate_evidence_project(project: dict[str, Any]) -> None:
     """Validate required first-version evidence project fields."""
     missing = [field for field in EVIDENCE_PROJECT_REQUIRED_FIELDS if not str(project.get(field) or "").strip()]
@@ -256,20 +272,55 @@ def validate_evidence_project(project: dict[str, Any]) -> None:
         raise EvidenceEngineError(f"Evidence project missing required fields: {', '.join(missing)}")
 
 
-def _load_evidence_project_file(path: Path) -> list[dict[str, Any]]:
-    """Load one Evidence project file without applying durable-root overlays."""
+def _load_evidence_payload(path: Path) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Load parent projects and canonical child evidence from one file."""
     if not path.exists():
-        return []
+        return [], []
     try:
         loaded = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     except yaml.YAMLError as error:
         raise EvidenceEngineError(f"Malformed evidence project YAML: {error}") from error
     projects = loaded.get("evidence_projects") if isinstance(loaded, dict) else None
     if projects is None:
-        return []
+        return [], []
     if not isinstance(projects, list):
         raise EvidenceEngineError("data/evidence_projects.yml must contain evidence_projects list")
-    return [normalize_evidence_project(project) for project in projects if isinstance(project, dict)]
+    atomic = loaded.get("atomic_evidence", []) if isinstance(loaded, dict) else []
+    if not isinstance(atomic, list):
+        raise EvidenceEngineError("data/evidence_projects.yml atomic_evidence must be a list")
+    return (
+        [normalize_evidence_project(project) for project in projects if isinstance(project, dict)],
+        [normalize_atomic_evidence(record) for record in atomic if isinstance(record, dict)],
+    )
+
+
+def _hydrate_atomic_evidence(
+    projects: list[dict[str, Any]], atomic: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    by_id = {str(item.get("stable_id") or ""): dict(item) for item in atomic}
+    hydrated: list[dict[str, Any]] = []
+    for project in projects:
+        item = dict(project)
+        embedded = [
+            normalize_atomic_evidence(record)
+            for record in item.get("atomic_evidence") or []
+            if isinstance(record, dict)
+        ]
+        known = {str(record.get("stable_id") or "") for record in embedded}
+        for stable_id in item.get("atomic_evidence_ids") or []:
+            child = by_id.get(str(stable_id))
+            if child and str(stable_id) not in known:
+                embedded.append(dict(child))
+                known.add(str(stable_id))
+        item["atomic_evidence"] = embedded
+        hydrated.append(item)
+    return hydrated
+
+
+def _load_evidence_project_file(path: Path) -> list[dict[str, Any]]:
+    """Load and hydrate one Evidence project file without durable overlays."""
+    projects, atomic = _load_evidence_payload(path)
+    return _hydrate_atomic_evidence(projects, atomic)
 
 
 def load_evidence_projects(project_root: str | Path | None = None) -> list[dict[str, Any]]:
@@ -280,10 +331,10 @@ def load_evidence_projects(project_root: str | Path | None = None) -> list[dict[
     canonical records are exposed by stable ID without rewriting runtime data.
     """
     path = _evidence_project_path(project_root)
-    projects = _load_evidence_project_file(path)
+    projects, atomic = _load_evidence_payload(path)
     code_root_value = str(os.environ.get("CAREER_CATALYST_CODE_ROOT") or "").strip()
     if not code_root_value:
-        return projects
+        return _hydrate_atomic_evidence(projects, atomic)
 
     code_path = _evidence_project_path(Path(code_root_value).expanduser())
     try:
@@ -291,15 +342,28 @@ def load_evidence_projects(project_root: str | Path | None = None) -> list[dict[
     except OSError:
         same_file = code_path == path
     if same_file:
-        return projects
+        return _hydrate_atomic_evidence(projects, atomic)
 
+    code_projects, code_atomic = _load_evidence_payload(code_path)
+    atomic_by_id = {
+        str(item.get("stable_id") or ""): dict(item)
+        for item in [*atomic, *code_atomic]
+    }
     known_ids = {str(project.get("id") or "") for project in projects}
-    for project in _load_evidence_project_file(code_path):
+    by_id = {str(project.get("id") or ""): project for project in projects}
+    for project in code_projects:
         project_id = str(project.get("id") or "")
         if project_id not in known_ids:
             projects.append(project)
             known_ids.add(project_id)
-    return projects
+            by_id[project_id] = project
+        else:
+            runtime_project = by_id[project_id]
+            runtime_project["atomic_evidence_ids"] = _merge_unique(
+                runtime_project.get("atomic_evidence_ids"),
+                project.get("atomic_evidence_ids"),
+            )
+    return _hydrate_atomic_evidence(projects, list(atomic_by_id.values()))
 
 
 def save_evidence_projects(projects: list[dict[str, Any]], project_root: str | Path | None = None) -> Path:
@@ -312,7 +376,15 @@ def save_evidence_projects(projects: list[dict[str, Any]], project_root: str | P
         validate_evidence_project(project)
     path = _evidence_project_path(project_root)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(yaml.safe_dump({"evidence_projects": normalized}, sort_keys=False, allow_unicode=True, width=1000), encoding="utf-8")
+    _existing_projects, atomic = _load_evidence_payload(path)
+    storage_projects = [
+        {key: value for key, value in project.items() if key != "atomic_evidence"}
+        for project in normalized
+    ]
+    payload: dict[str, Any] = {"evidence_projects": storage_projects}
+    if atomic:
+        payload["atomic_evidence"] = atomic
+    path.write_text(yaml.safe_dump(payload, sort_keys=False, allow_unicode=True, width=1000), encoding="utf-8")
     return path
 
 
@@ -352,7 +424,10 @@ def _safe_seed_merge(existing: dict[str, Any], seed: dict[str, Any]) -> dict[str
     """Enrich an untouched seed record while preserving user edits and associations."""
     merged = dict(existing)
     for field, value in seed.items():
-        if field in {"skills", "technologies", "tags", "supporting_evidence", "links"}:
+        if field in {
+            "skills", "technologies", "tags", "supporting_evidence", "links",
+            "atomic_evidence_ids",
+        }:
             merged[field] = _merge_unique(existing.get(field), value)
             continue
         if field == "status" and existing.get("status"):
@@ -490,6 +565,17 @@ def evidence_generation_context(projects: list[dict[str, Any]]) -> str:
             values = project.get(field) or []
             if values:
                 lines.append(f"  {label}: {', '.join(values)}")
+        children = [
+            child for child in project.get("atomic_evidence") or []
+            if isinstance(child, dict) and child.get("candidate_facing_allowed") is not False
+        ]
+        if children:
+            lines.append("  Verified atomic evidence:")
+            lines.extend(
+                f"  - {child.get('stable_id')}: {child.get('canonical_claim')}"
+                for child in children
+                if child.get("canonical_claim")
+            )
     return "\n".join(lines)
 
 
@@ -508,6 +594,12 @@ def filter_evidence_projects(projects: list[dict[str, Any]], query: str = "", st
                 project.get("client"), project.get("business_unit"), project.get("function"),
                 project.get("project_type"), project.get("status"), " ".join(project.get("skills", [])),
                 " ".join(project.get("technologies", [])), " ".join(project.get("tags", [])),
+                " ".join(
+                    str(value)
+                    for child in project.get("atomic_evidence") or []
+                    if isinstance(child, dict)
+                    for value in child.values()
+                ),
             )
         ).lower()
         if clean_query and clean_query not in haystack:

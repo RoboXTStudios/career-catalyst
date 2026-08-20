@@ -6,7 +6,7 @@ project:
   status: production_consolidated
 
 positioning:
-  headline: "Senior Operations & Transformation Leader | MarTech | AI Systems | Entertainment"
+  headline: "Senior Operations & Transformation Leader | Marketing Technology | AI-Enabled Systems | Entertainment"
   summary: "Golden Master-aligned structured source of truth for future candidate materials, fit analysis, and Evidence selection."
 
 scope:
@@ -48,6 +48,9 @@ canonical_resume_foundation:
       - veteran
       - decades of experience
     education_claim_exclusions:
+      - Associate's degree
+      - Associate degree
+      - AA degree
       - Bachelor's degree
       - Bachelor degree
       - Master's degree
@@ -55,6 +58,8 @@ canonical_resume_foundation:
       - MBA
       - doctorate
       - PhD
+    hard_exclusions:
+      - Substack
   baseline_files:
     - data/positions.yml
     - data/achievements.yml

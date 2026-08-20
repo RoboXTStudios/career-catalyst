@@ -279,8 +279,13 @@ def test_legacy_paths_are_reported_without_mutation(tmp_path):
     assert record == before
 
 
-def test_new_generation_sources_contain_no_obsolete_project_name():
-    for relative in ("scripts", "config", "data", "templates"):
-        for path in (PROJECT_ROOT / relative).rglob("*"):
-            if path.is_file() and path.suffix in {".py", ".yml", ".yaml", ".md", ".txt"}:
-                assert "Substack" not in path.read_text(encoding="utf-8")
+def test_obsolete_project_name_is_policy_only_not_canonical_evidence():
+    foundation = load_resume_foundation(PROJECT_ROOT)
+    settings = foundation["config"]["settings"]
+    assert "Substack" in settings["canonical_resume_foundation"]["claim_constraints"]["hard_exclusions"]
+
+    career_data = dict(foundation["data"])
+    personal_brand = dict(career_data["personal_brand"])
+    personal_brand.pop("claim_guardrails", None)
+    career_data["personal_brand"] = personal_brand
+    assert "Substack" not in json.dumps(career_data)

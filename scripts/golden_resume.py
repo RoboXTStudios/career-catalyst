@@ -51,7 +51,8 @@ def _as_records(value: Any, key: str) -> list[dict[str, Any]]:
 
 def _record_id(record: Mapping[str, Any], *, prefix: str = "") -> str:
     identifier = str(
-        record.get("id")
+        record.get("stable_id")
+        or record.get("id")
         or record.get("name")
         or record.get("title")
         or record.get("company")
@@ -153,6 +154,12 @@ def load_golden_resume(project_root: str | Path | None = None) -> dict[str, Any]
         prefix="evidence_project_",
         source_path="data/evidence_projects.yml",
     )
+    atomic_evidence = _normalize_records(
+        _as_records(data.get("evidence_projects", {}), "atomic_evidence"),
+        kind="atomic_evidence",
+        prefix="atomic_",
+        source_path="data/evidence_projects.yml",
+    )
     evidence_cards = _normalize_records(
         load_evidence_cards(root), kind="evidence_card", prefix="card_", source_path="config/evidence_cards.yml"
     )
@@ -189,16 +196,25 @@ def load_golden_resume(project_root: str | Path | None = None) -> dict[str, Any]
         prefix="personal_brand_",
         source_path="data/personal_brand.yml",
     )
+    personal_brand_data = data.get("personal_brand", {}) or {}
+    education = _normalize_records(
+        _as_records(personal_brand_data, "education"),
+        kind="education",
+        prefix="education_",
+        source_path="data/personal_brand.yml",
+    )
     records = [
         *employment,
         *achievements,
         *projects,
         *evidence_projects,
+        *atomic_evidence,
         *evidence_cards,
         *skill_groups,
         *platform_categories,
         *certifications,
         *personal_brand,
+        *education,
     ]
     inventory = {
         "metadata": {
@@ -212,11 +228,13 @@ def load_golden_resume(project_root: str | Path | None = None) -> dict[str, Any]
         "achievements": achievements,
         "projects": projects,
         "evidence_projects": evidence_projects,
+        "atomic_evidence": atomic_evidence,
         "evidence_cards": evidence_cards,
         "skill_groups": skill_groups,
         "platform_categories": platform_categories,
         "certifications": certifications,
         "personal_brand": personal_brand,
+        "education": education,
         "records": records,
         "by_id": {str(item["canonical_id"]): item for item in records},
         "claim_corpus": "\n".join(_flatten(records)),
@@ -253,7 +271,7 @@ def validate_golden_resume(inventory: Mapping[str, Any]) -> dict[str, Any]:
     if omg23:
         aliases = {str(value) for value in omg23.get("internal_aliases") or []}
         if not {"OMD Entertainment", "OMG23 / OMD Entertainment"}.issubset(aliases):
-            errors.append("Historical OMG23 aliases must remain internal matching aliases.")
+                errors.append("Historical OMG23 aliases must remain available for deterministic matching.")
         corpus = " ".join(_flatten(omg23))
         if "Led 10 direct reports" not in corpus or "64-person organization" not in corpus:
             errors.append("Canonical OMG23 leadership scope must retain 10 direct reports and 64-person organization.")
@@ -286,6 +304,65 @@ def validate_golden_resume(inventory: Mapping[str, Any]) -> dict[str, Any]:
     ):
         errors.append("Career Catalyst must retain its verified public GitHub repository evidence.")
 
+    all_repositories = [
+        dict(repo)
+        for project in inventory.get("projects") or []
+        for repo in project.get("repositories") or []
+        if isinstance(repo, Mapping)
+    ]
+    if any(
+        str(repo.get("url") or "") != "https://github.com/RoboXTStudios/career-catalyst"
+        for repo in all_repositories
+    ):
+        errors.append("Only the verified Career Catalyst GitHub repository may be canonical.")
+
+    education = list(inventory.get("education") or [])
+    expected_education = next(
+        (item for item in education if item.get("institution") == "Los Angeles Valley College"),
+        None,
+    )
+    if not expected_education:
+        errors.append("Los Angeles Valley College education is missing.")
+    elif (
+        str(expected_education.get("timeframe") or "") != "2001-2002"
+        or str(expected_education.get("study") or "") != "Business Administration coursework"
+        or expected_education.get("degree_earned") is not False
+    ):
+        errors.append("Education must be Business Administration coursework (2001-2002), with no degree earned.")
+
+    atomic = list(inventory.get("atomic_evidence") or [])
+    required_atomic_fields = {
+        "stable_id", "parent_id", "evidence_type", "canonical_claim",
+        "timeframe", "organization", "skills", "technologies", "role_families",
+        "industries", "tags", "seniority_relevance", "recency", "confidence",
+        "provenance", "candidate_facing_allowed", "guardrails", "notes",
+    }
+    atomic_ids = [str(item.get("stable_id") or "") for item in atomic]
+    if not atomic:
+        errors.append("Canonical atomic evidence is missing.")
+    if len(atomic_ids) != len(set(atomic_ids)):
+        errors.append("Atomic evidence stable IDs must be unique.")
+    for item in atomic:
+        missing = sorted(field for field in required_atomic_fields if field not in item)
+        if missing:
+            errors.append(f"Atomic evidence {item.get('stable_id')} missing fields: {', '.join(missing)}.")
+    parent_ids = {
+        str(item.get("id") or "")
+        for section in ("employment", "projects", "evidence_projects")
+        for item in inventory.get(section) or []
+    }
+    orphaned = sorted(
+        str(item.get("stable_id") or "")
+        for item in atomic
+        if str(item.get("parent_id") or "") not in parent_ids
+    )
+    if orphaned:
+        errors.append("Atomic evidence has unknown parents: " + ", ".join(orphaned))
+
+    corpus = str(inventory.get("claim_corpus") or "")
+    if re.search(r"\bSubstack\b", corpus, flags=re.IGNORECASE):
+        errors.append("Substack is excluded from canonical career evidence.")
+
     if errors:
         raise GoldenResumeError("Golden Resume validation failed: " + " ".join(errors))
     return {
@@ -294,6 +371,8 @@ def validate_golden_resume(inventory: Mapping[str, Any]) -> dict[str, Any]:
         "employment_count": len(employment),
         "project_count": len(inventory.get("projects") or []),
         "evidence_project_count": len(inventory.get("evidence_projects") or []),
+        "atomic_evidence_count": len(inventory.get("atomic_evidence") or []),
+        "education_count": len(inventory.get("education") or []),
         "evidence_card_count": len(inventory.get("evidence_cards") or []),
         "skill_group_count": len(inventory.get("skill_groups") or []),
         "platform_category_count": len(inventory.get("platform_categories") or []),

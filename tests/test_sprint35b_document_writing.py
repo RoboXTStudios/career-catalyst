@@ -53,8 +53,18 @@ def _isolated_runtime(tmp_path: Path, role_id: str, fixture_name: str, selected_
     shutil.copy2(FIXTURES / fixture_name, root / "jobs" / fixture_name)
     parsed = parse_job_description(root / "jobs" / fixture_name)
     evidence = _fixture_evidence(selected_ids)
+    evidence_payload = yaml.safe_load(
+        (root / "data" / "evidence_projects.yml").read_text(encoding="utf-8")
+    )
+    evidence_payload["evidence_projects"] = evidence
+    selected_parent_ids = {str(item.get("id") or "") for item in evidence}
+    evidence_payload["atomic_evidence"] = [
+        item
+        for item in evidence_payload.get("atomic_evidence", [])
+        if str(item.get("parent_id") or "") in selected_parent_ids
+    ]
     (root / "data" / "evidence_projects.yml").write_text(
-        yaml.safe_dump({"evidence_projects": evidence}, sort_keys=False), encoding="utf-8"
+        yaml.safe_dump(evidence_payload, sort_keys=False), encoding="utf-8"
     )
     tracker = {
         "applications": [
@@ -118,7 +128,7 @@ def test_isolated_candidate_documents_follow_writing_standard(
     assert cover != additional
     assert "—" not in "\n".join((resume, cover, additional))
     assert not re.search(r"\b(?:20\+ years|two decades|nearly two decades|seasoned|veteran)\b", resume + cover + additional, re.I)
-    assert "OMD Entertainment" not in resume + cover + additional
+    assert "OMG23 / OMD Entertainment, Omnicom Media Group" in resume + cover + additional
     assert "calm senior judgment" not in cover.lower()
     assert "i bring a practical operating style:" not in cover.lower()
     assert "the through line in my experience" not in cover.lower()

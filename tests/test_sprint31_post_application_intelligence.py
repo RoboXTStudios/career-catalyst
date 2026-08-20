@@ -305,7 +305,7 @@ def test_output_has_no_unsupported_candidate_claims(tmp_path: Path):
     # mandatory; otherwise the intelligence remains grounded in career facts.
     if "campaignos" in text:
         assert "working prototype" in text
-    assert "omg23 (omnicom media group)" in text
+    assert "omg23 / omd entertainment, omnicom media group" in text
 
 
 # ARCHIVE

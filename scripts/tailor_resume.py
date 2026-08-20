@@ -878,6 +878,22 @@ def _professional_development(career_data: Dict[str, Any]) -> List[str]:
     return certification_lines
 
 
+def _education(career_data: Dict[str, Any]) -> List[str]:
+    """Return factual coursework-only education without inferring a degree."""
+    records = career_data["data"].get("personal_brand", {}).get("education", [])
+    lines: List[str] = []
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+        institution = str(record.get("institution") or "").strip()
+        timeframe = str(record.get("timeframe") or "").strip()
+        study = str(record.get("study") or "").strip()
+        if institution and study:
+            metadata = " | ".join(value for value in (institution, timeframe) if value)
+            lines.append(f"{metadata} | {study}")
+    return lines
+
+
 def _render_markdown(
     career_data: Dict[str, Any],
     parsed_job: Dict[str, Any],
@@ -963,6 +979,7 @@ def _render_markdown(
         if complete_foundation or _include_professional_development(parsed_job)
         else []
     )
+    education = _education(career_data) if complete_foundation else []
 
     lines = [
         f"<!-- career-catalyst-job-title: {parsed_job.get('job_title') or 'Role'} -->",
@@ -1091,6 +1108,11 @@ def _render_markdown(
     if development:
         lines.extend(["## Professional Development", ""])
         lines.extend(f"- {line}" for line in development)
+        lines.append("")
+
+    if education:
+        lines.extend(["## Education", ""])
+        lines.extend(f"- {line}" for line in education)
         lines.append("")
 
     return "\n".join(line for line in lines if line is not None)

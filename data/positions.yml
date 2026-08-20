@@ -1,8 +1,10 @@
 positions:
-  - company: OMG23 (Omnicom Media Group)
+  - id: omg23_omd_entertainment
+    company: OMG23 / OMD Entertainment, Omnicom Media Group
     internal_aliases:
       - OMD Entertainment
       - OMG23 / OMD Entertainment
+      - OMG23 (Omnicom Media Group)
       - Omnicom Media Group
     location: Burbank, CA
     timeframe: 2016-2026
@@ -18,7 +20,7 @@ positions:
       - "Led 10 direct reports spanning directors, associate directors, senior campaign managers, and project managers across Ad Operations, Creative Management, and Marketing Science and Analytics."
       - "Provided strategic and operational leadership across an integrated 64-person organization comprising approximately 24 Ad Operations, 26 Creative Management, and 14 Marketing Science and Analytics professionals."
       - "Supported Disney Studios, Disney+, Searchlight Pictures, Corporate Brand Management, and related theatrical, streaming, and franchise priorities."
-      - "Directed operational execution and governance across hundreds to thousands of campaigns representing multimillion-dollar media investments."
+      - "Directed operational execution and governance across large entertainment campaign portfolios representing multimillion-dollar media investments."
       - "Served as the senior Ad Operations representative on the cross-functional task force responsible for operationalizing the Disney+ launch."
       - "Partnered directly with Disney Technology and Disney Streaming Services to establish governance, campaign taxonomies, pixel implementation, tracking structures, measurement readiness, and launch support within the required timeline."
       - "Designed and continuously improved campaign operating systems across CM360, DV360, Meta, TikTok, Innovid, DoubleVerify, IAS, TransUnion, LiveRamp, VideoAmp, Box, Airtable, Trello, and related platforms."
@@ -28,7 +30,9 @@ positions:
       - "Partnered across creative, marketing, media planning, analytics, engineering, technology, programmatic, search, social, vendors, and client leadership to resolve complex issues and deliver launches under aggressive deadlines."
       - "Created and served as Managing Editor of Multiverse, an internal editorial publication reaching more than 400 employees and highlighting creativity, innovation, culture, music, emerging media, and employee storytelling."
       - "Became a trusted escalation point for complex operational problems, with senior leaders relying on her to diagnose the issue, develop the solution, implement the strategy, and stabilize execution."
+    atomic_evidence_ids: [OMG23-01, OMG23-02, OMG23-03, OMG23-04, OMG23-05, OMG23-06, DISNEYPLUS-01, DISNEYPLUS-02, DISNEYPLUS-03, DISNEYPLUS-04, MARTECH-01, MARTECH-02, MARTECH-03, MARTECH-04, MARTECH-05, M365-01, M365-02, M365-03, M365-04, MULTIVERSE-01, MULTIVERSE-02, MULTIVERSE-03, MULTIVERSE-04]
   - company: Intermedia Advertising
+    id: intermedia_senior_digital_media_planner_strategist
     location: Los Angeles, CA
     timeframe: 2011-2015
     progression:
@@ -40,6 +44,7 @@ positions:
       - "Supported paid search and social initiatives while working across clients, account teams, publishers, platforms, creative partners, and internal stakeholders to resolve execution issues from planning through reporting."
       - "Contributed to video production and voiceover work for clients including Marinello Schools of Beauty and Education Connection, and built and managed the company's LinkedIn presence."
   - company: US International Media
+    id: us_international_media_senior_digital_media_planner
     location: Las Vegas, NV and Los Angeles, CA
     timeframe: 2008-2011
     progression:
@@ -51,10 +56,18 @@ positions:
       - "Helped establish and evolve digital operating practices as clients and internal teams transitioned from traditional media into more complex digital ecosystems."
       - "Supported accounts including Station Casinos brands, Chevrolet, Pepperdine University, Aruba, and additional clients requiring digital strategy and operational support."
   - company: Additional Early Experience
+    id: additional_early_experience
     progression:
       - Intermedia Advertising - Trafficking Assistant
       - Tylie Jones & Associates - Junior Account Executive; previously Warehouse Assistant
     summary: "Early trafficking, account, production, and media-material experience."
+    sub_positions:
+      - company: Intermedia Advertising
+        role: Trafficking Assistant
+        timeframe: 2005-2007
+      - company: Tylie Jones & Associates
+        roles: [Warehouse Assistant, Junior Account Executive]
+        timeframe: 2004-2005
     highlights:
       - "Coordinated broadcast trafficking, media materials, schedules, delivery requirements, and execution across clients, stations, and internal account teams."
       - "Managed dailies, dub inventory, digital transfers, media deliveries, and production materials for studio and entertainment clients; supported video editing and post-production workflows, including television commercial work for Honda and Toyota."

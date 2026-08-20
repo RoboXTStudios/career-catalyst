@@ -70,7 +70,7 @@ Newsletter Development, Editorial Production
 
 ## Professional Experience
 
-### OMG23 (Omnicom Media Group)
+### OMG23 / OMD Entertainment, Omnicom Media Group
 
 Group Director | 2022-2026
 
@@ -131,7 +131,7 @@ def test_exports_preserve_canonical_visible_content_and_links(tmp_path: Path):
         document = Document(result["output_path"])
         content = _document_text(document)
         for expected in (
-            "OMG23 (Omnicom Media Group)",
+            "OMG23 / OMD Entertainment, Omnicom Media Group",
             "Career Catalyst",
             "CampaignOS (Working Prototype)",
             "AI Workflow Design",

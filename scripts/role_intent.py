@@ -66,7 +66,7 @@ DYNAMIC_ROLE_WRITING = {
         "headline": "Senior Strategy & Operations Leader | Transformation | AI Systems | Marketing Operations",
         "summary": (
             "Senior strategy and operations leader who translates go-to-market priorities into clear planning rhythms, "
-            "workflow visibility, data quality, and cross-functional execution. At OMG23 (Omnicom Media Group), I led "
+            "workflow visibility, data quality, and cross-functional execution. At OMG23 / OMD Entertainment, Omnicom Media Group, I led "
             "10 direct reports and provided strategic and operational leadership across an integrated 64-person organization. "
             "My strengths include operating model design, stakeholder alignment, workflow governance, and disciplined delivery "
             "in complex organizations."
@@ -89,7 +89,7 @@ DYNAMIC_ROLE_WRITING = {
         "summary": (
             "Senior operations and entertainment-media leader with direct audio production experience and a record of "
             "coordinating complex work across creative, media, analytics, technology, vendors, and client stakeholders. "
-            "At OMG23 (Omnicom Media Group), I led 10 direct reports and provided strategic and operational leadership "
+            "At OMG23 / OMD Entertainment, Omnicom Media Group, I led 10 direct reports and provided strategic and operational leadership "
             "across an integrated 64-person organization. I bring strengths in partner coordination, release readiness, "
             "workflow governance, and cross-functional execution."
         ),

@@ -6,14 +6,14 @@ import re
 from typing import Any
 
 
-PUBLIC_OMG23_NAME = "OMG23 (Omnicom Media Group)"
+PUBLIC_OMG23_NAME = "OMG23 / OMD Entertainment, Omnicom Media Group"
 HISTORICAL_OMG23_ALIASES = (
     "OMD Entertainment",
     "OMG23 / OMD Entertainment",
+    "OMG23 (Omnicom Media Group)",
     "Omnicom Media Group",
 )
 STALE_PUBLIC_CLAIMS = (
-    "OMG23 / OMD Entertainment",
     "cross-functional teams of 60+",
     "teams of 60+",
     "more than 60 people",
@@ -101,11 +101,20 @@ def is_ai_transformation_role(parsed_job: dict[str, Any]) -> bool:
 
 
 def public_claim_violations(text: str) -> list[str]:
-    return [
+    violations = [
         phrase
         for phrase in STALE_PUBLIC_CLAIMS
         if re.search(rf"(?<!\w){re.escape(phrase)}(?!\w)", text, flags=re.I)
     ]
+    # The historical combined name is still useful for matching, but the
+    # candidate-facing form must include the Omnicom Media Group parent.
+    if re.search(
+        r"(?<!\w)OMG23 / OMD Entertainment(?!,\s*Omnicom Media Group)",
+        text,
+        flags=re.I,
+    ):
+        violations.append("OMG23 / OMD Entertainment")
+    return violations
 
 
 def validate_public_career_claims(text: str) -> None:

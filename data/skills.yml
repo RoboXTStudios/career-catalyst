@@ -15,20 +15,39 @@ skill_groups:
     - Measurement & Data Governance
     - Quality Assurance
     - Risk Management
+    - Data Governance
+    - Operational Strategy
   leadership_and_strategy:
+    - People Leadership
     - Cross-Functional Leadership
     - Executive Stakeholder Management
     - Team Development
+    - Stakeholder Alignment
+    - Training & Enablement
+    - Executive Communication
+    - Problem Solving
+    - Escalation Management
     - Creative Operations
     - Entertainment Marketing
     - Emerging Media
+    - Editorial Production
+    - Photography
+    - Video Production
+    - Audio Production
+    - Digital Publishing
+    - Content Operations
+    - Music Media
   ai_and_systems:
+    - Product Strategy
+    - Requirements Development
     - AI Workflow Design
     - Prompt and Schema Development
     - Process Automation
     - Product Prototyping
     - Organizational Systems
     - Validation Frameworks
+    - Product QA
+    - Release Validation
   platforms_and_tools:
     ad_tech:
       - Google Marketing Platform
@@ -77,4 +96,4 @@ skill_groups:
       - Video Production
       - Post-Production Workflows
     technical:
-      - Python working knowledge
+      - Python — Working Knowledge

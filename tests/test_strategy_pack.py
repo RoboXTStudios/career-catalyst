@@ -57,7 +57,7 @@ class StrategyPackTests(unittest.TestCase):
         self.assertIn("Director, Enterprise Strategy & Initiatives", self.content)
 
     def test_strategy_pack_uses_canonical_career_scope_without_forcing_projects(self):
-        self.assertIn("OMG23 (Omnicom Media Group)", self.content)
+        self.assertIn("OMG23 / OMD Entertainment, Omnicom Media Group", self.content)
         self.assertIn("10 direct reports", self.content)
         self.assertIn("64-person organization", self.content)
         if "CampaignOS" in self.content:

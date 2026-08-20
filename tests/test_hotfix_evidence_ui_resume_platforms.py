@@ -5,6 +5,8 @@ import shutil
 from pathlib import Path
 
 import yaml
+
+from tests.fixture_support import replace_evidence_projects
 from docx import Document
 
 import app
@@ -30,10 +32,7 @@ def _evidence(project_id: str, *, status: str = "Active", title: str | None = No
 def _write_evidence(root: Path, projects: list[dict]) -> None:
     path = root / "data/evidence_projects.yml"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        yaml.safe_dump({"evidence_projects": projects}, sort_keys=False),
-        encoding="utf-8",
-    )
+    replace_evidence_projects(path, projects)
 
 
 def _platform_section(markdown: str) -> str:

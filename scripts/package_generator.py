@@ -22,6 +22,7 @@ try:
         update_prospect,
         update_status,
     )
+    from .career_claims import PUBLIC_OMG23_NAME
     from .dynamic_role_intelligence import get_effective_voice_profile
     from .docx_quality import compare_docx_factual_parity
     from .export_docx import export_ats_docx, export_styled_docx
@@ -96,6 +97,7 @@ except ImportError:
         update_prospect,
         update_status,
     )
+    from career_claims import PUBLIC_OMG23_NAME
     from dynamic_role_intelligence import get_effective_voice_profile
     from docx_quality import compare_docx_factual_parity
     from export_docx import export_ats_docx, export_styled_docx
@@ -995,7 +997,10 @@ def _generate_package_in_place(
             "generic_language_check": "passed" if not any(
                 phrase in cover_text.lower() for phrase in ("sound judgment", "cross-functional follow-through", "calm senior judgment")
             ) else "review",
-            "employer_name_check": "passed" if "OMD Entertainment" not in cover_text else "repaired",
+            "employer_name_check": "passed" if (
+                PUBLIC_OMG23_NAME in cover_text
+                or not re.search(r"\b(?:OMG23|OMD Entertainment)\b", cover_text)
+            ) else "repaired",
             "age_language_check": "passed" if not any(
                 phrase in cover_text.lower() for phrase in ("20+ years", "two decades", "seasoned", "veteran")
             ) else "repaired",

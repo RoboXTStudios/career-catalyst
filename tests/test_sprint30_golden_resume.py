@@ -48,7 +48,7 @@ def test_golden_foundation_preserves_positioning_and_complete_role_history():
     omg23 = next(record for record in positions if record["company"].startswith("OMG23"))
 
     assert data["personal_brand"]["candidate"]["headline"] == (
-        "Senior Operations & Transformation Leader | MarTech | AI Systems | "
+        "Senior Operations & Transformation Leader | Marketing Technology | AI-Enabled Systems | "
         "Entertainment"
     )
     assert omg23["progression"] == OMG23_PROGRESSION
@@ -142,10 +142,16 @@ def test_tailored_generator_inherits_golden_baseline_and_policy():
 
 def test_active_candidate_source_contains_no_unsupported_or_age_signaling_claims():
     info = canonical_resume_foundation_info(PROJECT_ROOT)
+    foundation = load_resume_foundation(PROJECT_ROOT)
     active_text = "\n".join(
-        (PROJECT_ROOT / relative_path).read_text(encoding="utf-8")
+        str(foundation["data"][Path(relative_path).stem])
         for relative_path in info["baseline_files"]
-    )
+        if Path(relative_path).stem != "personal_brand"
+    ) + "\n" + str({
+        key: value
+        for key, value in foundation["data"]["personal_brand"].items()
+        if key != "claim_guardrails"
+    })
 
     assert CORRECTED_DISNEY_SCOPE in active_text
     assert candidate_language_violations(active_text) == []
@@ -159,12 +165,17 @@ def test_existing_evidence_ids_and_provenance_are_preserved():
         (PROJECT_ROOT / "config/evidence_cards.yml").read_text(encoding="utf-8")
     )["evidence_cards"]
 
-    assert {record["id"] for record in evidence} == {
+    assert {record["id"] for record in evidence} >= {
         "enterprise_media_operations_transformation",
         "enterprise_collaboration_platform_adoption_stakeholder_enablement",
         "operational_workflow_design_airtable_implementation",
         "enterprise_employee_engagement_community_fundraising_initiative",
         "multiverse_editorial",
+        "disney_plus_launch_readiness",
+        "career_catalyst",
+        "roboxt_studios",
+        "campaignos",
+        "just_for_us_podcast",
     }
     assert {(record["id"], record["source"]) for record in cards} == {
         (

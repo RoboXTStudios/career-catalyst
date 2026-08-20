@@ -239,7 +239,7 @@ def test_gitlab_tailoring_is_compact_and_role_relevant():
     assert "Tylie Jones" not in resume
     assert "Professional Development" not in resume
     assert "Publishing & Creative" not in resume
-    assert "OMG23 (Omnicom Media Group)" in resume
+    assert "OMG23 / OMD Entertainment, Omnicom Media Group" in resume
     assert public_claim_violations(resume) == []
 
 
@@ -306,5 +306,5 @@ def test_internal_employer_aliases_remain_available_but_public_display_is_curren
     assert "OMD Entertainment" in aliases
     assert "OMG23 / OMD Entertainment" in aliases
     assert company_display_name("Gitlab") == "GitLab"
-    assert company_display_name("OMD Entertainment") == "OMG23 (Omnicom Media Group)"
-    assert company_display_name("OMG23 / OMD Entertainment") == "OMG23 (Omnicom Media Group)"
+    assert company_display_name("OMD Entertainment") == "OMG23 / OMD Entertainment, Omnicom Media Group"
+    assert company_display_name("OMG23 / OMD Entertainment") == "OMG23 / OMD Entertainment, Omnicom Media Group"

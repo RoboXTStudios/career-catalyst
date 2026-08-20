@@ -6,6 +6,8 @@ from pathlib import Path
 import app
 import yaml
 
+from tests.fixture_support import replace_evidence_projects
+
 from scripts.evidence_engine import evidence_projects_for_role
 from scripts.package_generator import build_package_context, preflight_package_generation
 from scripts.role_state_resolver import resolve_selected_evidence, selected_evidence_ids
@@ -51,10 +53,7 @@ def _runtime(tmp_path: Path) -> Path:
             ),
         )
     ]
-    (root / "data" / "evidence_projects.yml").write_text(
-        yaml.safe_dump({"evidence_projects": evidence}, sort_keys=False),
-        encoding="utf-8",
-    )
+    replace_evidence_projects(root / "data" / "evidence_projects.yml", evidence)
     return root
 
 

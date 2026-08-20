@@ -119,10 +119,12 @@ def test_golden_resume_validates_complete_canonical_inventory():
     validation = validate_golden_resume(inventory)
     assert validation == {
         "status": "valid",
-        "record_count": 40,
+        "record_count": 109,
         "employment_count": 4,
         "project_count": 4,
-        "evidence_project_count": 5,
+        "evidence_project_count": 11,
+        "atomic_evidence_count": 62,
+        "education_count": 1,
         "evidence_card_count": 8,
         "skill_group_count": 4,
         "platform_category_count": 5,
@@ -136,7 +138,7 @@ def test_golden_resume_validates_complete_canonical_inventory():
 
 def test_golden_resume_rejects_stale_provenance_and_preserves_public_employer():
     inventory = load_golden_resume(ROOT)
-    assert inventory["employment"][0]["company"] == "OMG23 (Omnicom Media Group)"
+    assert inventory["employment"][0]["company"] == "OMG23 / OMD Entertainment, Omnicom Media Group"
     assert "OMD Entertainment" in inventory["employment"][0]["internal_aliases"]
     inventory["evidence_cards"][0]["source"] = "data/achievements.yml:not_real"
     with pytest.raises(GoldenResumeError, match="stale provenance"):
@@ -413,7 +415,7 @@ def test_traditional_senior_operations_package_preserves_career_credibility(tmp_
     quality = result["package_quality"]
     resume = Path(result["manifest"]["files"]["resume_text"]).read_text(encoding="utf-8")
     assert result["package_complete"]
-    assert "OMG23 (Omnicom Media Group)" in resume
+    assert "OMG23 / OMD Entertainment, Omnicom Media Group" in resume
     assert "Led 10 direct reports" in resume
     assert quality["ats_round_trip"]["status"] == "PASS"
     assert quality["human_credibility"]["checks"]["career_progression_visible"]

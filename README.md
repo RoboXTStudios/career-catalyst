@@ -28,7 +28,7 @@ The Golden Resume is the full verified inventory, not a submission résumé. Can
 - CampaignOS is a working prototype and supporting evidence for campaign systems, workflow governance, QA, and role-relevant AI operations.
 - GitHub is included only when the verified public build record adds credibility. URLs remain visible and clickable.
 
-Historical employer aliases are matching-only. Candidate-facing language uses `OMG23 (Omnicom Media Group)` and preserves the verified scope of 10 direct reports and an integrated 64-person organization.
+Historical employer aliases are matching-only. Candidate-facing language uses `OMG23 / OMD Entertainment, Omnicom Media Group` and preserves the verified scope of 10 direct reports and an integrated 64-person organization.
 
 ## Package outputs
 

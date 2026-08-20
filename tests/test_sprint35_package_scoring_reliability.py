@@ -9,6 +9,8 @@ import pytest
 
 import app
 import yaml
+
+from tests.fixture_support import replace_evidence_projects
 from scripts.dynamic_role_intelligence import detect_role_family
 from scripts.evidence_tailoring import (
     cover_letter_project_paragraph,
@@ -222,7 +224,8 @@ def test_candidate_language_repairs_missing_subject_and_protected_claims():
     assert "At RoboXT Studios, I founded" in text
     assert "integrated 64-person organization" in text
     assert "working campaign-operations prototype" in text
-    assert "—" not in text and "OMD Entertainment" not in text
+    assert "—" not in text
+    assert "OMG23 / OMD Entertainment, Omnicom Media Group" in text
 
 
 @pytest.mark.parametrize(
@@ -381,9 +384,7 @@ def test_sanitized_role_package_completes_transactionally(
     shutil.copy2(FIXTURES / fixture_name, job)
     parsed = parse_job_description(job)
     evidence = _fixture_evidence(selected_ids)
-    (root / "data" / "evidence_projects.yml").write_text(
-        yaml.safe_dump({"evidence_projects": evidence}, sort_keys=False), encoding="utf-8"
-    )
+    replace_evidence_projects(root / "data" / "evidence_projects.yml", evidence)
     tracker = {
         "applications": [{
             "id": role_id, "stable_slug": role_id, "company": parsed["company"],
@@ -413,7 +414,7 @@ def test_sanitized_role_package_completes_transactionally(
         if Path(item["preferred_open_path"]).suffix in {".txt", ".json"}
     )
     assert "—" not in candidate_text
-    assert "OMD Entertainment" not in candidate_text
+    assert "OMG23 / OMD Entertainment, Omnicom Media Group" in candidate_text
     assert "team of 64" not in candidate_text.lower()
 
     files = result["manifest"]["files"]

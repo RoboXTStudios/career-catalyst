@@ -5,6 +5,8 @@ from pathlib import Path
 
 import yaml
 
+from tests.fixture_support import replace_evidence_projects
+
 from scripts.evidence_tailoring import evidence_score_contribution
 from scripts.score_match import score_job_match
 from scripts.package_generator import (
@@ -72,7 +74,7 @@ def test_selected_evidence_limits_are_transparent(tmp_path: Path):
 
 def test_candidate_normalization_repairs_nonfactual_language_only():
     value = normalize_candidate_text("OMD Entertainment — a seasoned leader with 20+ years")
-    assert value == "OMG23 (Omnicom Media Group) - an experienced leader with extensive experience"
+    assert value == "OMG23 / OMD Entertainment, Omnicom Media Group - an experienced leader with extensive experience"
     assert normalize_candidate_text(value) == value
 
 
@@ -140,10 +142,7 @@ def _write_openai_fixture_runtime(root: Path) -> None:
             "external_use": True,
         },
     ]
-    (root / "data" / "evidence_projects.yml").write_text(
-        yaml.safe_dump({"evidence_projects": projects}, sort_keys=False),
-        encoding="utf-8",
-    )
+    replace_evidence_projects(root / "data" / "evidence_projects.yml", projects)
     tracker = {
         "applications": [
             {

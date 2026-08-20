@@ -24,6 +24,7 @@ evidence_projects:
   links: []
   notes: ''
   status: Active
+  atomic_evidence_ids: [OMG23-01, OMG23-02, OMG23-03, OMG23-04, OMG23-05, OMG23-06]
 - id: enterprise_collaboration_platform_adoption_stakeholder_enablement
   title: Enterprise Collaboration Platform Adoption & Stakeholder Enablement
   employer: OMG23
@@ -50,6 +51,7 @@ evidence_projects:
   links: []
   notes: ''
   status: Active
+  atomic_evidence_ids: [M365-01, M365-02, M365-03, M365-04]
 - id: operational_workflow_design_airtable_implementation
   title: Operational Workflow Design & Airtable Implementation
   employer: OMG23
@@ -80,6 +82,7 @@ evidence_projects:
   links: []
   notes: ''
   status: Active
+  atomic_evidence_ids: [AIRTABLE-01, AIRTABLE-02, AIRTABLE-03, AIRTABLE-04, AIRTABLE-05, AIRTABLE-06]
 - id: enterprise_employee_engagement_community_fundraising_initiative
   title: Enterprise Employee Engagement & Community Fundraising Initiative
   employer: OMG23
@@ -136,3 +139,1314 @@ evidence_projects:
   links: []
   notes: ''
   status: Active
+  atomic_evidence_ids: [MULTIVERSE-01, MULTIVERSE-02, MULTIVERSE-03, MULTIVERSE-04]
+- id: disney_plus_launch_readiness
+  title: Disney+ Launch Readiness — Tracking, Measurement and Operational Governance
+  employer: OMG23 / OMD Entertainment, Omnicom Media Group
+  client: The Walt Disney Company
+  business_unit: Disney+
+  industry: Entertainment & Media
+  function: Marketing Operations
+  project_type: Streaming Launch Operations
+  problem: Disney+ required cross-functional operational readiness across tracking, measurement, taxonomy, quality assurance, and campaign execution.
+  actions: Served as the senior Ad Operations representative on the launch task force and partnered with Disney Technology and Disney Streaming Services on governance, implementation standards, and readiness workflows.
+  results: Supported launch readiness by connecting tracking structures, pixel implementation, measurement requirements, quality assurance, and operational execution.
+  skills: [Launch Operations, Cross-Functional Leadership, Campaign Governance, Quality Assurance]
+  technologies: []
+  tags: [Streaming, Entertainment Technology, Marketing Operations, Program Operations, Measurement Readiness]
+  supporting_evidence: [data/achievements.yml:disney_plus_launch_support]
+  links: []
+  notes: ''
+  status: Active
+  atomic_evidence_ids: [DISNEYPLUS-01, DISNEYPLUS-02, DISNEYPLUS-03, DISNEYPLUS-04]
+- id: martech_platform_governance_measurement_operations
+  title: MarTech Platform Governance & Measurement Operations
+  employer: OMG23 / OMD Entertainment, Omnicom Media Group
+  client: The Walt Disney Company
+  industry: Entertainment & Media
+  function: Marketing Technology
+  project_type: Platform Governance and Measurement Operations
+  problem: Complex entertainment marketing operations required consistent platform governance, tagging, measurement, vendor workflows, training, and quality standards.
+  actions: Influenced platform implementation and designed repeatable workflows across internal teams, clients, and technology and measurement partners.
+  results: Improved consistency across platform operations, taxonomies, tagging, data flows, measurement readiness, troubleshooting, training, and adoption.
+  skills: [MarTech Strategy, Platform Governance, Measurement Operations, Quality Assurance]
+  technologies: [Google Marketing Platform, CM360, DV360, Google Ads, YouTube, GA4, The Trade Desk, Innovid, DoubleVerify, IAS, LiveRamp, VideoAmp, TransUnion, Meta Ads Manager, TikTok Ads]
+  tags: [MarTech, AdTech, Taxonomy, Tagging, Measurement, Vendor Integration]
+  supporting_evidence: [data/achievements.yml:google_youtube_platform_familiarity,workflow_governance]
+  links: []
+  notes: ''
+  status: Active
+  atomic_evidence_ids: [MARTECH-01, MARTECH-02, MARTECH-03, MARTECH-04, MARTECH-05]
+- id: career_catalyst
+  title: Career Catalyst — AI-Enabled Career Intelligence & Application Operations Platform
+  organization: RoboXT Studios
+  industry: Career Technology
+  function: Product Operations
+  project_type: Active Product Development
+  timeframe: 2026-Present
+  problem: Job-search workflows needed a truthful, structured way to connect canonical career evidence, role requirements, fit decisions, candidate materials, application operations, and quality controls.
+  actions: Defined and built an AI-enabled product with role intelligence, semantic requirement mapping, evidence selection, grounded material generation, transactional package controls, DOCX validation, and application workflows.
+  results: Actively operates the product in a real job search and converts observed production failures and output issues into requirements, fixes, regression tests, and release validation.
+  skills: [Product Strategy, Product Operations, Requirements Development, AI Workflow Design, Human-in-the-Loop AI, Quality Assurance]
+  technologies: [Python — Working Knowledge, Streamlit, Git, GitHub, Structured YAML]
+  tags: [Applied AI, Product Development, Workflow Architecture, Provenance, Regression Testing]
+  supporting_evidence: [data/projects.yml:Career Catalyst]
+  links: [https://github.com/RoboXTStudios/career-catalyst]
+  notes: Public repository demonstrates the project only; do not portray it as traditional software-engineering employment.
+  status: Active
+  atomic_evidence_ids: [CC-01, CC-02, CC-03, CC-04, CC-05, CC-06, CC-07, CC-08, CC-09, CC-10, CC-11, CC-12, CC-13, CC-14, CC-15, CC-16, CC-17, CC-18]
+- id: roboxt_studios
+  title: RoboXT Studios — Independent Creative and Product Studio
+  organization: RoboXT Studios
+  industry: Media & Entertainment
+  function: Creative and Media Operations
+  project_type: Independent Creative/Media Platform
+  timeframe: 2026-Present
+  problem: An archive of original photography and concert/music media needed an owned publishing environment, coherent brand, and repeatable production and distribution workflows.
+  actions: Founded and operates an independent creative platform spanning WordPress operations, photography, concert/music video, editorial publishing, brand development, asset management, and cross-platform distribution.
+  results: Established a public digital presence and operating foundation for publishing original creative work across owned web properties and selected social platforms.
+  skills: [Media Production, Photography, Video Production, Digital Publishing, Brand Development, Content Operations]
+  technologies: [WordPress, YouTube, TikTok, Instagram, Pinterest]
+  tags: [Music Media, Creative Operations, Website Operations, Media Archive, Distribution]
+  supporting_evidence: [data/projects.yml:RoboXT Studios]
+  links: []
+  notes: No paid-client, revenue, staff, audience-scale, or commercial-success claims are authorized.
+  status: Active
+  atomic_evidence_ids: [ROBOXT-01, ROBOXT-02, ROBOXT-03, ROBOXT-04, ROBOXT-05, ROBOXT-06, ROBOXT-07, ROBOXT-08, ROBOXT-09]
+- id: campaignos
+  title: CampaignOS — AI-Enabled Campaign Operations Prototype
+  organization: RoboXT Studios
+  industry: Marketing Technology
+  function: Campaign Operations
+  project_type: Working Prototype
+  timeframe: 2026-Present
+  problem: Recurring enterprise campaign-operations problems called for structured readiness, governance, validation, and risk visibility.
+  actions: Translated those problems into a working prototype with a structured campaign schema, readiness logic, governance workflows, and QA concepts.
+  results: Established a testable product concept; further validation depends on representative campaign data and practical testing environments.
+  skills: [Problem Definition, Product Thinking, Workflow Governance, Quality Assurance]
+  technologies: [AI-assisted workflows, Structured YAML, Schema-driven validation]
+  tags: [Campaign Operations, Marketing Operations, Product Prototype, Validation]
+  supporting_evidence: [data/projects.yml:CampaignOS, data/achievements.yml:campaignos_ai_operations]
+  links: []
+  notes: Working prototype only; not deployed enterprise software or commercial SaaS.
+  status: Active
+  atomic_evidence_ids: [CAMPAIGNOS-01, CAMPAIGNOS-02, CAMPAIGNOS-03, CAMPAIGNOS-04, CAMPAIGNOS-05, CAMPAIGNOS-06]
+- id: just_for_us_podcast
+  title: Just for Us Podcast — Audio Production & Editing
+  industry: Media & Entertainment
+  function: Audio Production
+  project_type: Podcast Production
+  problem: A collaborative multi-host podcast required editorial shaping, dialogue cleanup, audio balancing, revision management, quality control, and release preparation.
+  actions: Produced and edited a ten-episode collaborative podcast series, managing conversation editing, pacing, dialogue cleanup, balancing, revisions, quality control, and release preparation.
+  results: Multiple episodes were released on Spotify.
+  skills: [Audio Production, Editing, Quality Control, Release Preparation]
+  technologies: []
+  tags: [Podcast, Audio, Content Production, Creative Operations, Music Media]
+  supporting_evidence: []
+  links: []
+  notes: Does not establish label operations, artist management, booking, negotiation, or music-industry business-development ownership.
+  status: Active
+
+atomic_evidence:
+- stable_id: OMG23-01
+  parent_id: omg23_omd_entertainment
+  evidence_type: career_progression
+  canonical_claim: Advanced through five roles from Campaign Manager to Group Director as responsibilities expanded from hands-on campaign execution into senior operations, organizational leadership, and transformation.
+  supporting_context: Campaign Manager, Supervisor, Associate Director, Director, and Group Director.
+  timeframe: 2016-2026
+  organization: OMG23 / OMD Entertainment, Omnicom Media Group
+  skills: [Career Progression, Enterprise Operations, Transformation]
+  technologies: []
+  role_families: [Senior Operations, Transformation, Program Leadership]
+  industries: [Entertainment, Marketing Technology, Media]
+  tags: [career progression, promotion, leadership growth, enterprise operations, transformation, seniority]
+  seniority_relevance: executive
+  recency: recent
+  confidence: high
+  provenance: User-confirmed canonical employment history; data/positions.yml
+  candidate_facing_allowed: true
+  guardrails: [Do not imply a different title sequence or timeframe.]
+  notes: ''
+- stable_id: OMG23-02
+  parent_id: omg23_omd_entertainment
+  evidence_type: organizational_leadership
+  canonical_claim: Led 10 direct reports and provided strategic and operational leadership across an integrated 64-person organization spanning Ad Operations, Creative Management, and Marketing Science & Analytics.
+  supporting_context: Direct reports included senior operations and project-management talent.
+  timeframe: 2022-2026
+  organization: OMG23 / OMD Entertainment, Omnicom Media Group
+  skills: [People Leadership, Team Development, Cross-Functional Leadership, Executive Management]
+  technologies: []
+  role_families: [Operations Leadership, Organizational Leadership]
+  industries: [Entertainment, Media, Marketing Technology]
+  tags: [people leadership, organizational leadership, team development, resource leadership, cross-functional leadership, executive management]
+  seniority_relevance: executive
+  recency: recent
+  confidence: high
+  provenance: User-confirmed leadership scope; data/positions.yml; data/achievements.yml:cross_functional_leadership
+  candidate_facing_allowed: true
+  guardrails: [Distinguish 10 direct reports from leadership across the 64-person organization., Do not claim direct management of all 64 people.]
+  notes: ''
+- stable_id: OMG23-03
+  parent_id: omg23_omd_entertainment
+  evidence_type: portfolio_operations
+  canonical_claim: Directed operational execution and governance across large entertainment campaign portfolios representing multimillion-dollar media investment.
+  supporting_context: Theatrical releases, streaming launches, franchise and IP priorities, and high-volume enterprise campaign portfolios.
+  timeframe: 2016-2026
+  organization: OMG23 / OMD Entertainment, Omnicom Media Group
+  skills: [Entertainment Marketing, Marketing Operations, Campaign Operations, Portfolio Operations, Media Operations]
+  technologies: []
+  role_families: [Entertainment Marketing Operations, Portfolio Operations]
+  industries: [Entertainment, Media, Advertising]
+  tags: [entertainment marketing, marketing operations, campaign operations, portfolio operations, execution at scale, media operations]
+  seniority_relevance: senior
+  recency: recent
+  confidence: high
+  provenance: User-confirmed canonical employment history; data/positions.yml; data/achievements.yml:enterprise_campaign_delivery
+  candidate_facing_allowed: true
+  guardrails: [Do not invent exact campaign counts.]
+  notes: ''
+- stable_id: OMG23-04
+  parent_id: omg23_omd_entertainment
+  evidence_type: cross_functional_leadership
+  canonical_claim: Connected creative, marketing, media, analytics, technology, engineering, programmatic, vendors, and client stakeholders to translate complex requirements into executable operating processes.
+  supporting_context: Matrixed enterprise delivery across internal, client, vendor, and technology partners.
+  timeframe: 2016-2026
+  organization: OMG23 / OMD Entertainment, Omnicom Media Group
+  skills: [Stakeholder Alignment, Matrix Leadership, Cross-Functional Execution, Program Leadership, Executive Communication]
+  technologies: []
+  role_families: [Program Leadership, Operations Leadership]
+  industries: [Entertainment, Media, Marketing Technology]
+  tags: [stakeholder alignment, matrix leadership, cross-functional execution, program leadership, executive communication, operating coordination]
+  seniority_relevance: senior
+  recency: recent
+  confidence: high
+  provenance: User-confirmed canonical employment history; data/positions.yml
+  candidate_facing_allowed: true
+  guardrails: [Collaboration does not imply direct management of every adjacent function.]
+  notes: ''
+- stable_id: OMG23-05
+  parent_id: omg23_omd_entertainment
+  evidence_type: operating_model_transformation
+  canonical_claim: Designed and implemented scalable workflows, governance practices, quality standards, and execution processes across complex marketing operations.
+  supporting_context: Enterprise entertainment marketing and media operations.
+  timeframe: 2016-2026
+  organization: OMG23 / OMD Entertainment, Omnicom Media Group
+  skills: [Operating Model Design, Process Optimization, Transformation, Operational Excellence, Workflow Design, Governance, Quality Assurance]
+  technologies: []
+  role_families: [Operations Transformation, Marketing Operations]
+  industries: [Entertainment, Media, Marketing Technology]
+  tags: [operating model design, process optimization, transformation, operational excellence, workflow design, governance, quality assurance]
+  seniority_relevance: senior
+  recency: recent
+  confidence: high
+  provenance: User-confirmed canonical employment history; data/positions.yml; data/achievements.yml:workflow_governance
+  candidate_facing_allowed: true
+  guardrails: []
+  notes: ''
+- stable_id: OMG23-06
+  parent_id: omg23_omd_entertainment
+  evidence_type: executive_problem_solving
+  canonical_claim: Became a trusted escalation point for complex operational problems, diagnosing root causes, developing practical solutions, implementing change, and stabilizing execution.
+  supporting_context: Senior leaders relied on practical judgment and follow-through during ambiguity and operational risk.
+  timeframe: 2016-2026
+  organization: OMG23 / OMD Entertainment, Omnicom Media Group
+  skills: [Root-Cause Analysis, Problem Solving, Strategic Operations, Escalation Management, Decision Making]
+  technologies: []
+  role_families: [Senior Operations, Transformation]
+  industries: [Entertainment, Media, Marketing Technology]
+  tags: [executive trust, ambiguity, root-cause analysis, problem solving, strategic operations, escalation management, decision making]
+  seniority_relevance: executive
+  recency: recent
+  confidence: high
+  provenance: User-confirmed canonical employment history; data/positions.yml
+  candidate_facing_allowed: true
+  guardrails: []
+  notes: ''
+- stable_id: DISNEYPLUS-01
+  parent_id: disney_plus_launch_readiness
+  evidence_type: launch_task_force
+  canonical_claim: Served as the senior Ad Operations representative on the cross-functional task force supporting operationalization of the Disney+ launch.
+  supporting_context: Cross-functional launch readiness for a new streaming platform.
+  timeframe: Disney+ launch period
+  organization: OMG23 / OMD Entertainment, Omnicom Media Group
+  client: The Walt Disney Company
+  business_unit: Disney+
+  skills: [Launch Operations, Cross-Functional Leadership, Program Management]
+  technologies: []
+  role_families: [Streaming Operations, Program Operations]
+  industries: [Streaming, Entertainment Technology]
+  tags: [streaming, launch operations, cross-functional leadership, program management, entertainment technology]
+  seniority_relevance: senior
+  recency: established
+  confidence: high
+  provenance: User-confirmed Disney+ launch evidence; data/positions.yml; data/achievements.yml:disney_plus_launch_support
+  candidate_facing_allowed: true
+  guardrails: [Do not imply ownership of the entire Disney+ launch.]
+  notes: ''
+- stable_id: DISNEYPLUS-02
+  parent_id: disney_plus_launch_readiness
+  evidence_type: technology_partnership
+  canonical_claim: Partnered with Disney Technology and Disney Streaming Services on campaign tracking, measurement, and operational readiness.
+  supporting_context: Technology partnership within the Disney+ launch task force.
+  timeframe: Disney+ launch period
+  organization: OMG23 / OMD Entertainment, Omnicom Media Group
+  client: The Walt Disney Company
+  business_unit: Disney+
+  skills: [Technology Partnership, Streaming Operations, Cross-Functional Execution, Marketing Technology]
+  technologies: []
+  role_families: [Streaming Operations, Marketing Technology]
+  industries: [Streaming, Entertainment Technology]
+  tags: [technology partnership, streaming operations, cross-functional execution, marketing technology]
+  seniority_relevance: senior
+  recency: established
+  confidence: high
+  provenance: User-confirmed Disney+ launch evidence; data/positions.yml
+  candidate_facing_allowed: true
+  guardrails: [Partnership does not imply direct ownership of Disney Technology or Disney Streaming Services.]
+  notes: ''
+- stable_id: DISNEYPLUS-03
+  parent_id: disney_plus_launch_readiness
+  evidence_type: governance_taxonomy
+  canonical_claim: Helped establish governance, campaign taxonomies, implementation standards, and execution workflows required for launch readiness.
+  supporting_context: Operational standards for campaign readiness and consistent implementation.
+  timeframe: Disney+ launch period
+  organization: OMG23 / OMD Entertainment, Omnicom Media Group
+  client: The Walt Disney Company
+  business_unit: Disney+
+  skills: [Campaign Governance, Taxonomy, Process Design, Operating Standards, Launch Readiness]
+  technologies: []
+  role_families: [Marketing Operations, Program Operations]
+  industries: [Streaming, Entertainment Technology]
+  tags: [campaign governance, taxonomy, process design, operating standards, launch readiness]
+  seniority_relevance: senior
+  recency: established
+  confidence: high
+  provenance: User-confirmed Disney+ launch evidence; data/positions.yml
+  candidate_facing_allowed: true
+  guardrails: []
+  notes: ''
+- stable_id: DISNEYPLUS-04
+  parent_id: disney_plus_launch_readiness
+  evidence_type: measurement_readiness
+  canonical_claim: Connected pixel implementation, tracking structures, quality assurance, and measurement requirements with operational execution.
+  supporting_context: Launch-readiness connection between campaign implementation and measurement.
+  timeframe: Disney+ launch period
+  organization: OMG23 / OMD Entertainment, Omnicom Media Group
+  client: The Walt Disney Company
+  business_unit: Disney+
+  skills: [Measurement Readiness, Tagging, Quality Assurance, Implementation, MarTech]
+  technologies: []
+  role_families: [Marketing Operations, Marketing Technology]
+  industries: [Streaming, Entertainment Technology]
+  tags: [measurement readiness, tagging, quality assurance, implementation, martech, launch operations]
+  seniority_relevance: senior
+  recency: established
+  confidence: high
+  provenance: User-confirmed Disney+ launch evidence; data/positions.yml
+  candidate_facing_allowed: true
+  guardrails: []
+  notes: ''
+- stable_id: MARTECH-01
+  parent_id: martech_platform_governance_measurement_operations
+  evidence_type: platform_governance
+  canonical_claim: Influenced platform implementation, governance, quality standards, data flows, measurement design, troubleshooting, training, and adoption across complex entertainment marketing operations.
+  supporting_context: Cross-platform operating standards and adoption.
+  timeframe: 2016-2026
+  organization: OMG23 / OMD Entertainment, Omnicom Media Group
+  skills: [Platform Governance, Quality Assurance, Training, Adoption]
+  technologies: []
+  role_families: [MarTech Strategy, Marketing Operations]
+  industries: [Entertainment, Advertising Technology]
+  tags: [platform governance, implementation, quality standards, data flows, measurement design, troubleshooting, training, adoption]
+  seniority_relevance: senior
+  recency: recent
+  confidence: high
+  provenance: User-confirmed MarTech evidence; data/positions.yml
+  candidate_facing_allowed: true
+  guardrails: [Influence and partnership do not imply sole platform ownership.]
+  notes: ''
+- stable_id: MARTECH-02
+  parent_id: martech_platform_governance_measurement_operations
+  evidence_type: vendor_workflow_design
+  canonical_claim: Designed operational workflows connecting internal teams, clients, and technology and measurement partners.
+  supporting_context: Representative partners include Innovid and TransUnion when relevant.
+  timeframe: 2016-2026
+  organization: OMG23 / OMD Entertainment, Omnicom Media Group
+  skills: [Vendor Workflow Design, Stakeholder Alignment, Process Design]
+  technologies: [Innovid, TransUnion]
+  role_families: [Marketing Technology, Vendor Management]
+  industries: [Entertainment, Advertising Technology]
+  tags: [vendor workflow design, technology partners, measurement partners, operating coordination]
+  seniority_relevance: senior
+  recency: recent
+  confidence: high
+  provenance: User-confirmed MarTech evidence; data/positions.yml
+  candidate_facing_allowed: true
+  guardrails: [Name partners only when relevant; do not imply employment by those partners.]
+  notes: ''
+- stable_id: MARTECH-03
+  parent_id: martech_platform_governance_measurement_operations
+  evidence_type: taxonomy_tagging
+  canonical_claim: Created and governed campaign taxonomies, tagging structures, pixel frameworks, documentation, and quality controls.
+  supporting_context: Repeatable campaign implementation and measurement structures.
+  timeframe: 2016-2026
+  organization: OMG23 / OMD Entertainment, Omnicom Media Group
+  skills: [Taxonomy, Tagging, Documentation, Quality Control]
+  technologies: []
+  role_families: [Marketing Technology, Campaign Operations]
+  industries: [Entertainment, Advertising Technology]
+  tags: [taxonomy, tagging, pixel frameworks, documentation, quality controls]
+  seniority_relevance: senior
+  recency: recent
+  confidence: high
+  provenance: User-confirmed MarTech evidence; data/positions.yml
+  candidate_facing_allowed: true
+  guardrails: []
+  notes: ''
+- stable_id: MARTECH-04
+  parent_id: martech_platform_governance_measurement_operations
+  evidence_type: measurement_operations
+  canonical_claim: Translated measurement and platform requirements into repeatable campaign workflows and quality-assurance practices.
+  supporting_context: Operational translation between measurement needs and campaign execution.
+  timeframe: 2016-2026
+  organization: OMG23 / OMD Entertainment, Omnicom Media Group
+  skills: [Measurement Operations, Workflow Design, Quality Assurance]
+  technologies: []
+  role_families: [Marketing Technology, Campaign Operations]
+  industries: [Entertainment, Advertising Technology]
+  tags: [measurement operations, platform requirements, repeatable workflows, quality assurance]
+  seniority_relevance: senior
+  recency: recent
+  confidence: high
+  provenance: User-confirmed MarTech evidence; data/positions.yml
+  candidate_facing_allowed: true
+  guardrails: []
+  notes: ''
+- stable_id: MARTECH-05
+  parent_id: martech_platform_governance_measurement_operations
+  evidence_type: platform_ecosystem
+  canonical_claim: Worked across a verified advertising and measurement platform ecosystem supporting entertainment marketing operations.
+  supporting_context: Platform evidence must remain relevance-based and should not be dumped into every résumé.
+  timeframe: 2016-2026
+  organization: OMG23 / OMD Entertainment, Omnicom Media Group
+  skills: [MarTech Strategy, Platform Operations, Measurement]
+  technologies: [Google Marketing Platform, CM360, DV360, Google Ads, YouTube, GA4, The Trade Desk, Innovid, DoubleVerify, IAS, LiveRamp, VideoAmp, TransUnion, Meta Ads Manager, TikTok Ads]
+  role_families: [Marketing Technology, Campaign Operations]
+  industries: [Entertainment, Advertising Technology]
+  tags: [advertising platforms, measurement platforms, martech, adtech]
+  seniority_relevance: senior
+  recency: recent
+  confidence: high
+  provenance: User-confirmed platform inventory; data/platforms.yml
+  candidate_facing_allowed: true
+  guardrails: [Select platforms only when relevant., Do not imply formal employment or unsupported certifications.]
+  notes: ''
+- stable_id: AIRTABLE-01
+  parent_id: operational_workflow_design_airtable_implementation
+  evidence_type: business_problem
+  canonical_claim: Disney Performance Marketing needed a centralized way to track concurrent campaign activity and reduce reliance on disconnected documents and internal systems.
+  supporting_context: Teams lacked a consistent source of truth for campaign status, documentation, and reporting.
+  timeframe: 2016-2026
+  organization: OMG23 / OMD Entertainment, Omnicom Media Group
+  client: Disney Performance Marketing
+  business_unit: Disney Performance Marketing
+  skills: [Business Analysis, Workflow Discovery]
+  technologies: [Airtable]
+  role_families: [Marketing Operations, Business Operations]
+  industries: [Entertainment, Marketing Technology]
+  tags: [business problem, disconnected systems, campaign tracking, source of truth]
+  seniority_relevance: senior
+  recency: recent
+  confidence: high
+  provenance: User-confirmed Airtable implementation; data/evidence_projects.yml:operational_workflow_design_airtable_implementation
+  candidate_facing_allowed: true
+  guardrails: []
+  notes: ''
+- stable_id: AIRTABLE-02
+  parent_id: operational_workflow_design_airtable_implementation
+  evidence_type: cross_functional_implementation
+  canonical_claim: Coordinated stakeholders across Disney Performance Marketing, OMG23 Marketing Science, business operations, and technical teams to support the Airtable implementation.
+  supporting_context: Cross-functional implementation coordination between client, agency, business, and technical teams.
+  timeframe: 2016-2026
+  organization: OMG23 / OMD Entertainment, Omnicom Media Group
+  client: Disney Performance Marketing
+  business_unit: Disney Performance Marketing
+  skills: [Technology Implementation, Stakeholder Management, Program Coordination, Business Operations]
+  technologies: [Airtable]
+  role_families: [Marketing Operations, Program Operations]
+  industries: [Entertainment, Marketing Technology]
+  tags: [technology implementation, stakeholder management, program coordination, business operations]
+  seniority_relevance: senior
+  recency: recent
+  confidence: high
+  provenance: User-confirmed Airtable implementation; data/evidence_projects.yml:operational_workflow_design_airtable_implementation
+  candidate_facing_allowed: true
+  guardrails: [Coordination does not imply sole technical ownership of Airtable.]
+  notes: ''
+- stable_id: AIRTABLE-03
+  parent_id: operational_workflow_design_airtable_implementation
+  evidence_type: workflow_architecture
+  canonical_claim: Helped configure campaign tracking, linked databases, status reporting, documentation and knowledge structures, and automations.
+  supporting_context: Centralized operating workflow for concurrent campaign activity.
+  timeframe: 2016-2026
+  organization: OMG23 / OMD Entertainment, Omnicom Media Group
+  client: Disney Performance Marketing
+  business_unit: Disney Performance Marketing
+  skills: [Workflow Architecture, Systems Design, Process Automation, Information Architecture, Operational Systems]
+  technologies: [Airtable]
+  role_families: [Marketing Operations, Product Operations, Business Operations]
+  industries: [Entertainment, Marketing Technology]
+  tags: [workflow architecture, systems design, process automation, information architecture, operational systems]
+  seniority_relevance: senior
+  recency: recent
+  confidence: high
+  provenance: User-confirmed Airtable implementation; data/evidence_projects.yml:operational_workflow_design_airtable_implementation
+  candidate_facing_allowed: true
+  guardrails: []
+  notes: ''
+- stable_id: AIRTABLE-04
+  parent_id: operational_workflow_design_airtable_implementation
+  evidence_type: governance
+  canonical_claim: Established naming conventions, permissions, standardized workflows, quality assurance, and data-quality practices.
+  supporting_context: Governance and data standards for the Airtable operating environment.
+  timeframe: 2016-2026
+  organization: OMG23 / OMD Entertainment, Omnicom Media Group
+  client: Disney Performance Marketing
+  business_unit: Disney Performance Marketing
+  skills: [Governance, Data Quality, Quality Assurance, Process Standards, Operating Model Design]
+  technologies: [Airtable]
+  role_families: [Marketing Operations, Governance]
+  industries: [Entertainment, Marketing Technology]
+  tags: [governance, data quality, QA, process standards, operating model design]
+  seniority_relevance: senior
+  recency: recent
+  confidence: high
+  provenance: User-confirmed Airtable implementation; data/evidence_projects.yml:operational_workflow_design_airtable_implementation
+  candidate_facing_allowed: true
+  guardrails: []
+  notes: ''
+- stable_id: AIRTABLE-05
+  parent_id: operational_workflow_design_airtable_implementation
+  evidence_type: change_adoption
+  canonical_claim: Tested workflows, trained users, and supported adoption.
+  supporting_context: Practical enablement during implementation and transition.
+  timeframe: 2016-2026
+  organization: OMG23 / OMD Entertainment, Omnicom Media Group
+  client: Disney Performance Marketing
+  business_unit: Disney Performance Marketing
+  skills: [Change Management, Training, Adoption, Enablement]
+  technologies: [Airtable]
+  role_families: [Change Management, Marketing Operations]
+  industries: [Entertainment, Marketing Technology]
+  tags: [change management, training, adoption, enablement]
+  seniority_relevance: senior
+  recency: recent
+  confidence: high
+  provenance: User-confirmed Airtable implementation; data/evidence_projects.yml:operational_workflow_design_airtable_implementation
+  candidate_facing_allowed: true
+  guardrails: []
+  notes: ''
+- stable_id: AIRTABLE-06
+  parent_id: operational_workflow_design_airtable_implementation
+  evidence_type: business_outcome
+  canonical_claim: Created a centralized source of truth that improved visibility and data consistency while reducing duplicate work and frequent status-email dependency.
+  supporting_context: The platform was transitioned to the client after implementation.
+  timeframe: 2016-2026
+  organization: OMG23 / OMD Entertainment, Omnicom Media Group
+  client: Disney Performance Marketing
+  business_unit: Disney Performance Marketing
+  skills: [Operational Efficiency, Workflow Visibility, Process Improvement, Business Operations]
+  technologies: [Airtable]
+  role_families: [Marketing Operations, Business Operations]
+  industries: [Entertainment, Marketing Technology]
+  tags: [source of truth, operational efficiency, workflow visibility, process improvement, business operations]
+  seniority_relevance: senior
+  recency: recent
+  confidence: high
+  provenance: User-confirmed Airtable implementation; data/evidence_projects.yml:operational_workflow_design_airtable_implementation
+  candidate_facing_allowed: true
+  guardrails: [Do not invent quantified efficiency gains.]
+  notes: ''
+- stable_id: M365-01
+  parent_id: enterprise_collaboration_platform_adoption_stakeholder_enablement
+  evidence_type: enterprise_platform_adoption
+  canonical_claim: Supported organizational adoption of Microsoft Teams during an enterprise collaboration transition.
+  supporting_context: Enterprise collaboration change and stakeholder readiness.
+  timeframe: 2016-2026
+  organization: OMG23 / OMD Entertainment, Omnicom Media Group
+  client: The Walt Disney Company
+  skills: [Technology Adoption, Change Management]
+  technologies: [Microsoft Teams, Microsoft 365]
+  role_families: [Change Management, Business Operations]
+  industries: [Entertainment]
+  tags: [enterprise platform adoption, change management, collaboration]
+  seniority_relevance: senior
+  recency: recent
+  confidence: high
+  provenance: User-confirmed Microsoft Teams adoption evidence; data/evidence_projects.yml:enterprise_collaboration_platform_adoption_stakeholder_enablement
+  candidate_facing_allowed: true
+  guardrails: []
+  notes: ''
+- stable_id: M365-02
+  parent_id: enterprise_collaboration_platform_adoption_stakeholder_enablement
+  evidence_type: stakeholder_enablement
+  canonical_claim: Held recurring office hours for Disney stakeholders and helped users troubleshoot workflows and adoption issues.
+  supporting_context: Accessible support during the Microsoft Teams rollout.
+  timeframe: 2016-2026
+  organization: OMG23 / OMD Entertainment, Omnicom Media Group
+  client: The Walt Disney Company
+  skills: [Stakeholder Enablement, Training, Troubleshooting]
+  technologies: [Microsoft Teams]
+  role_families: [Change Management, Enablement]
+  industries: [Entertainment]
+  tags: [stakeholder enablement, office hours, troubleshooting, adoption]
+  seniority_relevance: senior
+  recency: recent
+  confidence: high
+  provenance: User-confirmed Microsoft Teams adoption evidence; data/evidence_projects.yml:enterprise_collaboration_platform_adoption_stakeholder_enablement
+  candidate_facing_allowed: true
+  guardrails: []
+  notes: ''
+- stable_id: M365-03
+  parent_id: enterprise_collaboration_platform_adoption_stakeholder_enablement
+  evidence_type: champion_network
+  canonical_claim: Identified and coordinated champions and power users who could provide peer support across teams.
+  supporting_context: Distributed support network for enterprise collaboration adoption.
+  timeframe: 2016-2026
+  organization: OMG23 / OMD Entertainment, Omnicom Media Group
+  client: The Walt Disney Company
+  skills: [Champion Networks, Stakeholder Coordination, Peer Enablement]
+  technologies: [Microsoft Teams]
+  role_families: [Change Management, Enablement]
+  industries: [Entertainment]
+  tags: [champion network, power users, peer support, coordination]
+  seniority_relevance: senior
+  recency: recent
+  confidence: high
+  provenance: User-confirmed Microsoft Teams adoption evidence; data/evidence_projects.yml:enterprise_collaboration_platform_adoption_stakeholder_enablement
+  candidate_facing_allowed: true
+  guardrails: []
+  notes: ''
+- stable_id: M365-04
+  parent_id: enterprise_collaboration_platform_adoption_stakeholder_enablement
+  evidence_type: change_management
+  canonical_claim: Created a sustainable support model that expanded internal capability and supported broader platform adoption.
+  supporting_context: Peer support and recurring enablement reduced reliance on a single support source.
+  timeframe: 2016-2026
+  organization: OMG23 / OMD Entertainment, Omnicom Media Group
+  client: The Walt Disney Company
+  skills: [Change Management, Training, Stakeholder Enablement, Adoption, Enterprise Collaboration]
+  technologies: [Microsoft Teams, Microsoft 365]
+  role_families: [Change Management, Business Operations]
+  industries: [Entertainment]
+  tags: [change management, training, stakeholder enablement, adoption, enterprise collaboration]
+  seniority_relevance: senior
+  recency: recent
+  confidence: high
+  provenance: User-confirmed Microsoft Teams adoption evidence; data/evidence_projects.yml:enterprise_collaboration_platform_adoption_stakeholder_enablement
+  candidate_facing_allowed: true
+  guardrails: []
+  notes: ''
+- stable_id: MULTIVERSE-01
+  parent_id: multiverse_editorial
+  evidence_type: creation_ownership
+  canonical_claim: Created OMG23 Multiverse and served as Managing Editor.
+  supporting_context: Internal editorial publication.
+  timeframe: 2023-2026
+  organization: OMG23 / OMD Entertainment, Omnicom Media Group
+  skills: [Editorial Leadership, Content Operations]
+  technologies: []
+  role_families: [Internal Communications, Editorial, Creative Operations]
+  industries: [Entertainment, Media]
+  tags: [creation, ownership, managing editor, internal publication]
+  seniority_relevance: senior
+  recency: recent
+  confidence: high
+  provenance: User-confirmed Multiverse evidence; data/projects.yml:OMG23 Multiverse Newsletter
+  candidate_facing_allowed: true
+  guardrails: [Do not imply an external commercial publication.]
+  notes: ''
+- stable_id: MULTIVERSE-02
+  parent_id: multiverse_editorial
+  evidence_type: audience
+  canonical_claim: Reached more than 400 employees.
+  supporting_context: Internal OMG23 employee audience.
+  timeframe: 2023-2026
+  organization: OMG23 / OMD Entertainment, Omnicom Media Group
+  skills: [Employee Engagement, Internal Communications]
+  technologies: []
+  role_families: [Internal Communications, Editorial]
+  industries: [Entertainment, Media]
+  tags: [audience, employee engagement, internal communications]
+  seniority_relevance: senior
+  recency: recent
+  confidence: high
+  provenance: User-confirmed Multiverse evidence; data/achievements.yml:multiverse_editorial
+  candidate_facing_allowed: true
+  guardrails: [Describe the audience as employees, not external subscribers.]
+  notes: ''
+- stable_id: MULTIVERSE-03
+  parent_id: multiverse_editorial
+  evidence_type: editorial_operations
+  canonical_claim: Developed editorial voice, recurring content strategy, contributor framework, and production workflow.
+  supporting_context: Repeatable internal editorial operations.
+  timeframe: 2023-2026
+  organization: OMG23 / OMD Entertainment, Omnicom Media Group
+  skills: [Editorial Production, Content Strategy, Contributor Coordination, Workflow Design]
+  technologies: []
+  role_families: [Editorial, Content Operations, Creative Operations]
+  industries: [Entertainment, Media]
+  tags: [editorial operations, editorial voice, content strategy, contributor framework, production workflow]
+  seniority_relevance: senior
+  recency: recent
+  confidence: high
+  provenance: User-confirmed Multiverse evidence; data/projects.yml:OMG23 Multiverse Newsletter
+  candidate_facing_allowed: true
+  guardrails: []
+  notes: ''
+- stable_id: MULTIVERSE-04
+  parent_id: multiverse_editorial
+  evidence_type: cross_functional_engagement
+  canonical_claim: Built cross-functional participation around creativity, culture, innovation, music, emerging media, and employee storytelling.
+  supporting_context: Contributor and employee engagement across the organization.
+  timeframe: 2023-2026
+  organization: OMG23 / OMD Entertainment, Omnicom Media Group
+  skills: [Cross-Functional Engagement, Internal Communications, Content Operations]
+  technologies: []
+  role_families: [Internal Communications, Editorial, Music and Media]
+  industries: [Entertainment, Media]
+  tags: [cross-functional engagement, creativity, culture, innovation, music, emerging media, employee storytelling]
+  seniority_relevance: senior
+  recency: recent
+  confidence: high
+  provenance: User-confirmed Multiverse evidence; data/projects.yml:OMG23 Multiverse Newsletter
+  candidate_facing_allowed: true
+  guardrails: [Do not automatically select for unrelated strategy or operations roles.]
+  notes: ''
+- stable_id: CC-01
+  parent_id: career_catalyst
+  evidence_type: product_conception
+  canonical_claim: Identified the product problem and defined Career Catalyst's purpose, product direction, and operating model.
+  supporting_context: Active product development grounded in real job-search operations.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [Product Strategy, Product Ownership, Problem Definition, Product Thinking]
+  technologies: []
+  role_families: [Product Strategy, Product Operations, Transformation]
+  industries: [Career Technology, Applied AI]
+  tags: [product strategy, product ownership, problem definition, product thinking]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: User-confirmed Career Catalyst product work; data/projects.yml:Career Catalyst
+  candidate_facing_allowed: true
+  guardrails: [Do not portray as traditional software-engineering employment.]
+  notes: ''
+- stable_id: CC-02
+  parent_id: career_catalyst
+  evidence_type: requirements_product_strategy
+  canonical_claim: Translates observed workflow needs into product requirements, feature priorities, acceptance criteria, and release decisions.
+  supporting_context: Iterative requirements originate in active use and verified production behavior.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [Requirements Development, Product Operations, Prioritization, Acceptance Criteria, Roadmap Thinking]
+  technologies: []
+  role_families: [Product Operations, Product Management, Technical Program Management]
+  industries: [Career Technology, Applied AI]
+  tags: [requirements development, product operations, prioritization, acceptance criteria, roadmap thinking]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: User-confirmed Career Catalyst product work; repository history
+  candidate_facing_allowed: true
+  guardrails: []
+  notes: ''
+- stable_id: CC-03
+  parent_id: career_catalyst
+  evidence_type: canonical_career_architecture
+  canonical_claim: Designed a structured Golden Resume and evidence architecture that separates canonical career facts from role-specific candidate-facing output.
+  supporting_context: Structured source-of-truth and contextual output selection.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [Information Architecture, Structured Data, Schema Design, Source of Truth, Operational Systems]
+  technologies: [Structured YAML]
+  role_families: [Product Operations, Information Architecture, Transformation]
+  industries: [Career Technology, Applied AI]
+  tags: [information architecture, structured data, schema design, source of truth, operational systems]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: User-confirmed Career Catalyst architecture; repository history
+  candidate_facing_allowed: true
+  guardrails: []
+  notes: ''
+- stable_id: CC-04
+  parent_id: career_catalyst
+  evidence_type: evidence_provenance
+  canonical_claim: Designed claim-level provenance controls so substantive candidate-facing claims resolve to verified career evidence.
+  supporting_context: Deterministic grounding and final candidate-facing provenance checks.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [Provenance, Data Integrity, Governance, Trust and Safety, Quality Controls]
+  technologies: []
+  role_families: [Responsible AI, Product Operations, Governance]
+  industries: [Career Technology, Applied AI]
+  tags: [provenance, data integrity, governance, trust and safety, quality controls]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: User-confirmed Career Catalyst architecture; repository history
+  candidate_facing_allowed: true
+  guardrails: [Do not claim guarantees beyond implemented controls.]
+  notes: ''
+- stable_id: CC-05
+  parent_id: career_catalyst
+  evidence_type: role_intelligence
+  canonical_claim: Built role-context analysis covering job requirements, role family, hiring needs, fit signals, and evidence selection.
+  supporting_context: Effective role intelligence is shared across tailoring and package consumers.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [Role Intelligence, Semantic Analysis, Decision Support, AI Workflow, Product Operations]
+  technologies: []
+  role_families: [Product Operations, AI Workflow, Transformation]
+  industries: [Career Technology, Applied AI]
+  tags: [role intelligence, semantic analysis, decision support, AI workflow, product operations]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: User-confirmed Career Catalyst functionality; repository history
+  candidate_facing_allowed: true
+  guardrails: []
+  notes: ''
+- stable_id: CC-06
+  parent_id: career_catalyst
+  evidence_type: semantic_requirement_mapping
+  canonical_claim: Developed logic that distinguishes proven, transferable, weak, and unsupported requirements rather than relying only on literal keyword matching.
+  supporting_context: Requirement coverage is evidence-backed and explicit about unsupported gaps.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [Semantic Matching, Requirement Analysis, Transferable Skills, Decision Logic, AI Systems]
+  technologies: []
+  role_families: [Product Operations, Decision Support, AI Workflow]
+  industries: [Career Technology, Applied AI]
+  tags: [semantic matching, requirement analysis, transferable skills, decision logic, AI systems]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: User-confirmed Career Catalyst functionality; repository history
+  candidate_facing_allowed: true
+  guardrails: [Do not represent unsupported requirements as proven.]
+  notes: ''
+- stable_id: CC-07
+  parent_id: career_catalyst
+  evidence_type: evidence_selection
+  canonical_claim: Designed contextual evidence-selection logic that prioritizes established career experience while allowing relevant current projects to supplement specific role requirements.
+  supporting_context: Candidate-facing selection remains narrower than the canonical evidence database.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [Relevance Ranking, Evidence Selection, Decision Systems, Career Intelligence]
+  technologies: []
+  role_families: [Product Operations, AI Workflow, Career Intelligence]
+  industries: [Career Technology, Applied AI]
+  tags: [relevance ranking, evidence selection, decision systems, career intelligence]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: User-confirmed Career Catalyst functionality; repository history
+  candidate_facing_allowed: true
+  guardrails: [Do not automatically promote every project into every résumé.]
+  notes: ''
+- stable_id: CC-08
+  parent_id: career_catalyst
+  evidence_type: ai_enabled_material_generation
+  canonical_claim: Built workflows for generating role-specific résumés and cover letters from canonical evidence rather than unconstrained job-description rewriting.
+  supporting_context: Grounded, role-specific candidate-material generation.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [Generative AI, Grounded Generation, Document Automation, Content Systems, Human-in-the-Loop AI]
+  technologies: []
+  role_families: [AI Workflow, Product Operations, Content Systems]
+  industries: [Career Technology, Applied AI]
+  tags: [generative AI, grounded generation, document automation, content systems, human-in-the-loop AI]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: User-confirmed Career Catalyst functionality; repository history
+  candidate_facing_allowed: true
+  guardrails: [Do not imply unconstrained autonomous factual generation.]
+  notes: ''
+- stable_id: CC-09
+  parent_id: career_catalyst
+  evidence_type: ats_document_architecture
+  canonical_claim: Designed separate ATS and styled résumé outputs with factual parity and application-safe document structure.
+  supporting_context: Separate presentation formats share the same candidate facts.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [ATS, Document Generation, Structured Content, Output Systems]
+  technologies: [DOCX]
+  role_families: [Product Operations, Document Systems]
+  industries: [Career Technology]
+  tags: [ATS, document generation, structured content, output systems]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: User-confirmed Career Catalyst functionality; repository history
+  candidate_facing_allowed: true
+  guardrails: []
+  notes: ''
+- stable_id: CC-10
+  parent_id: career_catalyst
+  evidence_type: docx_quality_hygiene
+  canonical_claim: Implemented candidate-document QA covering parseability, comments, revision artifacts, metadata sanitation, hyperlinks, and visible-content preservation.
+  supporting_context: Quality and privacy controls for generated DOCX files.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [Document QA, Privacy, Metadata Hygiene, Quality Assurance, File Validation]
+  technologies: [DOCX, OOXML]
+  role_families: [Quality Assurance, Product Operations]
+  industries: [Career Technology]
+  tags: [document QA, privacy, metadata hygiene, quality assurance, file validation]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: User-confirmed Career Catalyst functionality; repository history
+  candidate_facing_allowed: true
+  guardrails: [Candidate Python skill must not leak generator identity into document metadata.]
+  notes: ''
+- stable_id: CC-11
+  parent_id: career_catalyst
+  evidence_type: ats_round_trip_validation
+  canonical_claim: Built validation that reopens generated DOCX files and checks whether critical candidate information survives extraction in expected reading order.
+  supporting_context: ATS-oriented parse and ordering verification.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [ATS Validation, Document Parsing, Quality Assurance, Regression Protection]
+  technologies: [DOCX]
+  role_families: [Quality Assurance, Product Operations]
+  industries: [Career Technology]
+  tags: [ATS validation, document parsing, QA, regression protection]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: User-confirmed Career Catalyst functionality; repository history
+  candidate_facing_allowed: true
+  guardrails: []
+  notes: ''
+- stable_id: CC-12
+  parent_id: career_catalyst
+  evidence_type: candidate_claim_safeguards
+  canonical_claim: Implemented controls intended to prevent unsupported experience, credentials, ownership, or responsibilities from being introduced into candidate materials.
+  supporting_context: Candidate-facing claim validation and restricted-claim guards.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [Factual Grounding, Provenance, Claim Validation, Responsible AI, Quality Governance]
+  technologies: []
+  role_families: [Responsible AI, Governance, Product Operations]
+  industries: [Career Technology, Applied AI]
+  tags: [factual grounding, provenance, claim validation, responsible AI, quality governance]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: User-confirmed Career Catalyst functionality; repository history
+  candidate_facing_allowed: true
+  guardrails: [Describe safeguards as controls, not an absolute guarantee.]
+  notes: ''
+- stable_id: CC-13
+  parent_id: career_catalyst
+  evidence_type: transactional_generation
+  canonical_claim: Designed package-generation controls that prevent incomplete application packages from replacing the last known valid output.
+  supporting_context: Staging, validation, promotion, rollback, and recovery behavior.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [Transactional Workflows, Reliability, Rollback, Production Safeguards]
+  technologies: []
+  role_families: [Product Operations, Reliability, Quality Assurance]
+  industries: [Career Technology]
+  tags: [transactional workflows, reliability, rollback, production safeguards]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: User-confirmed Career Catalyst functionality; repository history
+  candidate_facing_allowed: true
+  guardrails: []
+  notes: ''
+- stable_id: CC-14
+  parent_id: career_catalyst
+  evidence_type: regression_testing
+  canonical_claim: Directed iterative development through automated regression testing, quality assurance, root-cause remediation, and production validation.
+  supporting_context: Sprint 42 full suite completed with 982 passed, 0 failed, 0 errors, and 0 skipped.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [Regression Testing, Quality Assurance, Release Validation, Product Reliability]
+  technologies: []
+  role_families: [Product Operations, Quality Assurance, Release Management]
+  industries: [Career Technology]
+  tags: [regression testing, QA, release validation, product reliability]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: Sprint 42 verified test report and repository history
+  candidate_facing_allowed: true
+  guardrails: [Use only the latest verified test milestone as current evidence.]
+  notes: Current verified milestone is 982 passed / 0 failed / 0 errors / 0 skipped.
+- stable_id: CC-15
+  parent_id: career_catalyst
+  evidence_type: real_role_qa
+  canonical_claim: Tested the system across materially different role families to validate evidence isolation, document hygiene, factual parity, and role-context behavior.
+  supporting_context: Senior operations, AI and transformation, entertainment and music, and experiential production QA.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [End-to-End Testing, Real-World QA, Role Isolation, System Validation]
+  technologies: []
+  role_families: [Product Operations, Quality Assurance]
+  industries: [Career Technology]
+  tags: [end-to-end testing, real-world QA, role isolation, system validation]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: Sprint 42 verified QA and repository history
+  candidate_facing_allowed: true
+  guardrails: [Do not disclose private production role data.]
+  notes: ''
+- stable_id: CC-16
+  parent_id: career_catalyst
+  evidence_type: human_in_the_loop_ai
+  canonical_claim: Designed Career Catalyst to use AI within deterministic evidence, validation, and human-review boundaries rather than delegating factual career representation entirely to generative models.
+  supporting_context: Human approval and deterministic validation remain authoritative.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [Human-in-the-Loop AI, Responsible AI, Governance, AI Workflow Design]
+  technologies: []
+  role_families: [Responsible AI, Product Operations, AI Workflow]
+  industries: [Career Technology, Applied AI]
+  tags: [human-in-the-loop AI, responsible AI, governance, AI workflow design]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: User-confirmed Career Catalyst architecture; repository history
+  candidate_facing_allowed: true
+  guardrails: []
+  notes: ''
+- stable_id: CC-17
+  parent_id: career_catalyst
+  evidence_type: git_github_workflow
+  canonical_claim: Uses Git and GitHub-based development practices for iterative changes, isolated development, version control, review, and release validation.
+  supporting_context: The verified public Career Catalyst repository is the only canonical repository evidence.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [Version Control, Iterative Delivery, Review, Release Validation]
+  technologies: [Git, GitHub]
+  role_families: [Product Operations, Technical Program Management, Transformation]
+  industries: [Career Technology, Applied AI]
+  tags: [Git, GitHub, version control, review, release validation]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: https://github.com/RoboXTStudios/career-catalyst
+  candidate_facing_allowed: true
+  guardrails: [Do not invent other repositories., Do not portray repository work as traditional software-engineering employment.]
+  notes: ''
+- stable_id: CC-18
+  parent_id: career_catalyst
+  evidence_type: active_product_iteration
+  canonical_claim: Career Catalyst is actively used in the candidate's real job search; observed production failures and output issues are converted into requirements, fixes, and regression protection.
+  supporting_context: Continuous product iteration through active use.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [Product Iteration, Continuous Improvement, Product Operations, User Feedback Loop]
+  technologies: []
+  role_families: [Product Operations, Product Management, Transformation]
+  industries: [Career Technology, Applied AI]
+  tags: [product iteration, dogfooding, continuous improvement, product operations, user feedback loop]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: User-confirmed active use; repository history
+  candidate_facing_allowed: true
+  guardrails: [Do not expose private job-search data.]
+  notes: ''
+- stable_id: ROBOXT-01
+  parent_id: roboxt_studios
+  evidence_type: platform_creation
+  canonical_claim: Founded and launched RoboXT Studios as an independent digital creative and media platform.
+  supporting_context: Owned platform for original media, editorial work, and digital publishing.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [Platform Creation, Creative Operations, Digital Publishing]
+  technologies: []
+  role_families: [Creative Operations, Media Operations, Digital Publishing]
+  industries: [Media, Entertainment, Music]
+  tags: [platform creation, independent media, digital publishing]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: User-confirmed RoboXT Studios project; data/projects.yml:RoboXT Studios
+  candidate_facing_allowed: true
+  guardrails: [Do not claim paid clients, revenue, commercial scale, or staff.]
+  notes: ''
+- stable_id: ROBOXT-02
+  parent_id: roboxt_studios
+  evidence_type: website_operations
+  canonical_claim: Built and manages the RoboXT Studios WordPress property, information architecture, navigation, publishing environment, and ongoing site evolution.
+  supporting_context: Ongoing owned-site operations and publishing workflow.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [Web Publishing, Digital Operations, Information Architecture]
+  technologies: [WordPress]
+  role_families: [Digital Publishing, Content Operations]
+  industries: [Media, Entertainment]
+  tags: [WordPress, web publishing, digital operations, information architecture]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: User-confirmed RoboXT Studios project; data/projects.yml:RoboXT Studios
+  candidate_facing_allowed: true
+  guardrails: [Do not portray as client website services.]
+  notes: ''
+- stable_id: ROBOXT-03
+  parent_id: roboxt_studios
+  evidence_type: photography
+  canonical_claim: Produces and publishes original photography.
+  supporting_context: Original visual work published through owned channels.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [Photography, Visual Storytelling, Creative Production]
+  technologies: []
+  role_families: [Creative Production, Content Operations]
+  industries: [Media, Entertainment, Music]
+  tags: [photography, visual storytelling, creative production]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: User-confirmed RoboXT Studios project; data/projects.yml:RoboXT Studios
+  candidate_facing_allowed: true
+  guardrails: []
+  notes: ''
+- stable_id: ROBOXT-04
+  parent_id: roboxt_studios
+  evidence_type: concert_music_video
+  canonical_claim: Develops and manages original concert and music video and media assets.
+  supporting_context: Original concert and music-media production and asset workflows.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [Video Production, Concert Media, Visual Content]
+  technologies: []
+  role_families: [Media Production, Creative Operations]
+  industries: [Music, Entertainment, Media]
+  tags: [video production, music, concert media, visual content]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: User-confirmed RoboXT Studios project; data/projects.yml:RoboXT Studios
+  candidate_facing_allowed: true
+  guardrails: [Do not infer label operations, artist management, booking, negotiation, or tour management.]
+  notes: ''
+- stable_id: ROBOXT-05
+  parent_id: roboxt_studios
+  evidence_type: digital_publishing
+  canonical_claim: Creates, packages, and publishes editorial and visual work across owned digital properties.
+  supporting_context: Cross-format publishing on owned channels.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [Publishing, Editorial Production, Content Operations]
+  technologies: [WordPress]
+  role_families: [Digital Publishing, Editorial, Content Operations]
+  industries: [Media, Entertainment]
+  tags: [publishing, editorial production, content operations]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: User-confirmed RoboXT Studios project; data/projects.yml:RoboXT Studios
+  candidate_facing_allowed: true
+  guardrails: []
+  notes: ''
+- stable_id: ROBOXT-06
+  parent_id: roboxt_studios
+  evidence_type: brand_development
+  canonical_claim: Developed the RoboXT Studios visual identity, positioning, and digital presence.
+  supporting_context: Brand foundation for an independent creative platform.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [Brand Development, Creative Direction, Visual Identity, Digital Brand]
+  technologies: []
+  role_families: [Brand Development, Creative Operations]
+  industries: [Media, Entertainment]
+  tags: [brand development, creative direction, visual identity, digital brand]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: User-confirmed RoboXT Studios project; data/projects.yml:RoboXT Studios
+  candidate_facing_allowed: true
+  guardrails: [Do not claim agency services or commercial brand clients.]
+  notes: ''
+- stable_id: ROBOXT-07
+  parent_id: roboxt_studios
+  evidence_type: distribution_operations
+  canonical_claim: Operates and experiments with media distribution across YouTube, TikTok, Instagram, Pinterest, and owned web properties.
+  supporting_context: Relevance-based cross-platform content distribution.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [Content Distribution, Social Media Operations, Audience Development, Digital Publishing]
+  technologies: [YouTube, TikTok, Instagram, Pinterest, WordPress]
+  role_families: [Content Operations, Digital Publishing, Media Operations]
+  industries: [Media, Entertainment, Music]
+  tags: [content distribution, social media operations, audience development, digital publishing]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: User-confirmed RoboXT Studios project; data/projects.yml:RoboXT Studios
+  candidate_facing_allowed: true
+  guardrails: [Do not invent audience scale or commercial success.]
+  notes: ''
+- stable_id: ROBOXT-08
+  parent_id: roboxt_studios
+  evidence_type: media_archive
+  canonical_claim: Organizes and develops an existing archive of original concert and music footage and photography for digital distribution.
+  supporting_context: Media asset management and archive-to-publishing workflow.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [Media Asset Management, Archive Management, Content Operations]
+  technologies: []
+  role_families: [Media Operations, Content Operations]
+  industries: [Music, Entertainment, Media]
+  tags: [media asset management, archive management, content operations, music media]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: User-confirmed RoboXT Studios project; data/projects.yml:RoboXT Studios
+  candidate_facing_allowed: true
+  guardrails: []
+  notes: ''
+- stable_id: ROBOXT-09
+  parent_id: roboxt_studios
+  evidence_type: creative_technology_integration
+  canonical_claim: Uses emerging technology and AI-assisted workflows as part of media production, publishing, and operating-system development.
+  supporting_context: Practical experimentation within an independent creative platform.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [Creative Technology, AI-Assisted Workflows, Media Production, Publishing Operations]
+  technologies: [AI-assisted workflows]
+  role_families: [Creative Technology, Media Operations, Content Operations]
+  industries: [Media, Entertainment, Music]
+  tags: [creative technology, AI-assisted workflows, media production, publishing]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: User-confirmed RoboXT Studios project; data/projects.yml:RoboXT Studios
+  candidate_facing_allowed: true
+  guardrails: [Do not claim paid clients, agency services, staff, revenue, audience scale, or commercial success.]
+  notes: ''
+- stable_id: CAMPAIGNOS-01
+  parent_id: campaignos
+  evidence_type: problem_definition
+  canonical_claim: Translated recurring enterprise campaign-operations problems into a structured product concept.
+  supporting_context: Product concept grounded in prior enterprise operating experience.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [Problem Definition, Product Thinking, Campaign Operations]
+  technologies: []
+  role_families: [Campaign Operations, Product Operations]
+  industries: [Marketing Technology, Advertising Technology]
+  tags: [problem definition, campaign operations, product concept]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: User-confirmed CampaignOS project; data/projects.yml:CampaignOS
+  candidate_facing_allowed: true
+  guardrails: [Identify CampaignOS as a working prototype.]
+  notes: ''
+- stable_id: CAMPAIGNOS-02
+  parent_id: campaignos
+  evidence_type: campaign_schema
+  canonical_claim: Designed structured campaign data architecture for operational readiness, workflow governance, and quality assurance.
+  supporting_context: Schema-driven working prototype.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [Schema Design, Operational Readiness, Workflow Governance, Quality Assurance]
+  technologies: [Structured YAML, Schema-driven validation]
+  role_families: [Campaign Operations, Product Operations]
+  industries: [Marketing Technology, Advertising Technology]
+  tags: [campaign schema, data architecture, readiness, governance, QA]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: User-confirmed CampaignOS project; data/projects.yml:CampaignOS
+  candidate_facing_allowed: true
+  guardrails: [Identify CampaignOS as a working prototype.]
+  notes: ''
+- stable_id: CAMPAIGNOS-03
+  parent_id: campaignos
+  evidence_type: readiness_logic
+  canonical_claim: Developed readiness logic intended to identify incomplete or risky campaign inputs before activation.
+  supporting_context: Prototype validation logic, not production deployment.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [Readiness Logic, Validation, Risk Detection]
+  technologies: [Schema-driven validation]
+  role_families: [Campaign Operations, Product Operations]
+  industries: [Marketing Technology, Advertising Technology]
+  tags: [readiness logic, incomplete inputs, risk detection, validation]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: User-confirmed CampaignOS project; data/projects.yml:CampaignOS
+  candidate_facing_allowed: true
+  guardrails: [Describe intended prototype behavior, not proven production outcomes.]
+  notes: ''
+- stable_id: CAMPAIGNOS-04
+  parent_id: campaignos
+  evidence_type: workflow_governance
+  canonical_claim: Designed workflows for campaign governance, validation, and execution visibility.
+  supporting_context: Working prototype based on recurring campaign-operations needs.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [Workflow Governance, Validation, Execution Visibility]
+  technologies: []
+  role_families: [Campaign Operations, Marketing Operations]
+  industries: [Marketing Technology, Advertising Technology]
+  tags: [workflow governance, validation, execution visibility]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: User-confirmed CampaignOS project; data/projects.yml:CampaignOS
+  candidate_facing_allowed: true
+  guardrails: [Identify CampaignOS as a working prototype.]
+  notes: ''
+- stable_id: CAMPAIGNOS-05
+  parent_id: campaignos
+  evidence_type: quality_assurance_logic
+  canonical_claim: Developed validation concepts intended to reduce operational errors and inconsistent campaign setup.
+  supporting_context: Prototype QA concepts awaiting representative real-world validation.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [Quality Assurance, Validation, Operational Risk]
+  technologies: []
+  role_families: [Campaign Operations, Quality Assurance]
+  industries: [Marketing Technology, Advertising Technology]
+  tags: [QA logic, validation, operational errors, campaign setup]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: User-confirmed CampaignOS project; data/projects.yml:CampaignOS
+  candidate_facing_allowed: true
+  guardrails: [Do not claim validated production error reduction.]
+  notes: ''
+- stable_id: CAMPAIGNOS-06
+  parent_id: campaignos
+  evidence_type: current_limitation
+  canonical_claim: Further real-world validation depends on access to representative campaign data and practical testing environments.
+  supporting_context: Explicit limitation of the working prototype.
+  timeframe: 2026-Present
+  organization: RoboXT Studios
+  skills: [Product Validation, Responsible Product Claims]
+  technologies: []
+  role_families: [Campaign Operations, Product Operations]
+  industries: [Marketing Technology, Advertising Technology]
+  tags: [working prototype, limitation, real-world validation]
+  seniority_relevance: current_proof
+  recency: current
+  confidence: high
+  provenance: User-confirmed CampaignOS limitation; data/projects.yml:CampaignOS
+  candidate_facing_allowed: true
+  guardrails: [Do not describe CampaignOS as deployed enterprise software, client implementation, commercial SaaS, or an externally used production platform.]
+  notes: ''

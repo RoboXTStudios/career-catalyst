@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional, Union
 
 try:
     from .career_claims import leadership_claim, public_omg23_name
+    from .evidence_tailoring import candidate_project_reference_violations
     from .generate_cover_letter import (
         ApplicationMaterialError,
         _as_first_person,
@@ -19,6 +20,7 @@ try:
     from .role_context import is_google_youtube_role
 except ImportError:
     from career_claims import leadership_claim, public_omg23_name
+    from evidence_tailoring import candidate_project_reference_violations
     from generate_cover_letter import (
         ApplicationMaterialError,
         _as_first_person,
@@ -88,6 +90,17 @@ def _dynamic_message_copy(context: Dict[str, Any]) -> tuple[str, str]:
     )
 
 
+def _authorized_project_copy(
+    context: Dict[str, Any], content: str, fallback: str, artifact_type: str
+) -> str:
+    """Keep profile copy grounded in the manually selected Evidence pool."""
+    if context.get("associated_evidence_projects") and candidate_project_reference_violations(
+        content, context, artifact_type
+    ):
+        return fallback
+    return content
+
+
 def _profile_recruiter_content(context: Dict[str, Any]) -> str:
     parsed_job = context["parsed_job"]
     profile_key = context.get("profile_key", "default")
@@ -127,6 +140,13 @@ def _profile_recruiter_content(context: Dict[str, Any]) -> str:
             return ""
         copy = _dynamic_message_copy(context)
     focus, proof = copy
+    proof = _authorized_project_copy(
+        context,
+        proof,
+        f"I {leadership_claim(context['career_data'])} and built practical governance, "
+        "workflow, quality, and reporting systems for complex cross-functional work.",
+        "recruiter_message",
+    )
     message = (
         f"I'm reaching out about {role_reference} at {company}. It stood out because it connects "
         f"{focus}. {proof} That combination of clear context and disciplined execution is where I "
@@ -186,6 +206,20 @@ def _profile_hiring_manager_content(context: Dict[str, Any]) -> str:
             proof,
         )
     challenge, experience, proof = copy
+    experience = _authorized_project_copy(
+        context,
+        experience,
+        f"I {leadership_claim(context['career_data'])} while aligning senior stakeholders "
+        "with complex delivery work.",
+        "hiring_manager_message",
+    )
+    proof = _authorized_project_copy(
+        context,
+        proof,
+        "I have built practical governance, workflow, quality, and reporting systems that make "
+        "ownership, dependencies, and decisions easier to see.",
+        "hiring_manager_message",
+    )
     opening = (
         f"{role_reference} at {company} stood out because it centers on {challenge}. "
         "That is the kind of problem where clear judgment and practical execution need to work together."

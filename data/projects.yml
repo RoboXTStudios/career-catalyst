@@ -2,8 +2,9 @@ projects:
   - name: CampaignOS
     id: campaignos
     role: Creator & Product Lead
-    timeframe: Working Prototype
-    category: AI campaign operations prototype
+    timeframe: 2026-Present
+    status: Working prototype
+    category: AI-enabled campaign operations prototype
     summary: "Built and iterated CampaignOS as a working prototype for campaign readiness, workflow governance, quality assurance, validation, reporting, and operational risk detection."
     highlights:
       - "Built schema-driven workflows and product logic grounded in recurring enterprise entertainment operations challenges."
@@ -14,12 +15,14 @@ projects:
     confidence: high
     visibility: role_relevant
     repository_visibility: not_publicly_confirmed
+    atomic_evidence_ids: [CAMPAIGNOS-01, CAMPAIGNOS-02, CAMPAIGNOS-03, CAMPAIGNOS-04, CAMPAIGNOS-05, CAMPAIGNOS-06]
   - name: Career Catalyst
     id: career_catalyst
     role: Creator & Product Lead
     timeframe: 2026-Present
-    category: AI-enabled career intelligence and job-search operations platform
-    summary: "Designed, built, and actively uses an AI-enabled career intelligence and job-search operations platform."
+    organization: RoboXT Studios
+    category: AI-Enabled Career Intelligence & Application Operations Platform
+    summary: "Designed, built, and actively operates an AI-enabled career intelligence and application-operations platform that converts structured career evidence and job requirements into role-fit intelligence, grounded evidence selection, candidate materials, application workflows, and submission-readiness controls."
     highlights:
       - "Developed structured workflows for opportunity intake, role-fit analysis, Evidence management, tailored application materials, status tracking, and follow-up."
       - "Continuously improves the platform through real-world use, iterative development, workflow testing, recovery controls, information architecture, and quality governance."
@@ -35,12 +38,13 @@ projects:
         description: "Role-aware career intelligence, evidence provenance, grounded candidate-material generation, document QA, and application tracking."
         visibility: public
         relationship: primary_project_repository
+    atomic_evidence_ids: [CC-01, CC-02, CC-03, CC-04, CC-05, CC-06, CC-07, CC-08, CC-09, CC-10, CC-11, CC-12, CC-13, CC-14, CC-15, CC-16, CC-17, CC-18]
   - name: RoboXT Studios
     id: roboxt_studios
-    role: Founder & Creative Director
+    role: Founder & Media Producer
     timeframe: 2026-Present
-    category: Public creative platform
-    summary: "Founded and launched a publicly accessible creative platform combining editorial work, photography, digital projects, creative direction, and technology-enabled experimentation."
+    category: Independent creative/media and digital publishing platform
+    summary: "Founded and operates an independent creative platform spanning original photography, concert/music video, digital publishing, editorial work, website operations, brand development, and cross-platform media distribution."
     highlights:
       - "Leads site strategy, information architecture, WordPress development, visual direction, content production, brand development, and ongoing platform evolution."
       - "Produces and packages photography, videography, concert and music media, editorial content, and social publishing across YouTube, TikTok, Instagram, and other relevant distribution channels."
@@ -50,6 +54,7 @@ projects:
     applicable_role_families: [entertainment, music, media, creative operations, content operations, digital publishing, production]
     confidence: high
     visibility: role_relevant
+    atomic_evidence_ids: [ROBOXT-01, ROBOXT-02, ROBOXT-03, ROBOXT-04, ROBOXT-05, ROBOXT-06, ROBOXT-07, ROBOXT-08, ROBOXT-09]
   - name: OMG23 Multiverse Newsletter
     id: multiverse_editorial
     role: Creator & Managing Editor
@@ -62,3 +67,4 @@ projects:
     applicable_role_families: [editorial, content strategy, creative operations, internal communications, music and media]
     confidence: high
     visibility: role_relevant
+    atomic_evidence_ids: [MULTIVERSE-01, MULTIVERSE-02, MULTIVERSE-03, MULTIVERSE-04]

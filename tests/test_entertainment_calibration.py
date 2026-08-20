@@ -79,10 +79,9 @@ class EntertainmentCalibrationTests(unittest.TestCase):
 
     def test_cover_letter_uses_employer_shorthand_after_full_mention(self):
         cover_letter = self.contents["cover_letter"]
-        full_name = "OMG23 (Omnicom Media Group)"
+        full_name = "OMG23 / OMD Entertainment, Omnicom Media Group"
 
         self.assertEqual(cover_letter.count(full_name), 1)
-        self.assertNotIn("OMG23 / OMD Entertainment", cover_letter)
 
     def test_playstation_outputs_use_upload_friendly_filenames(self):
         expected_suffixes = {
@@ -146,7 +145,7 @@ class EntertainmentCalibrationTests(unittest.TestCase):
         self.assertLessEqual(experience_paragraph.lower().count("campaign operations"), 1)
         self.assertLessEqual(experience_paragraph.lower().count("complex"), 1)
         self.assertLessEqual(experience_paragraph.lower().count("cross-functional"), 1)
-        self.assertIn("OMG23 (Omnicom Media Group)", experience_paragraph)
+        self.assertIn("OMG23 / OMD Entertainment, Omnicom Media Group", experience_paragraph)
         self.assertIn("10 direct reports", experience_paragraph)
         self.assertIn("64-person organization", experience_paragraph)
 
@@ -189,10 +188,9 @@ class EntertainmentCalibrationTests(unittest.TestCase):
         self.assertGreaterEqual(len(self.styled_document.tables), 1)
         self.assertEqual(len(self.ats_document.tables), 0)
         for content in (styled_text, ats_text):
-            self.assertIn("OMG23 (Omnicom Media Group)", content)
+            self.assertIn("OMG23 / OMD Entertainment, Omnicom Media Group", content)
             self.assertIn("10 direct reports", content)
             self.assertIn("64-person organization", content)
-            self.assertNotIn("OMG23 / OMD Entertainment", content)
 
     def test_all_playstation_outputs_exist_and_are_non_empty(self):
         output_paths = [Path(result["output_path"]) for result in self.results.values()]

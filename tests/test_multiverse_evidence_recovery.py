@@ -63,10 +63,12 @@ def test_existing_evidence_ids_remain_unique_and_stable():
     ids = [project["id"] for project in projects]
 
     assert len(ids) == len(set(ids))
-    assert ids[:-1] == [
+    assert set(
+        [
         "enterprise_media_operations_transformation",
         "enterprise_collaboration_platform_adoption_stakeholder_enablement",
         "operational_workflow_design_airtable_implementation",
         "enterprise_employee_engagement_community_fundraising_initiative",
-    ]
-    assert ids[-1] == MULTIVERSE_ID
+        MULTIVERSE_ID,
+        ]
+    ).issubset(ids)

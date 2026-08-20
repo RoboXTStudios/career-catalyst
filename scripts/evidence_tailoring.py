@@ -107,7 +107,8 @@ def candidate_project_reference_violations(
     allowed_kinds = {
         project_kind(project)
         for project in known_projects
-        if _project_id(project) in allowed and project_kind(project) != "other"
+        if _project_id(project) in allowed
+        and project_kind(project) in {"career_catalyst", "campaignos", "roboxt_studios", "podcast"}
     }
     aliases: dict[str, set[str]] = {}
     alias_kinds: dict[str, set[str]] = {}
@@ -116,10 +117,13 @@ def candidate_project_reference_violations(
         if not project_id:
             continue
         for raw in (project.get("id"), project.get("title"), project.get("name")):
-            alias = normalize_candidate_text(str(raw or "")).strip().lower()
-            if len(alias) >= 4:
-                aliases.setdefault(alias, set()).add(project_id)
-                alias_kinds.setdefault(alias, set()).add(project_kind(project))
+            for alias in {
+                str(raw or "").strip().lower(),
+                normalize_candidate_text(str(raw or "")).strip().lower(),
+            }:
+                if len(alias) >= 4:
+                    aliases.setdefault(alias, set()).add(project_id)
+                    alias_kinds.setdefault(alias, set()).add(project_kind(project))
         human_id = normalize_candidate_text(project_id.replace("_", " ")).strip().lower()
         if len(human_id) >= 4:
             aliases.setdefault(human_id, set()).add(project_id)
@@ -142,6 +146,10 @@ def project_kind(project: Mapping[str, Any]) -> str:
         return "career_catalyst"
     if "campaignos" in identity:
         return "campaignos"
+    if "roboxt studios" in identity or "roboxt_studios" in identity:
+        return "roboxt_studios"
+    if "multiverse" in identity:
+        return "multiverse"
     if "just for us" in identity or "podcast" in identity:
         return "podcast"
     return "other"
@@ -204,6 +212,7 @@ def evidence_relevance(
             project.get("skills"),
             project.get("technologies"),
             project.get("tags"),
+            project.get("atomic_evidence"),
         ]
     )
     matched = sorted(posting_terms & evidence_terms)
@@ -325,6 +334,7 @@ def _artifact_suitability(project: Mapping[str, Any], artifact_type: str) -> int
             project.get("results"),
             project.get("candidate_facing_bullet"),
             project.get("highlights"),
+            project.get("atomic_evidence"),
         ]
     )
     if not detail:
@@ -562,7 +572,10 @@ def resume_project_bullets(
 ) -> list[str]:
     """Condense verified Evidence into one or two complete candidate-facing bullets."""
     corpus = " ".join(
-        _flatten([project.get("problem"), project.get("actions"), project.get("results")])
+        _flatten([
+            project.get("problem"), project.get("actions"), project.get("results"),
+            project.get("atomic_evidence"),
+        ])
     ).lower()
     kind = project_kind(project)
     if kind == "career_catalyst" and "product" in corpus:
@@ -574,11 +587,17 @@ def resume_project_bullets(
         return [
             "Served as audio producer and editor for a ten-episode, multi-host podcast series released on Spotify, managing dialogue editing, pacing, audio quality, revisions, quality control, and release-ready delivery."
         ]
+    child_claims = [
+        _first_sentence(item.get("canonical_claim"))
+        for item in project.get("atomic_evidence") or []
+        if isinstance(item, Mapping) and item.get("candidate_facing_allowed") is not False
+    ]
     bullets = [
         sentence
         for sentence in (
             _first_sentence(project.get("actions")),
             _first_sentence(project.get("results")),
+            *child_claims,
         )
         if sentence
     ]

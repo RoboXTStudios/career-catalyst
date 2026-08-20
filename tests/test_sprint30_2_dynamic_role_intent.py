@@ -242,7 +242,7 @@ def test_generic_resume_uses_no_filler_project(tmp_path: Path):
     assert intent["resume"]["headline_profile"] in text
     assert "Relevant Projects & Impact" not in text
     assert "Additional Early Experience" not in text
-    assert "OMG23 (Omnicom Media Group)" in text
+    assert "OMG23 / OMD Entertainment, Omnicom Media Group" in text
 
 
 def test_generic_cover_letter_needs_no_banned_filler(tmp_path: Path):
@@ -312,7 +312,7 @@ def test_role_intent_source_contains_no_employer_conditions():
 def test_immutable_leadership_facts_are_unchanged():
     positions = yaml.safe_load((PROJECT_ROOT / "data/positions.yml").read_text())
     text = json.dumps(positions)
-    assert "OMG23 (Omnicom Media Group)" in text
+    assert "OMG23 / OMD Entertainment, Omnicom Media Group" in text
     assert "10 direct reports" in text
     assert "64-person organization" in text
     assert "60+" not in text

@@ -166,8 +166,9 @@ def normalize_candidate_text(text: str, *, employer: str = "") -> str:
     cleaned = unescape(str(text or ""))
     cleaned = re.sub(r"[ \t]*\u2014+[ \t]*", " - ", cleaned)
     replacements = (
-        (r"\bOMG23\s*/\s*OMD Entertainment\b", "OMG23 (Omnicom Media Group)"),
-        (r"\bOMD Entertainment\b", "OMG23 (Omnicom Media Group)"),
+        (r"\bOMG23\s*\(\s*Omnicom Media Group\s*\)", "OMG23 / OMD Entertainment, Omnicom Media Group"),
+        (r"\bOMG23\s*/\s*OMD Entertainment(?:,\s*Omnicom Media Group)?\b", "OMG23 / OMD Entertainment, Omnicom Media Group"),
+        (r"(?<!OMG23 / )\bOMD Entertainment\b", "OMG23 / OMD Entertainment, Omnicom Media Group"),
         (r"\b20\+\s+years\b", "extensive experience"),
         (r"\bnearly\s+two\s+decades\b", "extensive experience"),
         (r"\btwo\s+decades(?:\s+of\s+experience)?\b", "extensive experience"),

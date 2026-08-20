@@ -167,7 +167,7 @@ PROFILE_SUMMARIES = {
     "business_operations_chief_of_staff": (
         "Business operations and transformation leader who turns complex priorities into clear decisions, "
         "practical operating rhythms, and accountable cross-functional delivery. Advanced through five roles "
-        "to Group Director at OMG23 (Omnicom Media Group), leading 10 direct reports and providing strategic "
+        "to Group Director at OMG23 / OMD Entertainment, Omnicom Media Group, leading 10 direct reports and providing strategic "
         "and operational leadership across an integrated 64-person organization supporting demanding "
         "entertainment portfolios."
     ),
@@ -204,7 +204,7 @@ def profile_summary(archetype: str, configured: str) -> str:
     else:
         summary = (
             f"{configured.rstrip('.')} . "
-            "Advanced through five roles to Group Director at OMG23 (Omnicom Media Group), leading "
+            "Advanced through five roles to Group Director at OMG23 / OMD Entertainment, Omnicom Media Group, leading "
             "10 direct reports and providing strategic and operational leadership across an integrated "
             "64-person organization while coordinating complex work across creative, marketing, media, "
             "analytics, technology, vendors, and client stakeholders."
@@ -329,7 +329,7 @@ def _product_evidence_cover_letter(
         )
     )
     leadership = (
-        "At OMG23 (Omnicom Media Group), I advanced through five roles to Group Director, led 10 direct "
+        "At OMG23 / OMD Entertainment, Omnicom Media Group, I advanced through five roles to Group Director, led 10 direct "
         "reports, and provided strategic and operational leadership across an integrated 64-person "
         "organization. I also supported Disney+ launch readiness through governance, platform coordination, "
         "quality assurance, tracking, and measurement readiness across creative, media, technology, and "
@@ -470,7 +470,7 @@ def candidate_cover_letter(context: Mapping[str, Any]) -> str:
             "shared priorities, clear ownership, useful operating visibility, and systems that help people make better decisions."
         )
     leadership = (
-        "At OMG23 (Omnicom Media Group), I advanced through five roles to Group Director. I led 10 direct "
+        "At OMG23 / OMD Entertainment, Omnicom Media Group, I advanced through five roles to Group Director. I led 10 direct "
         "reports and provided strategic and operational leadership across an integrated 64-person organization "
         "spanning Ad Operations, Creative Management, and Marketing Science and Analytics. The work required "
         "translating demanding client and leadership priorities into accountable plans across creative, media, "
@@ -536,7 +536,7 @@ def _experiential_cover_letter(
                 "help complex work move from brief to execution."
             ),
             (
-                "At OMG23 (Omnicom Media Group), I advanced through five roles to Group Director, led 10 direct "
+                "At OMG23 / OMD Entertainment, Omnicom Media Group, I advanced through five roles to Group Director, led 10 direct "
                 "reports, and provided strategic and operational leadership across an integrated 64-person "
                 "organization spanning Ad Operations, Creative Management, and Marketing Science and Analytics. "
                 "I translated demanding priorities into accountable plans, quality standards, timelines, and "
@@ -576,11 +576,6 @@ def _strategy_gtm_cover_letter(
 ) -> str:
     parsed = context["parsed_job"]
     projects = _selected_project_paragraphs(context, parsed)
-    decision = cover_letter_evidence_decision(context, limit=2)
-    allowed_projects = list(decision.get("used_projects") or [])
-    career_catalyst_selected = any(
-        project_kind(project) == "career_catalyst" for project in allowed_projects
-    )
     content = "\n\n".join(
         [
             greeting,
@@ -590,7 +585,7 @@ def _strategy_gtm_cover_letter(
                 "view of priorities, dependencies, decisions, and the work required to move them forward."
             ),
             (
-                "At OMG23 (Omnicom Media Group), I advanced through five roles to Group Director, led 10 direct reports, "
+                "At OMG23 / OMD Entertainment, Omnicom Media Group, I advanced through five roles to Group Director, led 10 direct reports, "
                 "and provided strategic and operational leadership across an integrated 64-person organization spanning "
                 "Ad Operations, Creative Management, and Marketing Science and Analytics. I translated complex client and "
                 "leadership priorities into operating plans, governance, reporting, and accountable execution across "
@@ -604,13 +599,8 @@ def _strategy_gtm_cover_letter(
             ),
             *projects,
             (
-                "Career Catalyst is a current product-building proof point. I translate user needs into requirements, "
-                "workflows, acceptance criteria, testing, and release guardrails for an active local application. Together, "
-                "these experiences show how I connect strategic planning with dependable operating systems and disciplined "
-                "follow-through."
-                if career_catalyst_selected
-                else "These selected Evidence records show how I connect strategic planning with dependable operating "
-                "systems and disciplined follow-through."
+                "Together, these selected Evidence records show how I connect strategic planning with dependable "
+                "operating systems and disciplined follow-through."
             ),
             (
                 "In a strategy and operations setting, I would apply that same discipline to planning cadence, data and "
@@ -644,7 +634,7 @@ def _music_partnerships_cover_letter(
                 "a practical understanding of the coordination required around it."
             ),
             (
-                "At OMG23 (Omnicom Media Group), I advanced to Group Director, led 10 direct reports, and provided strategic "
+                "At OMG23 / OMD Entertainment, Omnicom Media Group, I advanced to Group Director, led 10 direct reports, and provided strategic "
                 "and operational leadership across an integrated 64-person organization spanning Ad Operations, Creative "
                 "Management, and Marketing Science and Analytics. I coordinated priorities, quality standards, reporting, "
                 "and stakeholder communication across creative, media, analytics, technology, vendors, and client teams."

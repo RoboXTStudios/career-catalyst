@@ -26,7 +26,7 @@ def test_company_display_preserves_only_approved_acronym_casing():
     assert company_display_name("axs") == "AXS"
     assert company_display_name("Ordinary Company") == "Ordinary Company"
     assert company_display_name("Cascade") == "Cascade"
-    assert company_display_name("OMG23") == "OMG23 (Omnicom Media Group)"
+    assert company_display_name("OMG23") == "OMG23 / OMD Entertainment, Omnicom Media Group"
 
 
 def test_candidate_employer_boundary_repairs_only_the_current_known_employer():
@@ -48,8 +48,8 @@ def test_candidate_employer_boundary_repairs_only_the_current_known_employer():
 def test_known_employer_mappings_remain_stable_in_candidate_prose():
     assert canonicalize_employer_mentions("Gitlab role", "GitLab") == "GitLab role"
     assert canonicalize_employer_mentions(
-        "OMD Entertainment role", "OMG23 (Omnicom Media Group)"
-    ) == "OMG23 (Omnicom Media Group) role"
+        "OMD Entertainment role", "OMG23 / OMD Entertainment, Omnicom Media Group"
+    ) == "OMG23 / OMD Entertainment, Omnicom Media Group role"
     assert canonicalize_employer_mentions("netflix role", "Netflix") == "netflix role"
 
 

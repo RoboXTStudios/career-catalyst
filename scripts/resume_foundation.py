@@ -39,6 +39,9 @@ DEFAULT_AGE_SIGNALING_EXCLUSIONS = (
     "decades of experience",
 )
 DEFAULT_EDUCATION_CLAIM_EXCLUSIONS = (
+    "Associate's degree",
+    "Associate degree",
+    "AA degree",
     "Bachelor's degree",
     "Bachelor degree",
     "Master's degree",
@@ -47,6 +50,7 @@ DEFAULT_EDUCATION_CLAIM_EXCLUSIONS = (
     "doctorate",
     "PhD",
 )
+DEFAULT_CANONICAL_HARD_EXCLUSIONS = ("Substack",)
 
 
 class CandidateLanguageError(DataLoadError):
@@ -68,10 +72,11 @@ def candidate_language_violations(
     unsupported_brands: tuple[str, ...] = DEFAULT_UNSUPPORTED_BRAND_CLAIMS,
     age_signaling: tuple[str, ...] = DEFAULT_AGE_SIGNALING_EXCLUSIONS,
     education_claims: tuple[str, ...] = DEFAULT_EDUCATION_CLAIM_EXCLUSIONS,
+    hard_exclusions: tuple[str, ...] = DEFAULT_CANONICAL_HARD_EXCLUSIONS,
 ) -> list[str]:
     """Return deterministic unsupported-brand and age-signaling matches."""
     violations: list[str] = []
-    for phrase in (*unsupported_brands, *age_signaling, *education_claims):
+    for phrase in (*unsupported_brands, *age_signaling, *education_claims, *hard_exclusions):
         pattern = rf"(?<!\w){re.escape(phrase)}(?!\w)"
         if re.search(pattern, str(text or ""), flags=re.IGNORECASE):
             violations.append(phrase)
@@ -85,6 +90,7 @@ def validate_candidate_language(
     unsupported_brands: tuple[str, ...] = DEFAULT_UNSUPPORTED_BRAND_CLAIMS,
     age_signaling: tuple[str, ...] = DEFAULT_AGE_SIGNALING_EXCLUSIONS,
     education_claims: tuple[str, ...] = DEFAULT_EDUCATION_CLAIM_EXCLUSIONS,
+    hard_exclusions: tuple[str, ...] = DEFAULT_CANONICAL_HARD_EXCLUSIONS,
     candidate_facing: bool = True,
 ) -> None:
     """Prevent unsupported brand claims and age-signaling language."""
@@ -93,6 +99,7 @@ def validate_candidate_language(
         unsupported_brands=unsupported_brands,
         age_signaling=age_signaling,
         education_claims=education_claims,
+        hard_exclusions=hard_exclusions,
     )
     if violations:
         raise CandidateLanguageError(
@@ -147,6 +154,12 @@ def _validate_active_foundation(
                 for project in evidence
                 if isinstance(project, dict) and _evidence_is_candidate_usable(project)
             )
+        elif relative_path == "data/personal_brand.yml" and isinstance(value, dict):
+            # Guardrails name prohibited claims so validators can enforce them;
+            # they are policy metadata, not candidate-facing assertions.
+            active_values.append(
+                {key: nested for key, nested in value.items() if key != "claim_guardrails"}
+            )
         else:
             active_values.append(value)
 
@@ -165,6 +178,7 @@ def _validate_active_foundation(
         unsupported_brands=info["unsupported_brand_claims"],
         age_signaling=info["age_signaling_exclusions"],
         education_claims=info["education_claim_exclusions"],
+        hard_exclusions=info["canonical_hard_exclusions"],
         candidate_facing=False,
     )
 
@@ -203,6 +217,11 @@ def _foundation_info(root: Path, loaded: dict[str, Any]) -> dict[str, Any]:
             configured,
             "education_claim_exclusions",
             DEFAULT_EDUCATION_CLAIM_EXCLUSIONS,
+        ),
+        "canonical_hard_exclusions": _policy_values(
+            configured,
+            "hard_exclusions",
+            DEFAULT_CANONICAL_HARD_EXCLUSIONS,
         ),
         "last_updated": str(configured.get("last_updated") or "Unknown"),
         "last_verified": str(configured.get("last_verified") or "Unknown"),

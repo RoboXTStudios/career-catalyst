@@ -34,10 +34,10 @@ CANONICAL_EMPLOYER_NAMES: Dict[str, str] = {
     "mrbeastyoutube": "Beast Industries",
     "mr beast youtube": "Beast Industries",
     "gitlab": "GitLab",
-    "omg23": "OMG23 (Omnicom Media Group)",
-    "omd entertainment": "OMG23 (Omnicom Media Group)",
-    "omg23 omd entertainment": "OMG23 (Omnicom Media Group)",
-    "omg23 omd entertainment omnicom media group": "OMG23 (Omnicom Media Group)",
+    "omg23": "OMG23 / OMD Entertainment, Omnicom Media Group",
+    "omd entertainment": "OMG23 / OMD Entertainment, Omnicom Media Group",
+    "omg23 omd entertainment": "OMG23 / OMD Entertainment, Omnicom Media Group",
+    "omg23 omd entertainment omnicom media group": "OMG23 / OMD Entertainment, Omnicom Media Group",
 }
 
 ROLE_SHORT_NAMES: Dict[str, str] = {
