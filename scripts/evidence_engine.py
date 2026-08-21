@@ -240,7 +240,7 @@ def normalize_evidence_project(project: dict[str, Any]) -> dict[str, Any]:
     normalized["status"] = status if status in EVIDENCE_PROJECT_STATUSES else "Active"
     for field in (
         "skills", "technologies", "tags", "supporting_evidence", "links",
-        "atomic_evidence_ids",
+        "atomic_evidence_ids", "legacy_ids",
     ):
         normalized[field] = normalize_multivalue(normalized.get(field))
     for field in (

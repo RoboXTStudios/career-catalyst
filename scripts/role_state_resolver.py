@@ -73,15 +73,30 @@ def resolve_selected_evidence(
 ) -> Dict[str, Any]:
     """Resolve tracker-selected Evidence without allowing stale state to win."""
     selected_ids = selected_evidence_ids(record)
-    by_id = {
-        str(project.get("id") or "").strip(): project
-        for project in projects
-        if isinstance(project, dict) and str(project.get("id") or "").strip()
-    }
+    by_id: Dict[str, Dict[str, Any]] = {}
+    for project in projects:
+        if not isinstance(project, dict):
+            continue
+        project_id = str(project.get("id") or "").strip()
+        if not project_id:
+            continue
+        by_id.setdefault(project_id, project)
+        for legacy_id in project.get("legacy_ids") or []:
+            alias = str(legacy_id or "").strip()
+            if alias:
+                by_id.setdefault(alias, project)
     missing_ids = [project_id for project_id in selected_ids if project_id not in by_id]
+    resolved_projects: List[Dict[str, Any]] = []
+    resolved_project_ids: set[str] = set()
+    for selected_id in selected_ids:
+        project = by_id.get(selected_id)
+        canonical_id = str((project or {}).get("id") or "").strip()
+        if project and canonical_id not in resolved_project_ids:
+            resolved_projects.append(project)
+            resolved_project_ids.add(canonical_id)
     return {
         "selected_ids": selected_ids,
-        "projects": [by_id[project_id] for project_id in selected_ids if project_id in by_id],
+        "projects": resolved_projects,
         "missing_ids": missing_ids,
     }
 

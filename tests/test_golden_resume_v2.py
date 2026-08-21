@@ -11,6 +11,7 @@ from scripts.evidence_tailoring import candidate_project_reference_violations, e
 from scripts.generate_cover_letter import repair_cover_letter_content
 from scripts.golden_resume import GoldenResumeError, load_golden_resume, validate_golden_resume
 from scripts.resume_foundation import CandidateLanguageError, validate_candidate_language
+from scripts.role_state_resolver import resolve_selected_evidence
 from scripts.score_match import _score_with_snapshot
 from scripts.submission_readiness import build_requirement_coverage_matrix
 from scripts.tailor_resume import render_base_resume
@@ -39,6 +40,26 @@ def test_canonical_inventory_has_complete_v2_structure_and_stable_atomic_evidenc
     assert {record["parent_id"] for record in atomic} <= parent_ids
     assert all(record["candidate_facing_allowed"] in {True, False} for record in atomic)
     assert all(record["canonical_claim"] and record["provenance"] for record in atomic)
+
+
+def test_production_legacy_evidence_ids_resolve_to_v2_canonical_parents():
+    selected_ids = [
+        "disney_launch_readiness_tracking_measurement_and_operational_governance",
+        "operational_workflow_design_airtable_implementation",
+        "career_catalyst_ai_enabled_career_intelligence_application_operations_platform",
+    ]
+    resolved = resolve_selected_evidence(
+        {"evidence_project_ids": selected_ids},
+        load_evidence_projects(ROOT),
+    )
+
+    assert resolved["selected_ids"] == selected_ids
+    assert [project["id"] for project in resolved["projects"]] == [
+        "disney_plus_launch_readiness",
+        "operational_workflow_design_airtable_implementation",
+        "career_catalyst",
+    ]
+    assert resolved["missing_ids"] == []
 
 
 def test_exact_education_is_canonical_and_degree_claims_are_blocked():
@@ -222,13 +243,16 @@ def test_strategy_cover_letter_uses_selected_career_catalyst_once():
 
     assert letter.count("Career Catalyst") == 1
     assert "Career Catalyst is a current product-building proof point" not in letter
+    assert sum("airtable" in paragraph.lower() for paragraph in letter.split("\n\n")) == 1
+    assert "selected Evidence records" not in letter
+    assert "verified experience" not in letter
 
 
 def test_cover_letter_length_repair_does_not_duplicate_existing_proof_paragraph():
     proof = (
         "I would apply that discipline to the role's stated priorities, with clear decisions, visible dependencies, "
         "and practical follow-through. I value operating systems that improve quality and momentum without adding "
-        "process teams cannot sustain. My approach is grounded in verified experience, direct communication, and "
+        "process teams cannot sustain. My approach is grounded in direct experience, clear communication, and "
         "respect for the people closest to the work."
     )
     content = "\n\n".join(

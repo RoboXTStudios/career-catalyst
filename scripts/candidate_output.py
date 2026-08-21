@@ -98,6 +98,16 @@ INTERNAL_PHRASES = (
     "focus on improve",
 )
 
+CANDIDATE_FACING_QA_PHRASES = (
+    "verified experience",
+    "verified evidence",
+    "candidate-facing provenance",
+    "unsupported claim",
+    "not supported",
+    "claim ownership",
+    "selected evidence records",
+)
+
 
 def humanize_identifier(value: Any) -> str:
     """Return an approved human label for an internal deterministic value."""
@@ -129,10 +139,15 @@ def join_naturally(values: Sequence[str]) -> str:
     return ", ".join(items[:-1]) + f", and {items[-1]}"
 
 
-def candidate_output_violations(text: str) -> list[str]:
+def candidate_output_violations(
+    text: str, *, include_candidate_qa_language: bool = True
+) -> list[str]:
     """Find internal taxonomy or configuration syntax in candidate copy."""
     value = str(text or "")
-    found = [phrase for phrase in INTERNAL_PHRASES if phrase in value.lower()]
+    phrases = INTERNAL_PHRASES + (
+        CANDIDATE_FACING_QA_PHRASES if include_candidate_qa_language else ()
+    )
+    found = [phrase for phrase in phrases if phrase in value.lower()]
     found.extend(
         match.group(0)
         for match in re.finditer(r"(?<![\w/])[a-z][a-z0-9]+(?:_[a-z0-9]+)+(?![\w/])", value)
@@ -140,8 +155,15 @@ def candidate_output_violations(text: str) -> list[str]:
     return list(dict.fromkeys(found))
 
 
-def validate_candidate_output(text: str, *, context: str = "candidate material") -> None:
-    violations = candidate_output_violations(text)
+def validate_candidate_output(
+    text: str,
+    *,
+    context: str = "candidate material",
+    include_candidate_qa_language: bool = True,
+) -> None:
+    violations = candidate_output_violations(
+        text, include_candidate_qa_language=include_candidate_qa_language
+    )
     if violations:
         raise CandidateOutputError(
             f"{context} contains internal orchestration language: " + ", ".join(violations)
@@ -575,7 +597,26 @@ def _strategy_gtm_cover_letter(
     context: Mapping[str, Any], greeting: str, company: str, role: str
 ) -> str:
     parsed = context["parsed_job"]
-    projects = _selected_project_paragraphs(context, parsed)
+    selected_projects = cover_letter_evidence_selection(context)
+    projects = [
+        paragraph
+        for project in selected_projects
+        if (paragraph := cover_letter_project_paragraph(project, parsed))
+    ]
+    airtable_selected = any(
+        "airtable" in " ".join(
+            str(project.get(key) or "") for key in ("id", "title", "name")
+        ).lower()
+        for project in selected_projects
+    )
+    airtable_proof = [] if airtable_selected else [
+        (
+            "I also coordinated an Airtable implementation that created a shared source of truth for campaign tracking, "
+            "workflow documentation, status reporting, permissions, quality assurance, training, and adoption. That "
+            "work strengthened my ability to improve visibility without adding unnecessary process, while keeping "
+            "owners aligned around the decisions that affect delivery."
+        )
+    ]
     content = "\n\n".join(
         [
             greeting,
@@ -591,22 +632,17 @@ def _strategy_gtm_cover_letter(
                 "leadership priorities into operating plans, governance, reporting, and accountable execution across "
                 "creative, media, analytics, technology, vendors, and client stakeholders."
             ),
-            (
-                "I also coordinated an Airtable implementation that created a shared source of truth for campaign tracking, "
-                "workflow documentation, status reporting, permissions, quality assurance, training, and adoption. That "
-                "work strengthened my ability to improve visibility without adding unnecessary process, while keeping "
-                "owners aligned around the decisions that affect delivery."
-            ),
+            *airtable_proof,
             *projects,
             (
-                "Together, these selected Evidence records show how I connect strategic planning with dependable "
+                "Together, these examples show how I connect strategic planning with dependable "
                 "operating systems and disciplined follow-through."
             ),
             (
                 "In a strategy and operations setting, I would apply that same discipline to planning cadence, data and "
                 "workflow quality, executive reporting, and the handoffs that connect Sales, Finance, Marketing, and other "
                 "partners. I would keep the work grounded in the team's actual operating needs and make progress visible "
-                "without claiming ownership beyond my verified experience."
+                "while staying precise about the scope of my direct experience."
             ),
             (
                 f"I would bring {company} practical operating judgment, clear communication, and a structured approach to "

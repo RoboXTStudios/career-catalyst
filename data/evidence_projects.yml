@@ -141,6 +141,7 @@ evidence_projects:
   status: Active
   atomic_evidence_ids: [MULTIVERSE-01, MULTIVERSE-02, MULTIVERSE-03, MULTIVERSE-04]
 - id: disney_plus_launch_readiness
+  legacy_ids: [disney_launch_readiness_tracking_measurement_and_operational_governance]
   title: Disney+ Launch Readiness — Tracking, Measurement and Operational Governance
   employer: OMG23 / OMD Entertainment, Omnicom Media Group
   client: The Walt Disney Company
@@ -178,6 +179,7 @@ evidence_projects:
   status: Active
   atomic_evidence_ids: [MARTECH-01, MARTECH-02, MARTECH-03, MARTECH-04, MARTECH-05]
 - id: career_catalyst
+  legacy_ids: [career_catalyst_ai_enabled_career_intelligence_application_operations_platform]
   title: Career Catalyst — AI-Enabled Career Intelligence & Application Operations Platform
   organization: RoboXT Studios
   industry: Career Technology
@@ -196,6 +198,7 @@ evidence_projects:
   status: Active
   atomic_evidence_ids: [CC-01, CC-02, CC-03, CC-04, CC-05, CC-06, CC-07, CC-08, CC-09, CC-10, CC-11, CC-12, CC-13, CC-14, CC-15, CC-16, CC-17, CC-18]
 - id: roboxt_studios
+  legacy_ids: [roboxt_studios_independent_creative_and_product_studio]
   title: RoboXT Studios — Independent Creative and Product Studio
   organization: RoboXT Studios
   industry: Media & Entertainment
@@ -214,6 +217,7 @@ evidence_projects:
   status: Active
   atomic_evidence_ids: [ROBOXT-01, ROBOXT-02, ROBOXT-03, ROBOXT-04, ROBOXT-05, ROBOXT-06, ROBOXT-07, ROBOXT-08, ROBOXT-09]
 - id: campaignos
+  legacy_ids: [campaignos_campaign_operations_workflow_prototype]
   title: CampaignOS — AI-Enabled Campaign Operations Prototype
   organization: RoboXT Studios
   industry: Marketing Technology
@@ -232,6 +236,7 @@ evidence_projects:
   status: Active
   atomic_evidence_ids: [CAMPAIGNOS-01, CAMPAIGNOS-02, CAMPAIGNOS-03, CAMPAIGNOS-04, CAMPAIGNOS-05, CAMPAIGNOS-06]
 - id: just_for_us_podcast
+  legacy_ids: [just_for_us_podcast_audio_production_editing]
   title: Just for Us Podcast — Audio Production & Editing
   industry: Media & Entertainment
   function: Audio Production

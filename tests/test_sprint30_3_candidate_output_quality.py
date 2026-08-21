@@ -80,6 +80,8 @@ def test_internal_identifiers_have_human_labels(identifier: str):
         "work motions", "role signals", "required outcomes", "primary hiring need",
         "lead evidence", "supporting evidence", "suppressed evidence", "matched signals",
         "detected role", "role intent", "archetype", "fixture",
+        "verified experience", "verified evidence", "candidate-facing provenance",
+        "unsupported claim", "not supported", "claim ownership", "selected evidence records",
         "fundamentally about this operating need", "focus on improve",
         "business_operations_chief_of_staff",
     ),

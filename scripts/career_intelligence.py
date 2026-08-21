@@ -353,7 +353,11 @@ def generate_career_intelligence(
         "generated_at": datetime.now(timezone.utc).isoformat(),
     }
     content = normalize_candidate_text(_render(result))
-    validate_candidate_output(content, context="Career Intelligence")
+    validate_candidate_output(
+        content,
+        context="Career Intelligence",
+        include_candidate_qa_language=False,
+    )
     validate_public_career_claims(content)
     validate_material_context(content, parsed, "Interview_Prep")
     filename = build_upload_filename(

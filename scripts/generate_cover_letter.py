@@ -345,7 +345,7 @@ def _cover_letter_value_sentences(context: Dict[str, Any]) -> List[str]:
         return [
             "I would apply that discipline to the role's stated priorities, with clear decisions, visible dependencies, and practical follow-through.",
             "I value operating systems that improve quality and momentum without adding process teams cannot sustain.",
-            "My approach is grounded in verified experience, direct communication, and respect for the people closest to the work.",
+            "My approach is grounded in direct experience, clear communication, and respect for the people closest to the work.",
             "I would begin by learning how the team coordinates priorities today, where decisions lose context, and which operating improvements would make delivery clearer without disrupting what already works.",
             "That approach keeps recommendations practical, proportionate, and accountable to the people responsible for execution.",
         ]
