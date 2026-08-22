@@ -3,6 +3,7 @@ from __future__ import annotations
 from copy import deepcopy
 import inspect
 import json
+import logging
 from pathlib import Path
 import shutil
 
@@ -180,6 +181,41 @@ def test_archive_bundle_verified_before_live_removal(tmp_path: Path):
     assert (folder / manifest["materials"][0]["filename"]).read_bytes() == b"existing resume"
 
 
+def test_archive_prefers_canonical_package_over_inaccessible_legacy_paths(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    legacy = tmp_path / "Documents" / "career-catalyst" / "application_note.txt"
+    legacy.parent.mkdir(parents=True)
+    legacy.write_text("legacy safety copy", encoding="utf-8")
+    record = _record(
+        "legacy_role",
+        "Rejected",
+        material_paths={"Application Note": str(legacy)},
+        package_manifest={"files": {"application_note": str(legacy)}},
+    )
+    root, exports, archives = _runtime(tmp_path, [record])
+    _package(exports, record, content=b"canonical resume")
+    original_copy = shutil.copy2
+
+    def deny_legacy_source(source, destination, *args, **kwargs):
+        if Path(source).resolve() == legacy.resolve():
+            raise PermissionError("legacy Documents path is not readable")
+        return original_copy(source, destination, *args, **kwargs)
+
+    monkeypatch.setattr("scripts.role_archive.shutil.copy2", deny_legacy_source)
+    result = archive_role(
+        record["id"], "Rejected", root, export_root=exports, archive_root=archives
+    )
+
+    manifest = json.loads(
+        (Path(result["folder"]) / "role_manifest.json").read_text(encoding="utf-8")
+    )
+    assert manifest["final_status"] == "Rejected"
+    assert manifest["original_record"]["material_paths"]["Application Note"] == str(legacy)
+    assert [item["label"] for item in manifest["materials"]] == ["ATS Resume"]
+    assert not load_application_tracker(root)
+
+
 def test_archive_failure_keeps_live_role_and_package(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     record = _record("acme_product_ops")
     root, exports, archives = _runtime(tmp_path, [record])
@@ -292,7 +328,11 @@ def test_reopen_creates_fresh_scored_prospect_and_is_repeat_safe(tmp_path: Path)
     assert len(load_application_tracker(root)) == 1
 
 
-def test_bulk_archive_reports_each_success_and_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def test_bulk_archive_reports_each_success_and_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+):
     records = [_record("first"), _record("second")]
     root, exports, archives = _runtime(tmp_path, records)
     original = archive_role
@@ -303,12 +343,31 @@ def test_bulk_archive_reports_each_success_and_failure(tmp_path: Path, monkeypat
         return original(tracker_id, *args, **kwargs)
 
     monkeypatch.setattr("scripts.role_archive.archive_role", selective)
+    caplog.set_level(logging.ERROR)
     result = bulk_archive_roles(
         ["first", "second"], root, export_root=exports, archive_root=archives
     )
     assert result["archived"] == ["first"]
     assert result["failed"] == {"second": "simulated failure"}
     assert [item["id"] for item in load_application_tracker(root)] == ["second"]
+    assert "Bulk archive failed for tracker_id=second" in caplog.text
+
+    class Renderer:
+        def __init__(self):
+            self.errors = []
+
+        def error(self, message):
+            self.errors.append(message)
+
+    renderer = Renderer()
+    app._render_bulk_archive_failures(
+        renderer,
+        result["failed"],
+        {"second": "Acme Media — Product Operations Director"},
+    )
+    assert renderer.errors == [
+        "Acme Media — Product Operations Director — archive failed: simulated failure"
+    ]
 
 
 def test_integrity_audit_detects_paused_invisible_orphan_and_archive_mismatch(tmp_path: Path):

@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 import hashlib
 import html
 import json
+import logging
 import os
 from pathlib import Path
 import re
@@ -57,6 +58,7 @@ except ImportError:  # pragma: no cover
 PathInput = Union[str, Path]
 ARCHIVE_REASONS = ("Rejected", "Withdrawn / Closed", "Hidden / Invalid")
 ARCHIVE_SCHEMA_VERSION = 2
+LOGGER = logging.getLogger(__name__)
 
 
 def infer_archive_reason(record: Dict[str, Any]) -> str:
@@ -115,13 +117,17 @@ def _material_sources(
     export_root: Path,
 ) -> tuple[list[tuple[str, Path]], Optional[Path]]:
     package = find_exact_role_package(root, entry, export_root=export_root)
+    canonical_package = bool(package.get("folder") and package.get("manifest"))
     candidates: list[tuple[str, Any]] = []
+    # A stable-ID manifest under the canonical export root is authoritative.
+    # Legacy tracker paths remain in the archived original record for audit, but
+    # must not be opened when a migrated canonical copy exists.
+    candidates.extend(dict(package.get("files") or {}).items())
     candidates.extend(dict(entry.get("material_paths") or {}).items())
     manifest = entry.get("package_manifest")
     if isinstance(manifest, dict):
         candidates.extend(dict(manifest.get("files") or {}).items())
         candidates.extend(dict(manifest.get("materials") or {}).items())
-    candidates.extend(dict(package.get("files") or {}).items())
     sources: list[tuple[str, Path]] = []
     seen: set[Path] = set()
     for label, value in candidates:
@@ -134,6 +140,11 @@ def _material_sources(
             resolved = path.resolve()
         except OSError:
             continue
+        if canonical_package:
+            try:
+                require_beneath_export_root(resolved, export_root)
+            except ValueError:
+                continue
         if not resolved.is_file() or resolved in seen:
             continue
         seen.add(resolved)
@@ -635,6 +646,7 @@ def bulk_archive_roles(
             )
             result["archived"].append(tracker_id)
         except Exception as error:
+            LOGGER.exception("Bulk archive failed for tracker_id=%s", tracker_id)
             result["failed"][tracker_id] = str(error)
     result["archived_count"] = len(result["archived"])
     return result

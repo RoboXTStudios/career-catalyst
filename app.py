@@ -4398,6 +4398,17 @@ def _render_career_intelligence(st: Any) -> None:
         _render_career_intelligence_result(st, result)
 
 
+def _render_bulk_archive_failures(
+    st: Any, failed: Dict[str, Any], labels: Dict[str, str]
+) -> None:
+    """Show concise role-scoped archive failures without exposing tracebacks."""
+    for tracker_id, reason in failed.items():
+        message = " ".join(str(reason or "Unknown archive error").split())
+        st.error(
+            f"{labels.get(str(tracker_id), str(tracker_id))} — archive failed: {message}"
+        )
+
+
 def _render_archive(st: Any) -> None:
     st.markdown('<h2 class="cc-section-heading">Archive Log</h2>', unsafe_allow_html=True)
     archive_root = canonical_archive_root(PROJECT_ROOT)
@@ -4502,6 +4513,7 @@ def _render_archive(st: Any) -> None:
                 f"Archived {len(summary['archived'])} · Skipped "
                 f"{len(summary['skipped'])} · Failed {len(summary['failed'])}"
             )
+            _render_bulk_archive_failures(st, summary["failed"], labels)
             if not summary["failed"]:
                 st.rerun()
 
