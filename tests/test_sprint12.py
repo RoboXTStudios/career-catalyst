@@ -153,7 +153,9 @@ class PackageReliabilityTests(unittest.TestCase):
                 generate_package("nova_director_operations", self.root)
         generator.assert_not_called()
         self.assertIn("appears closed", str(context.exception))
-        self.assertEqual(load_application_tracker(self.root)[0]["posting_status"], "Closed")
+        # A blocked package run is transactional: detection must not mutate the
+        # previously valid tracker record.
+        self.assertNotIn("posting_status", load_application_tracker(self.root)[0])
 
     def test_unknown_salary_does_not_break_package_generation(self):
         self._job()

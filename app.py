@@ -30,6 +30,11 @@ from scripts.application_tracker import (
 )
 from scripts.application_strategy import build_application_strategy, build_hiring_manager_lens
 from scripts.dynamic_role_intelligence import get_effective_voice_profile
+from scripts.evidence_engine import (
+    candidate_positioning_narrative,
+    job_requirement_coverage,
+    rank_evidence_projects,
+)
 from scripts.filename_utils import build_upload_filename, company_display_name
 from scripts.filename_utils import is_valid_role_title
 from scripts.generate_dashboard import (
@@ -91,12 +96,17 @@ from scripts.package_generator import (
     PackageGenerationError,
     build_package_context,
     generate_package,
+    preflight_package_generation,
     refresh_saved_package_context,
     resolve_job_reference,
 )
 from scripts.package_context import CONTEXT_MISMATCH_MESSAGE
 from scripts.parse_job import extract_metadata, parse_job_description, salary_parsing_warning
-from scripts.prospect_intake import ProspectIntakeError, create_prospect
+from scripts.prospect_intake import (
+    ProspectIntakeError,
+    create_prospect,
+    recover_saved_prospect_context,
+)
 from scripts.prospect_validation import compute_prospect_validation_state
 from scripts.role_interpreter import ROLE_ARCHETYPES
 from scripts.score_match import incomplete_match_report, score_job_data, score_job_match
@@ -817,7 +827,7 @@ def apply_dashboard_status_action(
 
 def build_prospect_payload(values: Dict[str, Any]) -> Dict[str, Any]:
     """Normalize widget values without importing or executing Streamlit."""
-    return {
+    payload = {
         "posting_url": str(values.get("posting_url") or values.get("official_url") or "").strip(),
         "application_portal_url": str(values.get("application_portal_url") or "").strip(),
         "official_url": str(values.get("official_url") or "").strip(),
@@ -844,6 +854,9 @@ def build_prospect_payload(values: Dict[str, Any]) -> Dict[str, Any]:
             values.get("evidence_selection_overrides") or {}
         ),
     }
+    if isinstance(values.get("match_report"), dict):
+        payload["match_report"] = dict(values["match_report"])
+    return payload
 
 
 def recent_output_files(
@@ -1383,7 +1396,7 @@ def _render_role_card(
                 f"Salary: {application.get('salary_range') or 'Not disclosed'}",
             ]
             st.caption(" · ".join(compact_facts))
-            st.write(brief_summary["reason"])
+            st.markdown(html.escape(brief_summary["reason"]))
             st.markdown(f"**Next:** {html.escape(brief_summary['next_action'])}")
             posting_url = record_posting_url(application)
             portal_url = record_application_portal_url(application)
@@ -1448,6 +1461,20 @@ def _render_role_card(
         metadata = _primary_facts_html(application, package)
         if metadata:
             st.markdown(metadata, unsafe_allow_html=True)
+        role_lens = _role_lens_for_card(application, package)
+        if role_lens:
+            primary_label = role_lens.get("primary_label") or _humanize_taxonomy(
+                role_lens.get("primary")
+            )
+            lens_parts = [f"Role lens: {primary_label}"]
+            secondary = role_lens.get("secondary")
+            if secondary:
+                lens_parts.append(f"Secondary: {_humanize_taxonomy(secondary)}")
+            if role_lens.get("confidence_label"):
+                lens_parts.append(
+                    f"Lens confidence: {role_lens['confidence_label']}"
+                )
+            st.caption(" · ".join(lens_parts))
         brief_summary = brief_card_summary(application)
         st.markdown(f"**{brief_summary['match_recommendation']}**")
         st.write(brief_summary["reason"])
@@ -2077,6 +2104,10 @@ def detect_prospect_intelligence(values: Dict[str, Any]) -> Dict[str, Any]:
         if prospect_has_usable_job_content(values)
         else incomplete_match_report(values)
     )
+    if not isinstance(intelligence["match_report"], dict):
+        intelligence["match_report"] = incomplete_match_report(
+            {**values, "job_description": ""}
+        ) or {}
     intelligence["role_evidence_selection"] = dict(
         intelligence["match_report"].get("role_evidence_selection") or {}
     )
@@ -2842,6 +2873,48 @@ def _render_application_strategy(st: Any, intelligence: Dict[str, Any]) -> None:
         st.json(strategy)
 
 
+def _render_evidence_intelligence(
+    st: Any, application: Dict[str, Any]
+) -> None:
+    """Show deterministic recommendations without changing manual Evidence choices."""
+    profile = load_cached_evidence_profile(PROJECT_ROOT)
+    projects = [
+        project
+        for project in profile.get("evidence") or []
+        if project.get("verification_status") in {"Verified", "User Confirmed"}
+        and project.get("evidence_type") not in {"Unsupported", "Inferred"}
+    ]
+    role_context = {
+        "company": application.get("company"),
+        "job_title": application.get("role") or application.get("job_title"),
+        "role_family": application.get("role_family"),
+        "job_description": application.get("job_description") or "",
+        "requirements": application.get("requirements") or [],
+    }
+    recommendations = rank_evidence_projects(role_context, projects, limit=5)
+    if not recommendations:
+        return
+    st.markdown("### Evidence Intelligence · Top 5 recommendations")
+    st.caption(
+        "Recommendations are diagnostic only; manual Evidence decisions remain authoritative."
+    )
+    for recommendation in recommendations:
+        reasons = " · ".join(recommendation["reasons"])
+        st.markdown(
+            f"**{recommendation['title']}** · {recommendation['score']}/100  \n{reasons}"
+        )
+    st.markdown("**Candidate positioning (internal)**")
+    st.caption(candidate_positioning_narrative(role_context, recommendations))
+    coverage = job_requirement_coverage(role_context, recommendations)
+    if coverage:
+        with st.expander("Job requirement coverage", expanded=False):
+            for item in coverage:
+                supporters = ", ".join(item["evidence_projects"]) or "No stored Evidence"
+                st.markdown(
+                    f"**{item['status']}:** {item['requirement']}  \nEvidence: {supporters}"
+                )
+
+
 def _render_role_evidence_selection(
     st: Any,
     intelligence: Dict[str, Any],
@@ -3100,6 +3173,7 @@ def _render_intelligence_preview(
     *,
     editable_interpretation: bool = False,
     evidence_tracker_id: str = "",
+    role_context: Optional[Dict[str, Any]] = None,
 ) -> None:
     with st.container(border=True):
         _render_hiring_manager_brief(
@@ -3140,6 +3214,7 @@ def _render_intelligence_preview(
         _render_role_interpretation(
             st, intelligence, editable=editable_interpretation
         )
+        _render_evidence_intelligence(st, role_context or {})
         _render_role_evidence_selection(
             st,
             intelligence,
@@ -3264,8 +3339,13 @@ def _render_add_prospect(st: Any) -> None:
                 intelligence = stored_intelligence
                 match_report = intelligence.get("match_report")
                 _render_intelligence_preview(
-                    st, intelligence, editable_interpretation=True
+                    st,
+                    intelligence,
+                    editable_interpretation=True,
+                    role_context=values,
                 )
+                if isinstance(match_report, dict):
+                    values["match_report"] = match_report
         if intelligence is None:
             st.warning("Analysis needs refresh. Use Refresh Analysis when the role details are ready.")
     elif any(values.get(key) for key in ("official_url", "company", "job_title", "job_description")):
@@ -3333,11 +3413,13 @@ def _render_add_prospect(st: Any) -> None:
                 focus_dashboard_role(st.session_state, intake["tracker_id"])
                 st.session_state["dashboard_materials_role_id"] = intake["tracker_id"]
             else:
-                intake = create_prospect(build_prospect_payload(values), PROJECT_ROOT)
-                dashboard = generate_dashboard(PROJECT_ROOT)
+                intake = create_prospect(
+                    build_prospect_payload(values),
+                    PROJECT_ROOT,
+                    run_match_analysis=False,
+                )
                 st.session_state["last_package_outputs"] = {
                     "job_file": intake["job_file_path"],
-                    "dashboard": dashboard["output_path"],
                 }
     except (ProspectIntakeError, PackageGenerationError, TrackerValidationError) as error:
         if isinstance(error, PackageGenerationError) and error.details.get(
@@ -3363,7 +3445,20 @@ def _render_add_prospect(st: Any) -> None:
 
 def _load_applications(st: Any) -> list[Dict[str, Any]]:
     try:
-        return load_cached_application_tracker(PROJECT_ROOT)
+        applications = load_cached_application_tracker(PROJECT_ROOT)
+        recovered: list[Dict[str, Any]] = []
+        changed = False
+        for application in applications:
+            updates = recover_saved_prospect_context(application, PROJECT_ROOT)
+            if updates:
+                application = update_prospect(
+                    str(application["id"]), updates, PROJECT_ROOT
+                )
+                changed = True
+            recovered.append(application)
+        if changed:
+            invalidate_tracker_cache()
+        return recovered
     except TrackerValidationError as error:
         st.error(str(error))
         return []
@@ -3849,6 +3944,53 @@ def detected_application_voice(
     return intelligence
 
 
+def _package_recovery_key(tracker_id: str) -> str:
+    return f"package_recovery_{tracker_id}"
+
+
+def _render_package_recovery(
+    st: Any,
+    tracker_id: str,
+    application: Dict[str, Any],
+    *,
+    override_closed: bool = False,
+) -> None:
+    """Offer a role-scoped clean draft after a material identity conflict."""
+    key = _package_recovery_key(tracker_id)
+    state = st.session_state.get(key)
+    if not state:
+        return
+    conflict = (state.get("conflicts") or [{}])[0]
+    st.warning(
+        "Career Catalyst found material associated with a different opportunity. "
+        "It was not reused or changed."
+    )
+    generate_column, cancel_column = st.columns(2)
+    if generate_column.button(
+        "Generate a clean new draft", key=f"clean_draft_{tracker_id}"
+    ):
+        try:
+            result = generate_package(
+                tracker_id,
+                PROJECT_ROOT,
+                override_closed=override_closed,
+                force_clean_draft=True,
+            )
+        except PackageGenerationError as error:
+            st.error(str(error))
+        else:
+            st.session_state.pop(key, None)
+            st.session_state["last_package_outputs"] = result["outputs"]
+            st.session_state["last_package_result"] = result
+            st.success(
+                f"Generated clean package for {result['job_title']} at {result['company']}."
+            )
+    if cancel_column.button("Cancel", key=f"cancel_recovery_{tracker_id}"):
+        st.session_state.pop(key, None)
+    if conflict.get("path"):
+        st.caption(f"Conflicting material: {conflict['path']}")
+
+
 def _render_generate_package(st: Any) -> None:
     st.markdown(
         '<h2 class="cc-section-heading">Generate Materials</h2>',
@@ -3902,7 +4044,10 @@ def _render_generate_package(st: Any) -> None:
     elif pending_evidence_changes:
         st.info("Apply the pending evidence changes below before refreshing analysis.")
     _render_intelligence_preview(
-        st, voice_context, evidence_tracker_id=tracker_id
+        st,
+        voice_context,
+        evidence_tracker_id=tracker_id,
+        role_context=application,
     )
     public_transparency_requested = st.checkbox(
         "Include concise transparency language when a material limitation changes the hiring decision",
@@ -3924,6 +4069,9 @@ def _render_generate_package(st: Any) -> None:
         key=f"package_context_recovery_{tracker_id}",
         override_closed=override_closed,
     )
+    _render_package_recovery(
+        st, tracker_id, application, override_closed=override_closed
+    )
     if st.button(
         "Generate Materials",
         type="primary",
@@ -3944,6 +4092,10 @@ def _render_generate_package(st: Any) -> None:
                 )
         except PackageGenerationError as error:
             _remember_context_recovery(st.session_state, tracker_id, error)
+            if error.details.get("recovery"):
+                st.session_state[_package_recovery_key(tracker_id)] = {
+                    "conflicts": error.details.get("conflicts") or []
+                }
             st.error(
                 CONTEXT_MISMATCH_MESSAGE
                 if error.details.get("context_mismatch")
@@ -4113,7 +4265,9 @@ def _render_followups(st: Any) -> None:
     saved_intelligence = saved_application_voice(application)
     if saved_intelligence.get("analysis_dirty"):
         st.warning("Analysis needs refresh before generating new role-specific materials.")
-    _render_intelligence_preview(st, saved_intelligence)
+    _render_intelligence_preview(
+        st, saved_intelligence, role_context=application
+    )
 
     if generate_clicked:
         try:

@@ -89,6 +89,12 @@ def save_package_summary(
     dimensions = "\n".join(
         f"- {name}: {score}/100" for name, score in opportunity["dimensions"].items()
     )
+    seniority_warnings = quality.get("seniority_warnings") or []
+    seniority_section = (
+        "\n## Seniority Protection\n\n" + "\n".join(f"- {warning}" for warning in seniority_warnings) + "\n"
+        if seniority_warnings
+        else "\n## Seniority Protection\n\n- No deterministic seniority-erosion warnings.\n"
+    )
     content = f"""# Application Package Summary
 
 ## Opportunity
@@ -111,6 +117,6 @@ def save_package_summary(
 - ATS Keyword Match: {quality['ats_keyword_match']}/100
 - Voice Match: {quality['voice_match']}/100
 - Confidence Level: {quality['confidence_level']}
-"""
+{seniority_section}"""
     path.write_text(content, encoding="utf-8")
     return {"output_path": str(path)}

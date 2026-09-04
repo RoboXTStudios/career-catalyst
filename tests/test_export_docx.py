@@ -16,7 +16,7 @@ from scripts.export_docx import (
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-MARKDOWN_RESUME = "exports/markdown/Trisha_Lynch_executive_operations_Crunchyroll_Resume.md"
+MARKDOWN_RESUME = "tests/fixtures/resumes/crunchyroll_resume.md"
 LINKEDIN_URL = "https://www.linkedin.com/in/trisha-lynch-3433417"
 OLD_LINKEDIN_URL = "https://www.linkedin.com/in/trishalynch"
 
@@ -33,7 +33,7 @@ class ExportDocxTests(unittest.TestCase):
 
         self.assertTrue(
             result["output_path"].endswith(
-                "TrishaLynch_DirectorEnterpriseStrategy_Crunchyroll_Styled.docx"
+                "crunchyroll_director_enterprise_strategy_initiatives_trisha_lynch_styled_resume.docx"
             )
         )
         self.assertTrue(Path(result["output_path"]).is_file())
@@ -43,7 +43,7 @@ class ExportDocxTests(unittest.TestCase):
 
         self.assertTrue(
             result["output_path"].endswith(
-                "TrishaLynch_DirectorEnterpriseStrategy_Crunchyroll_ATS.docx"
+                "crunchyroll_director_enterprise_strategy_initiatives_trisha_lynch_ats_resume.docx"
             )
         )
         self.assertTrue(Path(result["output_path"]).is_file())
@@ -177,7 +177,7 @@ class ExportDocxTests(unittest.TestCase):
                 PROJECT_ROOT
                 / "exports"
                 / "docx"
-                / "TrishaLynch_DirectorEnterpriseStrategy_Crunchyroll_Styled.docx"
+                / "crunchyroll_director_enterprise_strategy_initiatives_trisha_lynch_styled_resume.docx"
             ).is_file()
         )
 

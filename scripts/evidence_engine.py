@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +24,217 @@ CONFIDENCE_ORDER = {"low": 1, "medium": 2, "high": 3}
 BUILDER_IDS = {"campaignos", "career_catalyst", "roboxt_studios"}
 PERSONAL_EVIDENCE_IDS = BUILDER_IDS | {"photography_creative_voice", "substack"}
 DEFAULT_MAX_CARDS = 4
+
+_STOP_WORDS = {
+    "and", "the", "for", "with", "from", "that", "this", "into", "across",
+    "role", "work", "team", "teams", "will", "your", "our", "their", "using",
+}
+_DIMENSION_SIGNALS = {
+    "leadership": ("led", "leadership", "directed", "owned", "ownership", "managed", "head", "developed talent"),
+    "outcomes": ("result", "reduced", "increased", "improved", "launched", "achieved", "%", "$"),
+    "business_impact": ("business impact", "revenue", "cost", "efficiency", "quality", "risk", "customer", "community impact"),
+    "scale": ("enterprise", "global", "company-wide", "cross-functional", "business units", "client", "60+", "100%"),
+    "transformation": ("transform", "change management", "redesign", "standardized", "scalable", "adoption", "operating model"),
+    "people": ("people leadership", "talent", "developed", "mentored", "trained", "champion network", "office hours"),
+    "stakeholders": ("executive", "client", "senior stakeholder", "partner", "leadership team"),
+}
+def _tokens(value: Any) -> set[str]:
+    return {
+        token for token in re.findall(r"[a-z0-9]+", str(value or "").lower())
+        if len(token) > 2 and token not in _STOP_WORDS
+    }
+
+
+def _project_text(project: dict[str, Any], *, include_technology: bool = True) -> str:
+    fields = (
+        "title",
+        "label",
+        "short_description",
+        "description",
+        "employer",
+        "organization",
+        "client",
+        "business_unit",
+        "industry",
+        "function",
+        "project_type",
+        "problem",
+        "actions",
+        "results",
+        "notes",
+    )
+    values = [str(project.get(field) or "") for field in fields]
+    values.extend(
+        str(value)
+        for field in ("skills", "tags", "proof_points", "outcomes")
+        for value in project.get(field, [])
+    )
+    if include_technology:
+        values.extend(str(value) for value in project.get("technologies", []))
+    return " ".join(values).lower()
+
+
+def rank_evidence_projects(
+    role: dict[str, Any], projects: list[dict[str, Any]], *, limit: int = 5
+) -> list[dict[str, Any]]:
+    """Rank active Evidence without mutation; cap technology's contribution.
+
+    Leadership, outcomes, impact, and ownership deliberately carry more combined
+    weight than tool-name overlap.
+    """
+    role_text = _role_text(role)
+    role_tokens = _tokens(role_text)
+    ranked: list[dict[str, Any]] = []
+    for project in projects:
+        if str(project.get("status") or "Active").lower() == "archived":
+            continue
+        text = _project_text(project)
+        nontech_text = _project_text(project, include_technology=False)
+        overlap = role_tokens & _tokens(nontech_text)
+        dimensions = {
+            name: sum(1 for signal in signals if signal in text)
+            for name, signals in _DIMENSION_SIGNALS.items()
+        }
+        direct = min(24, len(overlap) * 3)
+        leadership = min(18, dimensions["leadership"] * 6)
+        outcomes = min(16, dimensions["outcomes"] * 4)
+        impact = min(12, dimensions["business_impact"] * 3)
+        scale = min(10, dimensions["scale"] * 3)
+        transformation = min(10, dimensions["transformation"] * 3)
+        people = min(8, dimensions["people"] * 3)
+        stakeholders = min(8, dimensions["stakeholders"] * 3)
+        domain_values = " ".join(str(project.get(k) or "") for k in ("industry", "function", "project_type", "client"))
+        domain = min(8, len(role_tokens & _tokens(domain_values)) * 2)
+        technologies = " ".join(map(str, project.get("technologies", []))).lower()
+        technology = min(6, len(role_tokens & _tokens(technologies)) * 2)
+        score = min(100, direct + leadership + outcomes + impact + scale + transformation + people + stakeholders + domain + technology)
+        reasons: list[str] = []
+        reason_candidates = (
+            (leadership, "Leadership / ownership match"),
+            (outcomes, "Measurable business outcome"),
+            (transformation, "Transformation ownership"),
+            (people, "People development"),
+            (stakeholders, "Executive / client stakeholder credibility"),
+            (scale, "Enterprise / organizational scale"),
+            (domain, "Industry and functional relevance"),
+            (direct, "Direct requirement match"),
+            (technology, "Technology / platform relevance"),
+        )
+        reasons.extend(label for value, label in sorted(reason_candidates, reverse=True) if value > 0)
+        if overlap and len(reasons) < 2:
+            reasons.append("Transferable functional relevance")
+        if technology and len(reasons) < 2:
+            reasons.append("Direct platform requirement match")
+        if score <= 0:
+            continue
+        ranked.append({"project": project, "project_id": str(project.get("id") or ""),
+                       "title": str(project.get("title") or project.get("label") or "Untitled Evidence"),
+                       "score": score, "reasons": reasons[:4],
+                       "dimensions": {**dimensions, "technology": technology, "direct": direct}})
+    ranked.sort(key=lambda item: (-item["score"], item["title"].lower(), item["project_id"]))
+    return ranked[:max(0, limit)]
+
+
+def candidate_positioning_narrative(role: dict[str, Any], ranked: list[dict[str, Any]]) -> str:
+    """Build an internal, Evidence-grounded positioning statement."""
+    evidence_text = " ".join(_project_text(item["project"]) for item in ranked[:5])
+    if not evidence_text:
+        return "No active Evidence is available to support a candidate positioning statement."
+    attributes: list[str] = []
+    if any(term in evidence_text for term in ("led", "leadership", "owned", "directed")):
+        attributes.append("leader")
+    if any(term in evidence_text for term in ("transform", "change management", "redesign", "scalable")):
+        attributes.append("who leads transformation and builds scalable operating systems")
+    elif any(term in evidence_text for term in ("workflow", "governance", "operational")):
+        attributes.append("who builds practical operating systems")
+    if any(term in evidence_text for term in ("talent", "mentored", "trained", "champion network")):
+        attributes.append("develops people")
+    if any(term in evidence_text for term in ("executive", "client", "stakeholder")):
+        attributes.append("aligns executive and client stakeholders")
+    domain = "entertainment operations" if any(term in evidence_text for term in ("entertainment", "disney", "media")) else "operations"
+    if any(term in evidence_text for term in ("ai", "automation", "product thinking")) and any(term in _role_text(role) for term in ("ai", "product", "technology")):
+        domain = "AI-enabled operations and product"
+    return (domain.capitalize() + " " + ", ".join(attributes[:3]) + ".").replace("  ", " ")
+
+
+def job_requirement_coverage(role: dict[str, Any], ranked: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Map major role requirements to supporting Evidence, without filling gaps."""
+    requirements = role.get("requirements")
+    if isinstance(requirements, str):
+        requirements = [line.strip(" -•\t") for line in requirements.splitlines() if line.strip(" -•\t")]
+    if not isinstance(requirements, list) or not requirements:
+        raw = str(role.get("job_description") or role.get("raw_text") or "")
+        requirements = [part.strip(" -•\t") for part in re.split(r"[\n.;]+", raw) if len(part.split()) >= 3][:10]
+    coverage: list[dict[str, Any]] = []
+    for requirement in requirements:
+        requirement = str(requirement).strip()
+        tokens = _tokens(requirement)
+        supporters = []
+        best = 0
+        for item in ranked:
+            matched = tokens & _tokens(_project_text(item["project"]))
+            strength = len(matched)
+            if strength:
+                supporters.append(item["title"])
+                best = max(best, strength)
+        status = "Strongly supported" if best >= 3 else "Partially supported" if best else "Unsupported"
+        coverage.append({"requirement": requirement, "status": status, "evidence_projects": supporters[:3]})
+    return coverage
+
+
+def seniority_erosion_warnings(content: str, selected_projects: list[dict[str, Any]]) -> list[str]:
+    """Flag down-leveling patterns without rewriting generated claims."""
+    lowered = str(content or "").lower()
+    evidence = " ".join(_project_text(project) for project in selected_projects)
+    warnings: list[str] = []
+    support_count = len(re.findall(r"\bsupport(?:ed|ing)?\b", lowered))
+    coordinate_count = len(re.findall(r"\bcoordinat(?:e|ed|ing|ion)\b", lowered))
+    if support_count >= 3:
+        warnings.append("Seniority risk: support language is overused.")
+    if coordinate_count >= 3:
+        warnings.append("Seniority risk: coordination language is overused.")
+    if any(term in evidence for term in _DIMENSION_SIGNALS["leadership"]) and not any(term in lowered for term in ("led", "leader", "owned", "directed", "managed")):
+        warnings.append("Seniority risk: selected leadership or ownership Evidence is not represented.")
+    if any(term in evidence for term in _DIMENSION_SIGNALS["people"]) and not any(term in lowered for term in ("talent", "developed", "mentored", "trained", "team")):
+        warnings.append("Seniority risk: relevant people-development Evidence is omitted.")
+    if any(term in evidence for term in _DIMENSION_SIGNALS["scale"]) and not any(term in lowered for term in ("enterprise", "client", "global", "company-wide", "cross-functional")):
+        warnings.append("Seniority risk: enterprise or client scale is flattened into task execution.")
+    if any(term in evidence for term in _DIMENSION_SIGNALS["transformation"]) and not any(term in lowered for term in ("transformed", "transformation", "redesigned", "standardized", "scaled", "change")):
+        warnings.append("Seniority risk: transformation ownership is not represented.")
+    if any(term in evidence for term in ("owned", "led", "directed")) and any(term in lowered for term in ("assisted with", "helped with", "provided support")):
+        warnings.append("Seniority risk: owned work is described as assistance.")
+    return warnings
+
+
+def load_evidence_projects(
+    project_root: str | Path | None = None,
+) -> list[dict[str, Any]]:
+    """Load optional project-style Evidence without requiring runtime data."""
+    root = Path(project_root) if project_root is not None else Path.cwd()
+    path = root / "data" / "evidence_projects.yml"
+    if not path.is_file():
+        return []
+    try:
+        loaded = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except OSError as error:
+        raise EvidenceEngineError(f"Unable to read Evidence projects: {error}") from error
+    projects = loaded.get("projects") if isinstance(loaded, dict) else loaded
+    return [dict(item) for item in projects or [] if isinstance(item, dict)]
+
+
+def evidence_projects_for_role(
+    application: dict[str, Any], project_root: str | Path | None = None
+) -> list[dict[str, Any]]:
+    """Return only the manually associated Evidence projects, in saved order."""
+    by_id = {
+        str(project.get("id") or ""): project
+        for project in load_evidence_projects(project_root)
+    }
+    return [
+        by_id[str(project_id)]
+        for project_id in application.get("evidence_project_ids") or []
+        if str(project_id) in by_id
+    ]
 
 
 class EvidenceEngineError(Exception):

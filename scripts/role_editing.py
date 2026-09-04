@@ -19,6 +19,7 @@ BANNED_VOICE_PHRASE_REWRITES = {
     "enable great work": "support better execution",
     "genuine enthusiasm": "practical interest",
     "I built my career around": "my experience has centered on",
+    "builder's mindset": "systems-building perspective",
 }
 
 

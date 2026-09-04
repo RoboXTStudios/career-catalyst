@@ -1431,12 +1431,14 @@ def _cover_letter_content(context: Dict[str, Any]) -> str:
     interpreted_archetype = str(
         (context.get("role_interpretation") or {}).get("primary_archetype") or ""
     )
-    if interpreted_archetype in TECHNICAL_ARCHETYPES:
-        builder = _interpretation_aware_technical_cover_letter_content
-    elif context.get("role_lens", {}).get("primary") == "people_operations":
+    # A confirmed people-operations lens is more specific than company defaults;
+    # otherwise known company voices outrank generic technical archetypes.
+    if context.get("role_lens", {}).get("primary") == "people_operations":
         builder = _people_operations_cover_letter_content
     elif profile_key in builders:
         builder = builders[profile_key]
+    elif interpreted_archetype in TECHNICAL_ARCHETYPES:
+        builder = _interpretation_aware_technical_cover_letter_content
     else:
         role_category = context["material_editing_plan"].get("role_category")
         if role_category in {"chief_of_staff_business_operations", "product_ai_operations"}:

@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
+import tempfile
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 try:
     from .application_strategy import build_application_strategy, build_hiring_manager_lens
@@ -47,6 +49,7 @@ try:
     from .score_match import persisted_match_fields, score_job_match
     from .role_evidence_selection import selected_evidence
     from .tailor_resume import tailor_resume
+    from .evidence_engine import seniority_erosion_warnings
 except ImportError:
     from application_strategy import build_application_strategy, build_hiring_manager_lens
     from career_coach import build_career_coach_brief
@@ -87,6 +90,7 @@ except ImportError:
     from score_match import persisted_match_fields, score_job_match
     from role_evidence_selection import selected_evidence
     from tailor_resume import tailor_resume
+    from evidence_engine import seniority_erosion_warnings
 
 
 PathInput = Union[str, Path]
@@ -105,6 +109,51 @@ class PackageGenerationError(Exception):
         super().__init__(message)
         self.checklist = checklist or []
         self.details = details or {}
+
+
+class _GenerationTransaction:
+    """Restore tracker state and generated artifacts after a failed package run."""
+
+    def __init__(self, root: Path):
+        self.root = root
+        self._temporary = tempfile.TemporaryDirectory(
+            prefix="career-catalyst-package-"
+        )
+        self._backup = Path(self._temporary.name)
+        exports = root / "exports"
+        if exports.exists():
+            shutil.copytree(exports, self._backup / "exports")
+        tracker = root / "data" / "application_tracker.yml"
+        if tracker.exists():
+            (self._backup / "data").mkdir(parents=True, exist_ok=True)
+            shutil.copy2(tracker, self._backup / "data" / tracker.name)
+        self._closed = False
+
+    def rollback(self) -> None:
+        if self._closed:
+            return
+        exports = self.root / "exports"
+        if exports.exists():
+            shutil.rmtree(exports)
+        backup_exports = self._backup / "exports"
+        if backup_exports.exists():
+            shutil.copytree(backup_exports, exports)
+        tracker = self.root / "data" / "application_tracker.yml"
+        backup_tracker = self._backup / "data" / tracker.name
+        if backup_tracker.exists():
+            tracker.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(backup_tracker, tracker)
+        elif tracker.exists():
+            tracker.unlink()
+        self._close()
+
+    def commit(self) -> None:
+        self._close()
+
+    def _close(self) -> None:
+        if not self._closed:
+            self._temporary.cleanup()
+            self._closed = True
 
 
 def _job_files(root: Path) -> list[Path]:
@@ -175,6 +224,84 @@ def _selected_tracker_record(
     return dict(matches[0])
 
 
+def preflight_package_generation(
+    prospect_id: str,
+    tracker: Any,
+    project_root: Optional[PathInput] = None,
+) -> Dict[str, Any]:
+    """Find material identity conflicts before expensive generation begins."""
+    application = _selected_tracker_record(prospect_id, tracker)
+    current_id = str(application.get("id") or prospect_id)
+    current_slug = str(application.get("stable_slug") or current_id)
+    paths = dict(application.get("material_paths") or {})
+    manifest = application.get("package_manifest")
+    if isinstance(manifest, dict):
+        manifest_prospect_id = str(manifest.get("prospect_id") or "")
+        if manifest_prospect_id and manifest_prospect_id != current_id:
+            return {
+                "status": "conflict",
+                "conflicts": [
+                    {
+                        "material_type": "Package manifest",
+                        "current_prospect_id": current_id,
+                        "conflicting_prospect_id": manifest_prospect_id,
+                        "conflicting_company": str(manifest.get("company") or ""),
+                        "conflicting_role": str(manifest.get("role") or ""),
+                        "path": str(manifest.get("manifest_path") or ""),
+                        "reason": "stored package manifest belongs to a different prospect",
+                    }
+                ],
+            }
+        paths.update(dict(manifest.get("materials") or {}))
+
+    owners: Dict[str, Dict[str, Any]] = {}
+    records = tracker.get("applications", []) if isinstance(tracker, dict) else tracker
+    for record in records or []:
+        record_id = str(record.get("id") or "")
+        if not record_id or record_id == current_id:
+            continue
+        for value in dict(record.get("material_paths") or {}).values():
+            if value:
+                owners[str(Path(str(value)).expanduser())] = record
+
+    conflicts: List[Dict[str, Any]] = []
+    for label, value in paths.items():
+        if not value or str(label) == "Job Description":
+            continue
+        path_text = str(Path(str(value)).expanduser())
+        owner = owners.get(path_text)
+        if owner is not None:
+            conflicts.append(
+                {
+                    "material_type": str(label),
+                    "current_prospect_id": current_id,
+                    "conflicting_prospect_id": str(owner.get("id") or ""),
+                    "conflicting_company": str(owner.get("company") or ""),
+                    "conflicting_role": str(owner.get("role") or ""),
+                    "path": str(value),
+                    "reason": "material path is already associated with a different prospect",
+                }
+            )
+            continue
+        normalized_path = path_text.replace("\\", "/")
+        if "/exports/" in normalized_path and current_slug not in normalized_path:
+            conflicts.append(
+                {
+                    "material_type": str(label),
+                    "current_prospect_id": current_id,
+                    "conflicting_prospect_id": "",
+                    "conflicting_company": "",
+                    "conflicting_role": "",
+                    "path": str(value),
+                    "reason": "material path is outside the selected role package",
+                }
+            )
+    return {
+        "status": "conflict" if conflicts else "ok",
+        "conflicts": conflicts,
+    }
+
+
 def build_package_context(
     prospect_id: str,
     tracker: Any,
@@ -224,8 +351,10 @@ def build_package_context(
         or application.get("source_url")
         or ""
     )
+    # The tracker field is the canonical user-supplied JD. The local job file is
+    # its durable recovery/export representation and contains wrapper metadata.
     job_description = str(
-        parsed.get("raw_text") or application.get("job_description") or ""
+        application.get("job_description") or parsed.get("raw_text") or ""
     )
     saved_interpretation = (
         dict(application.get("role_interpretation") or {})
@@ -547,13 +676,43 @@ def generate_package(
     override_closed: bool = False,
     public_transparency_requested: bool = False,
     _context_refresh_attempted: bool = False,
+    force_clean_draft: bool = False,
 ) -> Dict[str, Any]:
     """Generate all package materials and apply the safe Drafted-to-Reviewed transition."""
     root = Path(project_root) if project_root is not None else Path.cwd()
+    transaction: Optional[_GenerationTransaction] = None
     try:
         resolved = resolve_job_reference(job_file_or_tracker_id, root)
         selected_id = str(resolved["application"].get("id") or "")
-        context = build_package_context(selected_id, load_application_tracker(root), root)
+        tracker = load_application_tracker(root)
+        if not force_clean_draft:
+            preflight = preflight_package_generation(selected_id, tracker, root)
+            if preflight["status"] == "conflict":
+                conflict = preflight["conflicts"][0]
+                material_key = {
+                    "Tailored Resume": "resume_markdown",
+                    "ATS Resume": "ats_docx",
+                    "Cover Letter": "cover_letter",
+                    "Recruiter Message": "recruiter_message",
+                    "Hiring Manager Message": "hiring_manager_message",
+                    "Application Note": "application_note",
+                }.get(str(conflict.get("material_type") or ""), "resume_markdown")
+                checklist = validate_package_outputs(
+                    {}, {material_key: "Blocked: package role mismatch"}
+                )
+                role = str(resolved["application"].get("role") or "this role")
+                company = company_display_name(resolved["application"].get("company"))
+                raise PackageGenerationError(
+                    "Career Catalyst found a material associated with a different "
+                    f"opportunity. Generate a clean new draft for {role} at {company} "
+                    "or review the conflicting material.",
+                    checklist=checklist,
+                    details={
+                        "recovery": True,
+                        "conflicts": preflight["conflicts"],
+                    },
+                )
+        context = build_package_context(selected_id, tracker, root)
         automatic_refresh_attempted = bool(_context_refresh_attempted)
         if context.get("context_stale"):
             context = refresh_saved_package_context(selected_id, root, context=context)
@@ -569,6 +728,7 @@ def generate_package(
             raise PackageGenerationError(
                 "Package generation paused: paste the complete job description and re-score first."
             )
+        transaction = _GenerationTransaction(root)
         application = update_prospect(
             str(application["id"]),
             {
@@ -648,6 +808,23 @@ def generate_package(
             interview_prep = {}
 
         quality = calculate_package_quality(score, resume, cover_letter, intelligence)
+        generated_text = "\n".join(
+            Path(str(result.get("output_path") or "")).read_text(
+                encoding="utf-8", errors="replace"
+            )
+            for result in (resume, cover_letter)
+            if Path(str(result.get("output_path") or "")).is_file()
+        )
+        selected_projects = list(
+            (context.get("role_evidence_selection") or {}).get("primary_evidence")
+            or []
+        ) + list(
+            (context.get("role_evidence_selection") or {}).get("supporting_evidence")
+            or []
+        )
+        quality["seniority_warnings"] = seniority_erosion_warnings(
+            generated_text, selected_projects
+        )
         role_lens_quality = {
             label: result.get("role_lens_quality")
             for label, result in {
@@ -758,9 +935,14 @@ def generate_package(
         dashboard_path = _output_path(dashboard)
         if dashboard_path:
             outputs["dashboard"] = dashboard_path
+        transaction.commit()
     except PackageGenerationError:
+        if transaction:
+            transaction.rollback()
         raise
     except PackageContextMismatchError as error:
+        if transaction:
+            transaction.rollback()
         if not locals().get("automatic_refresh_attempted", _context_refresh_attempted):
             refresh_saved_package_context(
                 locals().get("selected_id") or str(job_file_or_tracker_id), root
@@ -769,7 +951,9 @@ def generate_package(
                 job_file_or_tracker_id,
                 root,
                 override_closed=override_closed,
+                public_transparency_requested=public_transparency_requested,
                 _context_refresh_attempted=True,
+                force_clean_draft=force_clean_draft,
             )
             recovered["context_recovery"] = {
                 "automatic_refresh_attempted": True,
@@ -818,8 +1002,12 @@ def generate_package(
             },
         ) from error
     except (OSError, TrackerValidationError, ValueError) as error:
+        if transaction:
+            transaction.rollback()
         raise PackageGenerationError(f"Could not generate package: {error}") from error
     except Exception as error:
+        if transaction:
+            transaction.rollback()
         # Existing generators expose several focused exception types. Preserve their useful text.
         raise PackageGenerationError(f"Could not generate package: {error}") from error
 

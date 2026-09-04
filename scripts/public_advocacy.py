@@ -123,8 +123,8 @@ def rewrite_public_advocacy(
                 flags=re.I,
             ):
                 kept.append(
-                    f"I would welcome the opportunity to contribute to {company} in the {role} role. "
-                    "I look forward to discussing how my experience can support the team's priorities."
+                    f"I would welcome the opportunity to contribute to {company} and discuss how "
+                    "my experience can support the team's priorities."
                 )
                 continue
             if _sentence_is_internal(
@@ -142,8 +142,8 @@ def rewrite_public_advocacy(
                 flags=re.I,
             ):
                 rebuilt = (
-                    f"I would welcome the opportunity to contribute to {company} in the {role} role. "
-                    "I look forward to discussing how my experience can support the team's priorities."
+                    f"I would welcome the opportunity to contribute to {company} and discuss how "
+                    "my experience can support the team's priorities."
                 )
             paragraphs.append(rebuilt)
     rewritten = "\n\n".join(paragraphs)

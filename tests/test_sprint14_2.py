@@ -1,3 +1,4 @@
+import shutil
 import tempfile
 import unittest
 from datetime import date
@@ -20,6 +21,7 @@ from scripts.prospect_intake import create_prospect
 
 
 TODAY = date(2026, 6, 30)
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 GAMEJOBS_URL = "https://gamejobs.co/Operations-Director-at-teamLFG"
 GREENHOUSE_URL = "https://job-boards.greenhouse.io/teamlfg/jobs/6101992004"
 
@@ -153,7 +155,8 @@ class Sprint142ActionAndPreviewTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.root = Path(self.temporary.name)
-        (self.root / "data").mkdir()
+        shutil.copytree(PROJECT_ROOT / "config", self.root / "config")
+        shutil.copytree(PROJECT_ROOT / "data", self.root / "data")
         (self.root / "jobs").mkdir()
         (self.root / "data" / "application_tracker.yml").write_text(
             "applications: []\n", encoding="utf-8"

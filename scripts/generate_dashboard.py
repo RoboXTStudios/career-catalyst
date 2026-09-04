@@ -1346,11 +1346,11 @@ def _render_match_score(
     return (
         compatibility
         +
-        '<section class="match-gate" aria-label="Match Recommendation">'
+        '<div class="match-details"><section class="match-gate" aria-label="Match Recommendation">'
         f'<strong class="match-tier">{html.escape(summary["match_recommendation"])}</strong>'
         f'<p class="match-summary">{html.escape(summary["reason"])}</p>'
         f'<p><strong>Next:</strong> {html.escape(summary["next_action"])}</p>'
-        '</section>'
+        '</section></div>'
     )
 
 

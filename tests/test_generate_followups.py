@@ -56,6 +56,14 @@ class GenerateFollowupsTests(unittest.TestCase):
         for application in tracker["applications"]:
             if application["id"] in SUBMITTED_IDS:
                 application["status"] = "Applied"
+                for key in (
+                    "is_archived",
+                    "archived_at",
+                    "archive_reason",
+                    "archived_from_status",
+                    "archive_history",
+                ):
+                    application.pop(key, None)
             if application["id"] in {PARAMOUNT_ID, GOOGLE_ID}:
                 application.update(
                     {

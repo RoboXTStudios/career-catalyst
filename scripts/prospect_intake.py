@@ -258,6 +258,64 @@ def _refresh_downstream_intelligence(
     )
 
 
+def _parsed_requirements(parsed: Dict[str, Any]) -> list[str]:
+    """Return one stable, de-duplicated requirement list from local parsing."""
+    values = list(parsed.get("responsibilities") or []) + list(
+        parsed.get("qualifications") or []
+    )
+    return list(
+        dict.fromkeys(str(value).strip() for value in values if str(value).strip())
+    )
+
+
+def _description_from_saved_job(path: Path) -> str:
+    """Recover the exact description body stored in a Career Catalyst job file."""
+    text = path.read_text(encoding="utf-8")
+    match = re.search(
+        r"^## Job Description\s*$\n+(.*)\Z", text, flags=re.I | re.M | re.S
+    )
+    return match.group(1).strip() if match else ""
+
+
+def recover_saved_prospect_context(
+    application: Dict[str, Any], project_root: Optional[PathInput] = None
+) -> Dict[str, Any]:
+    """Recover a legacy record from its local job file without network access."""
+    if application.get("job_description") and application.get("match_score") is not None:
+        return {}
+    root = Path(project_root) if project_root is not None else Path.cwd()
+    stored = Path(str(application.get("job_file") or ""))
+    path = stored if stored.is_absolute() else root / stored
+    if not path.is_file():
+        return {}
+    try:
+        description = str(
+            application.get("job_description") or _description_from_saved_job(path)
+        ).strip()
+    except OSError:
+        return {}
+    if len(description) < MINIMUM_DESCRIPTION_LENGTH:
+        return {}
+    try:
+        parsed = parse_job_description(path)
+    except (JobParseError, OSError):
+        return {}
+    updates: Dict[str, Any] = {
+        "job_description": description,
+        "requirements": _parsed_requirements(parsed),
+    }
+    if application.get("match_score") is None:
+        verification = normalize_job_source(application)
+        updates.update(
+            persisted_match_fields(
+                _source_adjusted_match_report(
+                    score_job_match(path, root), verification
+                )
+            )
+        )
+    return updates
+
+
 def _field_warnings(
     normalized: Dict[str, Any],
     verification: Dict[str, Any],
@@ -280,6 +338,8 @@ def _field_warnings(
 def create_prospect(
     job_data: Dict[str, Any],
     project_root: Optional[PathInput] = None,
+    *,
+    run_match_analysis: bool = True,
 ) -> Dict[str, Any]:
     """Create a clean job file and add or update its tracker entry."""
     root = Path(project_root) if project_root is not None else Path.cwd()
@@ -425,10 +485,17 @@ def create_prospect(
         ),
     )
     freshness = detect_job_freshness(markdown)
-    match_report = _source_adjusted_match_report(
-        score_job_data(normalized, root), verification
+    supplied_match_report = normalized_input.get("match_report")
+    match_report = (
+        _source_adjusted_match_report(score_job_data(normalized, root), verification)
+        if run_match_analysis
+        else _source_adjusted_match_report(supplied_match_report, verification)
+        if isinstance(supplied_match_report, dict)
+        else {}
     )
-    _refresh_downstream_intelligence(intelligence, match_report)
+    if match_report:
+        _refresh_downstream_intelligence(intelligence, match_report)
+    parsed_job = parse_job_description(job_path)
     context_fingerprint = prospect_context_fingerprint(
         {
             "prospect_id": tracker_id,
@@ -445,7 +512,12 @@ def create_prospect(
         {**intelligence, "match_report": match_report},
     )
     field_warnings = _field_warnings(normalized, verification, intelligence)
-    next_action = _merge_next_action(job_data.get("next_action"), verification)
+    requested_next_action = job_data.get("next_action")
+    if match_report.get("match_score") is not None and str(
+        requested_next_action or ""
+    ).lower().startswith("paste the job description"):
+        requested_next_action = "Review fit and generate application package."
+    next_action = _merge_next_action(requested_next_action, verification)
 
     tracker_result = add_prospect(
         {
@@ -467,6 +539,8 @@ def create_prospect(
             "field_warnings": field_warnings,
             "show_on_dashboard": bool(job_data.get("show_on_dashboard", True)),
             "job_file": _project_relative(job_path, root),
+            "job_description": description,
+            "requirements": _parsed_requirements(parsed_job),
             "company_category": intelligence["company_category"],
             "role_family": intelligence["role_family"],
             "role_lens": intelligence.get("role_lens", {}).get("primary"),
