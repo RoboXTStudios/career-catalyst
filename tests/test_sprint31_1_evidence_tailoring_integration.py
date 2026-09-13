@@ -236,10 +236,10 @@ def test_save_relevant_evidence_recomputes_score_without_touching_files(
         "resolve_job_reference",
         lambda *_args: {"job_path": tmp_path / "job.md"},
     )
-    monkeypatch.setattr(
-        app,
-        "score_job_match",
-        lambda *_args: {
+    def saved_posting_score(*_args, job_data_override):
+        assert job_data_override["job_description"] == "Saved posting body"
+        assert job_data_override["job_title"] == "Operations Director"
+        return {
             "match_score": 81,
             "match_tier": "Strong Match",
             "match_summary": "A complete test scoring report.",
@@ -247,8 +247,9 @@ def test_save_relevant_evidence_recomputes_score_without_touching_files(
             "match_gaps": ["Gap one"],
             "recommended_action": "Generate Package",
             "confidence": "High",
-        },
-    )
+        }
+
+    monkeypatch.setattr(app, "score_job_match", saved_posting_score)
     monkeypatch.setattr(
         app,
         "update_prospect",
@@ -256,7 +257,8 @@ def test_save_relevant_evidence_recomputes_score_without_touching_files(
     )
     app._render_relevant_evidence_panel(
         fake,
-        {"id": "netflix", "evidence_project_ids": [CAREER_CATALYST["id"]]},
+        {"id": "netflix", "evidence_project_ids": [CAREER_CATALYST["id"]],
+         "job_description": "Saved posting body", "role": "Operations Director"},
         "netflix",
     )
     assert updates == [

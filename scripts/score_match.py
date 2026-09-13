@@ -1,5 +1,7 @@
 """Score a parsed job description against Career Catalyst data."""
 
+from datetime import date
+
 import hashlib
 import json
 import re
@@ -22,6 +24,8 @@ try:
         extract_responsibilities,
         normalize_compensation,
         parse_job_description,
+        _analysis_text,
+        extract_metadata,
     )
 except ImportError:
     from application_tracker import (
@@ -39,6 +43,8 @@ except ImportError:
         extract_responsibilities,
         normalize_compensation,
         parse_job_description,
+        _analysis_text,
+        extract_metadata,
     )
 
 
@@ -60,9 +66,8 @@ GENERIC_TERMS = {
 }
 
 # Candidate-facing Evidence diagnostics are derived from semantic requirements,
-# not arbitrary one-word overlap. Legacy token matches remain available to the
-# established scoring calculation so this presentation fix cannot manufacture a
-# score change.
+# not arbitrary one-word overlap. Numeric keyword contribution remains separate,
+# with common-word noise excluded before either candidate or Evidence matching.
 MEANINGFUL_EVIDENCE_REQUIREMENTS = (
     "audience insights", "business operations", "campaign management",
     "content strategy", "cross-functional collaboration", "delivery outcomes",
@@ -153,7 +158,9 @@ OBVIOUS_NON_FIT_SIGNALS = (
 )
 
 MINIMUM_MEANINGFUL_DESCRIPTION_LENGTH = 80
-SCORING_ENGINE_VERSION = "sprint35-v1"
+SCORING_ENGINE_VERSION = "astra-v2"
+SCORING_INPUT_VERSION = "posting-body-v1"
+EVIDENCE_NOISE = {"not", "people", "them", "they", "who", "what", "how", "one", "real", "more", "than"}
 
 
 def incomplete_match_report(job_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -292,7 +299,7 @@ def _job_terms(parsed_job: Dict[str, Any]) -> List[str]:
 
 def _important_keywords(parsed_job: Dict[str, Any]) -> List[str]:
     keywords = parsed_job.get("keywords", [])
-    return [keyword for keyword in keywords if keyword and _terms(str(keyword))]
+    return [keyword for keyword in keywords if keyword and _terms(str(keyword)) and str(keyword).lower() not in EVIDENCE_NOISE]
 
 
 def _skills_from_data(career_data: Dict[str, Any]) -> List[str]:
@@ -578,7 +585,10 @@ def persisted_match_fields(report: Dict[str, Any]) -> Dict[str, Any]:
     ):
         return {}
 
-    return {field: report[field] for field in MATCH_PERSISTENCE_FIELDS}
+    fields = {field: report[field] for field in MATCH_PERSISTENCE_FIELDS}
+    if isinstance(report.get("evaluation_snapshot"), dict):
+        fields["evaluation_snapshot"] = dict(report["evaluation_snapshot"])
+    return fields
 
 
 def _empty_career_data() -> Dict[str, Any]:
@@ -977,11 +987,13 @@ def _score_parsed_job(
     root: Path,
     associated_evidence_projects: Optional[List[Dict[str, Any]]] = None,
     role_intelligence: Optional[Dict[str, Any]] = None,
+    career_data: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
-    try:
-        career_data = load_resume_foundation(root)
-    except DataLoadError:
-        career_data = _empty_career_data()
+    if career_data is None:
+        try:
+            career_data = load_resume_foundation(root)
+        except DataLoadError:
+            career_data = _empty_career_data()
     keywords = _important_keywords(parsed_job)
     associated_evidence_projects = associated_evidence_projects or []
     candidate_text = _candidate_text(career_data, associated_evidence_projects)
@@ -1040,6 +1052,39 @@ def _evaluation_fingerprint(value: Any) -> str:
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
+def normalized_posting(job: Dict[str, Any]) -> Dict[str, Any]:
+    """Separate substantive posting text from storage/UI metadata exactly once."""
+    text = _analysis_text(str(job.get("job_description") or job.get("raw_text") or ""))
+    heading = re.search(r"^##\s+Job Description\s*$", text, re.I | re.M)
+    if heading:
+        body = text[heading.end():].strip()
+    else:
+        lines = text.splitlines()
+        # Only remove the leading serialization envelope, never body labels.
+        while lines and (not lines[0].strip() or re.match(
+            r"^(?:# |Company:|Location:|Work arrangement:|Salary range:|Posting date:|"
+            r"Tracker ID:|Official URL:|Source type:|Verification status:)", lines[0], re.I
+        )):
+            lines.pop(0)
+        body = "\n".join(lines).strip()
+    metadata = extract_metadata(text)
+    parsed = {**metadata, **{k: v for k, v in job.items() if v not in (None, "")}}
+    parsed["job_title"] = job.get("job_title") or job.get("role") or metadata.get("job_title")
+    parsed["company"] = job.get("company") or metadata.get("company")
+    parsed["job_description"] = body
+    # Stable metadata is available for practical-fit scoring, but cannot enter
+    # the keyword-frequency ranking or masquerade as a requirement.
+    prefix = "\n".join(f"{label}: {parsed.get(key)}" for label, key in (
+        ("Posting date", "posting_date"), ("Work arrangement", "work_arrangement"),
+    ) if parsed.get(key))
+    parsed["raw_text"] = (prefix + "\n\n" + body).strip()
+    parsed["keywords"] = extract_keywords(body)
+    parsed["responsibilities"] = extract_responsibilities(body)
+    parsed["qualifications"] = extract_qualifications(body)
+    parsed["preferred_qualifications"] = extract_preferred_qualifications(body)
+    return parsed
+
+
 def _score_with_snapshot(
     parsed_job: Dict[str, Any],
     root: Path,
@@ -1047,9 +1092,14 @@ def _score_with_snapshot(
     role_intelligence: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Score one immutable posting/profile snapshot with Evidence separated."""
+    parsed_job = normalized_posting(parsed_job)
     selected = list(associated_evidence_projects or [])
-    base = _score_parsed_job(parsed_job, root, [], role_intelligence)
-    report = _score_parsed_job(parsed_job, root, selected, role_intelligence) if selected else dict(base)
+    try:
+        career_data = load_resume_foundation(root)
+    except DataLoadError:
+        career_data = _empty_career_data()
+    base = _score_parsed_job(parsed_job, root, [], role_intelligence, career_data)
+    report = _score_parsed_job(parsed_job, root, selected, role_intelligence, career_data) if selected else dict(base)
     evidence_ids = sorted(
         str(item.get("id") or item.get("title") or "") for item in selected
     )
@@ -1060,30 +1110,30 @@ def _score_with_snapshot(
             "posting_date", "raw_text", "responsibilities", "qualifications",
         )
     }
-    profile_paths = [
-        root / "data" / name
-        for name in ("skills.yml", "achievements.yml", "positions.yml", "projects.yml", "personal_brand.yml")
-    ]
-    profile_hashes = {
-        path.name: hashlib.sha256(path.read_bytes()).hexdigest()
-        for path in profile_paths
-        if path.is_file()
-    }
     base_score = int(base.get("match_score") or 0)
     final_score = int(report.get("match_score") or 0)
     report.update(
         {
+            "base_match_report": dict(base),
             "base_match_score": base_score,
             "evidence_score_delta": final_score - base_score,
             "evaluation_snapshot": {
                 "engine_version": SCORING_ENGINE_VERSION,
                 "posting_fingerprint": _evaluation_fingerprint(posting_inputs),
-                "profile_fingerprint": _evaluation_fingerprint(profile_hashes),
-                "evidence_fingerprint": _evaluation_fingerprint(evidence_ids),
+                "profile_fingerprint": _evaluation_fingerprint(career_data),
+                "evidence_fingerprint": _evaluation_fingerprint(selected),
+                "input_version": SCORING_INPUT_VERSION,
+                "evaluation_date": date.today().isoformat(),
+                "base_score": base_score,
+                "adjusted_score": final_score,
+                "evidence_delta": final_score - base_score,
+                "previous_evaluation_id": None,
                 "evidence_ids": evidence_ids,
             },
         }
     )
+    snapshot = report["evaluation_snapshot"]
+    snapshot["evaluation_id"] = _evaluation_fingerprint(snapshot)
     return report
 
 
@@ -1098,7 +1148,7 @@ def score_job_data(
     if incomplete:
         return incomplete
     root = Path(project_root) if project_root is not None else Path.cwd()
-    raw_text = str(job_data.get("raw_text") or job_data.get("job_description") or "")
+    raw_text = str(job_data.get("job_description") or job_data.get("raw_text") or "")
     metadata_lines = "\n".join(
         line
         for line in (
@@ -1124,6 +1174,8 @@ def score_job_data(
             disclosure_state=job_data.get("compensation_disclosure_state"),
         ),
         "posting_date": job_data.get("posting_date"),
+        "work_arrangement": job_data.get("work_arrangement"),
+        "job_description": raw_text,
         "keywords": extract_keywords(canonical_text),
         "responsibilities": extract_responsibilities(canonical_text),
         "qualifications": extract_qualifications(canonical_text),
@@ -1137,11 +1189,19 @@ def score_job_match(
     project_root: Optional[PathInput] = None,
     associated_evidence_projects: Optional[List[Dict[str, Any]]] = None,
     role_intelligence: Optional[Dict[str, Any]] = None,
+    job_data_override: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Return the legacy tailoring report plus the Sprint 13 decision gate."""
     root = Path(project_root) if project_root is not None else Path.cwd()
     parsed_job = parse_job_description(root / job_path)
-    raw_text = str(parsed_job.get("raw_text") or "")
+    if job_data_override is not None:
+        parsed_job.update({key: value for key, value in job_data_override.items() if value is not None})
+        if "salary_range" in job_data_override and "compensation" not in job_data_override:
+            parsed_job["compensation"] = normalize_compensation(
+                job_data_override["salary_range"], source="saved",
+                disclosure_state=job_data_override.get("compensation_disclosure_state"),
+            )
+    raw_text = str(parsed_job.get("job_description") or parsed_job.get("raw_text") or "")
     description_match = re.search(
         r"^##\s+Job Description\s*$\n(.*)", raw_text, flags=re.I | re.M | re.S
     )

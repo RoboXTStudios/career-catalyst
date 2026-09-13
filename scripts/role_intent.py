@@ -287,6 +287,12 @@ def _score_archetype(
         for phrase in signals.get(tier, []) or []:
             if _contains(text, str(phrase)):
                 matches.append((weight, str(phrase)))
+    if rule.get("requires_specific_action"):
+        action_weight = int(weights.get("action_outcome", 0))
+        discriminating = [phrase for weight, phrase in matches
+                          if weight == action_weight and phrase not in rule.get("nonspecific_actions", [])]
+        if not discriminating:
+            matches = [(weight, phrase) for weight, phrase in matches if weight < action_weight]
     matches.sort(key=lambda item: (-item[0], item[1].lower()))
     return sum(weight for weight, _phrase in matches), matches
 
@@ -383,6 +389,17 @@ def build_role_intent(
         for score, archetype, _matches in ranked
         if archetype != primary and score >= secondary_threshold and score >= best_score * 0.5
     ][:3]
+    try:
+        from .dynamic_role_intelligence import is_agency_delivery_role
+    except ImportError:
+        from dynamic_role_intelligence import is_agency_delivery_role
+    agency_delivery = is_agency_delivery_role(
+        str(role.get("job_title") or role.get("role") or ""), text
+    )
+    if agency_delivery:
+        primary = DEFAULT_ARCHETYPE
+        confidence = "high"
+        secondary = []
     rule = deepcopy(archetypes[primary])
     resume = deepcopy(rule.get("resume") or {})
     cover_letter = deepcopy(rule.get("cover_letter") or {})
@@ -417,6 +434,23 @@ def build_role_intent(
         resume["selected_project_limit"] = 0
         resume["earlier_career_policy"] = "omit"
         resume["target_max_pages"] = 2
+    if agency_delivery:
+        primary_hiring_need = (
+            "Lead and develop the agency's delivery-team leaders; redesign workflows, establish operating "
+            "standards and quality, improve capacity visibility, and partner with technology and executive "
+            "leaders on practical AI enablement."
+        )
+        lead_evidence = ["people_leadership", "leadership_development", "workflow_governance", "operating_standards"]
+        supporting_evidence = ["delivery_outcomes", "capacity_visibility", "technology_enablement", "executive_partnership"]
+        suppressed_evidence = ["unrelated_independent_projects", "additional_early_experience"]
+        resume.update({
+            "headline": "Senior Operations & Transformation Leader | People Leadership | Delivery | Workflow Design",
+            "summary": "Operations and transformation leader who develops people, clarifies delivery standards, "
+                       "redesigns workflows, and connects quality and capacity visibility with practical technology enablement. "
+                       "Brings enterprise media operations experience and cross-functional leadership to complex delivery organizations.",
+            "competency_priorities": ["People Leadership", "Leadership Development", "Operations Transformation", "Workflow Governance", "Quality Assurance", "Cross-Functional Leadership", "Process Excellence", "Executive Stakeholder Management"],
+        })
+        cover_letter["framing"] = primary_hiring_need
     resume.setdefault("headline_profile", resume.pop("headline", ""))
     if "headline" in resume:
         resume.pop("headline")
@@ -450,13 +484,14 @@ def build_role_intent(
             package_label = "Marketing Operations / Campaign Management"
         elif dynamic_family == "strategy_gtm_operations" and _contains(text, "marketing operations"):
             package_label = "Marketing Operations / Strategy & Business Operations"
-    reasoning_signals = [phrase for _weight, phrase in selected_matches[:12]]
+    reasoning_signals = list(lead_evidence + supporting_evidence) if agency_delivery else [phrase for _weight, phrase in selected_matches[:12]]
     if explicit_lead:
         # Dynamic families expose the same explicit production or operating
         # signals used by the Tailoring Plan instead of generic archetype
         # matches such as "creative" or "tracking".
         reasoning_signals = list(explicit_lead)
     return {
+        "mandate": "agency_delivery" if agency_delivery else "",
         "primary_archetype": primary,
         "package_role_family": package_family,
         "package_role_label": package_label,
@@ -619,6 +654,7 @@ def role_intent_snapshot(role_intent: Mapping[str, Any]) -> dict[str, Any]:
     resume = role_intent.get("resume") or {}
     cover = role_intent.get("cover_letter") or {}
     return {
+        "mandate": role_intent.get("mandate", ""),
         "primary_archetype": role_intent.get("primary_archetype"),
         "package_role_family": role_intent.get("package_role_family"),
         "package_role_label": role_intent.get("package_role_label"),
@@ -790,6 +826,7 @@ def tailoring_plan(role_intent: Mapping[str, Any]) -> dict[str, Any]:
         "system_recommended_projects": humanize_values(
             resume.get("selected_project_ids") or []
         ),
+        "planned_artifact_selections": dict(role_intent.get("planned_artifact_selections") or {}),
         "resume_projects_used": list(output_use.get("resume_projects_used") or []),
         "cover_letter_projects_used": list(
             output_use.get("cover_letter_projects_used") or []

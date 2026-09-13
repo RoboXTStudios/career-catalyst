@@ -205,6 +205,9 @@ def _neutralize_properties(payload: bytes, *, core: bool) -> bytes:
     for child in list(root):
         if child.tag in removable:
             root.remove(child)
+    if core:
+        for tag in (f"{{{DC_NS}}}creator", f"{{{CP_NS}}}lastModifiedBy"):
+            etree.SubElement(root, tag).text = "Trisha Lynch"
     return etree.tostring(root, xml_declaration=True, encoding="UTF-8", standalone=True)
 
 
@@ -279,7 +282,9 @@ def inspect_docx_hygiene(path: str | Path) -> dict[str, Any]:
         and not prohibited
         and not comment_parts
         and not custom_parts
-        and not any(core_properties.values())
+        and core_properties["creator"] in {"", "Trisha Lynch"}
+        and core_properties["last_modified_by"] in {"", "Trisha Lynch"}
+        and not core_properties["created"] and not core_properties["modified"]
     )
     return {
         "status": "PASS" if valid else "BLOCKED",

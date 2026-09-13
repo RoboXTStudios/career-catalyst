@@ -12,6 +12,9 @@ except ImportError:
 
 
 IMPORTANT_PHRASES = (
+    "agency operations", "delivery outcomes", "team leads", "operating standards",
+    "quality standards", "capacity visibility", "people leadership", "leadership development",
+
     "enterprise strategy",
     "cross-functional",
     "operational planning",
@@ -97,6 +100,7 @@ RESPONSIBILITY_HEADINGS = (
     "key responsibilities",
     "what you'll do",
     "what you will do",
+    "what you'll own",
     "the role",
 )
 
@@ -112,10 +116,14 @@ PREFERRED_QUALIFICATION_HEADINGS = (
     "preferred qualifications",
     "nice to have",
     "bonus points",
+    "a strong plus",
 )
 
 BOILERPLATE_HEADINGS = (
     "about us",
+    "how we work",
+    "growth & opportunity",
+    "what we offer",
     "company overview",
     "benefits",
     "equal employment opportunity",
@@ -610,7 +618,11 @@ def _extract_section_items(text: str, headings: Tuple[str, ...], stop_headings: 
         if not stripped:
             continue
 
-        if _is_heading(stripped):
+        plain_heading = _normalize_heading(stripped) in (
+            RESPONSIBILITY_HEADINGS + QUALIFICATION_HEADINGS
+            + PREFERRED_QUALIFICATION_HEADINGS + BOILERPLATE_HEADINGS
+        )
+        if _is_heading(stripped) or plain_heading:
             if stop_headings and _section_matches(stripped, stop_headings):
                 active = False
             else:
@@ -696,10 +708,15 @@ def _summary(parsed: Dict[str, Any]) -> str:
 
 def parse_job_description(file_path: PathInput) -> Dict[str, Any]:
     """Parse a local job description file into a structured dictionary."""
-    text = _analysis_text(load_job_description(file_path))
+    return parse_job_text(load_job_description(file_path), source_path=str(file_path))
+
+
+def parse_job_text(text: str, *, source_path: str = "") -> Dict[str, Any]:
+    """Parse persisted or unsaved posting text without a temporary file."""
+    text = _analysis_text(text)
     metadata = extract_metadata(text)
     parsed = {
-        "source_path": str(file_path),
+        "source_path": source_path,
         "raw_text": text,
         "job_title": metadata["job_title"],
         "company": (

@@ -123,6 +123,15 @@ def material_editing_plan(
         "shared_services_operations": "traditional_pmo_governance",
     }.get(intent_category, detect_role_editing_category(role, rules))
     rule = dict(rules.get(category, {}))
+    try:
+        from .evidence_tailoring import reconcile_manual_evidence
+    except ImportError:
+        from evidence_tailoring import reconcile_manual_evidence
+    merged_omissions = dict(intent)
+    merged_omissions["suppressed_evidence"] = list(dict.fromkeys(
+        [*intent.get("suppressed_evidence", []), *rule.get("omitted_evidence", [])]
+    ))
+    omissions = reconcile_manual_evidence(merged_omissions, intent.get("manual_evidence_projects", []))["suppressed_evidence"]
     resume = intent.get("resume") or {}
     return {
         "role_category": category,
@@ -134,11 +143,7 @@ def material_editing_plan(
                 [*intent.get("supporting_evidence", []), *rule.get("supporting_evidence", [])]
             )
         ),
-        "omitted_evidence": list(
-            dict.fromkeys(
-                [*intent.get("suppressed_evidence", []), *rule.get("omitted_evidence", [])]
-            )
-        ),
+        "omitted_evidence": omissions,
         "preferred_terms": list(rule.get("preferred_terms", [])),
         "banned_phrases": list(rule.get("banned_phrases", [])),
         "preferred_cover_letter_framing": (

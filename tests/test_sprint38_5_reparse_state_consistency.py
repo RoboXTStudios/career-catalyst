@@ -88,17 +88,17 @@ def test_reopened_live_nation_uses_one_saved_score_and_effective_role_state(tmp_
         root,
     )
 
-    # The posting parses to different metadata and a different computed score,
-    # but the saved prospect state is authoritative after reparse/rescore.
-    assert context["match_report"]["match_score"] == 62
-    assert context["baseline_match_report"]["match_score"] == 62
-    assert context["evidence_score_contribution"] == {
-        "before": 62,
-        "after": 62,
-        "delta": 0,
-        "matched_requirements": [],
-        "explanation": "No additional role requirements were matched by the selected Evidence.",
-    }
+    # Saved metadata remains authoritative, but a legacy score is not an
+    # independently measured no-Evidence baseline for a new evaluation.
+    from scripts.score_match import score_job_match
+    expected = score_job_match(context["job_reference"], root, job_data_override=context["parsed_job"])
+    score = expected["match_score"]
+    assert context["match_report"]["match_score"] == score
+    assert context["baseline_match_report"]["match_score"] == score
+    assert context["evidence_score_contribution"]["before"] == score
+    assert context["evidence_score_contribution"]["after"] == score
+    assert context["evidence_score_contribution"]["delta"] == 0
+    assert load_application_tracker(root)[0]["match_score"] == 62
     assert "Not scored yet" not in _match_score_html(context["match_report"])
     assert context["parsed_job"]["location"] == "Work From Home - New York"
     assert context["parsed_job"]["work_arrangement"] == "Not specified"

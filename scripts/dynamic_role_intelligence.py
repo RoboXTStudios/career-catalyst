@@ -153,6 +153,9 @@ CATEGORY_SIGNALS = {
         "engineering",
     ),
     "marketing_advertising": (
+        "marketing agency",
+        "agency operations",
+        "digital marketing",
         "marketing operations",
         "advertising",
         "campaign",
@@ -498,6 +501,16 @@ def infer_company_context(
         ),
         "",
     )
+    # Explicit employer identity outranks incidental tooling requirements.
+    agency_identity = (
+        _contains_phrase(_normalize(job_title), "agency operations")
+        or bool(re.search(r"\bwe are (?:a |an |the )?(?:\w+ ){0,5}marketing agency\b", text))
+        or bool(company_key and re.search(
+            rf"\b{re.escape(company_key)} is (?:\w+ ){{0,18}}marketing agency\b", text
+        ))
+    )
+    if not category and agency_identity and _contains_phrase(text, "marketing agency"):
+        category = "marketing_advertising"
     top_score = max(scores.values(), default=0)
     if not category:
         category = next(
@@ -521,6 +534,16 @@ def infer_company_context(
         "matched_signals": matched_signals,
         "reasoning_summary": summary,
     }
+
+
+def is_agency_delivery_role(job_title: str = "", job_description: str = "") -> bool:
+    """Recognize delivery leadership, not merely an agency client context."""
+    title = _normalize(job_title)
+    text = _normalize(job_description)
+    return _contains_phrase(title, "agency operations") and any(
+        _contains_phrase(text, signal)
+        for signal in ("delivery teams", "delivery organization", "delivery outcomes", "team leads")
+    )
 
 
 def detect_role_family(job_title: str = "", job_description: str = "") -> str:
@@ -615,6 +638,8 @@ def detect_role_family(job_title: str = "", job_description: str = "") -> str:
     )
     production_hits = [signal for signal in production_signals if _contains_phrase(combined, signal)]
     production_density = len(production_hits)
+    if _contains_phrase(title, "agency operations"):
+        return "business_operations"
     if product_marketing_title:
         return "product_marketing"
     if product_operations_title:

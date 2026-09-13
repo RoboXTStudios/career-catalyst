@@ -306,6 +306,8 @@ def _select_core_competencies(
     role_intent: Optional[Dict[str, Any]] = None,
 ) -> List[str]:
     archetype = str((role_intent or {}).get("primary_archetype") or "")
+    if (role_intent or {}).get("mandate") == "agency_delivery":
+        return list(role_intent["resume"]["competency_priorities"])[:8]
     prescribed = competency_recipe(archetype)
     if prescribed:
         return prescribed
@@ -917,6 +919,13 @@ def _render_markdown(
             role_intent,
         )
     )
+    if associated_evidence_projects and (role_intent or {}).get("package_role_family") not in {
+        "experiential_live_event_production", "music_partnerships_label_relations"
+    }:
+        evidence_skills = _dedupe(str(skill) for project in associated_evidence_projects
+            for skill in project.get("skills", []) if str(skill).strip())
+        relevant_skills = [skill for skill in evidence_skills if _normalize_text(skill) in _normalize_text(str(parsed_job.get("raw_text") or ""))]
+        competencies = _dedupe([*relevant_skills[:3], *competencies])[:8]
     platforms = (
         _platform_categories(career_data)
         if complete_foundation
@@ -1187,7 +1196,7 @@ def tailor_resume(
         capacity=3,
     )
     resume_evidence_projects = evidence_selection["used_projects"]
-    match_report = score_job_match(job_path, root, associated_evidence_projects)
+    match_report = score_job_match(job_path, root, associated_evidence_projects, job_data_override=parsed_job)
     markdown = normalize_candidate_text(
         _render_markdown(
             career_data,

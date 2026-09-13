@@ -61,6 +61,8 @@ role_intent:
         framing: Connect active AI workflow building with governance, adoption, and enterprise operationalization.
 
     marketing_operations_integration:
+      requires_specific_action: true
+      nonspecific_actions: [throughput]
       signals:
         action_outcome:
           - integrate brands

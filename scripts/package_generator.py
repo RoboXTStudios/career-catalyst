@@ -564,6 +564,16 @@ def build_package_context(
             f"No exact local job file is associated with tracker entry '{prospect_id}'."
         )
     parsed = parse_job_description(job_path)
+    if str(application.get("job_description") or "").strip():
+        try:
+            from .parse_job import parse_job_text
+        except ImportError:
+            from parse_job import parse_job_text
+        saved = str(application["job_description"])
+        prefix = "\n".join(f"{label}: {application.get(key) or parsed.get(key) or ''}" for label, key in (
+            ("Company", "company"), ("Location", "location"), ("Work arrangement", "work_arrangement"),
+            ("Salary range", "salary_range"), ("Posting date", "posting_date")))
+        parsed = parse_job_text(f"# {application.get('role') or parsed.get('job_title')}\n{prefix}\n\n## Job Description\n{saved}", source_path=str(job_path))
     # A saved prospect is the authoritative source for manually verified
     # location/work-arrangement metadata.  Posting text can contain a newer or
     # lower-confidence inference, but it must not replace a value already
@@ -652,51 +662,50 @@ def build_package_context(
         root,
         [],
         role_intelligence=intelligence,
+        job_data_override=parsed,
     )
     adjusted_match = score_job_match(
         job_reference,
         root,
         associated_evidence,
         role_intelligence=intelligence,
+        job_data_override=parsed,
     )
-    # Reparse/rescore persists the canonical score on the stable tracker
-    # record.  Package context must keep that score as the base even when an
-    # Evidence evaluation is incomplete or contributes no new requirements.
-    # Only a complete, positively matched Evidence report may provide a valid
-    # adjusted score; genuinely unscored records do not inherit anything.
-    canonical_match = persisted_match_fields(application)
-    adjusted_fields = persisted_match_fields(adjusted_match)
-    evidence_matches = list(adjusted_match.get("associated_evidence_matches") or [])
-    if canonical_match:
-        canonical_score = int(canonical_match["match_score"])
-        for field, value in canonical_match.items():
-            baseline_match[field] = value
-        baseline_match["match_band"] = canonical_match["match_tier"]
-        baseline_match.pop("incomplete_import", None)
-        baseline_match.pop("missing_required_fields", None)
-        baseline_match["base_match_score"] = canonical_score
-        baseline_match["evidence_score_delta"] = 0
-
-        if not adjusted_fields or not evidence_matches:
-            # An incomplete/no-op Evidence evaluation must not turn a valid
-            # persisted score into 0 or “Not scored”.
-            for field, value in canonical_match.items():
-                adjusted_match[field] = value
-            adjusted_match["match_band"] = canonical_match["match_tier"]
+    # The scorer's paired baseline uses the identical in-memory foundation.
+    baseline_match = dict(adjusted_match.get("base_match_report") or baseline_match)
+    if not persisted_match_fields(adjusted_match):
+        canonical_match = persisted_match_fields(application)
+        if canonical_match:
+            adjusted_match.update(canonical_match)
+            adjusted_match["evaluation_unavailable"] = True
             adjusted_match.pop("incomplete_import", None)
             adjusted_match.pop("missing_required_fields", None)
-            adjusted_match["base_match_score"] = canonical_score
-            adjusted_match["evidence_score_delta"] = 0
-        else:
-            # Keep the canonical persisted score as the “changed from” value
-            # even when selected Evidence produces a valid adjustment.
-            adjusted_match["base_match_score"] = canonical_score
-            adjusted_match["evidence_score_delta"] = (
-                int(adjusted_match["match_score"]) - canonical_score
-            )
+    # A fresh no-Evidence calculation is the baseline. Never replace it with
+    # an already adjusted tracker score, including on legacy applications.
+    if not adjusted_match.get("evaluation_unavailable"):
+        adjusted_match["base_match_score"] = baseline_match.get("match_score")
+        adjusted_match["evidence_score_delta"] = int(adjusted_match.get("match_score") or 0) - int(baseline_match.get("match_score") or 0)
+        snapshot = adjusted_match.get("evaluation_snapshot")
+        previous = application.get("evaluation_snapshot") or {}
+        if isinstance(snapshot, dict):
+            snapshot["previous_evaluation_id"] = (previous.get("previous_evaluation_id")
+                if previous.get("evaluation_id") == snapshot.get("evaluation_id") else previous.get("evaluation_id"))
     score_contribution = evidence_score_contribution(baseline_match, adjusted_match)
-    role_intent["manual_evidence_projects"] = [dict(project) for project in associated_evidence]
+    try:
+        from .evidence_tailoring import reconcile_manual_evidence
+    except ImportError:
+        from evidence_tailoring import reconcile_manual_evidence
+    role_intent = reconcile_manual_evidence(role_intent, associated_evidence)
     role_intent["evidence_score_contribution"] = score_contribution
+    try:
+        from .evidence_tailoring import public_artifact_selection, select_evidence_for_artifact
+    except ImportError:
+        from evidence_tailoring import public_artifact_selection, select_evidence_for_artifact
+    role_intent["planned_artifact_selections"] = {
+        kind: public_artifact_selection(select_evidence_for_artifact(
+            parsed, associated_evidence, artifact_type=kind, capacity=capacity
+        )) for kind, capacity in (("ats_resume", 3), ("cover_letter", 2))
+    }
     context = {
         "prospect_id": str(application.get("id") or prospect_id),
         "slug": str(application.get("stable_slug") or application.get("id") or prospect_id),

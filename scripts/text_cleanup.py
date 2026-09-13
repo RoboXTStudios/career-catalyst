@@ -163,6 +163,15 @@ def normalize_candidate_text(text: str, *, employer: str = "") -> str:
     # Job boards commonly double-escape role titles and prose (for example,
     # ``&amp;``). Decode standard HTML entities only at the candidate-facing
     # boundary; source tracker/Evidence records remain unchanged.
+    text = str(text or "")
+    # Candidate-facing prose should describe the work, not narrate claim checks.
+    for phrase in (
+        "while staying precise about the scope of my direct experience",
+        "based on the evidence available", "where my experience directly aligns",
+    ):
+        text = re.sub(r"\s*,?\s*" + re.escape(phrase), "", text, flags=re.I)
+    text = text.replace("keep claims close to the facts", "make ownership and decisions clear")
+    text = text.replace("an approach grounded in the role's actual priorities rather than assumptions about the company", "a practical approach to the team's priorities")
     cleaned = unescape(str(text or ""))
     cleaned = re.sub(r"[ \t]*\u2014+[ \t]*", " - ", cleaned)
     replacements = (

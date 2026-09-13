@@ -60,9 +60,10 @@ def test_selected_evidence_noop_preserves_canonical_package_score(tmp_path, monk
     assert len(context["associated_evidence_projects"]) == len(selected) == 3
     assert context["baseline_match_report"]["match_score"] == 62
     assert context["match_report"]["match_score"] == 62
-    assert context["evidence_score_contribution"]["before"] == 62
+    assert context["evidence_score_contribution"]["before"] is None
     assert context["evidence_score_contribution"]["after"] == 62
-    assert context["evidence_score_contribution"]["delta"] == 0
+    assert context["evidence_score_contribution"]["delta"] is None
+    assert context["match_report"]["evaluation_unavailable"] is True
     assert context["match_report"].get("incomplete_import") is not True
     assert before["applications"][0]["match_score"] == 62
     assert before["applications"][0]["evidence_project_ids"] == [item["id"] for item in selected]

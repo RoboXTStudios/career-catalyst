@@ -296,7 +296,10 @@ def test_docx_hygiene_removes_metadata_comments_and_revision_markup(tmp_path: Pa
     assert report["status"] == "PASS"
     assert report["comments"] == report["revisions"] == 0
     assert report["revision_session_attributes"] == 0
-    assert not any(report["core_properties"].values())
+    assert report["core_properties"] == {
+        "creator": "Trisha Lynch", "last_modified_by": "Trisha Lynch",
+        "created": "", "modified": "",
+    }
     assert report["prohibited_generator_identifiers"] == []
     assert report["visible_content_preserved"]
     assert extract_docx_structure(path)["text"] == before == "Final visible candidate text"

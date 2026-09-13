@@ -491,6 +491,13 @@ def candidate_cover_letter(context: Mapping[str, Any]) -> str:
             "cross-functional follow-through that has defined my work. I am most effective when leaders need "
             "shared priorities, clear ownership, useful operating visibility, and systems that help people make better decisions."
         )
+    if intent.get("mandate") == "agency_delivery":
+        opening = (
+            f"The {role} role at {company} centers on leading the delivery organization: developing team "
+            "leaders, redesigning workflows, establishing operating standards and quality, and making capacity "
+            "visible. It calls for a working partner to technology and executive leaders who can help people "
+            "adopt practical AI tools while protecting the judgment and craft that clients depend on."
+        )
     leadership = (
         "At OMG23 / OMD Entertainment, Omnicom Media Group, I advanced through five roles to Group Director. I led 10 direct "
         "reports and provided strategic and operational leadership across an integrated 64-person organization "

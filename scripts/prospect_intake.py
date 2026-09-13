@@ -368,11 +368,20 @@ def create_prospect(
         source_url=official_url,
     )
     freshness = detect_job_freshness(markdown)
+    supplied_match = job_data.get("match_report")
     match_report = (
-        _source_adjusted_match_report(score_job_match(job_path, root), verification)
-        if run_match_analysis
-        else {}
+        _source_adjusted_match_report(supplied_match, verification)
+        if isinstance(supplied_match, dict) and persisted_match_fields(supplied_match)
+        else (
+            _source_adjusted_match_report(score_job_match(job_path, root), verification)
+            if run_match_analysis else {}
+        )
     )
+    parsed_requirements = parse_job_description(job_path)
+    requirements = list(dict.fromkeys([
+        *parsed_requirements.get("responsibilities", []),
+        *parsed_requirements.get("qualifications", []),
+    ]))
     field_warnings = _field_warnings(normalized, verification, intelligence)
     next_action = _merge_next_action(job_data.get("next_action"), verification)
 
@@ -413,6 +422,8 @@ def create_prospect(
             "field_warnings": field_warnings,
             "show_on_dashboard": bool(job_data.get("show_on_dashboard", True)),
             "job_file": _project_relative(job_path, root),
+            "job_description": description,
+            "requirements": requirements,
             "company_category": intelligence["company_category"],
             "role_family": intelligence["role_family"],
             "company_voice_profile": intelligence["profile_name"],

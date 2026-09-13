@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
+
 import hashlib
 import json
 import re
@@ -637,16 +639,41 @@ def cover_letter_project_paragraph(
     return f"{lead} {title}, {actions}{proof}"
 
 
+def reconcile_manual_evidence(role_intent: Mapping[str, Any], projects: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    """Resolve manual identity precedence before any automatic guidance is consumed."""
+    resolved = deepcopy(dict(role_intent))
+    selected = [dict(project) for project in projects]
+    aliases = {
+        " ".join(re.findall(r"[a-z0-9]+", str(value).lower()))
+        for project in selected for value in (project.get("id"), project.get("title"), project.get("name"))
+        if value
+    }
+    kinds = {project_kind(project) for project in selected} - {"other"}
+    def selected_identity(value: Any) -> bool:
+        identity = " ".join(re.findall(r"[a-z0-9]+", str(value).lower()))
+        return identity in aliases or project_kind({"id": value}) in kinds
+    resolved["suppressed_evidence"] = [
+        value for value in resolved.get("suppressed_evidence", []) if not selected_identity(value)
+    ]
+    resolved["manual_evidence_projects"] = selected
+    return resolved
+
+
 def evidence_score_contribution(
     before: Mapping[str, Any], after: Mapping[str, Any]
 ) -> dict[str, Any]:
+    if after.get("evaluation_unavailable"):
+        return {"before": None, "after": after.get("match_score"), "delta": None,
+                "matched_requirements": [], "explanation": "Saved score retained; a current Evidence evaluation is unavailable."}
     before_score = int(before.get("match_score") or 0)
     after_score = int(after.get("match_score") or 0)
     details = after.get("associated_evidence_match_details")
     matched = list(details if isinstance(details, list) else after.get("associated_evidence_matches") or [])
     noise = {"more", "than", "cross-functional", "cross functional"}
     matched = [value for value in matched if str(value).strip().lower() not in noise]
-    if not matched:
+    if not matched and after_score != before_score:
+        explanation = "Numeric contribution reflects keyword overlap; no substantive requirement matches were identified."
+    elif not matched:
         explanation = "No additional role requirements were matched by the selected Evidence."
     elif after_score == before_score:
         explanation = (

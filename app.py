@@ -780,7 +780,7 @@ def update_dashboard_role(
     for field in ("match_strengths", "match_gaps"):
         if field in values:
             updates[field] = list(values.get(field) or [])
-    for field in ("inferred_role_intelligence", "inferred_role_intent"):
+    for field in ("inferred_role_intelligence", "inferred_role_intent", "evaluation_snapshot"):
         if field in values and isinstance(values[field], dict):
             updates[field] = dict(values[field])
     if "compensation_manual_override" in values:
@@ -1880,7 +1880,8 @@ def _render_relevant_evidence_panel(
             _render_missing_posting_notice(st, _safe_job_reference_health(application, PROJECT_ROOT))
             return
         match_report = score_job_match(
-            resolved["job_path"], PROJECT_ROOT, selected_projects
+            resolved["job_path"], PROJECT_ROOT, selected_projects,
+            job_data_override={**application, "job_title": application.get("role")},
         )
         try:
             update_prospect(
@@ -3246,6 +3247,12 @@ def _render_tailoring_plan(st: Any, role_intent: Dict[str, Any]) -> None:
         )
         for label, value in rows:
             st.markdown(f"**{label}:** {value}")
+        for allocation in plan.get("planned_artifact_selections", {}).values():
+            label = str(allocation.get("artifact_label") or "artifact")
+            titles = ", ".join(item["title"] for item in allocation.get("used", [])) or "None"
+            st.markdown(f"**Planned {label} Evidence (capacity {allocation['capacity']}):** {titles}")
+            for item in allocation.get("omitted", []):
+                st.caption(f"{item['title']}: {item['reason']}")
         contribution = plan.get("evidence_score_contribution") or {}
         if contribution:
             st.markdown("**Selected Evidence Evaluated:** " + (
@@ -3255,8 +3262,9 @@ def _render_tailoring_plan(st: Any, role_intent: Dict[str, Any]) -> None:
                 "**Evidence-Supported Matches:** "
                 + (", ".join(contribution.get("matched_requirements") or []) or "None")
             )
-            st.markdown(f"**Evidence Contribution:** {int(contribution.get('delta') or 0):+d}")
-            st.markdown(f"**Score Changed From:** {contribution.get('before', 0)}")
+            delta = contribution.get("delta")
+            st.markdown("**Evidence Contribution:** " + (f"{delta:+d}" if isinstance(delta, int) else "Unavailable"))
+            st.markdown(f"**Current Evaluation Base Score:** {contribution.get('before', 0)}")
             st.markdown(f"**Current Evidence-Adjusted Match Score:** {contribution.get('after', 0)}")
             st.caption(str(contribution.get("explanation") or ""))
         if plan.get("resume_projects_used") or plan.get("cover_letter_projects_used") or plan.get("projects_not_used"):
@@ -3551,7 +3559,7 @@ def _render_add_prospect(st: Any) -> None:
     try:
         with st.spinner("Saving prospect…"):
             intake = create_prospect(
-                build_prospect_payload(values),
+                {**build_prospect_payload(values), "match_report": match_report},
                 PROJECT_ROOT,
                 run_match_analysis=False,
             )

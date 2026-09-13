@@ -791,6 +791,17 @@ def update_prospect(
 
     cleaned = _explicit_updates(updates)
     cleaned.pop("id", None)
+    if isinstance(cleaned.get("evaluation_snapshot"), dict):
+        incoming = dict(cleaned["evaluation_snapshot"])
+        previous = entry.get("evaluation_snapshot") or {}
+        if incoming.get("evaluation_id") == previous.get("evaluation_id"):
+            incoming["previous_evaluation_id"] = previous.get("previous_evaluation_id")
+        else:
+            incoming["previous_evaluation_id"] = previous.get("evaluation_id")
+        cleaned["evaluation_snapshot"] = incoming
+    elif "match_score" in cleaned:
+        # A legacy score update cannot retain provenance belonging to another score.
+        cleaned["evaluation_snapshot"] = None
     if "status" in cleaned:
         raw_status = str(cleaned["status"]).strip()
         cleaned["status"] = normalize_status(raw_status)

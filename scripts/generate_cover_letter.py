@@ -159,7 +159,7 @@ def load_generation_context(
         "material_editing_plan": editing_plan,
         "role_intent": shared_role_intent,
         "parsed_job": parsed_job,
-        "match_report": score_job_match(job_path, root, associated_evidence_projects),
+        "match_report": score_job_match(job_path, root, associated_evidence_projects, job_data_override=parsed_job),
         **voice_context,
     }
     context["cover_letter_evidence_selection"] = cover_letter_evidence_decision(
