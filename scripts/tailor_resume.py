@@ -793,13 +793,13 @@ def _relevant_associated_evidence(
     projects: List[Dict[str, Any]], parsed_job: Dict[str, Any]
 ) -> List[Dict[str, Any]]:
     """Keep relevant prospect-scoped Evidence in the user's saved order."""
-    relevant = relevant_selected_evidence(projects, parsed_job, limit=3)
+    relevant = relevant_selected_evidence(projects, parsed_job, limit=4)
     relevant_ids = {str(project.get("id") or project_title(project)) for project in relevant}
     return [
         project
         for project in projects
         if str(project.get("id") or project_title(project)) in relevant_ids
-    ][:3]
+    ][:4]
 
 
 def _earlier_career_positions(
@@ -1193,7 +1193,7 @@ def tailor_resume(
         parsed_job,
         associated_evidence_projects,
         artifact_type="ats_resume",
-        capacity=3,
+        capacity=4,
     )
     resume_evidence_projects = evidence_selection["used_projects"]
     match_report = score_job_match(job_path, root, associated_evidence_projects, job_data_override=parsed_job)

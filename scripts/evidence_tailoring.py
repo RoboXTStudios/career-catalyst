@@ -25,9 +25,9 @@ GENERIC_EVIDENCE_TERMS = {
 }
 
 ARTIFACT_CAPACITIES = {
-    "ats_resume": 3,
-    "styled_resume": 3,
-    "cover_letter": 3,
+    "ats_resume": 4,
+    "styled_resume": 4,
+    "cover_letter": 2,
 }
 
 ARTIFACT_LABELS = {
@@ -613,7 +613,7 @@ def cover_letter_project_paragraph(
     corpus = " ".join(_flatten(project)).lower()
     if kind == "career_catalyst" and "product" in corpus:
         return (
-            "Through Career Catalyst, I am actively developing an AI-enabled career intelligence and "
+            "I am actively developing an AI-enabled career intelligence and "
             "application-operations product. I translate user needs into product vision, requirements, "
             "feature priorities, workflows, acceptance criteria, iterative testing, and release guardrails, "
             "hands-on work that connects product judgment with disciplined delivery."
@@ -634,9 +634,7 @@ def cover_letter_project_paragraph(
     if result and result != actions and not explicit_subject.search(result):
         result = "This work " + result[:1].lower() + result[1:]
     proof = f" {result}" if result and result != actions else ""
-    title = project_title(project)
-    lead = "At" if "RoboXT Studios" in title else "Through"
-    return f"{lead} {title}, {actions}{proof}"
+    return f"{actions}{proof}"
 
 
 def reconcile_manual_evidence(role_intent: Mapping[str, Any], projects: Sequence[Mapping[str, Any]]) -> dict[str, Any]:

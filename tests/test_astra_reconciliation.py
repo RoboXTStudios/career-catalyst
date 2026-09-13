@@ -6,7 +6,7 @@ from docx import Document
 from scripts.application_tracker import load_application_tracker, update_prospect
 from scripts.dynamic_role_intelligence import get_effective_voice_profile
 from scripts.evidence_engine import load_evidence_projects
-from scripts.evidence_tailoring import reconcile_manual_evidence, select_evidence_for_artifact, evidence_score_contribution
+from scripts.evidence_tailoring import cover_letter_project_paragraph, reconcile_manual_evidence, select_evidence_for_artifact, evidence_score_contribution
 from scripts.package_generator import build_package_context
 from scripts.parse_job import parse_job_description
 from scripts.role_intent import build_role_intent, tailoring_plan
@@ -99,10 +99,11 @@ def test_manual_precedence_and_capacity(case):
     assert "CampaignOS" not in tailoring_plan(resolved)["de_emphasizing"]
     assert "campaignos" not in material_editing_plan(parsed, root, resolved)["omitted_evidence"]
     plan = tailoring_plan(build_package_context(record["id"], [record], root)["role_intent"])
-    assert plan["planned_artifact_selections"]["ats_resume"]["capacity"] == 3
+    assert plan["planned_artifact_selections"]["ats_resume"]["capacity"] == 4
+    assert plan["planned_artifact_selections"]["styled_resume"]["capacity"] == 4
     assert plan["planned_artifact_selections"]["cover_letter"]["capacity"] == 2
-    for kind, capacity in [("ats_resume", 3), ("cover_letter", 2)]:
-        decision = select_evidence_for_artifact(parsed, selected, artifact_type=kind, capacity=capacity)
+    for kind, capacity in [("ats_resume", 4), ("styled_resume", 4), ("cover_letter", 2)]:
+        decision = select_evidence_for_artifact(parsed, selected, artifact_type=kind)
         assert len(decision["used"]) == capacity
         assert len(decision["omitted"]) == 4-capacity
         assert all(item["reason"] for item in decision["omitted"])
@@ -143,8 +144,15 @@ def test_final_documents_follow_mandate_and_metadata(case):
         assert properties.author == properties.last_modified_by == "Trisha Lynch"
         assert inspect_docx_hygiene(path)["status"] == "PASS"
     assert len(resume["evidence_selection"]["selected_ids"]) == 4
-    assert len(resume["evidence_selection"]["used"]) == 3
+    assert len(resume["evidence_selection"]["used"]) == 4
     assert len(letter["evidence_selection"]["used"]) == 2
+    for artifact in (ats, styled):
+        text = extract_docx_structure(Path(artifact["output_path"]))["text"].lower()
+        for project in selected:
+            assert normalize_candidate_text(project["title"]).lower() in text
+    letter_text = extract_docx_structure(Path(letter["docx_output_path"]))["text"].lower()
+    for project in selected:
+        assert normalize_candidate_text(project["title"]).lower() not in letter_text
 
 
 def test_claim_safety_copy_is_removed():
@@ -182,3 +190,16 @@ def test_agency_customer_context_does_not_override_employer_identity():
     profile = get_effective_voice_profile("Example Software", "AI Systems Director",
         "We develop automation software for marketing agency clients using machine learning.")
     assert profile["company_category"] == "ai_technology_startup"
+
+
+@pytest.mark.parametrize("title", [
+    "Enterprise Media Operations Transformation",
+    "Operational Workflow Design & Airtable Implementation",
+])
+def test_cover_letter_evidence_uses_facts_without_card_titles(title):
+    project = {"id": "internal_card", "title": title,
+               "actions": "Redesigned workflows and clarified ownership.",
+               "results": "Improved delivery visibility."}
+    text = cover_letter_project_paragraph(project, {})
+    assert text == "I redesigned workflows and clarified ownership. This work improved delivery visibility."
+    assert title not in text

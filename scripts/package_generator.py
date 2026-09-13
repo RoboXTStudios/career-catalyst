@@ -704,7 +704,7 @@ def build_package_context(
     role_intent["planned_artifact_selections"] = {
         kind: public_artifact_selection(select_evidence_for_artifact(
             parsed, associated_evidence, artifact_type=kind, capacity=capacity
-        )) for kind, capacity in (("ats_resume", 3), ("cover_letter", 2))
+        )) for kind, capacity in (("ats_resume", 4), ("styled_resume", 4), ("cover_letter", 2))
     }
     context = {
         "prospect_id": str(application.get("id") or prospect_id),
