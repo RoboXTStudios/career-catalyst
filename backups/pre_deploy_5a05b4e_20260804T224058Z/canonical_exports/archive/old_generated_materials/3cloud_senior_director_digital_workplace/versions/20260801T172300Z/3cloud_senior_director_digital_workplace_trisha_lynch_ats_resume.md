@@ -1,0 +1,74 @@
+<!-- career-catalyst-job-title: Senior Director - Digital Workplace -->
+<!-- career-catalyst-company: 3Cloud -->
+
+# Trisha Lynch
+
+Senior Operations & Transformation Leader | MarTech | AI Systems | Entertainment
+
+Los Angeles, CA | [tslynch@mac.com](mailto:tslynch@mac.com) | LinkedIn: [https://www.linkedin.com/in/trisha-lynch-3433417](https://www.linkedin.com/in/trisha-lynch-3433417)
+
+## Profile
+
+Senior operations and transformation leader who brings clarity, practical governance, and dependable execution to complex cross-functional work. Advanced through five roles to Group Director at OMG23 (Omnicom Media Group), leading 10 direct reports and providing strategic and operational leadership across an integrated 64-person organization spanning operations, creative management, and analytics. Known for clear communication, grounded recommendations, and practical follow-through under pressure.
+
+## Core Competencies
+
+- Operations Transformation
+- Business Operations
+- Cross-Functional Leadership
+- Workflow Governance
+- Executive Stakeholder Management
+- Process Excellence
+- Quality Assurance
+- Change Management
+- AI Workflow Design
+- Marketing Operations
+- Validation Frameworks
+
+## Platforms & Technologies
+
+### Business Productivity & Collaboration
+
+Microsoft 365, Microsoft Teams, Airtable
+
+### Operations & Program Management
+
+Workflow Design, Operating Models, Process Documentation, Reporting Workflows
+
+## Professional Experience
+
+### OMG23 (Omnicom Media Group)
+
+Burbank, CA | 2016-2026
+
+Group Director (2022-2026) | Director (2020-2022) | Associate Director (2019-2020) | Supervisor (2018-2019) | Campaign Manager (2016-2018)
+
+- Led 10 direct reports and provided strategic and operational leadership across an integrated 64-person organization spanning Ad Operations, Creative Management, and Marketing Science and Analytics.
+- Advanced through five roles from Campaign Manager to Group Director while expanding responsibility across enterprise operations and transformation.
+- Introduced scalable workflows, governance practices, and execution standards across marketing, technology, analytics, and creative teams.
+- Directed operational execution for multimillion-dollar theatrical, streaming, and franchise campaigns, coordinating priorities, dependencies, quality, and stakeholder visibility.
+- Coordinated an Airtable implementation that created a shared source of truth for campaign tracking, documentation, status reporting, linked workflows, permissions, naming standards, automations, quality assurance, training, and adoption.
+- Helped operationalize the Disney+ launch through onboarding, quality assurance, measurement readiness, platform coordination, and execution workflows.
+
+## Relevant Projects & Impact
+
+### Microsoft 365 Digital Workplace Enablement — SharePoint Workflow and Knowledge Hub
+
+OMG23 (Omnicom Media Group) · OMG23 (Omnicom Media Group) · Microsoft 365 Workflow and Collaboration Solution
+
+- Designed and built a SharePoint-based trafficking queue that centralized campaign intake, ownership, status visibility, and operational handoffs.
+- Established centralized digital-workplace resources for campaign operations, improving access to operational information, workflow visibility, knowledge sharing, and consistency across the team.
+
+### Enterprise Collaboration Platform Adoption & Stakeholder Enablement
+
+OMG23 · The Walt Disney Company · Change Management
+
+- Served as a Microsoft Teams power user and stakeholder resource during the rollout.
+- Improved stakeholder readiness and supported broader adoption of Microsoft Teams through practical guidance and peer support.
+
+### Career Catalyst — AI-Enabled Career Intelligence & Application Operations Platform
+
+RoboXT Studios · Career Catalyst · AI-Enabled Product Development
+
+- Created and led development of an active AI-enabled career intelligence and application-operations product, defining product vision, requirements, priorities, workflows, acceptance criteria, and release guardrails.
+- Built and iterated a tested local application integrating prospect evaluation, evidence selection, tailored materials, follow-up planning, interview preparation, status management, and role archiving.

@@ -1,0 +1,7 @@
+Notes
+-----
+https://jobs.ea.com/en_US/careers/JobDetail/Senior-Manager-Marketing-Operations/215404
+
+Status history
+--------------
+{"date": "2026-08-05", "event": "status changed", "from": "Applied", "to": "Rejected"}

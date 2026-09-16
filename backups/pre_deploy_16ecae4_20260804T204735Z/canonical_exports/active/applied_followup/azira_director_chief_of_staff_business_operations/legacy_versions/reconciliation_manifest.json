@@ -1,0 +1,150 @@
+{
+  "alternate_source_folder": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations",
+  "canonical_source_folder": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/azira_director_chief_of_staff_business_operations",
+  "company": "Azira",
+  "copied_files": [
+    {
+      "classification": "same_relative_path_different_checksum",
+      "destination_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/legacy_versions/azira_director_chief_staff_business_operations_trisha_lynch_ats_resume_alternate_09881e8d.docx",
+      "final_relative_path": "legacy_versions/azira_director_chief_staff_business_operations_trisha_lynch_ats_resume_alternate_09881e8d.docx",
+      "original_relative_path": "azira_director_chief_staff_business_operations_trisha_lynch_ats_resume.docx",
+      "sha256": "09881e8de5c6ab2189525a055968b9bd2440914ed14a5afbbf5a2fb36ba43ce7",
+      "size": 28853,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_ats_resume.docx"
+    },
+    {
+      "classification": "same_relative_path_different_checksum",
+      "destination_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/legacy_versions/azira_director_chief_staff_business_operations_trisha_lynch_cover_letter_alternate_9937c931.docx",
+      "final_relative_path": "legacy_versions/azira_director_chief_staff_business_operations_trisha_lynch_cover_letter_alternate_9937c931.docx",
+      "original_relative_path": "azira_director_chief_staff_business_operations_trisha_lynch_cover_letter.docx",
+      "sha256": "9937c93157af7653fb2a2a4f388ae1cf97101fef7412c6af1ca988d000acab9c",
+      "size": 27397,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_cover_letter.docx"
+    },
+    {
+      "classification": "same_relative_path_different_checksum",
+      "destination_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/legacy_versions/azira_director_chief_staff_business_operations_trisha_lynch_cover_letter_alternate_eca87b8a.txt",
+      "final_relative_path": "legacy_versions/azira_director_chief_staff_business_operations_trisha_lynch_cover_letter_alternate_eca87b8a.txt",
+      "original_relative_path": "azira_director_chief_staff_business_operations_trisha_lynch_cover_letter.txt",
+      "sha256": "eca87b8a17332947bb3f00dffa2b6aee521b5abf52ade544b0d41e73ca559095",
+      "size": 1986,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_cover_letter.txt"
+    },
+    {
+      "classification": "alternate_only",
+      "destination_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/legacy_versions/azira_director_chief_staff_business_operations_trisha_lynch_followup_strategy.txt",
+      "final_relative_path": "legacy_versions/azira_director_chief_staff_business_operations_trisha_lynch_followup_strategy.txt",
+      "original_relative_path": "azira_director_chief_staff_business_operations_trisha_lynch_followup_strategy.txt",
+      "sha256": "4acdc0eeca5098cc72617a587e95f8061c51d2e74726e936c4b2a731535aeb40",
+      "size": 3865,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_followup_strategy.txt"
+    },
+    {
+      "classification": "alternate_only",
+      "destination_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/legacy_versions/azira_director_chief_staff_business_operations_trisha_lynch_hiring_manager_followup.txt",
+      "final_relative_path": "legacy_versions/azira_director_chief_staff_business_operations_trisha_lynch_hiring_manager_followup.txt",
+      "original_relative_path": "azira_director_chief_staff_business_operations_trisha_lynch_hiring_manager_followup.txt",
+      "sha256": "7c715f1e6cbe4b37cb270817a34760f8e4bfd4ddb80a5908e7cffd10518244b3",
+      "size": 691,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_hiring_manager_followup.txt"
+    },
+    {
+      "classification": "alternate_only",
+      "destination_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/legacy_versions/azira_director_chief_staff_business_operations_trisha_lynch_recruiter_followup.txt",
+      "final_relative_path": "legacy_versions/azira_director_chief_staff_business_operations_trisha_lynch_recruiter_followup.txt",
+      "original_relative_path": "azira_director_chief_staff_business_operations_trisha_lynch_recruiter_followup.txt",
+      "sha256": "0f22845f87ec4f588d2a23291afa003783494745cb7588a3f4d33af65008cd72",
+      "size": 549,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_recruiter_followup.txt"
+    },
+    {
+      "classification": "alternate_only",
+      "destination_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/legacy_versions/azira_director_chief_staff_business_operations_trisha_lynch_referral_ask.txt",
+      "final_relative_path": "legacy_versions/azira_director_chief_staff_business_operations_trisha_lynch_referral_ask.txt",
+      "original_relative_path": "azira_director_chief_staff_business_operations_trisha_lynch_referral_ask.txt",
+      "sha256": "8770d3647b5025b8e7f5b419ceede87b2f89ad49016c9fb03e48e31bd6f5f794",
+      "size": 552,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_referral_ask.txt"
+    },
+    {
+      "classification": "same_relative_path_different_checksum",
+      "destination_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/legacy_versions/azira_director_chief_staff_business_operations_trisha_lynch_resume_alternate_8ffcdde0.txt",
+      "final_relative_path": "legacy_versions/azira_director_chief_staff_business_operations_trisha_lynch_resume_alternate_8ffcdde0.txt",
+      "original_relative_path": "azira_director_chief_staff_business_operations_trisha_lynch_resume.txt",
+      "sha256": "8ffcdde08870d4232f791b14569ddeeb115a4a6aeaf03da2bcfeb3288f24da6b",
+      "size": 4577,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_resume.txt"
+    },
+    {
+      "classification": "same_relative_path_different_checksum",
+      "destination_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/legacy_versions/azira_director_chief_staff_business_operations_trisha_lynch_styled_resume_alternate_53b3b571.docx",
+      "final_relative_path": "legacy_versions/azira_director_chief_staff_business_operations_trisha_lynch_styled_resume_alternate_53b3b571.docx",
+      "original_relative_path": "azira_director_chief_staff_business_operations_trisha_lynch_styled_resume.docx",
+      "sha256": "53b3b571050f0213a6df026bf8e810717d7bf4887fd5c093c7c4c4d848bff161",
+      "size": 26743,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_styled_resume.docx"
+    },
+    {
+      "classification": "alternate_only",
+      "destination_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/legacy_versions/azira_director_chief_staff_business_operations_trisha_lynch_warm_contact_message.txt",
+      "final_relative_path": "legacy_versions/azira_director_chief_staff_business_operations_trisha_lynch_warm_contact_message.txt",
+      "original_relative_path": "azira_director_chief_staff_business_operations_trisha_lynch_warm_contact_message.txt",
+      "sha256": "d3ba9576e0197ffa23bde974184d4718addbb2b63b2cea716ef25f27d4e985cb",
+      "size": 572,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_warm_contact_message.txt"
+    },
+    {
+      "classification": "same_relative_path_different_checksum",
+      "destination_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/legacy_versions/manifest_alternate_e61684a9.json",
+      "final_relative_path": "legacy_versions/manifest_alternate_e61684a9.json",
+      "original_relative_path": "manifest.json",
+      "sha256": "e61684a91b1f168f812aa6188288f153bf11fcdedf3974bb5537b23eddd241d3",
+      "size": 8043,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/manifest.json"
+    }
+  ],
+  "excluded_temporary_files": [],
+  "reconciliation_timestamp": "20260731T215000Z",
+  "reconciliation_version": "sprint32-package-reconciliation-v1",
+  "role_id": "azira_director_chief_of_staff_business_operations",
+  "role_title": "Director, Chief of Staff & Business Operations",
+  "schema_version": 1,
+  "skipped_identical_files": [
+    {
+      "canonical_sha256": "a8b94e0bbd427692ea285f2a9dbb4780eaa9b32dab18dfc607add0cb660d8e8f",
+      "relative_path": "azira_director_chief_staff_business_operations_trisha_lynch_application_note.txt",
+      "size": 493,
+      "source_sha256": "a8b94e0bbd427692ea285f2a9dbb4780eaa9b32dab18dfc607add0cb660d8e8f"
+    },
+    {
+      "canonical_sha256": "05de4bf0f4f5c81d60211532a7dd8206ca55055897891662afdef77b57d44a98",
+      "relative_path": "azira_director_chief_staff_business_operations_trisha_lynch_hiring_manager_message.txt",
+      "size": 839,
+      "source_sha256": "05de4bf0f4f5c81d60211532a7dd8206ca55055897891662afdef77b57d44a98"
+    },
+    {
+      "canonical_sha256": "403e84fda9aba5065c3259a52b2506f7ffd10caad1795f8dc45756edc6966f7d",
+      "relative_path": "azira_director_chief_staff_business_operations_trisha_lynch_interview_prep.txt",
+      "size": 1309,
+      "source_sha256": "403e84fda9aba5065c3259a52b2506f7ffd10caad1795f8dc45756edc6966f7d"
+    },
+    {
+      "canonical_sha256": "f1881fab9850ea8ebe593835624990fc89622d52d8341853aa5430b916969fd1",
+      "relative_path": "azira_director_chief_staff_business_operations_trisha_lynch_package_summary.txt",
+      "size": 658,
+      "source_sha256": "f1881fab9850ea8ebe593835624990fc89622d52d8341853aa5430b916969fd1"
+    },
+    {
+      "canonical_sha256": "8168083ae5b2dd34d8b872a72495f03cd6ca6f5f02c4f00479a02fc4d8baa234",
+      "relative_path": "azira_director_chief_staff_business_operations_trisha_lynch_recruiter_message.txt",
+      "size": 566,
+      "source_sha256": "8168083ae5b2dd34d8b872a72495f03cd6ca6f5f02c4f00479a02fc4d8baa234"
+    },
+    {
+      "canonical_sha256": "734c01f3b7e72b2be9b92da5a53ed84bcd9b5499029c40d8ca8f747bd1c12063",
+      "relative_path": "azira_director_chief_staff_business_operations_trisha_lynch_strategy_pack.txt",
+      "size": 9450,
+      "source_sha256": "734c01f3b7e72b2be9b92da5a53ed84bcd9b5499029c40d8ca8f747bd1c12063"
+    }
+  ]
+}

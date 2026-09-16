@@ -1,0 +1,988 @@
+{
+  "prospect_id": "openai_program_manager_lead",
+  "slug": "openai_program_manager_lead",
+  "company": "OpenAI",
+  "role_title": "Program Manager Lead",
+  "status": "Applied",
+  "generated_at": "2026-08-03T01:38:08.730534+00:00",
+  "applied_date": "2026-08-01",
+  "status_date": "",
+  "source_url": "https://jobs.ashbyhq.com/openai/e6ddb290-3585-48ec-a331-d4fc4761af20/application",
+  "files": {
+    "resume_text": "/private/var/folders/05/7hb6k7_d7nj96l07t0bxft1m0000gn/T/career-catalyst-package-g3adv2r7/project/exports/active/applied_followup/openai_program_manager_lead/openai_program_manager_lead_trisha_lynch_resume.txt",
+    "styled_docx": "/private/var/folders/05/7hb6k7_d7nj96l07t0bxft1m0000gn/T/career-catalyst-package-g3adv2r7/project/exports/active/applied_followup/openai_program_manager_lead/openai_program_manager_lead_trisha_lynch_styled_resume.docx",
+    "ats_docx": "/private/var/folders/05/7hb6k7_d7nj96l07t0bxft1m0000gn/T/career-catalyst-package-g3adv2r7/project/exports/active/applied_followup/openai_program_manager_lead/openai_program_manager_lead_trisha_lynch_ats_resume.docx",
+    "cover_letter": "/private/var/folders/05/7hb6k7_d7nj96l07t0bxft1m0000gn/T/career-catalyst-package-g3adv2r7/project/exports/active/applied_followup/openai_program_manager_lead/openai_program_manager_lead_trisha_lynch_cover_letter.txt",
+    "cover_letter_docx": "/private/var/folders/05/7hb6k7_d7nj96l07t0bxft1m0000gn/T/career-catalyst-package-g3adv2r7/project/exports/active/applied_followup/openai_program_manager_lead/openai_program_manager_lead_trisha_lynch_cover_letter.docx",
+    "recruiter_message": "/private/var/folders/05/7hb6k7_d7nj96l07t0bxft1m0000gn/T/career-catalyst-package-g3adv2r7/project/exports/active/applied_followup/openai_program_manager_lead/openai_program_manager_lead_trisha_lynch_recruiter_message.txt",
+    "hiring_manager_message": "/private/var/folders/05/7hb6k7_d7nj96l07t0bxft1m0000gn/T/career-catalyst-package-g3adv2r7/project/exports/active/applied_followup/openai_program_manager_lead/openai_program_manager_lead_trisha_lynch_hiring_manager_message.txt",
+    "application_note": "/private/var/folders/05/7hb6k7_d7nj96l07t0bxft1m0000gn/T/career-catalyst-package-g3adv2r7/project/exports/active/applied_followup/openai_program_manager_lead/openai_program_manager_lead_trisha_lynch_application_note.txt",
+    "strategy_pack": "/private/var/folders/05/7hb6k7_d7nj96l07t0bxft1m0000gn/T/career-catalyst-package-g3adv2r7/project/exports/active/applied_followup/openai_program_manager_lead/openai_program_manager_lead_trisha_lynch_strategy_pack.txt",
+    "interview_prep": "/private/var/folders/05/7hb6k7_d7nj96l07t0bxft1m0000gn/T/career-catalyst-package-g3adv2r7/project/exports/active/applied_followup/openai_program_manager_lead/openai_program_manager_lead_trisha_lynch_interview_prep.txt",
+    "package_summary": "/private/var/folders/05/7hb6k7_d7nj96l07t0bxft1m0000gn/T/career-catalyst-package-g3adv2r7/project/exports/active/applied_followup/openai_program_manager_lead/openai_program_manager_lead_trisha_lynch_package_summary.txt"
+  },
+  "archived": false,
+  "archive_reason": "",
+  "legacy_files_moved": [
+    "/private/var/folders/05/7hb6k7_d7nj96l07t0bxft1m0000gn/T/career-catalyst-package-g3adv2r7/project/exports/archive/old_generated_materials/openai_program_manager_lead/openai_program_manager_lead_trisha_lynch_ats_resume.md"
+  ],
+  "role_intent": {
+    "primary_archetype": "pmo_program_delivery",
+    "package_role_family": "transformation_advisory",
+    "package_role_label": "Transformation advisory",
+    "secondary_archetypes": [],
+    "confidence": "high",
+    "primary_hiring_need": "Deliver complex cross-functional programs through visible milestones, dependencies, risks, decisions, and accountable execution.",
+    "required_outcomes": [
+      "deliver_roadmap",
+      "manage_dependencies",
+      "surface_risks",
+      "improve_status_visibility",
+      "maintain_quality"
+    ],
+    "reasoning_signals": [
+      "dependencies",
+      "milestones",
+      "resource planning",
+      "risk management",
+      "roadmap",
+      "status reporting",
+      "launch readiness",
+      "program management",
+      "delivery",
+      "program"
+    ],
+    "lead_evidence": [
+      "enterprise_campaign_delivery",
+      "workflow_governance",
+      "disney_plus_launch_support"
+    ],
+    "supporting_evidence": [
+      "cross_functional_leadership",
+      "operational_workflow_design_airtable_implementation"
+    ],
+    "suppressed_evidence": [
+      "multiverse",
+      "photography",
+      "unrelated_ai_projects"
+    ],
+    "headline_profile": "Senior Operations & Program Leader | Governance | Transformation | Cross-Functional Delivery",
+    "earlier_career_policy": "compact_relevant_only",
+    "selected_project_limit": 0,
+    "target_max_pages": 2,
+    "primary_cover_letter_story": "fixed_timeline_delivery",
+    "secondary_cover_letter_story": "delivery_governance",
+    "generated_greeting": "Dear OpenAI Hiring Team,"
+  },
+  "materials": {
+    "ATS Resume": "/private/var/folders/05/7hb6k7_d7nj96l07t0bxft1m0000gn/T/career-catalyst-package-g3adv2r7/project/exports/active/applied_followup/openai_program_manager_lead/openai_program_manager_lead_trisha_lynch_ats_resume.docx",
+    "Styled Resume": "/private/var/folders/05/7hb6k7_d7nj96l07t0bxft1m0000gn/T/career-catalyst-package-g3adv2r7/project/exports/active/applied_followup/openai_program_manager_lead/openai_program_manager_lead_trisha_lynch_styled_resume.docx",
+    "Tailored Resume": "/private/var/folders/05/7hb6k7_d7nj96l07t0bxft1m0000gn/T/career-catalyst-package-g3adv2r7/project/exports/active/applied_followup/openai_program_manager_lead/openai_program_manager_lead_trisha_lynch_resume.txt",
+    "Cover Letter": "/private/var/folders/05/7hb6k7_d7nj96l07t0bxft1m0000gn/T/career-catalyst-package-g3adv2r7/project/exports/active/applied_followup/openai_program_manager_lead/openai_program_manager_lead_trisha_lynch_cover_letter.docx",
+    "Application Note": "/private/var/folders/05/7hb6k7_d7nj96l07t0bxft1m0000gn/T/career-catalyst-package-g3adv2r7/project/exports/active/applied_followup/openai_program_manager_lead/openai_program_manager_lead_trisha_lynch_application_note.txt",
+    "Recruiter Message": "/private/var/folders/05/7hb6k7_d7nj96l07t0bxft1m0000gn/T/career-catalyst-package-g3adv2r7/project/exports/active/applied_followup/openai_program_manager_lead/openai_program_manager_lead_trisha_lynch_recruiter_message.txt",
+    "Hiring Manager Message": "/private/var/folders/05/7hb6k7_d7nj96l07t0bxft1m0000gn/T/career-catalyst-package-g3adv2r7/project/exports/active/applied_followup/openai_program_manager_lead/openai_program_manager_lead_trisha_lynch_hiring_manager_message.txt",
+    "Strategy Pack": "/private/var/folders/05/7hb6k7_d7nj96l07t0bxft1m0000gn/T/career-catalyst-package-g3adv2r7/project/exports/active/applied_followup/openai_program_manager_lead/openai_program_manager_lead_trisha_lynch_strategy_pack.txt",
+    "Interview Prep": "/private/var/folders/05/7hb6k7_d7nj96l07t0bxft1m0000gn/T/career-catalyst-package-g3adv2r7/project/exports/active/applied_followup/openai_program_manager_lead/openai_program_manager_lead_trisha_lynch_interview_prep.txt",
+    "Package Summary": "/private/var/folders/05/7hb6k7_d7nj96l07t0bxft1m0000gn/T/career-catalyst-package-g3adv2r7/project/exports/active/applied_followup/openai_program_manager_lead/openai_program_manager_lead_trisha_lynch_package_summary.txt",
+    "Job Description": "/private/var/folders/05/7hb6k7_d7nj96l07t0bxft1m0000gn/T/career-catalyst-package-g3adv2r7/project/jobs/openai_program_manager_lead_e6ddb290_3585_48ec_a331_d4fc4761af20.md"
+  },
+  "tailoring_metadata": {
+    "selected_evidence": [
+      {
+        "id": "disney_launch_readiness_tracking_measurement_and_operational_governance",
+        "title": "Disney+ Launch Readiness \u2014 Tracking, Measurement and Operational Governance",
+        "manual": true,
+        "relevance_score": 47,
+        "matched_signals": [
+          "accurate",
+          "across",
+          "aligned",
+          "before",
+          "campaign",
+          "campaigns",
+          "communication",
+          "critical",
+          "cross",
+          "data"
+        ]
+      },
+      {
+        "id": "enterprise_media_operations_transformation",
+        "title": "Enterprise Media Operations Transformation",
+        "manual": true,
+        "relevance_score": 27,
+        "matched_signals": [
+          "across",
+          "campaigns",
+          "complex",
+          "consistent",
+          "created",
+          "cross",
+          "execution",
+          "functional",
+          "improve",
+          "improvement"
+        ]
+      },
+      {
+        "id": "campaignos_campaign_operations_workflow_prototype",
+        "title": "CampaignOS \u2014 Campaign Operations Workflow Prototype",
+        "manual": true,
+        "relevance_score": 36,
+        "matched_signals": [
+          "approvals",
+          "based",
+          "campaign",
+          "challenges",
+          "complex",
+          "core",
+          "created",
+          "creating",
+          "dependencies",
+          "design"
+        ]
+      },
+      {
+        "id": "career_catalyst_ai_enabled_career_intelligence_application_operations_platform",
+        "title": "Career Catalyst \u2014 AI-Enabled Career Intelligence & Application Operations Platform",
+        "manual": true,
+        "relevance_score": 43,
+        "matched_signals": [
+          "product development",
+          "across",
+          "application",
+          "candidate",
+          "capabilities",
+          "content",
+          "created",
+          "data",
+          "design",
+          "designed"
+        ]
+      }
+    ],
+    "selected_count": 4,
+    "used_anywhere_count": 3,
+    "omitted_from_package_count": 1,
+    "system_recommended_projects": [],
+    "resume_projects_used": [
+      "Disney+ Launch Readiness \u2014 Tracking, Measurement and Operational Governance",
+      "Career Catalyst \u2014 AI-Enabled Career Intelligence & Application Operations Platform",
+      "CampaignOS \u2014 Campaign Operations Workflow Prototype"
+    ],
+    "cover_letter_projects_used": [
+      "Disney+ Launch Readiness \u2014 Tracking, Measurement and Operational Governance",
+      "Career Catalyst \u2014 AI-Enabled Career Intelligence & Application Operations Platform"
+    ],
+    "projects_not_used": [
+      {
+        "id": "enterprise_media_operations_transformation",
+        "title": "Enterprise Media Operations Transformation",
+        "reason": "Space limit: ranked below the top 3 selected Evidence records for this ATS resume."
+      }
+    ],
+    "artifact_usage": {
+      "ats_resume": {
+        "artifact_type": "ats_resume",
+        "artifact_label": "ATS resume",
+        "capacity": 3,
+        "selected_ids": [
+          "disney_launch_readiness_tracking_measurement_and_operational_governance",
+          "enterprise_media_operations_transformation",
+          "campaignos_campaign_operations_workflow_prototype",
+          "career_catalyst_ai_enabled_career_intelligence_application_operations_platform"
+        ],
+        "eligible": [
+          {
+            "id": "disney_launch_readiness_tracking_measurement_and_operational_governance",
+            "title": "Disney+ Launch Readiness \u2014 Tracking, Measurement and Operational Governance",
+            "source": "selected",
+            "user_order": 0,
+            "relevance_score": 47,
+            "matched_signals": [
+              "accurate",
+              "across",
+              "aligned",
+              "before",
+              "campaign",
+              "campaigns",
+              "communication",
+              "critical",
+              "cross",
+              "data"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "career_catalyst_ai_enabled_career_intelligence_application_operations_platform",
+            "title": "Career Catalyst \u2014 AI-Enabled Career Intelligence & Application Operations Platform",
+            "source": "selected",
+            "user_order": 3,
+            "relevance_score": 43,
+            "matched_signals": [
+              "product development",
+              "across",
+              "application",
+              "candidate",
+              "capabilities",
+              "content",
+              "created",
+              "data",
+              "design",
+              "designed"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "campaignos_campaign_operations_workflow_prototype",
+            "title": "CampaignOS \u2014 Campaign Operations Workflow Prototype",
+            "source": "selected",
+            "user_order": 2,
+            "relevance_score": 36,
+            "matched_signals": [
+              "approvals",
+              "based",
+              "campaign",
+              "challenges",
+              "complex",
+              "core",
+              "created",
+              "creating",
+              "dependencies",
+              "design"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "enterprise_media_operations_transformation",
+            "title": "Enterprise Media Operations Transformation",
+            "source": "selected",
+            "user_order": 1,
+            "relevance_score": 27,
+            "matched_signals": [
+              "across",
+              "campaigns",
+              "complex",
+              "consistent",
+              "created",
+              "cross",
+              "execution",
+              "functional",
+              "improve",
+              "improvement"
+            ],
+            "artifact_suitability": 2
+          }
+        ],
+        "ranked": [
+          {
+            "id": "disney_launch_readiness_tracking_measurement_and_operational_governance",
+            "title": "Disney+ Launch Readiness \u2014 Tracking, Measurement and Operational Governance",
+            "source": "selected",
+            "user_order": 0,
+            "relevance_score": 47,
+            "matched_signals": [
+              "accurate",
+              "across",
+              "aligned",
+              "before",
+              "campaign",
+              "campaigns",
+              "communication",
+              "critical",
+              "cross",
+              "data"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "career_catalyst_ai_enabled_career_intelligence_application_operations_platform",
+            "title": "Career Catalyst \u2014 AI-Enabled Career Intelligence & Application Operations Platform",
+            "source": "selected",
+            "user_order": 3,
+            "relevance_score": 43,
+            "matched_signals": [
+              "product development",
+              "across",
+              "application",
+              "candidate",
+              "capabilities",
+              "content",
+              "created",
+              "data",
+              "design",
+              "designed"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "campaignos_campaign_operations_workflow_prototype",
+            "title": "CampaignOS \u2014 Campaign Operations Workflow Prototype",
+            "source": "selected",
+            "user_order": 2,
+            "relevance_score": 36,
+            "matched_signals": [
+              "approvals",
+              "based",
+              "campaign",
+              "challenges",
+              "complex",
+              "core",
+              "created",
+              "creating",
+              "dependencies",
+              "design"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "enterprise_media_operations_transformation",
+            "title": "Enterprise Media Operations Transformation",
+            "source": "selected",
+            "user_order": 1,
+            "relevance_score": 27,
+            "matched_signals": [
+              "across",
+              "campaigns",
+              "complex",
+              "consistent",
+              "created",
+              "cross",
+              "execution",
+              "functional",
+              "improve",
+              "improvement"
+            ],
+            "artifact_suitability": 2
+          }
+        ],
+        "used": [
+          {
+            "id": "disney_launch_readiness_tracking_measurement_and_operational_governance",
+            "title": "Disney+ Launch Readiness \u2014 Tracking, Measurement and Operational Governance",
+            "source": "selected",
+            "user_order": 0,
+            "relevance_score": 47,
+            "matched_signals": [
+              "accurate",
+              "across",
+              "aligned",
+              "before",
+              "campaign",
+              "campaigns",
+              "communication",
+              "critical",
+              "cross",
+              "data"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "career_catalyst_ai_enabled_career_intelligence_application_operations_platform",
+            "title": "Career Catalyst \u2014 AI-Enabled Career Intelligence & Application Operations Platform",
+            "source": "selected",
+            "user_order": 3,
+            "relevance_score": 43,
+            "matched_signals": [
+              "product development",
+              "across",
+              "application",
+              "candidate",
+              "capabilities",
+              "content",
+              "created",
+              "data",
+              "design",
+              "designed"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "campaignos_campaign_operations_workflow_prototype",
+            "title": "CampaignOS \u2014 Campaign Operations Workflow Prototype",
+            "source": "selected",
+            "user_order": 2,
+            "relevance_score": 36,
+            "matched_signals": [
+              "approvals",
+              "based",
+              "campaign",
+              "challenges",
+              "complex",
+              "core",
+              "created",
+              "creating",
+              "dependencies",
+              "design"
+            ],
+            "artifact_suitability": 2
+          }
+        ],
+        "omitted": [
+          {
+            "id": "enterprise_media_operations_transformation",
+            "title": "Enterprise Media Operations Transformation",
+            "source": "selected",
+            "user_order": 1,
+            "relevance_score": 27,
+            "matched_signals": [
+              "across",
+              "campaigns",
+              "complex",
+              "consistent",
+              "created",
+              "cross",
+              "execution",
+              "functional",
+              "improve",
+              "improvement"
+            ],
+            "artifact_suitability": 2,
+            "reason": "Space limit: ranked below the top 3 selected Evidence records for this ATS resume."
+          }
+        ],
+        "fallback_used": []
+      },
+      "styled_resume": {
+        "artifact_type": "styled_resume",
+        "artifact_label": "styled resume",
+        "capacity": 3,
+        "selected_ids": [
+          "disney_launch_readiness_tracking_measurement_and_operational_governance",
+          "enterprise_media_operations_transformation",
+          "campaignos_campaign_operations_workflow_prototype",
+          "career_catalyst_ai_enabled_career_intelligence_application_operations_platform"
+        ],
+        "eligible": [
+          {
+            "id": "disney_launch_readiness_tracking_measurement_and_operational_governance",
+            "title": "Disney+ Launch Readiness \u2014 Tracking, Measurement and Operational Governance",
+            "source": "selected",
+            "user_order": 0,
+            "relevance_score": 47,
+            "matched_signals": [
+              "accurate",
+              "across",
+              "aligned",
+              "before",
+              "campaign",
+              "campaigns",
+              "communication",
+              "critical",
+              "cross",
+              "data"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "career_catalyst_ai_enabled_career_intelligence_application_operations_platform",
+            "title": "Career Catalyst \u2014 AI-Enabled Career Intelligence & Application Operations Platform",
+            "source": "selected",
+            "user_order": 3,
+            "relevance_score": 43,
+            "matched_signals": [
+              "product development",
+              "across",
+              "application",
+              "candidate",
+              "capabilities",
+              "content",
+              "created",
+              "data",
+              "design",
+              "designed"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "campaignos_campaign_operations_workflow_prototype",
+            "title": "CampaignOS \u2014 Campaign Operations Workflow Prototype",
+            "source": "selected",
+            "user_order": 2,
+            "relevance_score": 36,
+            "matched_signals": [
+              "approvals",
+              "based",
+              "campaign",
+              "challenges",
+              "complex",
+              "core",
+              "created",
+              "creating",
+              "dependencies",
+              "design"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "enterprise_media_operations_transformation",
+            "title": "Enterprise Media Operations Transformation",
+            "source": "selected",
+            "user_order": 1,
+            "relevance_score": 27,
+            "matched_signals": [
+              "across",
+              "campaigns",
+              "complex",
+              "consistent",
+              "created",
+              "cross",
+              "execution",
+              "functional",
+              "improve",
+              "improvement"
+            ],
+            "artifact_suitability": 2
+          }
+        ],
+        "ranked": [
+          {
+            "id": "disney_launch_readiness_tracking_measurement_and_operational_governance",
+            "title": "Disney+ Launch Readiness \u2014 Tracking, Measurement and Operational Governance",
+            "source": "selected",
+            "user_order": 0,
+            "relevance_score": 47,
+            "matched_signals": [
+              "accurate",
+              "across",
+              "aligned",
+              "before",
+              "campaign",
+              "campaigns",
+              "communication",
+              "critical",
+              "cross",
+              "data"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "career_catalyst_ai_enabled_career_intelligence_application_operations_platform",
+            "title": "Career Catalyst \u2014 AI-Enabled Career Intelligence & Application Operations Platform",
+            "source": "selected",
+            "user_order": 3,
+            "relevance_score": 43,
+            "matched_signals": [
+              "product development",
+              "across",
+              "application",
+              "candidate",
+              "capabilities",
+              "content",
+              "created",
+              "data",
+              "design",
+              "designed"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "campaignos_campaign_operations_workflow_prototype",
+            "title": "CampaignOS \u2014 Campaign Operations Workflow Prototype",
+            "source": "selected",
+            "user_order": 2,
+            "relevance_score": 36,
+            "matched_signals": [
+              "approvals",
+              "based",
+              "campaign",
+              "challenges",
+              "complex",
+              "core",
+              "created",
+              "creating",
+              "dependencies",
+              "design"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "enterprise_media_operations_transformation",
+            "title": "Enterprise Media Operations Transformation",
+            "source": "selected",
+            "user_order": 1,
+            "relevance_score": 27,
+            "matched_signals": [
+              "across",
+              "campaigns",
+              "complex",
+              "consistent",
+              "created",
+              "cross",
+              "execution",
+              "functional",
+              "improve",
+              "improvement"
+            ],
+            "artifact_suitability": 2
+          }
+        ],
+        "used": [
+          {
+            "id": "disney_launch_readiness_tracking_measurement_and_operational_governance",
+            "title": "Disney+ Launch Readiness \u2014 Tracking, Measurement and Operational Governance",
+            "source": "selected",
+            "user_order": 0,
+            "relevance_score": 47,
+            "matched_signals": [
+              "accurate",
+              "across",
+              "aligned",
+              "before",
+              "campaign",
+              "campaigns",
+              "communication",
+              "critical",
+              "cross",
+              "data"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "career_catalyst_ai_enabled_career_intelligence_application_operations_platform",
+            "title": "Career Catalyst \u2014 AI-Enabled Career Intelligence & Application Operations Platform",
+            "source": "selected",
+            "user_order": 3,
+            "relevance_score": 43,
+            "matched_signals": [
+              "product development",
+              "across",
+              "application",
+              "candidate",
+              "capabilities",
+              "content",
+              "created",
+              "data",
+              "design",
+              "designed"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "campaignos_campaign_operations_workflow_prototype",
+            "title": "CampaignOS \u2014 Campaign Operations Workflow Prototype",
+            "source": "selected",
+            "user_order": 2,
+            "relevance_score": 36,
+            "matched_signals": [
+              "approvals",
+              "based",
+              "campaign",
+              "challenges",
+              "complex",
+              "core",
+              "created",
+              "creating",
+              "dependencies",
+              "design"
+            ],
+            "artifact_suitability": 2
+          }
+        ],
+        "omitted": [
+          {
+            "id": "enterprise_media_operations_transformation",
+            "title": "Enterprise Media Operations Transformation",
+            "source": "selected",
+            "user_order": 1,
+            "relevance_score": 27,
+            "matched_signals": [
+              "across",
+              "campaigns",
+              "complex",
+              "consistent",
+              "created",
+              "cross",
+              "execution",
+              "functional",
+              "improve",
+              "improvement"
+            ],
+            "artifact_suitability": 2,
+            "reason": "Space limit: ranked below the top 3 selected Evidence records for this ATS resume."
+          }
+        ],
+        "fallback_used": []
+      },
+      "cover_letter": {
+        "artifact_type": "cover_letter",
+        "artifact_label": "cover letter",
+        "capacity": 2,
+        "selected_ids": [
+          "disney_launch_readiness_tracking_measurement_and_operational_governance",
+          "enterprise_media_operations_transformation",
+          "campaignos_campaign_operations_workflow_prototype",
+          "career_catalyst_ai_enabled_career_intelligence_application_operations_platform"
+        ],
+        "eligible": [
+          {
+            "id": "disney_launch_readiness_tracking_measurement_and_operational_governance",
+            "title": "Disney+ Launch Readiness \u2014 Tracking, Measurement and Operational Governance",
+            "source": "selected",
+            "user_order": 0,
+            "relevance_score": 47,
+            "matched_signals": [
+              "accurate",
+              "across",
+              "aligned",
+              "before",
+              "campaign",
+              "campaigns",
+              "communication",
+              "critical",
+              "cross",
+              "data"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "career_catalyst_ai_enabled_career_intelligence_application_operations_platform",
+            "title": "Career Catalyst \u2014 AI-Enabled Career Intelligence & Application Operations Platform",
+            "source": "selected",
+            "user_order": 3,
+            "relevance_score": 43,
+            "matched_signals": [
+              "product development",
+              "across",
+              "application",
+              "candidate",
+              "capabilities",
+              "content",
+              "created",
+              "data",
+              "design",
+              "designed"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "campaignos_campaign_operations_workflow_prototype",
+            "title": "CampaignOS \u2014 Campaign Operations Workflow Prototype",
+            "source": "selected",
+            "user_order": 2,
+            "relevance_score": 36,
+            "matched_signals": [
+              "approvals",
+              "based",
+              "campaign",
+              "challenges",
+              "complex",
+              "core",
+              "created",
+              "creating",
+              "dependencies",
+              "design"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "enterprise_media_operations_transformation",
+            "title": "Enterprise Media Operations Transformation",
+            "source": "selected",
+            "user_order": 1,
+            "relevance_score": 27,
+            "matched_signals": [
+              "across",
+              "campaigns",
+              "complex",
+              "consistent",
+              "created",
+              "cross",
+              "execution",
+              "functional",
+              "improve",
+              "improvement"
+            ],
+            "artifact_suitability": 2
+          }
+        ],
+        "ranked": [
+          {
+            "id": "disney_launch_readiness_tracking_measurement_and_operational_governance",
+            "title": "Disney+ Launch Readiness \u2014 Tracking, Measurement and Operational Governance",
+            "source": "selected",
+            "user_order": 0,
+            "relevance_score": 47,
+            "matched_signals": [
+              "accurate",
+              "across",
+              "aligned",
+              "before",
+              "campaign",
+              "campaigns",
+              "communication",
+              "critical",
+              "cross",
+              "data"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "career_catalyst_ai_enabled_career_intelligence_application_operations_platform",
+            "title": "Career Catalyst \u2014 AI-Enabled Career Intelligence & Application Operations Platform",
+            "source": "selected",
+            "user_order": 3,
+            "relevance_score": 43,
+            "matched_signals": [
+              "product development",
+              "across",
+              "application",
+              "candidate",
+              "capabilities",
+              "content",
+              "created",
+              "data",
+              "design",
+              "designed"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "campaignos_campaign_operations_workflow_prototype",
+            "title": "CampaignOS \u2014 Campaign Operations Workflow Prototype",
+            "source": "selected",
+            "user_order": 2,
+            "relevance_score": 36,
+            "matched_signals": [
+              "approvals",
+              "based",
+              "campaign",
+              "challenges",
+              "complex",
+              "core",
+              "created",
+              "creating",
+              "dependencies",
+              "design"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "enterprise_media_operations_transformation",
+            "title": "Enterprise Media Operations Transformation",
+            "source": "selected",
+            "user_order": 1,
+            "relevance_score": 27,
+            "matched_signals": [
+              "across",
+              "campaigns",
+              "complex",
+              "consistent",
+              "created",
+              "cross",
+              "execution",
+              "functional",
+              "improve",
+              "improvement"
+            ],
+            "artifact_suitability": 2
+          }
+        ],
+        "used": [
+          {
+            "id": "disney_launch_readiness_tracking_measurement_and_operational_governance",
+            "title": "Disney+ Launch Readiness \u2014 Tracking, Measurement and Operational Governance",
+            "source": "selected",
+            "user_order": 0,
+            "relevance_score": 47,
+            "matched_signals": [
+              "accurate",
+              "across",
+              "aligned",
+              "before",
+              "campaign",
+              "campaigns",
+              "communication",
+              "critical",
+              "cross",
+              "data"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "career_catalyst_ai_enabled_career_intelligence_application_operations_platform",
+            "title": "Career Catalyst \u2014 AI-Enabled Career Intelligence & Application Operations Platform",
+            "source": "selected",
+            "user_order": 3,
+            "relevance_score": 43,
+            "matched_signals": [
+              "product development",
+              "across",
+              "application",
+              "candidate",
+              "capabilities",
+              "content",
+              "created",
+              "data",
+              "design",
+              "designed"
+            ],
+            "artifact_suitability": 2
+          }
+        ],
+        "omitted": [
+          {
+            "id": "enterprise_media_operations_transformation",
+            "title": "Enterprise Media Operations Transformation",
+            "source": "selected",
+            "user_order": 1,
+            "relevance_score": 27,
+            "matched_signals": [
+              "across",
+              "campaigns",
+              "complex",
+              "consistent",
+              "created",
+              "cross",
+              "execution",
+              "functional",
+              "improve",
+              "improvement"
+            ],
+            "artifact_suitability": 2,
+            "reason": "Space limit: ranked below the top 2 selected Evidence records for this cover letter."
+          },
+          {
+            "id": "campaignos_campaign_operations_workflow_prototype",
+            "title": "CampaignOS \u2014 Campaign Operations Workflow Prototype",
+            "source": "selected",
+            "user_order": 2,
+            "relevance_score": 36,
+            "matched_signals": [
+              "approvals",
+              "based",
+              "campaign",
+              "challenges",
+              "complex",
+              "core",
+              "created",
+              "creating",
+              "dependencies",
+              "design"
+            ],
+            "artifact_suitability": 2,
+            "reason": "Space limit: ranked below the top 2 selected Evidence records for this cover letter."
+          }
+        ],
+        "fallback_used": []
+      }
+    },
+    "unselected_fallback_used": [],
+    "evidence_score_contribution": {
+      "before": 87,
+      "after": 91,
+      "delta": 4,
+      "matched_requirements": [
+        "cross-functional",
+        "process improvement",
+        "program",
+        "openai",
+        "marketing",
+        "production",
+        "operating"
+      ],
+      "explanation": "Selected Evidence matched additional verified role requirements."
+    }
+  }
+}

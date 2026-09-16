@@ -1,0 +1,371 @@
+{
+  "application_url": "https://job-boards.greenhouse.io/3cloud/jobs/8659863002",
+  "archive_folder": "/Users/trisha.lynch/Documents/career-catalyst/archive/3cloud/2026-08-04_senior-director-digital-workplace_3cloud-senior-director-digital-workplace",
+  "archive_reason": "Withdrawn / Closed",
+  "archived_at": "2026-08-04T22:53:03.699607+00:00",
+  "company": "3Cloud",
+  "final_status": "Withdrawn / Closed",
+  "job_posting_sha256": "13fd6d75c2cf249a2aca9e7ee21fd1d309f09690288c438935b7e9a671222bfe",
+  "legacy_archive_reason": "",
+  "legacy_status": "Withdrawn / Closed",
+  "location": "Remote \u2013 United States",
+  "match_score_snapshot": 65,
+  "match_tier_snapshot": "Stretch Match",
+  "materials": [
+    {
+      "filename": "materials/application_note.txt",
+      "label": "Application Note",
+      "sha256": "37ab039f473148e633b2c4287d280342a5e2946986d48d63145fc6fc7d2a4bd5",
+      "size": 645,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_application_note.txt"
+    },
+    {
+      "filename": "materials/ats_resume.docx",
+      "label": "ATS Resume",
+      "sha256": "be6e22abbb070161f4580b5f7350f6b368ecafb6495a4d4f24d5079cfa95344d",
+      "size": 38807,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_ats_resume.docx"
+    },
+    {
+      "filename": "materials/cover_letter.docx",
+      "label": "Cover Letter",
+      "sha256": "5a72702fac156e9e7b0738c3e024badfed1364fa1c3b61f2efa10da2ba686494",
+      "size": 27937,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_cover_letter.docx"
+    },
+    {
+      "filename": "materials/cover_letter.txt",
+      "label": "cover_letter",
+      "sha256": "26dac3726d08b54ee1a94ca34fbd1d11040b7607caf95d07ea84fca53e837982",
+      "size": 1841,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_cover_letter.txt"
+    },
+    {
+      "filename": "materials/hiring_manager_message.txt",
+      "label": "Hiring Manager Message",
+      "sha256": "d1730c6aa267c85d1f9a3e5d43c4502277c8908229496ba0fc17898723cbcfe3",
+      "size": 1014,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_hiring_manager_message.txt"
+    },
+    {
+      "filename": "materials/interview_prep.txt",
+      "label": "Interview Prep",
+      "sha256": "b1b997f4962806854968fdbf80513714b74f8d27e4e0cd17c05e52efe5a805ee",
+      "size": 9106,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_interview_prep.txt"
+    },
+    {
+      "filename": "materials/package_summary.txt",
+      "label": "Package Summary",
+      "sha256": "f6277c0278c0cb88e15e55309f9bf55b5a0b6c2c739311dc3ed5fbee8abea561",
+      "size": 632,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_package_summary.txt"
+    },
+    {
+      "filename": "materials/recruiter_message.txt",
+      "label": "Recruiter Message",
+      "sha256": "e5321f3ca86f9f0eb62d7d55da723e852fd3e2454610b5368b0c85ffcc1bb18d",
+      "size": 583,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_recruiter_message.txt"
+    },
+    {
+      "filename": "materials/strategy_pack.txt",
+      "label": "Strategy Pack",
+      "sha256": "be717d73b8095ce2a310e41274a5c957622d8cd550998e0a9370a4b64e33fbfc",
+      "size": 8578,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_strategy_pack.txt"
+    },
+    {
+      "filename": "materials/styled_resume.docx",
+      "label": "Styled Resume",
+      "sha256": "40ccb71ce2fe2feea164286e60475d3294d037019037de888be47bcc21147964",
+      "size": 26505,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_styled_resume.docx"
+    },
+    {
+      "filename": "materials/tailored_resume.txt",
+      "label": "Tailored Resume",
+      "sha256": "202dde09afdbf905c96786b441d5828c39d36b9399b7c1eed2d117a7d813a2c2",
+      "size": 3983,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_resume.txt"
+    }
+  ],
+  "original_record": {
+    "application_date": "2026-08-01",
+    "application_history": [
+      {
+        "date": "2026-08-01",
+        "event": "application submitted",
+        "provenance": "User-authoritative durable runtime reconstruction delta",
+        "to": "Applied"
+      },
+      {
+        "date": "2026-08-04",
+        "event": "status changed",
+        "from": "Applied",
+        "to": "Withdrawn / Closed"
+      }
+    ],
+    "canonical_apply_url": "https://job-boards.greenhouse.io/3cloud/jobs/8659863002",
+    "company": "3Cloud",
+    "company_aliases": [],
+    "company_category": "talent_agency_media",
+    "company_inference_confidence": "Medium",
+    "company_voice_label": "Dynamic Talent Agency Media",
+    "company_voice_profile": "dynamic_talent_agency_media",
+    "company_voice_source": "dynamic_inference",
+    "compensation_disclosure_state": "not_listed",
+    "compensation_display_message": "Compensation not listed \u2014 verify before recruiter screen.",
+    "compensation_maximum": null,
+    "compensation_minimum": null,
+    "confidence": "Medium",
+    "evidence_project_ids": [
+      "microsoft_365_digital_workplace_enablement_sharepoint_workflow_and_knowledge_hub",
+      "enterprise_collaboration_platform_adoption_stakeholder_enablement",
+      "disney_floodlight_tracking_database_and_data_technology_map",
+      "career_catalyst_ai_enabled_career_intelligence_application_operations_platform"
+    ],
+    "field_warnings": [
+      "Compensation not listed \u2014 verify before recruiter screen.",
+      "Full local posting text could not be recovered; verify before future retargeting."
+    ],
+    "freshness": "Unknown freshness",
+    "freshness_label": "Unknown freshness / Verify manually",
+    "id": "3cloud_senior_director_digital_workplace",
+    "job_file": "jobs/3cloud_senior_director_digital_workplace_8659863002.md",
+    "location": "Remote \u2013 United States",
+    "match_gaps": [
+      "Compensation was not listed; verify the range before the recruiter screen.",
+      "Posting age is unknown; verify that the role is still active."
+    ],
+    "match_score": 65,
+    "match_strengths": [
+      "Functional alignment includes workflow and process automation, strategic operations.",
+      "The seniority is aligned with Trisha's director/head-of target level.",
+      "The remote arrangement supports practical fit.",
+      "Career evidence overlaps in Change Management, Microsoft Office."
+    ],
+    "match_summary": "There is credible alignment, but the tradeoffs deserve review before package generation.",
+    "match_tier": "Stretch Match",
+    "material_paths": {
+      "ATS Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_ats_resume.docx",
+      "Application Note": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_application_note.txt",
+      "Cover Letter": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_cover_letter.docx",
+      "Hiring Manager Message": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_hiring_manager_message.txt",
+      "Interview Prep": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_interview_prep.txt",
+      "Package Summary": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_package_summary.txt",
+      "Recruiter Message": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_recruiter_message.txt",
+      "Strategy Pack": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_strategy_pack.txt",
+      "Styled Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_styled_resume.docx",
+      "Tailored Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_resume.txt"
+    },
+    "next_action": "Verify compensation before recruiter screen and recover full posting text if available.",
+    "notes": "Application was submitted before Sprint 33. Existing package preserved without regeneration.",
+    "official_url": "https://job-boards.greenhouse.io/3cloud/jobs/8659863002",
+    "package_history": [
+      {
+        "date": "2026-08-01",
+        "event": "existing package preserved during durable runtime reconstruction",
+        "generated_at": "2026-08-01T17:23:00.597989+00:00",
+        "manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/manifest.json"
+      }
+    ],
+    "package_manifest": {
+      "applied_date": "",
+      "archive_reason": "",
+      "archived": false,
+      "company": "3Cloud",
+      "files": {
+        "application_note": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_application_note.txt",
+        "ats_docx": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_ats_resume.docx",
+        "cover_letter": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_cover_letter.txt",
+        "cover_letter_docx": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_cover_letter.docx",
+        "hiring_manager_message": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_hiring_manager_message.txt",
+        "interview_prep": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_interview_prep.txt",
+        "package_summary": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_package_summary.txt",
+        "recruiter_message": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_recruiter_message.txt",
+        "resume_text": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_resume.txt",
+        "strategy_pack": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_strategy_pack.txt",
+        "styled_docx": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_styled_resume.docx"
+      },
+      "generated_at": "2026-08-01T17:23:00.597989+00:00",
+      "legacy_files_moved": [
+        "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/old_generated_materials/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_ats_resume.md"
+      ],
+      "manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/manifest.json",
+      "materials": {
+        "ATS Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_ats_resume.docx",
+        "Application Note": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_application_note.txt",
+        "Cover Letter": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_cover_letter.docx",
+        "Hiring Manager Message": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_hiring_manager_message.txt",
+        "Interview Prep": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_interview_prep.txt",
+        "Job Description": "/Users/trisha.lynch/.codex/.chatgpt-projects/g-p-6a5d817ef0788191bbc5427a19234f4c/main_runtime_60cca23/jobs/3cloud_senior_director_digital_workplace_8659863002.md",
+        "Package Summary": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_package_summary.txt",
+        "Recruiter Message": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_recruiter_message.txt",
+        "Strategy Pack": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_strategy_pack.txt",
+        "Styled Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_styled_resume.docx",
+        "Tailored Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/3cloud_senior_director_digital_workplace_trisha_lynch_resume.txt"
+      },
+      "prospect_id": "3cloud_senior_director_digital_workplace",
+      "role_intent": {
+        "confidence": "medium",
+        "earlier_career_policy": "omit",
+        "generated_greeting": "Dear 3Cloud Hiring Team,",
+        "headline_profile": "Senior Operations & Transformation Leader | MarTech | AI Systems | Entertainment",
+        "lead_evidence": [
+          "cross_functional_leadership",
+          "workflow_governance"
+        ],
+        "package_role_family": "business_operations",
+        "package_role_label": "Senior Operations Leadership",
+        "primary_archetype": "general_operations",
+        "primary_cover_letter_story": "integrated_leadership",
+        "primary_hiring_need": "Bring disciplined senior operations leadership to ambiguous cross-functional priorities.",
+        "reasoning_signals": [
+          "automation",
+          "change management",
+          "systems",
+          "transformation"
+        ],
+        "required_outcomes": [
+          "clarify_priorities",
+          "improve_cross_functional_execution",
+          "strengthen_operating_visibility"
+        ],
+        "secondary_archetypes": [
+          "ai_transformation",
+          "pmo_program_delivery"
+        ],
+        "secondary_cover_letter_story": "workflow_governance",
+        "selected_project_limit": 0,
+        "supporting_evidence": [
+          "enterprise_campaign_delivery"
+        ],
+        "suppressed_evidence": [
+          "additional_early_experience",
+          "unrelated_independent_projects"
+        ],
+        "target_max_pages": 2
+      },
+      "role_title": "Senior Director - Digital Workplace",
+      "slug": "3cloud_senior_director_digital_workplace",
+      "source_url": "https://job-boards.greenhouse.io/3cloud/jobs/8659863002?gh_jid=8659863002",
+      "status": "Drafted",
+      "status_date": "",
+      "tailoring_metadata": {
+        "cover_letter_projects_used": [],
+        "evidence_score_contribution": {
+          "after": 73,
+          "before": 71,
+          "delta": 2,
+          "explanation": "Selected Evidence matched additional verified role requirements.",
+          "matched_requirements": [
+            "change management",
+            "workplace",
+            "microsoft",
+            "digital",
+            "adoption"
+          ]
+        },
+        "projects_not_used": [],
+        "resume_projects_used": [
+          "Microsoft 365 Digital Workplace Enablement \u2014 SharePoint Workflow and Knowledge Hub",
+          "Enterprise Collaboration Platform Adoption & Stakeholder Enablement",
+          "Disney Floodlight Tracking Database and Data Technology Map"
+        ],
+        "selected_evidence": [
+          {
+            "id": "microsoft_365_digital_workplace_enablement_sharepoint_workflow_and_knowledge_hub",
+            "manual": true,
+            "matched_signals": [
+              "365",
+              "adoption",
+              "architecture",
+              "automation",
+              "change",
+              "collaboration",
+              "design",
+              "digital",
+              "employee",
+              "employees"
+            ],
+            "relevance_score": 34,
+            "title": "Microsoft 365 Digital Workplace Enablement \u2014 SharePoint Workflow and Knowledge Hub"
+          },
+          {
+            "id": "enterprise_collaboration_platform_adoption_stakeholder_enablement",
+            "manual": true,
+            "matched_signals": [
+              "adoption",
+              "answered",
+              "challenges",
+              "change",
+              "collaboration",
+              "enterprise",
+              "establish",
+              "expertise",
+              "help",
+              "large"
+            ],
+            "relevance_score": 27,
+            "title": "Enterprise Collaboration Platform Adoption & Stakeholder Enablement"
+          },
+          {
+            "id": "disney_floodlight_tracking_database_and_data_technology_map",
+            "manual": true,
+            "matched_signals": [
+              "account",
+              "architecture",
+              "client",
+              "data",
+              "design",
+              "development",
+              "governance",
+              "implementation",
+              "individual",
+              "knowledge"
+            ],
+            "relevance_score": 25,
+            "title": "Disney Floodlight Tracking Database and Data Technology Map"
+          }
+        ],
+        "system_recommended_projects": []
+      }
+    },
+    "posting_date": "",
+    "posting_status": "Verify manually",
+    "posting_text_recovery_note": "The package manifest references a missing temporary-runtime job file. Role and existing package preserved without inventing posting content.",
+    "posting_text_recovery_required": true,
+    "posting_url": "https://job-boards.greenhouse.io/3cloud/jobs/8659863002",
+    "priority": "High",
+    "recommended_action": "Review First",
+    "role": "Senior Director \u2013 Digital Workplace",
+    "role_aliases": [
+      "Senior Director - Digital Workplace"
+    ],
+    "role_family": "business_operations",
+    "salary_range": "Compensation not listed \u2014 verify before recruiter screen.",
+    "show_on_dashboard": true,
+    "source": "Official Greenhouse",
+    "source_domain": "job-boards.greenhouse.io",
+    "source_trust_label": "Direct Employer",
+    "source_type": "Direct Employer",
+    "source_url": "https://job-boards.greenhouse.io/3cloud/jobs/8659863002",
+    "source_verified": true,
+    "status": "Withdrawn / Closed",
+    "status_updated_at": "2026-08-04T15:52:06",
+    "submitted_date": "2026-08-01",
+    "verification_status": "Employer Source",
+    "work_arrangement": "Remote"
+  },
+  "original_role_id": "3cloud_senior_director_digital_workplace",
+  "role_title": "Senior Director \u2013 Digital Workplace",
+  "schema_version": 2,
+  "source_metadata": {
+    "source": "Official Greenhouse",
+    "source_trust_label": "Direct Employer",
+    "source_type": "Direct Employer",
+    "verification_status": "Employer Source"
+  },
+  "source_url": "https://job-boards.greenhouse.io/3cloud/jobs/8659863002"
+}

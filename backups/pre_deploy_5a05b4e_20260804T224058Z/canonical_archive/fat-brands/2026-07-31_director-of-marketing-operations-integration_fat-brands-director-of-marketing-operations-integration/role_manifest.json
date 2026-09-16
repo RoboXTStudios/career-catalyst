@@ -1,0 +1,273 @@
+{
+  "application_url": "",
+  "archive_folder": "/Users/trisha.lynch/Documents/career-catalyst/archive/fat-brands/2026-07-31_director-of-marketing-operations-integration_fat-brands-director-of-marketing-operations-integration",
+  "archive_reason": "Withdrawn / Closed",
+  "archived_at": "2026-07-31T18:32:03.455521+00:00",
+  "company": "FAT Brands",
+  "final_status": "Withdrawn / Closed",
+  "job_posting_sha256": "b6d62a111fb8678fc01632cacaeeb8c5299cbf6dee58f561bd0643d359d6d907",
+  "legacy_archive_reason": "Hidden / Invalid",
+  "legacy_status": "Reviewed",
+  "location": "Los Angeles, CA, US",
+  "match_score_snapshot": 85,
+  "match_tier_snapshot": "Strong Match",
+  "materials": [
+    {
+      "filename": "materials/application_note.txt",
+      "label": "Application Note",
+      "sha256": "ffd254385fb9f1f5a85f21703d74af926f63d6830f40bd59446cb03c879adc22",
+      "size": 655,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_application_note.txt"
+    },
+    {
+      "filename": "materials/ats_resume.docx",
+      "label": "ATS Resume",
+      "sha256": "f71647c08f7a86221450a320078addcacea0be308ece8cb45a104e9beb507c19",
+      "size": 29105,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_ats_resume.docx"
+    },
+    {
+      "filename": "materials/cover_letter.docx",
+      "label": "Cover Letter",
+      "sha256": "5db0fa53a173d945c9326e4f4b72e9551454bbe947d572dabafdd9b409c955a0",
+      "size": 27885,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_cover_letter.docx"
+    },
+    {
+      "filename": "materials/cover_letter.txt",
+      "label": "cover_letter",
+      "sha256": "117a33a125a3994ec835a8762e3d71b0c5c808194fdc563c084ccd58033a2c1c",
+      "size": 1754,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_cover_letter.txt"
+    },
+    {
+      "filename": "materials/hiring_manager_message.txt",
+      "label": "Hiring Manager Message",
+      "sha256": "11e9716f861c8f085dbf05e8a7464b35b4be465d9a18e39399837dd3b6baccdf",
+      "size": 1002,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_hiring_manager_message.txt"
+    },
+    {
+      "filename": "materials/interview_prep.txt",
+      "label": "Interview Prep",
+      "sha256": "43a2638f32c156658340a1afd03bcd9ee9329e119c458a9f0e0e15d86239c3d6",
+      "size": 1292,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_interview_prep.txt"
+    },
+    {
+      "filename": "materials/package_summary.txt",
+      "label": "Package Summary",
+      "sha256": "061575cdeb7331ed5c0353f6dc8bb813a319904a3d1a9970ed0e730beaad892b",
+      "size": 647,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_package_summary.txt"
+    },
+    {
+      "filename": "materials/recruiter_message.txt",
+      "label": "Recruiter Message",
+      "sha256": "82319283ce0600b5be0ec3102393b53ffa1c5a1a07eedd0f8e5004a6f99df723",
+      "size": 571,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_recruiter_message.txt"
+    },
+    {
+      "filename": "materials/strategy_pack.txt",
+      "label": "Strategy Pack",
+      "sha256": "4e3e86db09f40bbfc6ff89d78be97af7d11ea37646d9b70014422355b65cd4d3",
+      "size": 9185,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_strategy_pack.txt"
+    },
+    {
+      "filename": "materials/styled_resume.docx",
+      "label": "Styled Resume",
+      "sha256": "52d935b88cc299d9ed9e294b1d25e188fd98b5e34a55f635ff89717f13fbf1e4",
+      "size": 26719,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_styled_resume.docx"
+    },
+    {
+      "filename": "materials/tailored_resume.txt",
+      "label": "Tailored Resume",
+      "sha256": "70e2f5ab89708a78912a7dd220d7d87e739c90c89dc9a968b340e5e9568f361a",
+      "size": 4413,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_resume.txt"
+    }
+  ],
+  "original_record": {
+    "application_history": [
+      {
+        "date": "2026-07-25",
+        "event": "status changed",
+        "from": "Drafted",
+        "to": "Withdrawn / Closed"
+      },
+      {
+        "archive_reason": "Hidden / Invalid",
+        "date": "2026-07-29T22:10:07.112480+00:00",
+        "event": "role archived",
+        "status": "Withdrawn / Closed"
+      }
+    ],
+    "application_portal_url": "",
+    "apply_recommendation": "Apply Immediately",
+    "archive_reason": "Hidden / Invalid",
+    "archived": true,
+    "archived_at": "2026-07-29T22:10:07.112480+00:00",
+    "company": "FAT Brands",
+    "company_aliases": [],
+    "company_category": "marketing_advertising",
+    "company_inference_confidence": "High",
+    "company_voice_label": "Dynamic Marketing Advertising",
+    "company_voice_profile": "dynamic_marketing_advertising",
+    "company_voice_source": "dynamic_inference",
+    "compensation_currency": "USD",
+    "compensation_manual_override": false,
+    "compensation_maximum": 150000.0,
+    "compensation_minimum": 120000.0,
+    "compensation_period": "year",
+    "compensation_raw": "$120,000.0-$150,000.0 per year",
+    "compensation_source": "saved",
+    "confidence": "High",
+    "field_warnings": [
+      "Unknown source domain",
+      "Verify on employer site before generating package or applying.",
+      "Role family was inferred. Review if this is a strategic or product-ops role."
+    ],
+    "freshness": "Active",
+    "freshness_label": "Active / Good priority",
+    "freshness_risk": "Low",
+    "greenhouse_backed_hint": false,
+    "id": "fat_brands_director_of_marketing_operations_integration",
+    "job_file": "jobs/fat_brands_director_of_marketing_operations_and_integration.md",
+    "legacy_status": "Reviewed",
+    "location": "Los Angeles, CA, US",
+    "match_gaps": [
+      "Confirm the reporting line and decision authority before generating the package."
+    ],
+    "match_score": 85,
+    "match_strengths": [
+      "Functional alignment includes campaign operations, marketing technology and measurement, workflow and process automation.",
+      "The seniority is aligned with Trisha's director/head-of target level.",
+      "The marketing technology context is adjacent to Trisha's target industries.",
+      "The disclosed compensation is aligned with or near Trisha's target.",
+      "The remote arrangement supports practical fit."
+    ],
+    "match_summary": "Strong alignment across Trisha's core experience, target level, and practical priorities.",
+    "match_tier": "Strong Match",
+    "material_paths": {
+      "ATS Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_ats_resume.docx",
+      "Application Note": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_application_note.txt",
+      "Cover Letter": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_cover_letter.docx",
+      "Hiring Manager Message": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_hiring_manager_message.txt",
+      "Interview Prep": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_interview_prep.txt",
+      "Package Summary": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_package_summary.txt",
+      "Recruiter Message": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_recruiter_message.txt",
+      "Strategy Pack": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_strategy_pack.txt",
+      "Styled Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_styled_resume.docx",
+      "Tailored Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_resume.txt"
+    },
+    "next_action": "Verify on employer site before generating package or applying.",
+    "notes": "",
+    "official_url": "https://recruiting.paylocity.com/Recruiting/Jobs/Details/4335841",
+    "opportunity_dimensions": {
+      "Industry Alignment": 44,
+      "Interview Probability": 80,
+      "Location Fit": 100,
+      "Mission / Personal Alignment": 82,
+      "Posting Freshness": 82,
+      "Resume Fit": 85,
+      "Role Level Fit": 100,
+      "Salary Fit": 84
+    },
+    "opportunity_score": 82,
+    "original_source_url": "https://recruiting.paylocity.com/Recruiting/Jobs/Details/4335841",
+    "package_manifest": {
+      "applied_date": "",
+      "archive_reason": "Hidden / Invalid",
+      "archived": true,
+      "company": "FAT Brands",
+      "files": {
+        "application_note": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_application_note.txt",
+        "ats_docx": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_ats_resume.docx",
+        "cover_letter": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_cover_letter.txt",
+        "cover_letter_docx": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_cover_letter.docx",
+        "hiring_manager_message": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_hiring_manager_message.txt",
+        "interview_prep": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_interview_prep.txt",
+        "package_summary": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_package_summary.txt",
+        "recruiter_message": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_recruiter_message.txt",
+        "resume_text": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_resume.txt",
+        "strategy_pack": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_strategy_pack.txt",
+        "styled_docx": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_styled_resume.docx"
+      },
+      "generated_at": "2026-07-25T20:17:19.134710+00:00",
+      "legacy_files_moved": [
+        "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/old_generated_materials/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_ats_resume.md"
+      ],
+      "manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/manifest.json",
+      "materials": {
+        "ATS Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_ats_resume.docx",
+        "Application Note": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_application_note.txt",
+        "Cover Letter": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_cover_letter.docx",
+        "Hiring Manager Message": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_hiring_manager_message.txt",
+        "Interview Prep": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_interview_prep.txt",
+        "Package Summary": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_package_summary.txt",
+        "Recruiter Message": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_recruiter_message.txt",
+        "Strategy Pack": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_strategy_pack.txt",
+        "Styled Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_styled_resume.docx",
+        "Tailored Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/fat_brands_director_of_marketing_operations_integration/fat_brands_director_marketing_operations_integration_trisha_lynch_resume.txt"
+      },
+      "prospect_id": "fat_brands_director_of_marketing_operations_integration",
+      "role_title": "Director of Marketing Operations & Integration",
+      "slug": "fat_brands_director_of_marketing_operations_integration",
+      "source_url": "https://recruiting.paylocity.com/Recruiting/Jobs/Details/4335841",
+      "status": "Withdrawn / Closed",
+      "status_date": ""
+    },
+    "package_quality": {
+      "ats_keyword_match": 89,
+      "confidence_level": "High",
+      "confidence_score": 86,
+      "cover_letter_score": 87,
+      "resume_tailoring_score": 86,
+      "voice_match": 84
+    },
+    "posting_age_days": 10,
+    "posting_date": "2026-07-15",
+    "posting_status": "Open",
+    "posting_url": "https://recruiting.paylocity.com/Recruiting/Jobs/Details/4335841",
+    "pre_archive_status": "Withdrawn / Closed",
+    "priority": "Medium",
+    "recommended_action": "Generate Package",
+    "recommended_next_step": "Verify the source and role manually before applying.",
+    "requires_verification": true,
+    "role": "Director of Marketing Operations & Integration",
+    "role_aliases": [],
+    "role_family": "creative_marketing_ops",
+    "salary_range": "$120,000 \u2013 $150,000 per year",
+    "show_on_dashboard": false,
+    "source": "recruiting.paylocity.com",
+    "source_confidence": "Low",
+    "source_domain": "recruiting.paylocity.com",
+    "source_name": "recruiting.paylocity.com",
+    "source_trust_label": "Unknown Source",
+    "source_type": "Unknown Source",
+    "source_url": "https://recruiting.paylocity.com/Recruiting/Jobs/Details/4335841",
+    "source_verified": true,
+    "source_warnings": [
+      "Unknown source domain"
+    ],
+    "status": "Withdrawn / Closed",
+    "status_updated_at": "2026-07-25T14:02:15",
+    "verification_notes": "source domain is not in the registry; verify manually",
+    "verification_status": "Employer Source",
+    "work_arrangement": "Remote"
+  },
+  "original_role_id": "fat_brands_director_of_marketing_operations_integration",
+  "role_title": "Director of Marketing Operations & Integration",
+  "schema_version": 2,
+  "source_metadata": {
+    "source": "recruiting.paylocity.com",
+    "source_name": "recruiting.paylocity.com",
+    "source_trust_label": "Unknown Source",
+    "source_type": "Unknown Source",
+    "verification_status": "Employer Source"
+  },
+  "source_url": "https://recruiting.paylocity.com/Recruiting/Jobs/Details/4335841"
+}

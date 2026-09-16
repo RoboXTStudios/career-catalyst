@@ -1,0 +1,57 @@
+# Interview Prep
+
+## Contact Center Operations and Transformation Functional Manager at Deloitte US
+
+### Hiring Manager Lens
+
+- Likely first question: What experience best prepares you to solve this problem: Redesign how work gets done and help the organization adopt the change?
+- Likely functional probe: The hiring manager is likely to probe Is this a formal people-management role, and what team or disciplines would report to it?.
+- Likely concern: The hiring manager may hesitate if there is shared vocabulary without evidence of substantive ownership.
+- Response strategy: Use specific decisions, actions, and results that map to the hiring manager's stated and inferred priorities.
+
+### Likely Themes
+
+- cross-functional
+- deloitte
+- service
+- customer
+- center
+- contact
+
+### Proof Points to Prepare
+
+- Led enterprise campaign operations supporting Disney Studios Theatrical and Disney Streaming/DSS while coordinating creative, media, analytics, technology, and operations teams.
+- Worked extensively with advertising technology platforms supporting campaign activation, execution, delivery, and measurement.
+- Diagnosed and coordinated resolution of campaign delivery, trafficking, reporting, measurement, implementation, and platform issues.
+- Translated technical platform requirements into operational guidance for marketing, analytics, technology, creative, media, and leadership stakeholders.
+- Led Supervisors, Senior Campaign Managers, Campaign Managers, and Coordinators responsible for campaign execution and platform implementation.
+- Designed scalable workflows, governance, implementation standards, handoff processes, and operational systems.
+
+### Story Prompts
+
+- A time you turned an unclear cross-functional problem into a practical operating plan.
+- A time you improved a process without losing the trust or judgment of the people doing the work.
+- A time you used data, workflow design, or reporting to improve visibility and execution.
+- A decision where you balanced speed, quality, stakeholder needs, and limited capacity.
+
+### Requirement Gaps
+
+- Missing from resume language: Experience with contact center and customer service technologies, including CCaaS, CRM, workforce management, quality management, knowledge management, analytics, and AI-enabled service tools.
+- Missing from resume language: As a Manager in Deloitte Consulting’s Customer offering portfolio, you will help clients transform contact center and customer service operations to drive efficiency, improve customer and employee experiences, and enable more scalable, data-driven service delivery.
+- Missing from resume language: You will work at the intersection of business transformation, operations, technology, and AI, helping clients assess current-state service models, define future-state capabilities, and implement solutions that improve performance and reduce cost.
+- Missing from resume language: Our Deloitte Sales & Service team empowers organizations to build deeper relationships with customers through innovative strategies, advanced analytics, Generative AI, transformative technologies, and creative design.
+- Evidence is currently absent: 4+ years of experience leading multiple project teams and workstreams simultaneously, with responsibility for delivery quality, team performance, and client outcomes
+- Evidence is currently absent: 2+ years of experience serving clients across various industries, with an understanding of customer operations, service environments, and industry-specific business challenges
+- Evidence is currently absent: Experience with Genesys, Five9, NICE, AWS, or similar cloud-based contact center and customer service platforms.
+- Evidence is currently absent: You will advise clients on a range of customer operations priorities, including contact center transformation, digital channel enablement, operating model redesign, workforce optimization, service personalization, and AI-powered service innovation.
+- Evidence is currently absent: Helping clients use AI, analytics, and customer data to improve service performance, personalize interactions, reduce handle time, increase containment, improve first-contact resolution, and support better decision-making
+- Evidence is currently absent: Our team balances business strategy, technology, creativity, and ongoing managed services to solve the biggest problems that affect customers, partners, constituents, and the workforce
+
+### Questions to Ask
+
+- Is this a formal people-management role, and what team or disciplines would report to it?
+- What outcomes would define success in the first 90 days and first year?
+
+### Voice Reminder
+
+Be specific and conversational. Lead with the situation and decision, then the operating change and measurable result. Do not overstate company familiarity.

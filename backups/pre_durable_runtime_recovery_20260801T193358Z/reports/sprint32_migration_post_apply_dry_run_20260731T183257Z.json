@@ -1,0 +1,24 @@
+{
+  "after_counts": {
+    "Active": 2,
+    "Applied": 14,
+    "Considered": 6,
+    "Rejected": 7,
+    "Under Consideration": 2
+  },
+  "before_counts": {
+    "Active": 2,
+    "Applied": 14,
+    "Considered": 6,
+    "Rejected": 7,
+    "Under Consideration": 2
+  },
+  "changed": [],
+  "changed_count": 0,
+  "legacy_archive_count": 0,
+  "legacy_archives": [],
+  "project_root": "/Users/trisha.lynch/.codex/.chatgpt-projects/g-p-6a5d817ef0788191bbc5427a19234f4c/main_runtime_60cca23",
+  "tracker_sha256": "47b79ce766df6be25bad4f79be24a08f015645dffb0485011ecdb5968d0bf8d7",
+  "unknown_statuses": [],
+  "would_mutate": false
+}

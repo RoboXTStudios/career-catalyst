@@ -1,0 +1,15 @@
+Hello,
+
+The AI Transformation Owner, Marketing role at GitLab fits work I am already doing: transforming Marketing operations and building AI-enabled operating systems that move from a clear hypothesis through working workflows, governance, adoption, and iteration. I would bring business context and hands-on building judgment while partnering closely with technical specialists on production architecture and scale.
+
+Career Catalyst is the clearest current example. As Creator & Product Lead, I designed, built, and actively use a role-aware platform for opportunity intake, evidence management, fit analysis, material generation, status tracking, recovery controls, and quality governance. I turn recurring user problems into structured requirements, schemas, validation rules, and tested workflows, then refine the system through real use.
+
+At OMG23 (Omnicom Media Group), I progressed through five roles to Group Director. I led 10 direct reports and provided strategic and operational leadership across an integrated 64-person organization spanning Ad Operations, Creative Management, and Marketing Science and Analytics. That scale required more than process design. I coordinated an Airtable implementation that created a shared source of truth, with linked workflows, naming standards, permissions, QA, training, and adoption support. I also supported Microsoft Teams adoption through recurring office hours and a peer champion network.
+
+I also served on the cross-functional task force that operationalized the Disney+ launch, connecting governance, taxonomies, validation, QA, measurement readiness, training, and change management under a fixed timeline. That experience taught me to define the outcome, map work and data flows, prototype the right intervention, and build the feedback channels that make a new way of working stick.
+
+I would welcome the opportunity to bring that combination of Marketing operations depth, AI workflow building, and adoption leadership to GitLab. CampaignOS remains a working prototype and a useful supporting example, while Career Catalyst demonstrates the active operating system I build and improve today.
+
+Best,
+
+Trisha Lynch

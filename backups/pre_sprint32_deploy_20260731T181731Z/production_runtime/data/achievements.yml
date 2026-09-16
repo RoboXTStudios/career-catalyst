@@ -1,0 +1,45 @@
+achievements:
+  - id: omg23_advancement
+    theme: Career progression
+    statement: "Advanced through five roles from Campaign Manager to Group Director while leading enterprise operations and transformation work across Disney Studios, Disney+, Searchlight Pictures, Corporate Brand Management, and related theatrical, streaming, and franchise priorities."
+    evidence:
+      - "Progressed through Campaign Manager, Supervisor, Associate Director, Director, and Group Director roles between 2016 and 2026."
+      - "Supported Disney Studios, Disney+, Searchlight Pictures, Corporate Brand Management, and related theatrical, streaming, and franchise priorities."
+  - id: cross_functional_leadership
+    theme: Cross-functional leadership
+    statement: "Led 10 direct reports and provided strategic and operational leadership across an integrated 64-person organization spanning Ad Operations, Creative Management, and Marketing Science and Analytics."
+    evidence:
+      - "Partnered across creative, marketing, media planning, analytics, engineering, technology, programmatic, search, social, vendors, and client leadership."
+  - id: enterprise_campaign_delivery
+    theme: Campaign operations
+    statement: "Directed operational execution for multimillion-dollar premium entertainment campaigns across theatrical releases, streaming launches, and franchise/IP priorities."
+    evidence:
+      - "Established workflows, milestones, quality standards, and partner coordination for consistent campaign execution at scale."
+  - id: disney_plus_launch_support
+    theme: Streaming launch operations
+    statement: "Helped operationalize the Disney+ launch through onboarding, QA, measurement readiness, platform coordination, and execution workflows."
+    evidence:
+      - "Connected campaign operations, platform readiness, and quality assurance."
+  - id: google_youtube_platform_familiarity
+    theme: Google and YouTube platform activation
+    statement: "Built hands-on experience activating Google advertising products, including YouTube, through enterprise campaign operations."
+    evidence:
+      - "Translated Google and YouTube platform capabilities into campaign execution, measurement readiness, and operational workflows."
+      - "Connected brand objectives, campaign operations, measurement, and platform activation across large entertainment advertisers."
+      - "Developed deep familiarity with the practical realities of activating YouTube and Google media products at scale."
+  - id: workflow_governance
+    theme: Process excellence
+    statement: "Introduced scalable workflows, governance practices, and execution standards across marketing, technology, analytics, and creative teams."
+    evidence:
+      - "Improved consistency across complex entertainment marketing operations."
+  - id: multiverse_editorial
+    theme: Editorial leadership
+    statement: "Created and served as Managing Editor of Multiverse, an internal editorial publication reaching 400+ employees."
+    evidence:
+      - "Spotlighted creativity, innovation, culture, and employee storytelling."
+  - id: campaignos_ai_operations
+    theme: AI operations
+    statement: "Designed CampaignOS as a working prototype for AI-powered campaign operations focused on readiness, workflow governance, quality assurance, validation, reporting, and operational risk detection."
+    evidence:
+      - "Built schema-driven workflows and product logic grounded in recurring enterprise entertainment operations challenges."
+      - "Further development depends on representative campaign data and practical testing environments."

@@ -1,0 +1,133 @@
+{
+  "application_url": "",
+  "archive_folder": "/Users/trisha.lynch/Documents/career-catalyst/archive/sony-interactive-entertainment-playstation/2026-08-04_head-of-global-creative-and-product-development-operations_playstation-head-global-creative-ops",
+  "archive_reason": "Rejected",
+  "archived_at": "2026-08-04T22:48:47.567693+00:00",
+  "company": "Sony Interactive Entertainment / PlayStation",
+  "final_status": "Rejected",
+  "job_posting_sha256": "91425924276231fcbf78ebb29869ec28d2dce24169b415b2f3ff5380b512c78e",
+  "legacy_archive_reason": "",
+  "legacy_status": "Paused",
+  "location": "United States, Remote / San Mateo, CA collaboration",
+  "match_score_snapshot": 77,
+  "match_tier_snapshot": "Good Match",
+  "materials": [],
+  "original_record": {
+    "application_history": [
+      {
+        "date": "2026-07-31",
+        "event": "status changed",
+        "from": "Considered",
+        "to": "Withdrawn / Closed"
+      },
+      {
+        "date": "2026-08-04",
+        "event": "status changed",
+        "from": "Withdrawn / Closed",
+        "to": "Rejected"
+      }
+    ],
+    "application_portal_url": "",
+    "apply_recommendation": "Apply If Strategic",
+    "company": "Sony Interactive Entertainment / PlayStation",
+    "company_aliases": [
+      "PlayStation",
+      "Sony Interactive Entertainment",
+      "SIE"
+    ],
+    "company_category": "gaming_fandom",
+    "company_inference_confidence": "Medium",
+    "company_voice_label": "Dynamic Gaming Fandom",
+    "company_voice_profile": "dynamic_gaming_fandom",
+    "company_voice_source": "dynamic_inference",
+    "confidence": "High",
+    "freshness": "Unknown freshness",
+    "freshness_label": "Unknown freshness / Verify manually",
+    "id": "playstation_head_global_creative_ops",
+    "job_description": "",
+    "job_file": "",
+    "lifecycle_migration": {
+      "migrated_at": "20260731T183134Z",
+      "migration": "sprint32_role_lifecycle",
+      "original_status": "Paused"
+    },
+    "location": "United States, Remote / San Mateo, CA collaboration",
+    "match_gaps": [
+      "Posting age is unknown; verify that the role is still active."
+    ],
+    "match_score": 77,
+    "match_strengths": [
+      "Functional alignment includes workflow and process automation.",
+      "The seniority is aligned with Trisha's director/head-of target level.",
+      "The entertainment context is adjacent to Trisha's target industries.",
+      "The disclosed compensation is aligned with or near Trisha's target.",
+      "The remote arrangement supports practical fit."
+    ],
+    "match_summary": "Good overall alignment, with a few cautions to weigh before investing further.",
+    "match_tier": "Good Match",
+    "next_action": "Monitor for response and identify possible recruiter or hiring manager follow-up.",
+    "notes": "Submitted application for Head of Global Creative and Product Development Operations. Used styled resume and PlayStation cover letter.",
+    "opportunity_dimensions": {
+      "Industry Alignment": 58,
+      "Interview Probability": 76,
+      "Location Fit": 100,
+      "Mission / Personal Alignment": 62,
+      "Posting Freshness": 50,
+      "Resume Fit": 77,
+      "Role Level Fit": 100,
+      "Salary Fit": 100
+    },
+    "opportunity_score": 79,
+    "package_quality": {
+      "ats_keyword_match": 83,
+      "confidence_level": "Medium",
+      "confidence_score": 79,
+      "cover_letter_score": 86,
+      "resume_tailoring_score": 78,
+      "voice_match": 68
+    },
+    "posting_date": "",
+    "posting_status": "Open",
+    "posting_url": "",
+    "priority": "Low",
+    "recommended_action": "Generate Package",
+    "reconciliation_provenance": {
+      "package_versions": [
+        {
+          "action": "preserve version",
+          "prospect_id": "playstation_head_global_creative_ops",
+          "retained_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/reconciliation_versions/playstation_head_global_creative_ops/sprint27_5/2e57e709b771/playstation_head_global_creative_product_development_operations_trisha_lynch_ats_resume.docx",
+          "source": "/Users/trisha.lynch/.codex/.chatgpt-projects/g-p-6a5d817ef0788191bbc5427a19234f4c/sprint27_5_repair/exports/docx/playstation_head_global_creative_product_development_operations_trisha_lynch_ats_resume.docx",
+          "source_sha256": "2e57e709b7719e0e85fe7075fccbbdfa67e31e9c8a6472c0485b27bf1a6a4626"
+        },
+        {
+          "action": "preserve version",
+          "prospect_id": "playstation_head_global_creative_ops",
+          "retained_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/reconciliation_versions/playstation_head_global_creative_ops/sprint27_5/9e7f19a52abd/playstation_head_global_creative_product_development_operations_trisha_lynch_styled_resume.docx",
+          "source": "/Users/trisha.lynch/.codex/.chatgpt-projects/g-p-6a5d817ef0788191bbc5427a19234f4c/sprint27_5_repair/exports/docx/playstation_head_global_creative_product_development_operations_trisha_lynch_styled_resume.docx",
+          "source_sha256": "9e7f19a52abdb34c29b75dc0a3528cb156ee598a64884b74c0924867f1a62359"
+        }
+      ]
+    },
+    "role": "Head of Global Creative and Product Development Operations",
+    "role_aliases": [
+      "Head Global Creative Product Development Operations",
+      "Head of Global Creative and Product Development Operations"
+    ],
+    "role_family": "creative_marketing_ops",
+    "salary_range": "$184,100-$276,100 USD",
+    "show_on_dashboard": true,
+    "source": "Official Greenhouse",
+    "status": "Rejected",
+    "status_updated_at": "2026-08-04T14:18:09",
+    "submitted_date": "2026-06-27",
+    "work_arrangement": ""
+  },
+  "original_role_id": "playstation_head_global_creative_ops",
+  "role_title": "Head of Global Creative and Product Development Operations",
+  "schema_version": 2,
+  "source_metadata": {
+    "source": "Official Greenhouse"
+  },
+  "source_url": ""
+}

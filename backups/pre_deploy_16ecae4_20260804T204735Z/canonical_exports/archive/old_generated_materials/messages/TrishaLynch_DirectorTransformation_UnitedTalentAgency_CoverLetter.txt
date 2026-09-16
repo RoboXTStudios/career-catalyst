@@ -1,0 +1,13 @@
+Hello,
+
+The Director, Transformation role at United Talent Agency stood out because it asks for more than an internal process operator. It calls for someone who can understand a stakeholder's problem, form a clear hypothesis, shape an operating model, and communicate a recommendation that people can act on. That combination of advisory thinking and practical execution fits how I have worked across media, marketing, advertising, and technology.
+
+At OMG23 / OMD Entertainment, Omnicom Media Group, I progressed to Group Director while aligning senior stakeholders, cross-functional teams, and external partners around complex entertainment marketing work. I learned to move between executive context and delivery detail: clarify the decision, map dependencies, surface risk, and translate competing priorities into workflows and standards. That work required client-facing communication, sound judgment, and recommendations grounded in the realities of teams responsible for execution.
+
+Building CampaignOS extended that transformation work into a product. I took a recurring organizational problem, developed a point of view about its root causes, and designed an AI-powered operating system for governance, validation, quality, and reporting. The process has strengthened the same muscles useful in advisory work: structured discovery, hypothesis-driven problem solving, stakeholder empathy, and turning strategy into an implementable model.
+
+I would welcome the chance to discuss how United Talent Agency approaches transformation across its clients and business. I would bring an operator's fluency in the media ecosystem, an advisory mindset, and the discipline to carry a recommendation through to measurable execution. I am at my best when the answer must be both strategically sound and workable for the people responsible for delivering it.
+
+Best,
+
+Trisha Lynch

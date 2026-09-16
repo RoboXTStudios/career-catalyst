@@ -1,0 +1,31 @@
+schema_version: 1
+capability_reviews:
+- id: git_development_collaboration
+  user_review_status: Confirmed
+  strength: Direct Experience
+  limitations:
+  - Does not establish machine-learning engineering, model training, full-stack engineering,
+    MLOps, cloud architecture, or sole software-engineering ownership
+  supporting_evidence_ids:
+  - career_catalyst_codex_delivery
+  updated_at: '2026-07-21T21:47:29+00:00'
+  notes: []
+  unresolved_supporting_evidence_ids: []
+  provenance:
+    source: preserved original checkout snapshot
+    report_sha256: 624f895157d2d0b1da394adedc0c670aa2acc290143cc8579c1deae5f168caa5
+    preserved_record_sha256: 7f941d5682b126003be7478bdf4c71920db9c82866707f09c87c7a52e1271399
+- id: technical_program_leadership_ai
+  user_review_status: Confirmed
+  strength: Strong Adjacent Experience
+  limitations:
+  - Does not establish machine-learning engineering, model training, full-stack engineering,
+    MLOps, cloud architecture, or sole software-engineering ownership
+  supporting_evidence_ids: []
+  updated_at: '2026-07-21T21:48:30+00:00'
+  notes: []
+  unresolved_supporting_evidence_ids: []
+  provenance:
+    source: preserved original checkout snapshot
+    report_sha256: 624f895157d2d0b1da394adedc0c670aa2acc290143cc8579c1deae5f168caa5
+    preserved_record_sha256: 1e38b00eb8effa23b3e18845c70851f9525a61926310d185ca079517af8532c6

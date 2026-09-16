@@ -1,0 +1,13 @@
+Hello,
+
+What interests me about the manager, technical solutions role at Reddit is the need to make technical products reliable and usable for customers or advertisers while connecting sales, product, and engineering.
+
+At OMG23 / Omnicom Media Group, I led Disney theatrical and streaming campaign operations across media, analytics, technology, creative, and operations. I translated Google and YouTube capabilities into platform activation, measurement readiness, and dependable delivery workflows for large entertainment advertisers, with QA and risk visibility built into the work.
+
+My background is adjacent to a traditional Solutions Engineering function rather than identical to it. The strongest overlap is advertising technology, platform execution, measurement, technical translation, and cross-functional issue resolution; I would not overstate API, SDK, or solution-architecture ownership.
+
+I am curious how the team divides hands-on implementation, advertiser consultation, escalation ownership, and people leadership, and which of those outcomes matters most in the first six months.
+
+Best,
+
+Trisha Lynch

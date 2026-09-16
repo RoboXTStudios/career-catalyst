@@ -1,0 +1,110 @@
+{
+  "role_id": "3cloud_senior_director_digital_workplace",
+  "code_root": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/code",
+  "runtime_root": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime",
+  "documents_root": "/Users/trisha.lynch/Documents/career-catalyst",
+  "backup": {
+    "path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_candidate_language_repair_20260801T204615Z",
+    "manifest": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_candidate_language_repair_20260801T204615Z/backup_manifest.sha256",
+    "manifest_sha256": "b7bae5879a37d0624cbbe18f75b98dcd218981789f5899a2b2e0ac88b2b5e54b",
+    "file_count": 28,
+    "verified": true
+  },
+  "active_canonical_source": {
+    "type": "structured_yaml",
+    "files": [
+      {
+        "path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/data/projects.yml",
+        "sha256_before": "a8114494840126881aff1237595ba8f3123df1d6689bbcc20461476c1aae0889",
+        "sha256_after": "a560c4d81d4444426fdf2af1176b416f409a43b4ee5d45c4651ff63f00a7bf9e",
+        "occurrence_before": "Applied nearly two decades of enterprise entertainment operations experience to solve recurring organizational challenges through AI, automation, and product thinking.",
+        "replacement": "Applied extensive enterprise entertainment operations experience to solve recurring organizational challenges through AI, automation, and product thinking."
+      },
+      {
+        "path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/data/achievements.yml",
+        "sha256_before": "ee93b633f32b161b78d16a557d491c6673dddab9bcd9392274a641353a20fed3",
+        "sha256_after": "45a7fe7905bf94236d81b23345b9fcf61511d2307f5494851f0becb46ee1e586",
+        "occurrence_before": "Applied nearly two decades of enterprise entertainment operations experience to solve recurring organizational challenges through AI, automation, and product thinking.",
+        "replacement": "Applied extensive enterprise entertainment operations experience to solve recurring organizational challenges through AI, automation, and product thinking."
+      }
+    ],
+    "validator": "passed; zero candidate-language violations",
+    "alternate_source": "/Users/trisha.lynch/Documents/career-catalyst/data/projects.yml and data/achievements.yml still contain the old phrase; left untouched"
+  },
+  "evidence": {
+    "before": [
+      "microsoft_365_digital_workplace_enablement_sharepoint_workflow_and_knowledge_hub",
+      "enterprise_collaboration_platform_adoption_stakeholder_enablement",
+      "disney_floodlight_tracking_database_and_data_technology_map"
+    ],
+    "after": [
+      "microsoft_365_digital_workplace_enablement_sharepoint_workflow_and_knowledge_hub",
+      "enterprise_collaboration_platform_adoption_stakeholder_enablement",
+      "disney_floodlight_tracking_database_and_data_technology_map",
+      "career_catalyst_ai_enabled_career_intelligence_application_operations_platform"
+    ],
+    "count": 4,
+    "ui_three_record_reason": "The fourth Career Catalyst ID was absent from persisted evidence_project_ids; the earlier UI/report reflected stale prior state.",
+    "incremental_scoring": {
+      "base": 61,
+      "microsoft_365_digital_workplace_enablement_sharepoint_workflow_and_knowledge_hub": 4,
+      "enterprise_collaboration_platform_adoption_stakeholder_enablement": 0,
+      "disney_floodlight_tracking_database_and_data_technology_map": 0,
+      "career_catalyst_ai_enabled_career_intelligence_application_operations_platform": 0
+    }
+  },
+  "score_reconciliation": {
+    "former_score": 73,
+    "former_score_evidence": "Existing 3Cloud package manifest and tracker package metadata recorded before 71, after 73, delta 2, with three selected Evidence records.",
+    "stale_display_before_repair": "53 base + 7 Evidence = 60",
+    "current_base_score": 61,
+    "current_evidence_contribution": 4,
+    "current_final_score": 65,
+    "reason_for_change": "The former 73 was stale package metadata produced under the prior incomplete/stale posting context. Re-rescoring the recovered full Greenhouse posting with the current scorer yields 61 base and 65 with the four selected Evidence records. The fourth record loads correctly but adds no new deduplicated requirement beyond the existing matched set.",
+    "matched_requirements": ["change management", "workplace", "microsoft", "digital", "adoption"],
+    "gaps": ["executive communication", "cloud", "growth", "will"],
+    "compensation_effect": "No salary disclosed; minimum and maximum remain null; compensation does not increase the score."
+  },
+  "package_validation": {
+    "preflight": "ok",
+    "canonical_export_root": "/Users/trisha.lynch/Documents/career-catalyst/exports",
+    "local_job_resolves": true,
+    "all_four_evidence_load": true,
+    "language_error": false,
+    "generation_enabled": true,
+    "generated_or_overwritten": false,
+    "existing_package_unchanged": true,
+    "manifest_sha256": "1a654ba2c389ba33ffe10a8b899900912ff5d02e88d4c70a88aa0048d713e2ba"
+  },
+  "runtime_verification": {
+    "tests": "39 passed",
+    "health": "ok",
+    "pid": 13457,
+    "url": "http://127.0.0.1:8503",
+    "browser_console_errors": 0,
+    "dashboard_roles": 32,
+    "evidence_cards": 10,
+    "active_packages": 21,
+    "archive_entries": 22,
+    "3cloud_status": "Applied",
+    "3cloud_ui_score": 65,
+    "3cloud_ui_evidence": 4,
+    "generate_package_ui": "3Cloud selected; Tailoring Plan rendered; no candidate-language error"
+  },
+  "tracker": {
+    "sha256_before": "edefa34e5e73d4b7d8612baf7319309f5c9c3c4d6b79abead24027b380e6906e",
+    "sha256_after": "d0aad747cd7a6a535f9fd68f766f7698d953297c4a7541491908f288c020d5f8",
+    "semantic_changes": ["3Cloud evidence_project_ids", "3Cloud match_score", "3Cloud match_strengths"],
+    "other_role_changes": [],
+    "status_preserved": "Applied",
+    "compensation_preserved": true
+  },
+  "restrictions_verified": [
+    "No scoring logic changed",
+    "No job description changed",
+    "No migration or cleanup run",
+    "No package regenerated or overwritten",
+    "No other role changed",
+    "Documents checkout source and alternate candidate files left untouched"
+  ]
+}

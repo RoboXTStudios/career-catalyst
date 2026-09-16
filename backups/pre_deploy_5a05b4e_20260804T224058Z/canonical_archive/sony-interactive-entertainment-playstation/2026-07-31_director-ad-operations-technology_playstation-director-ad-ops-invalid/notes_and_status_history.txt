@@ -1,0 +1,7 @@
+Notes
+-----
+Official detail page appeared active, but application flow was broken or unavailable. Do not pursue unless role is reposted with a working application.
+
+Status history
+--------------
+{"archive_reason": "Hidden / Invalid", "date": "2026-07-29T22:09:38.561318+00:00", "event": "role archived", "status": "Withdrawn / Closed"}

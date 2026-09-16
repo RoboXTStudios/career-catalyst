@@ -1,0 +1,9 @@
+Hello,
+
+I'm reaching out about the Strategy and Operations Lead, YouTube Auction Brand role at Google. It stands out because it connects YouTube product activation, GTM operations, and large advertiser execution. I bring long-term hands-on experience with Google advertising products, including YouTube, dating back to the early 2000s. I have translated Google and YouTube platform capabilities into campaign execution, measurement readiness, and operational workflows across large entertainment advertisers. CampaignOS is a current proof point for how I turn recurring operational needs into scalable systems.
+
+If you're the right person to speak with, I would be glad to share more. If not, would you mind pointing me in the right direction?
+
+Best,
+
+Trisha Lynch

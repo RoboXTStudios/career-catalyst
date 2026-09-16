@@ -1,0 +1,11 @@
+Notes
+-----
+Applied with $100k salary expectation due posted range. Treat as music-industry doorway opportunity, not survival compensation.
+
+https://wmg.wd1.myworkdayjobs.com/en-US/WMGUS/userHome
+
+Workday Status: None - may be stale
+
+Status history
+--------------
+{"date": "2026-07-31", "event": "status changed", "from": "Considered", "to": "Rejected"}

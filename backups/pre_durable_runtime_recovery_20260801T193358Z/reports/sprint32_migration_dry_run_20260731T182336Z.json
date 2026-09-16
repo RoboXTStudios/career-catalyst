@@ -1,0 +1,172 @@
+{
+  "after_counts": {
+    "Active": 2,
+    "Applied": 14,
+    "Considered": 6,
+    "Invalid/Hidden": 7,
+    "Pass": 4,
+    "Rejected": 7,
+    "Under Consideration": 2,
+    "Withdrawn / Closed": 11
+  },
+  "before_counts": {
+    "Active": 2,
+    "Applied": 14,
+    "Invalid/Hidden": 7,
+    "Pass": 4,
+    "Paused": 6,
+    "Rejected": 7,
+    "Under Consideration": 2,
+    "Withdrawn / Closed": 11
+  },
+  "changed": [
+    {
+      "from": "Paused",
+      "id": "playstation_head_global_creative_ops",
+      "to": "Considered"
+    },
+    {
+      "from": "Paused",
+      "id": "warner_chappell_music_inc_sr_manager_strategic_integration_operations",
+      "to": "Considered"
+    },
+    {
+      "from": "Paused",
+      "id": "netflix_product_manager_ads_platform_experimentation_foundations",
+      "to": "Considered"
+    },
+    {
+      "from": "Paused",
+      "id": "netflix_product_manager_ads_live_ad_serving",
+      "to": "Considered"
+    },
+    {
+      "from": "Paused",
+      "id": "netflix_n_tech_manager_technology_systems_and_operations_creative",
+      "to": "Considered"
+    },
+    {
+      "from": "Paused",
+      "id": "about_tiktok_product_marketing_manager_tiktok_operations",
+      "to": "Considered"
+    }
+  ],
+  "changed_count": 6,
+  "legacy_archive_count": 22,
+  "legacy_archives": [
+    {
+      "archive_reason": "Hidden / Invalid",
+      "id": "playstation_director_ad_ops_invalid",
+      "status": "Invalid/Hidden"
+    },
+    {
+      "archive_reason": "Hidden / Invalid",
+      "id": "crunchyroll_enterprise_strategy_paused",
+      "status": "Invalid/Hidden"
+    },
+    {
+      "archive_reason": "Hidden / Invalid",
+      "id": "united_talent_agency_director_transformation",
+      "status": "Invalid/Hidden"
+    },
+    {
+      "archive_reason": "Passed",
+      "id": "bandsintown_senior_copywriter_content_strategist",
+      "status": "Invalid/Hidden"
+    },
+    {
+      "archive_reason": "Passed",
+      "id": "the_walt_disney_company_corporate_director_talent_growth",
+      "status": "Pass"
+    },
+    {
+      "archive_reason": "Hidden / Invalid",
+      "id": "disney_entertainment_and_espn_product_technology_product_strategy_and_operations_director",
+      "status": "Invalid/Hidden"
+    },
+    {
+      "archive_reason": "Hidden / Invalid",
+      "id": "paramount_director_product_martech_and_engagement_platforms",
+      "status": "Invalid/Hidden"
+    },
+    {
+      "archive_reason": "Hidden / Invalid",
+      "id": "600_umg_recordings_inc_vice_president_planning_and_forecasting_coe_lead",
+      "status": "Invalid/Hidden"
+    },
+    {
+      "archive_reason": "Passed",
+      "id": "live_nation_worldwide_inc_ln_concerts_architectural_design_manager",
+      "status": "Pass"
+    },
+    {
+      "archive_reason": "Passed",
+      "id": "netflix_inc_specialist_performance_marketing",
+      "status": "Pass"
+    },
+    {
+      "archive_reason": "Passed",
+      "id": "netflix_inc_product_manager_ads_supply",
+      "status": "Pass"
+    },
+    {
+      "archive_reason": "Hidden / Invalid",
+      "id": "beast_industries_head_of_programming",
+      "status": "Withdrawn / Closed"
+    },
+    {
+      "archive_reason": "Hidden / Invalid",
+      "id": "deloitte_us_contact_center_operations_and_transformation_functional_manager",
+      "status": "Withdrawn / Closed"
+    },
+    {
+      "archive_reason": "Hidden / Invalid",
+      "id": "deloitte_us_engineering_delivery_manager_ii_service_management_lead",
+      "status": "Withdrawn / Closed"
+    },
+    {
+      "archive_reason": "Hidden / Invalid",
+      "id": "figma_director_business_operations",
+      "status": "Withdrawn / Closed"
+    },
+    {
+      "archive_reason": "Passed",
+      "id": "mrbeastyoutube_head_of_programming",
+      "status": "Withdrawn / Closed"
+    },
+    {
+      "archive_reason": "Hidden / Invalid",
+      "id": "united_talent_agency_director_people_operations",
+      "status": "Withdrawn / Closed"
+    },
+    {
+      "archive_reason": "Hidden / Invalid",
+      "id": "youtube_strategy_and_operations_associate_youtube_music_and_premium",
+      "status": "Withdrawn / Closed"
+    },
+    {
+      "archive_reason": "Hidden / Invalid",
+      "id": "fat_brands_director_of_marketing_operations_integration",
+      "status": "Withdrawn / Closed"
+    },
+    {
+      "archive_reason": "Hidden / Invalid",
+      "id": "disney_experiences_principal_product_mgr",
+      "status": "Withdrawn / Closed"
+    },
+    {
+      "archive_reason": "Passed",
+      "id": "tiktok_creator_operations_manager_emerging_verticals_tiktok_operations_los_angeles",
+      "status": "Withdrawn / Closed"
+    },
+    {
+      "archive_reason": "Passed",
+      "id": "about_tiktok_creator_program_manager_emerging_verticals_tiktok_operations_los_angeles",
+      "status": "Withdrawn / Closed"
+    }
+  ],
+  "project_root": "/Users/trisha.lynch/.codex/.chatgpt-projects/g-p-6a5d817ef0788191bbc5427a19234f4c/main_runtime_60cca23",
+  "tracker_sha256": "bffdba689ac9b74d89bf7fa27d548fb3ff9864f4fc206904fc13958cc870f5d8",
+  "unknown_statuses": [],
+  "would_mutate": true
+}

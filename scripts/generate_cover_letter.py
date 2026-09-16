@@ -10,6 +10,7 @@ from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
 
 try:
+    from .docx_metadata import clean_docx_metadata
     from .application_strategy import (
         TECHNICAL_ARCHETYPES,
         build_application_strategy,
@@ -55,6 +56,7 @@ try:
     from .score_match import score_job_match
     from .text_cleanup import cleanup_repeated_words
 except ImportError:
+    from docx_metadata import clean_docx_metadata
     from application_strategy import (
         TECHNICAL_ARCHETYPES,
         build_application_strategy,
@@ -1381,6 +1383,17 @@ def _dynamic_cover_letter_content(context: Dict[str, Any]) -> str:
         )
 
     selected_ids = {str(card.get("id")) for card in context.get("selected_evidence_cards", [])}
+    evidence_stories = []
+    for card in context.get("selected_evidence_cards", []):
+        proof_points = [
+            str(value).strip()
+            for value in card.get("proof_points") or []
+            if str(value).strip()
+        ]
+        if proof_points:
+            evidence_stories.append(_as_first_person(proof_points[0]))
+        if len(evidence_stories) == 2:
+            break
     if role_family in {"editorial_content_strategy", "community_growth"} and editorial_relevant:
         proof = (
             "Those editorial projects strengthened more than my writing. They required content planning, "
@@ -1396,18 +1409,18 @@ def _dynamic_cover_letter_content(context: Dict[str, Any]) -> str:
             "and practical judgment about where automation can help. That work strengthened my ability to turn "
             "an operating problem into a usable product with clear validation and review controls."
         )
+    elif evidence_stories:
+        proof = " ".join(evidence_stories)
     else:
         proof = (
-            "I would bring governance practices, quality standards, "
-            "clearer handoffs, and executive visibility for teams working under real delivery pressure. That work "
-            "has taught me to keep claims close to the facts, name tradeoffs early, and build only the amount of "
-            "process a team can trust and use."
+            "I would bring governance practices, quality standards, clearer handoffs, and executive "
+            "visibility for teams working under real delivery pressure. My approach is to make decisions "
+            "and ownership clearer while building only the amount of process a team can trust and use."
         )
 
     closing = (
-        f"I would welcome the opportunity to contribute to {company} in the {role} role. I would bring "
-        "calm judgment, practical curiosity, "
-        "and an approach grounded in the role's actual priorities rather than assumptions about the company."
+        f"I would welcome the opportunity to discuss the {role} role at {company} and how my "
+        "systems-minded, practical approach could help the team do its best work."
     )
     return _signed_content(opening, experience, proof, closing)
 
@@ -1558,4 +1571,12 @@ def _export_cover_letter_docx(
 
     docx_path = markdown_path.with_suffix(".docx")
     document.save(docx_path)
+    parsed_job = context.get("parsed_job") or {}
+    role = str(parsed_job.get("job_title") or "Role")
+    company = str(parsed_job.get("company") or "Company")
+    clean_docx_metadata(
+        docx_path,
+        title=f"Trisha Lynch - {role} Cover Letter",
+        subject=f"{role} at {company}",
+    )
     return docx_path

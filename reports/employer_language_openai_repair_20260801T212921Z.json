@@ -1,0 +1,96 @@
+{
+  "repair": "active employer language foundation",
+  "timestamp_utc": "2026-08-01T21:29:21Z",
+  "code_root": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/code",
+  "runtime_root": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime",
+  "export_root": "/Users/trisha.lynch/Documents/career-catalyst/exports",
+  "code_commit": "a16753a5ab00e44ff5daaf3bc7a9c0223973966c",
+  "backup": {
+    "path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_employer_language_repair_20260801T212024Z",
+    "manifest": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_employer_language_repair_20260801T212024Z/backup_manifest.sha256",
+    "manifest_sha256": "e0dd819c7bb098334013634ed8aeaa9bd5c0a11777cc326c358f695f8e038164",
+    "verified_entries": 25,
+    "verification": "shasum -a 256 -c backup_manifest.sha256 passed"
+  },
+  "repair": {
+    "prospect_id": "openai_program_manager_lead",
+    "source_file": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/data/positions.yml",
+    "field": "positions[0].company",
+    "before": "OMG23 / OMD Entertainment, Omnicom Media Group",
+    "after": "OMG23 (Omnicom Media Group)",
+    "sha256_before": "bf9546dec8f20e8ad15b7007dc96c529d4585f98aff3158e71668fe0d33bd2b6",
+    "sha256_after": "85a586646120c7ce17c09bc5228599360e8d94ffd91d28ba4806f580f98c81ce",
+    "active_candidate_language_violations": [],
+    "active_valid_public_name_occurrences": 7,
+    "additional_active_source_repairs": {
+      "data/achievements.yml": {
+        "sha256_before": "45a7fe7905bf94236d81b23345b9fcf61511d2307f5494851f0becb46ee1e586",
+        "sha256_after": "abcbf30e0a2ef2f733776f915488a523ec160a2798dc0bad84973914167b4127",
+        "changes": ["five-role progression language", "10 direct reports / 64-person organization language"]
+      },
+      "config/evidence_cards.yml": {
+        "sha256_before": "79a700d5007fd41b99572c08b7227df3fb066745cc73f87615b37d5cd7f5833f",
+        "sha256_after": "91b42cf585b6003e76d34f0457a5ec9415450d5dbbeaced2c02ba448d1f697a1",
+        "changes": ["candidate-facing OMG23 label", "10 direct reports / 64-person organization proof point"]
+      }
+    },
+    "legacy_internal_occurrences": "left unchanged in evidence_profile.yml and tracker history snapshots; neither is used as an active candidate-facing foundation source"
+  },
+  "openai_validation": {
+    "status": "Prospect",
+    "priority_before": "Medium",
+    "priority_after": "Medium",
+    "priority_note": "Persisted value was Medium; it was not changed.",
+    "match_score_before": 91,
+    "match_score_after": 91,
+    "compensation": "$255,600 – $283,500 per year",
+    "evidence_project_ids": [
+      "disney_launch_readiness_tracking_measurement_and_operational_governance",
+      "enterprise_media_operations_transformation",
+      "campaignos_campaign_operations_workflow_prototype",
+      "career_catalyst_ai_enabled_career_intelligence_application_operations_platform"
+    ],
+    "job_file": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/openai_program_manager_lead_e6ddb290_3585_48ec_a331_d4fc4761af20.md",
+    "job_sha256": "f6ee08894c3b292332636786fb0ec2980131e4afadf1d11d7696e1757ffc4b7b",
+    "preflight": "ok; conflicts=[]",
+    "generation": "isolated GitLab AI Transformation résumé and cover letter generated successfully; no production outputs written"
+  },
+  "protected_data": {
+    "tracker_sha256_before": "b514c2d8aa3f0b204321fee19b22107dd5ed0ae003f47cccd6ac01ce90a8ad96",
+    "tracker_sha256_after": "b514c2d8aa3f0b204321fee19b22107dd5ed0ae003f47cccd6ac01ce90a8ad96",
+    "evidence_summary_sha256": "e22352a04e2fc9e9562d31b04f056fead72c1021f7973204f64d9bb6788bd93b",
+    "capability_graph_sha256": "2d4e318bf1f66ae414b415b367517b06fb0263314b5dff41edb93aa2f53d066e",
+    "capability_reviews_sha256": "740d5f172b95b1f92a960408f8e946f6f66c5ce5350ce7cdf90dbdf09e61cd98",
+    "other_roles_changed": [],
+    "packages_archives_jobs_exports_changed": false
+  },
+  "tests": {
+    "command": "python3 -m pytest -q tests/test_sprint30_golden_resume.py tests/test_sprint26_evidence_projects.py tests/test_sprint31_1_evidence_tailoring_integration.py",
+    "result": "39 passed",
+    "diff_check": "passed"
+  },
+  "live_verification": {
+    "health": "ok during browser QA before final reload; post-repair launcher reload hit the pre-existing missing 3Cloud job error",
+    "pid": 14412,
+    "url": "http://127.0.0.1:8503",
+    "dashboard_loaded": true,
+    "openai_role_loaded": true,
+    "selected_evidence_visible": true,
+    "tailoring_plan_loaded": true,
+    "superseded_language_visible": false,
+    "omd_entertainment_visible": false,
+    "browser_console_errors": 0,
+    "package_generated": false,
+    "relaunch_blocker": "A post-repair browser navigation caused the existing unrelated missing-job failure for tracker entry '3cloud_senior_director_digital_workplace'; no code or job data was changed.",
+    "last_launcher_pid": 15516,
+    "last_health_before_browser_navigation": "ok",
+    "last_browser_navigation": "refused after the unrelated pre-existing 3Cloud failure"
+  },
+  "scope": {
+    "migration": false,
+    "cleanup": false,
+    "submission": false,
+    "source_code_changed": false,
+    "runtime_files_changed": ["data/positions.yml", "data/achievements.yml", "config/evidence_cards.yml"]
+  }
+}

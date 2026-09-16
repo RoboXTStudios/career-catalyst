@@ -1,0 +1,13 @@
+Hello,
+
+The Manager, Technical Solutions role at Reddit caught my attention because it sits at the intersection of technical products, customer problem-solving, implementation reliability, and partnership across sales, product, and engineering. The posting appears to need a leader who can help make complex platform capabilities usable, resolve difficult technical blockers, and turn recurring advertiser issues into better support and product feedback. That is a more specific challenge than general operations, and it is the part of the role I find most compelling.
+
+At OMG23 / Omnicom Media Group, I led campaign operations across Disney Studios Theatrical and Disney Streaming/DSS while working across creative, media, analytics, technology, and operations. My direct advertising technology work included Google and YouTube activation, CM360 and DV360 campaign implementation, trafficking and launch readiness, conversion tracking, measurement validation, QA, and technical troubleshooting for large entertainment advertisers. I translated platform requirements into decisions and workflows that kept delivery reliable under demanding launch timelines.
+
+I also supported server-to-server conversion API implementation from the business and campaign-operations side: clarifying requirements, coordinating the right technical partners, validating launch readiness, and troubleshooting measurement issues. Alongside that work, I led Supervisors, Senior Campaign Managers, Campaign Managers, and Coordinators and built validation and escalation practices that surfaced delivery risk earlier. That experience taught me how to partner across technical and business teams, solve advertiser implementation challenges, and build operational practices that improve delivery quality at scale while keeping teams aligned around clear owners, validation steps, and escalation paths.
+
+I would welcome the opportunity to contribute relevant advertising-platform experience, measurement and delivery discipline, and a practical approach to helping Reddit make technically complex products reliable and usable for customers while turning recurring issues into product and support improvements. I look forward to discussing how that experience can support the team's immediate goals.
+
+Best,
+
+Trisha Lynch

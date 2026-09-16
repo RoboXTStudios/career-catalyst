@@ -1,0 +1,13 @@
+Hello,
+
+The Director, Transformation role at United Talent Agency stood out because it centers on moving from a sound transformation hypothesis to an operating model and recommendation stakeholders can use. That is the kind of problem where clear judgment and practical execution need to work together.
+
+My background across media, marketing, advertising, and technology lets me move between executive context, client-facing communication, and delivery detail.
+
+Building CampaignOS strengthened my approach to structured discovery, systems design, and carrying strategy through to implementation.
+
+I would welcome the chance to learn how the team is defining success and share how my experience could contribute. That conversation would also help me understand where the team sees the greatest friction and which outcomes matter first.
+
+Best,
+
+Trisha Lynch

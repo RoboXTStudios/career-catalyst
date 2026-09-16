@@ -1,0 +1,86 @@
+{
+  "purpose": "Repair missing durable 3Cloud local job file",
+  "role_id": "3cloud_senior_director_digital_workplace",
+  "posting_url": "https://job-boards.greenhouse.io/3cloud/jobs/8659863002",
+  "code_root": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/code",
+  "runtime_root": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime",
+  "export_root": "/Users/trisha.lynch/Documents/career-catalyst/exports",
+  "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z",
+  "backup_manifest": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/backup_manifest.json",
+  "backup_manifest_sha256": "3e021da63027ef7755b2434a0460b140143d3db148ee87bd9b451bd8a8e5ddd6",
+  "backup_file_count": 52,
+  "import_validation": {
+    "source": "Official Greenhouse",
+    "description_status": "Verified",
+    "company": "3Cloud",
+    "job_title": "Senior Director - Digital Workplace",
+    "job_id": "8659863002",
+    "location": "Remote - US",
+    "work_arrangement": "Remote",
+    "compensation_disclosure_state": "not_listed",
+    "description_characters": 7268,
+    "raw_html": false
+  },
+  "job_file": {
+    "path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/3cloud_senior_director_digital_workplace_8659863002.md",
+    "sha256": "13fd6d75c2cf249a2aca9e7ee21fd1d309f09690288c438935b7e9a671222bfe",
+    "tracker_reference_before": null,
+    "tracker_reference_after": "jobs/3cloud_senior_director_digital_workplace_8659863002.md"
+  },
+  "tracker_sha256": {
+    "before": "c5980faf8843878ec036ecb5db3b10e088671e83d5c2ee2ae2d232afbf940f44",
+    "after": "79c561dccdf165f8950e7012e93a62963d68047a97bf703de8b004bd0bccf202"
+  },
+  "tracker_change_scope": ["job_file"],
+  "record_count": 32,
+  "role_status": "Applied",
+  "evidence_ids": [
+    "microsoft_365_digital_workplace_enablement_sharepoint_workflow_and_knowledge_hub",
+    "enterprise_collaboration_platform_adoption_stakeholder_enablement",
+    "disney_floodlight_tracking_database_and_data_technology_map",
+    "career_catalyst_ai_enabled_career_intelligence_application_operations_platform"
+  ],
+  "lifecycle_counts": {
+    "All": 32,
+    "Prospect": 0,
+    "Considered": 2,
+    "Applied": 16,
+    "Under Consideration": 3,
+    "Rejected": 8,
+    "Withdrawn / Closed": 3
+  },
+  "package": {
+    "regenerated": false,
+    "manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/manifest.json",
+    "manifest_sha256_before_after": "1a654ba2c389ba33ffe10a8b899900912ff5d02e88d4c70a88aa0048d713e2ba",
+    "canonical_materials_untouched": true
+  },
+  "verification": {
+    "resolve_job_reference": "passed",
+    "build_package_context": "passed",
+    "application_tracker_validation": "passed",
+    "focused_runtime_checks": "passed",
+    "pytest": "44 passed, 1 baseline failure in test_canonical_export_root_is_stable_and_test_output_is_injected; no repair failure",
+    "browser_dashboard": "passed; All 32 and 3Cloud Applied card visible",
+    "browser_role_details": "passed; four selected Evidence projects visible",
+    "browser_package_selector": "passed; 3Cloud selected and Tailoring Plan rendered without traceback; generation not started",
+    "browser_outputs": "passed; Materials Library 21 active packages",
+    "browser_archive": "passed; Archive Log 22 entries",
+    "browser_evidence": "passed; Evidence Projects loaded",
+    "browser_console_errors": 0,
+    "health_url": "http://127.0.0.1:8503/_stcore/health",
+    "health": "ok",
+    "live_pid": 12178,
+    "live_url": "http://127.0.0.1:8503"
+  },
+  "protected_data_verification": {
+    "backup_entries_verified": 52,
+    "changed_backed_up_paths": ["/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/data/application_tracker.yml"],
+    "package_manifest_changed": false,
+    "jobs_other_than_new_3cloud_file_changed": false,
+    "exports_archives_evidence_manifests_materials_changed": false,
+    "migration_or_cleanup_run": false,
+    "source_code_changed": false
+  },
+  "rollback": "Stop PID 12178, copy application_tracker.yml and the jobs directory from the verified backup back to the durable runtime, then re-run validation; do not use destructive Git commands."
+}

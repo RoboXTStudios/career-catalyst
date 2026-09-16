@@ -1,0 +1,29 @@
+Application Package Summary
+
+Opportunity
+
+- Overall Score: 80/100
+- Apply Recommendation: Apply Immediately
+- Freshness: Fresh / High priority
+- Posting Status: Open
+- Posting Date: 2026-06-24
+- Salary: $152,000-$234,000
+
+Score Dimensions
+
+- Resume Fit: 89/100
+- Salary Fit: 100/100
+- Industry Alignment: 58/100
+- Role Level Fit: 55/100
+- Location Fit: 100/100
+- Mission / Personal Alignment: 72/100
+- Posting Freshness: 100/100
+- Interview Probability: 74/100
+
+Package Quality Check
+
+- Resume Tailoring Score: 90/100
+- Cover Letter Score: 80/100
+- ATS Keyword Match: 96/100
+- Voice Match: 68/100
+- Confidence Level: High

@@ -1,0 +1,7 @@
+Notes
+-----
+https://job-boards.greenhouse.io/crunchyroll/jobs/8029619?gh_jid=8029619
+
+Status history
+--------------
+{"date": "2026-07-27", "event": "status changed", "from": "Applied", "to": "Rejected"}

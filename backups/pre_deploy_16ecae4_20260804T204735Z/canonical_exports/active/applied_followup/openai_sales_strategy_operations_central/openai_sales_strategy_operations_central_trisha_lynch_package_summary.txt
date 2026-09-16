@@ -1,0 +1,54 @@
+# Application Package Summary
+
+## Opportunity
+
+- Overall Score: 72/100
+- Apply Recommendation: Apply If Strategic
+- Freshness: Fresh / High priority
+- Posting Status: Open
+- Posting Date: 2026-08-01
+- Salary: $189,000 – $210,000 per year
+
+### Score Dimensions
+
+- Resume Fit: 63/100
+- Salary Fit: 100/100
+- Industry Alignment: 58/100
+- Role Level Fit: 55/100
+- Location Fit: 100/100
+- Mission / Personal Alignment: 62/100
+- Posting Freshness: 100/100
+- Interview Probability: 60/100
+
+## Package Quality Check
+
+- Resume Tailoring Score: 65/100
+- Cover Letter Score: 76/100
+- ATS Keyword Match: 73/100
+- Voice Match: 60/100
+- Confidence Level: Medium
+
+## Evidence Usage
+
+- Selected: 3
+- Used anywhere: 3
+- Omitted from the entire package: 0
+
+- Enterprise Media Operations Transformation - Requirements supported: across, business, complex, consistent, created, cross, functional, high, improve, initiatives. ATS résumé: Used; styled résumé: Used; cover letter: Not used (Space limit: ranked below the top 2 selected Evidence records for this cover letter.)
+- Career Catalyst - AI-Enabled Career Intelligence & Application Operations Platform - Requirements supported: accuracy, across, analysis, applications, capabilities, context, created, data, design, experience. ATS résumé: Used; styled résumé: Used; cover letter: Used
+- Disney+ Launch Readiness - Tracking, Measurement and Operational Governance - Requirements supported: across, communication, critical, cross, data, design, executive, functional, helping, improve. ATS résumé: Used; styled résumé: Used; cover letter: Used
+
+### Unselected Fallback Evidence
+
+- None
+
+## Candidate-Facing Quality Report
+
+- Role requirements referenced: ['cross-functional', 'openai', 'strategy', 'gtm', 'role', 'team', 'data', 'job']
+- Evidence used: ['Career Catalyst - AI-Enabled Career Intelligence & Application Operations Platform', 'Disney+ Launch Readiness - Tracking, Measurement and Operational Governance']
+- Unsupported-claim check: passed
+- Generic-language check: review
+- Employer-name check: passed
+- Age-language check: passed
+- Punctuation check: passed
+- Page-length result: one page / within word limit

@@ -1,0 +1,62 @@
+# Application Package Summary
+
+## Opportunity
+
+- Overall Score: 78/100
+- Apply Recommendation: Apply If Strategic
+- Freshness: Fresh / High priority
+- Posting Status: Open
+- Posting Date: 2026-08-04
+- Salary: $220,000 – $260,000 per year
+
+### Score Dimensions
+
+- Resume Fit: 80/100
+- Salary Fit: 100/100
+- Industry Alignment: 58/100
+- Role Level Fit: 85/100
+- Location Fit: 55/100
+- Mission / Personal Alignment: 72/100
+- Posting Freshness: 100/100
+- Interview Probability: 76/100
+
+## Package Quality Check
+
+- Resume Tailoring Score: 81/100
+- Cover Letter Score: 80/100
+- ATS Keyword Match: 87/100
+- Voice Match: 68/100
+- Confidence Level: Medium
+
+## Evidence Usage
+
+- Selected: 4
+- Used anywhere: 3
+- Omitted from the entire package: 1
+
+- Enterprise Media Operations Transformation - Requirements supported: across, analytics, business, campaigns, collaboration, complex, consistent, cross, enterprise, establishing. ATS résumé: Used; styled résumé: Used; cover letter: Used
+- Operational Workflow Design & Airtable Implementation - Requirements supported: across, business, campaign, campaigns, connected, consistency, consistent, cross, data, design. ATS résumé: Used; styled résumé: Used; cover letter: Not used (Space limit: ranked below the top 2 selected Evidence records for this cover letter.)
+- Disney+ Launch Readiness - Tracking, Measurement and Operational Governance - Requirements supported: across, alignment, analytics, campaign, campaigns, communication, coordination, cross, data, delivery. ATS résumé: Used; styled résumé: Used; cover letter: Used
+- Enterprise Collaboration Platform Adoption & Stakeholder Enablement - Requirements supported: across, champion, change, collaboration, consistent, efficiently, enterprise, entertainment, establish, expertise. ATS résumé: Not used (Space limit: ranked below the top 3 selected Evidence records for this ATS resume.); styled résumé: Not used (Space limit: ranked below the top 3 selected Evidence records for this ATS resume.); cover letter: Not used (Space limit: ranked below the top 2 selected Evidence records for this cover letter.)
+
+### Unselected Fallback Evidence
+
+- None
+
+## Role Intelligence
+
+- Company voice: Dynamic Entertainment Streaming
+- Category: Entertainment Marketing
+- Role family: Marketing Operations/Campaign Management
+- Resolution: Explicit override applied; inferred source retained.
+
+## Candidate-Facing Quality Report
+
+- Role requirements referenced: ['cross-functional', 'marketing', 'planning', 'campaign', 'starz', 'portfolio', 'organizational', 'management']
+- Evidence used: ['Disney+ Launch Readiness - Tracking, Measurement and Operational Governance', 'Enterprise Media Operations Transformation']
+- Unsupported-claim check: passed
+- Generic-language check: passed
+- Employer-name check: passed
+- Age-language check: passed
+- Punctuation check: passed
+- Page-length result: one page / within word limit

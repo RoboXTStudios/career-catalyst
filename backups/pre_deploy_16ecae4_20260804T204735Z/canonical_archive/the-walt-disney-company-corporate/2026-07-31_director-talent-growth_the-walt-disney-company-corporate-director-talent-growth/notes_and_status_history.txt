@@ -1,0 +1,9 @@
+Notes
+-----
+https://disney.wd5.myworkdayjobs.com/en-US/disneycareer/userHome
+
+Workday Status: Application Received; Job posting no longer redirects so it may have been filled. 
+
+Status history
+--------------
+{"archive_reason": "Passed", "date": "2026-07-29T22:09:45.328115+00:00", "event": "role archived", "status": "Withdrawn / Closed"}

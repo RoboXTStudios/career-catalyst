@@ -1,0 +1,58 @@
+# Interview Prep
+
+## Engineering Delivery Manager II (Service Management Lead) at Deloitte US
+
+### Hiring Manager Lens
+
+- Likely first question: What experience best prepares you to solve this problem: Lead engineers and deliver reliable software systems?
+- Likely functional probe: The hiring manager is likely to probe Is this a formal people-management role, and what team or disciplines would report to it?.
+- Likely concern: The hiring manager may hesitate if there is shared vocabulary without evidence of substantive ownership.
+- Response strategy: Use specific decisions, actions, and results that map to the hiring manager's stated and inferred priorities.
+
+### Likely Themes
+
+- cross-functional
+- service
+- experience
+- technology
+- operational
+- delivery
+
+### Proof Points to Prepare
+
+- Led enterprise campaign operations supporting Disney Studios Theatrical and Disney Streaming/DSS while coordinating creative, media, analytics, technology, and operations teams.
+- Developed QA standards, launch readiness, implementation validation, campaign review processes, and operational quality controls.
+- Diagnosed and coordinated resolution of campaign delivery, trafficking, reporting, measurement, implementation, and platform issues.
+- Led operational readiness around campaign measurement, tracking quality, reporting alignment, and launch validation.
+- Built launch checklists, validation processes, operational readiness reviews, and escalation procedures.
+- Designed scalable workflows, governance, implementation standards, handoff processes, and operational systems.
+
+### Story Prompts
+
+- A time you turned an unclear cross-functional problem into a practical operating plan.
+- A time you improved a process without losing the trust or judgment of the people doing the work.
+- A time you used data, workflow design, or reporting to improve visibility and execution.
+- A decision where you balanced speed, quality, stakeholder needs, and limited capacity.
+
+### Requirement Gaps
+
+- Missing from resume language: 5+ years of experience in service management, information technology operations, and operational readiness in multi-stakeholder environments supporting large-scale programs and live operations
+- Missing from resume language: Experience with information technology service management frameworks and service delivery practices, including incident, change, continuity, and operational governance processes
+- Missing from resume language: Experience with service level management, operational reporting, and governance routines
+- Missing from resume language: Deloitte is seeking an Engineering Delivery Manager II (Service Management Lead) to lead service delivery and operational readiness for technology services supporting a large-scale global sporting event environment.
+- Missing from resume language: As an Engineering Delivery Manager II on the AI & Engineering team, you will be responsible for
+- Missing from resume language: Coordinating with technology vendors, functional teams, and stakeholder groups to manage dependencies, mitigate risk, and support operational excellence
+- Missing from resume language: Our teams help clients modernize technology and data platforms, improve mission-critical operations, and enable business advantage through scalable engineering solutions.
+- Missing from resume language: Leading end-to-end delivery of technology services that support live event operations, with a focus on service stability, resilience, and adherence to agreed service levels
+- Evidence is currently absent: For individuals assigned and/or hired to work in California, Deloitte is required by law to include a reasonable estimate of the compensation range for this role.
+- Evidence is currently absent: Ability to travel 10%, on average, based on the work you do and the clients and industries/sectors you serve
+
+### Questions to Ask
+
+- Is this a formal people-management role, and what team or disciplines would report to it?
+- How much direct customer or client interaction and escalation ownership is expected?
+- What outcomes would define success in the first 90 days and first year?
+
+### Voice Reminder
+
+Be specific and conversational. Lead with the situation and decision, then the operating change and measurable result. Do not overstate company familiarity.

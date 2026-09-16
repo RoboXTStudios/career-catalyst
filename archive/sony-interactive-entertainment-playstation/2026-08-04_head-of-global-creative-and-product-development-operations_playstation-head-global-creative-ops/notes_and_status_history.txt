@@ -1,0 +1,8 @@
+Notes
+-----
+Submitted application for Head of Global Creative and Product Development Operations. Used styled resume and PlayStation cover letter.
+
+Status history
+--------------
+{"date": "2026-07-31", "event": "status changed", "from": "Considered", "to": "Withdrawn / Closed"}
+{"date": "2026-08-04", "event": "status changed", "from": "Withdrawn / Closed", "to": "Rejected"}

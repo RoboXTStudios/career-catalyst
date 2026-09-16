@@ -1,0 +1,43 @@
+default_level: 3
+banned_phrases:
+  - visionary
+  - transformative
+  - disruptive
+  - best-in-class
+  - passionate
+  - revolutionize
+  - unlock
+  - cutting-edge
+  - uniquely positioned
+  - proven track record
+  - proven record
+  - dynamic leader
+  - seasoned professional
+  - veteran
+  - extensive experience
+  - results-driven
+  - accomplished executive
+  - highly accomplished
+  - years of experience
+  - over two decades
+  - long-term hands-on experience
+  - dating back to the early 2000s
+  - fast-paced environment
+  - enable great work
+  - best work together
+  - genuine enthusiasm
+  - i would be excited
+  - built my career around
+  - generic clear plan
+  - clear plan
+levels:
+  1:
+    label: Reflective, warm, conversational
+  2:
+    label: Professional, approachable
+  3:
+    label: Calm, thoughtful, practical, slightly conversational
+  4:
+    label: Senior Director / VP polish
+  5:
+    label: Startup founder / entrepreneurial pitch

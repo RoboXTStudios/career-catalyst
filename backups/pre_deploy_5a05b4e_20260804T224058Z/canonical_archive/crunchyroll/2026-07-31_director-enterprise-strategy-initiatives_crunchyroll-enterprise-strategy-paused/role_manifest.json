@@ -1,0 +1,49 @@
+{
+  "application_url": "",
+  "archive_folder": "/Users/trisha.lynch/Documents/career-catalyst/archive/crunchyroll/2026-07-31_director-enterprise-strategy-initiatives_crunchyroll-enterprise-strategy-paused",
+  "archive_reason": "Withdrawn / Closed",
+  "archived_at": "2026-07-31T18:31:38.117420+00:00",
+  "company": "Crunchyroll",
+  "final_status": "Withdrawn / Closed",
+  "job_posting_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "legacy_archive_reason": "Hidden / Invalid",
+  "legacy_status": "Invalid/Hidden",
+  "location": "",
+  "match_score_snapshot": null,
+  "match_tier_snapshot": null,
+  "materials": [],
+  "original_record": {
+    "application_history": [
+      {
+        "archive_reason": "Hidden / Invalid",
+        "date": "2026-07-29T22:09:40.289135+00:00",
+        "event": "role archived",
+        "status": "Withdrawn / Closed"
+      }
+    ],
+    "archive_reason": "Hidden / Invalid",
+    "archived": true,
+    "archived_at": "2026-07-29T22:09:40.289135+00:00",
+    "company": "Crunchyroll",
+    "company_aliases": [
+      "Crunchyroll"
+    ],
+    "id": "crunchyroll_enterprise_strategy_paused",
+    "next_action": "Revisit after current high-priority applications.",
+    "notes": "Strong potential fit but not applied yet.",
+    "pre_archive_status": "Withdrawn / Closed",
+    "priority": "Do Not Pursue",
+    "role": "Director, Enterprise Strategy & Initiatives",
+    "show_on_dashboard": true,
+    "source": "Official Crunchyroll / Greenhouse",
+    "status": "Invalid/Hidden",
+    "status_updated_at": "2026-07-06T08:27:09"
+  },
+  "original_role_id": "crunchyroll_enterprise_strategy_paused",
+  "role_title": "Director, Enterprise Strategy & Initiatives",
+  "schema_version": 2,
+  "source_metadata": {
+    "source": "Official Crunchyroll / Greenhouse"
+  },
+  "source_url": ""
+}

@@ -1,0 +1,62 @@
+# Application Package Summary
+
+## Opportunity
+
+- Overall Score: 84/100
+- Apply Recommendation: Apply Immediately
+- Freshness: Fresh / High priority
+- Posting Status: Open
+- Posting Date: 2026-07-31
+- Salary: $156,000 – $193,000 per year
+
+### Score Dimensions
+
+- Resume Fit: 88/100
+- Salary Fit: 100/100
+- Industry Alignment: 58/100
+- Role Level Fit: 72/100
+- Location Fit: 100/100
+- Mission / Personal Alignment: 82/100
+- Posting Freshness: 100/100
+- Interview Probability: 78/100
+
+## Package Quality Check
+
+- Resume Tailoring Score: 89/100
+- Cover Letter Score: 86/100
+- ATS Keyword Match: 95/100
+- Voice Match: 68/100
+- Confidence Level: High
+
+## Evidence Usage
+
+- Selected: 4
+- Used anywhere: 3
+- Omitted from the entire package: 1
+
+- Enterprise Media Operations Transformation - Requirements supported: across, analytics, business, collaboration, complex, cross, establishing, functional, leadership, led. ATS résumé: Used; styled résumé: Used; cover letter: Not used (Space limit: ranked below the top 2 selected Evidence records for this cover letter.)
+- Operational Workflow Design & Airtable Implementation - Requirements supported: across, base, business, cross, data, design, functional, information, management, marketing. ATS résumé: Used; styled résumé: Used; cover letter: Used
+- Enterprise Collaboration Platform Adoption & Stakeholder Enablement - Requirements supported: across, change, collaboration, expertise, hours, management, more, new, office, operations. ATS résumé: Not used (Space limit: ranked below the top 3 selected Evidence records for this ATS resume.); styled résumé: Not used (Space limit: ranked below the top 3 selected Evidence records for this ATS resume.); cover letter: Not used (Space limit: ranked below the top 2 selected Evidence records for this cover letter.)
+- Career Catalyst - AI-Enabled Career Intelligence & Application Operations Platform - Requirements supported: across, application, candidate, career, change, data, design, experience, interview, job. ATS résumé: Used; styled résumé: Used; cover letter: Used
+
+### Unselected Fallback Evidence
+
+- None
+
+## Role Intelligence
+
+- Company voice: Mission-Driven Global Consumer Technology Marketplace
+- Category: Global Marketing Operations
+- Role family: Marketing Operations/Strategy & Business Operations
+- Resolution: Explicit override applied; inferred source retained.
+
+## Candidate-Facing Quality Report
+
+- Role requirements referenced: ['cross-functional', 'business operations', 'marketing', 'airbnb', 'operations', 'role', 'work', 'will']
+- Evidence used: ['Operational Workflow Design & Airtable Implementation', 'Career Catalyst - AI-Enabled Career Intelligence & Application Operations Platform']
+- Unsupported-claim check: passed
+- Generic-language check: passed
+- Employer-name check: passed
+- Age-language check: passed
+- Punctuation check: passed
+- Page-length result: one page / within word limit

@@ -1,0 +1,467 @@
+{
+  "apply": {
+    "allowed": false,
+    "confirmation": "APPLY HOTFIX 34.3 PATH REPAIR"
+  },
+  "export_root": "/Users/trisha.lynch/Documents/career-catalyst/exports",
+  "generated_at": "2026-08-02T23:04:53.017002+00:00",
+  "record_count": 33,
+  "role_ids_with_repairs": [],
+  "roles": [
+    {
+      "id": "playstation_head_global_creative_ops",
+      "job": {
+        "path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/playstation_head_global_creative_product_dev_ops.md",
+        "relative_path": "jobs/playstation_head_global_creative_product_dev_ops.md",
+        "relinked": false,
+        "status": "valid"
+      },
+      "manifest_path": "",
+      "package_folder": "",
+      "selected_evidence_ids": [],
+      "stale_fields": []
+    },
+    {
+      "id": "google_strategy_ops_youtube_auction_brand",
+      "job": {
+        "path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/google_strategy_ops_lead_youtube_auction_brand.md",
+        "relative_path": "jobs/google_strategy_ops_lead_youtube_auction_brand.md",
+        "relinked": false,
+        "status": "valid"
+      },
+      "manifest_path": "",
+      "package_folder": "",
+      "selected_evidence_ids": [],
+      "stale_fields": []
+    },
+    {
+      "id": "paramount_director_marketing_operations",
+      "job": {
+        "path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/paramount_director_marketing_operations.md",
+        "relative_path": "jobs/paramount_director_marketing_operations.md",
+        "relinked": false,
+        "status": "valid"
+      },
+      "manifest_path": "",
+      "package_folder": "",
+      "selected_evidence_ids": [],
+      "stale_fields": []
+    },
+    {
+      "id": "disney_entertainment_and_espn_product_technology_director_strategy_operations_product_technology",
+      "job": {
+        "path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/director_strategy_operations_product_technology_disney_entertainment_and_espn_product_technology.md",
+        "relative_path": "jobs/director_strategy_operations_product_technology_disney_entertainment_and_espn_product_technology.md",
+        "relinked": false,
+        "status": "valid"
+      },
+      "manifest_path": "",
+      "package_folder": "",
+      "selected_evidence_ids": [],
+      "stale_fields": []
+    },
+    {
+      "id": "fieldai_director_of_matrix_operations_organizational_efficiency",
+      "job": {
+        "path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/director_of_matrix_operations_organizational_efficiency_fieldai.md",
+        "relative_path": "jobs/director_of_matrix_operations_organizational_efficiency_fieldai.md",
+        "relinked": false,
+        "status": "valid"
+      },
+      "manifest_path": "",
+      "package_folder": "",
+      "selected_evidence_ids": [],
+      "stale_fields": []
+    },
+    {
+      "id": "warner_chappell_music_inc_sr_manager_strategic_integration_operations",
+      "job": {
+        "path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/sr_manager_strategic_integration_operations_warner_chappell_music_inc.md",
+        "relative_path": "jobs/sr_manager_strategic_integration_operations_warner_chappell_music_inc.md",
+        "relinked": false,
+        "status": "valid"
+      },
+      "manifest_path": "",
+      "package_folder": "",
+      "selected_evidence_ids": [],
+      "stale_fields": []
+    },
+    {
+      "id": "live_nation_worldwide_inc_director_concert_communications",
+      "job": {
+        "path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/director_concert_communications_live_nation_worldwide_inc.md",
+        "relative_path": "jobs/director_concert_communications_live_nation_worldwide_inc.md",
+        "relinked": false,
+        "status": "valid"
+      },
+      "manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/ready_to_apply/live_nation_worldwide_inc_director_concert_communications/manifest.json",
+      "package_folder": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/ready_to_apply/live_nation_worldwide_inc_director_concert_communications",
+      "selected_evidence_ids": [],
+      "stale_fields": []
+    },
+    {
+      "id": "netflix_associate_manager_ucan_marketing_operations",
+      "job": {
+        "path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/associate_manager_ucan_marketing_operations_netflix.md",
+        "relative_path": "jobs/associate_manager_ucan_marketing_operations_netflix.md",
+        "relinked": false,
+        "status": "valid"
+      },
+      "manifest_path": "",
+      "package_folder": "",
+      "selected_evidence_ids": [],
+      "stale_fields": []
+    },
+    {
+      "id": "spotify_associate_director_crm_martech",
+      "job": {
+        "path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/associate_director_crm_martech_spotify.md",
+        "relative_path": "jobs/associate_director_crm_martech_spotify.md",
+        "relinked": false,
+        "status": "valid"
+      },
+      "manifest_path": "",
+      "package_folder": "",
+      "selected_evidence_ids": [],
+      "stale_fields": []
+    },
+    {
+      "id": "aeg_worldwide_axs_sr_technical_project_manager",
+      "job": {
+        "path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/sr_technical_project_manager_aeg_worldwide_axs.md",
+        "relative_path": "jobs/sr_technical_project_manager_aeg_worldwide_axs.md",
+        "relinked": false,
+        "status": "valid"
+      },
+      "manifest_path": "",
+      "package_folder": "",
+      "selected_evidence_ids": [],
+      "stale_fields": []
+    },
+    {
+      "id": "universal_music_group_umg_recordings_inc_senior_director_team_operations",
+      "job": {
+        "path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/senior_director_team_operations_universal_music_group_umg_recordings_inc.md",
+        "relative_path": "jobs/senior_director_team_operations_universal_music_group_umg_recordings_inc.md",
+        "relinked": false,
+        "status": "valid"
+      },
+      "manifest_path": "",
+      "package_folder": "",
+      "selected_evidence_ids": [],
+      "stale_fields": []
+    },
+    {
+      "id": "crunchyroll_strategic_operations_senior_manager",
+      "job": {
+        "path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/strategic_operations_senior_manager_crunchyroll.md",
+        "relative_path": "jobs/strategic_operations_senior_manager_crunchyroll.md",
+        "relinked": false,
+        "status": "valid"
+      },
+      "manifest_path": "",
+      "package_folder": "",
+      "selected_evidence_ids": [],
+      "stale_fields": []
+    },
+    {
+      "id": "600_umg_recordings_inc_senior_director_project_and_pmo_lead",
+      "job": {
+        "path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/600_umg_recordings_inc_senior_director_project_and_pmo_lead.md",
+        "relative_path": "jobs/600_umg_recordings_inc_senior_director_project_and_pmo_lead.md",
+        "relinked": false,
+        "status": "valid"
+      },
+      "manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead/manifest.json",
+      "package_folder": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/600_umg_recordings_inc_senior_director_project_and_pmo_lead",
+      "selected_evidence_ids": [],
+      "stale_fields": []
+    },
+    {
+      "id": "netflix_inc_program_manager_design",
+      "job": {
+        "path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/netflix_inc_program_manager_design.md",
+        "relative_path": "jobs/netflix_inc_program_manager_design.md",
+        "relinked": false,
+        "status": "valid"
+      },
+      "manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design/manifest.json",
+      "package_folder": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/netflix_inc_program_manager_design",
+      "selected_evidence_ids": [],
+      "stale_fields": []
+    },
+    {
+      "id": "electronic_arts_senior_manager_marketing_operations",
+      "job": {
+        "path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/electronic_arts_senior_manager_marketing_operations.md",
+        "relative_path": "jobs/electronic_arts_senior_manager_marketing_operations.md",
+        "relinked": false,
+        "status": "valid"
+      },
+      "manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/electronic_arts_senior_manager_marketing_operations/manifest.json",
+      "package_folder": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/electronic_arts_senior_manager_marketing_operations",
+      "selected_evidence_ids": [],
+      "stale_fields": []
+    },
+    {
+      "id": "disney_entertainment_and_espn_product_technology_principal_product_mgr",
+      "job": {
+        "path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/disney_entertainment_and_espn_product_and_technology_principal_product_mgr.md",
+        "relative_path": "jobs/disney_entertainment_and_espn_product_and_technology_principal_product_mgr.md",
+        "relinked": false,
+        "status": "valid"
+      },
+      "manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/disney_entertainment_and_espn_product_technology_principal_product_mgr/manifest.json",
+      "package_folder": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/disney_entertainment_and_espn_product_technology_principal_product_mgr",
+      "selected_evidence_ids": [
+        "enterprise_collaboration_platform_adoption_stakeholder_enablement",
+        "enterprise_media_operations_transformation",
+        "operational_workflow_design_airtable_implementation"
+      ],
+      "stale_fields": []
+    },
+    {
+      "id": "netflix_inc_ai_product_manager_content_platform_operations_and_publishing",
+      "job": {
+        "path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/netflix_inc_ai_product_manager_content_platform_operations_and_publishing.md",
+        "relative_path": "jobs/netflix_inc_ai_product_manager_content_platform_operations_and_publishing.md",
+        "relinked": false,
+        "status": "valid"
+      },
+      "manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing/manifest.json",
+      "package_folder": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_inc_ai_product_manager_content_platform_operations_and_publishing",
+      "selected_evidence_ids": [],
+      "stale_fields": []
+    },
+    {
+      "id": "azira_director_chief_of_staff_business_operations",
+      "job": {
+        "path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/azira_director_chief_of_staff_and_business_operations.md",
+        "relative_path": "jobs/azira_director_chief_of_staff_and_business_operations.md",
+        "relinked": false,
+        "status": "valid"
+      },
+      "manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/manifest.json",
+      "package_folder": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/azira_director_chief_of_staff_business_operations",
+      "selected_evidence_ids": [],
+      "stale_fields": []
+    },
+    {
+      "id": "reddit_lead_program_manager_vendor_operations",
+      "job": {
+        "path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/reddit_lead_program_manager_vendor_operations_8010425.md",
+        "relative_path": "jobs/reddit_lead_program_manager_vendor_operations_8010425.md",
+        "relinked": false,
+        "status": "valid"
+      },
+      "manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/reddit_lead_program_manager_vendor_operations/manifest.json",
+      "package_folder": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/reddit_lead_program_manager_vendor_operations",
+      "selected_evidence_ids": [],
+      "stale_fields": []
+    },
+    {
+      "id": "reddit_manager_technical_solutions",
+      "job": {
+        "path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/reddit_manager_technical_solutions_8068464.md",
+        "relative_path": "jobs/reddit_manager_technical_solutions_8068464.md",
+        "relinked": false,
+        "status": "valid"
+      },
+      "manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/reddit_manager_technical_solutions/manifest.json",
+      "package_folder": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/reddit_manager_technical_solutions",
+      "selected_evidence_ids": [],
+      "stale_fields": []
+    },
+    {
+      "id": "warner_elektra_atlantic_corporation_vp_operations",
+      "job": {
+        "path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/warner_elektra_atlantic_corporation_vp_operations_r_027404.md",
+        "relative_path": "jobs/warner_elektra_atlantic_corporation_vp_operations_r_027404.md",
+        "relinked": false,
+        "status": "valid"
+      },
+      "manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/warner_elektra_atlantic_corporation_vp_operations/manifest.json",
+      "package_folder": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/warner_elektra_atlantic_corporation_vp_operations",
+      "selected_evidence_ids": [],
+      "stale_fields": []
+    },
+    {
+      "id": "github_senior_product_operations_manager",
+      "job": {
+        "path": "jobs/github_senior_product_operations_manager.md",
+        "reason": "no usable posting file matched the stable role identity",
+        "recoverable": true,
+        "status": "missing"
+      },
+      "manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/manifest.json",
+      "package_folder": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager",
+      "selected_evidence_ids": [],
+      "stale_fields": []
+    },
+    {
+      "id": "gitlab_ai_transformation_owner_marketing",
+      "job": {
+        "path": "jobs/gitlab_ai_transformation_owner_marketing_8548105002.md",
+        "reason": "no usable posting file matched the stable role identity",
+        "recoverable": true,
+        "status": "missing"
+      },
+      "manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/gitlab_ai_transformation_owner_marketing/manifest.json",
+      "package_folder": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/gitlab_ai_transformation_owner_marketing",
+      "selected_evidence_ids": [],
+      "stale_fields": []
+    },
+    {
+      "id": "gitlab_director_customer_experience_strategy",
+      "job": {
+        "path": "jobs/gitlab_director_customer_experience_strategy_8628537002.md",
+        "reason": "no usable posting file matched the stable role identity",
+        "recoverable": true,
+        "status": "missing"
+      },
+      "manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/gitlab_director_customer_experience_strategy/manifest.json",
+      "package_folder": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/gitlab_director_customer_experience_strategy",
+      "selected_evidence_ids": [],
+      "stale_fields": []
+    },
+    {
+      "id": "aquent_lead_product_manager",
+      "job": {
+        "path": "jobs/aquent_lead_product_manager_211613.md",
+        "reason": "no usable posting file matched the stable role identity",
+        "recoverable": true,
+        "status": "missing"
+      },
+      "manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/aquent_lead_product_manager/manifest.json",
+      "package_folder": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/aquent_lead_product_manager",
+      "selected_evidence_ids": [],
+      "stale_fields": []
+    },
+    {
+      "id": "netflix_ads_product_marketing_manager",
+      "job": {
+        "path": "jobs/netflix_ads_product_marketing_manager_jr41584.md",
+        "reason": "no usable posting file matched the stable role identity",
+        "recoverable": true,
+        "status": "missing"
+      },
+      "manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_ads_product_marketing_manager/manifest.json",
+      "package_folder": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_ads_product_marketing_manager",
+      "selected_evidence_ids": [
+        "enterprise_media_operations_transformation",
+        "operational_workflow_design_airtable_implementation",
+        "campaignos_campaign_operations_workflow_prototype"
+      ],
+      "stale_fields": []
+    },
+    {
+      "id": "netflix_product_manager_ads_platform_experimentation_foundations",
+      "job": {
+        "path": "jobs/netflix_product_manager_ads_platform_experimentation_foundations_jr41085.md",
+        "reason": "no usable posting file matched the stable role identity",
+        "recoverable": true,
+        "status": "missing"
+      },
+      "manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_product_manager_ads_platform_experimentation_foundations/manifest.json",
+      "package_folder": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_product_manager_ads_platform_experimentation_foundations",
+      "selected_evidence_ids": [],
+      "stale_fields": []
+    },
+    {
+      "id": "netflix_product_manager_ads_live_ad_serving",
+      "job": {
+        "path": "jobs/netflix_product_manager_ads_live_ad_serving_jr39128.md",
+        "reason": "no usable posting file matched the stable role identity",
+        "recoverable": true,
+        "status": "missing"
+      },
+      "manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_product_manager_ads_live_ad_serving/manifest.json",
+      "package_folder": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_product_manager_ads_live_ad_serving",
+      "selected_evidence_ids": [],
+      "stale_fields": []
+    },
+    {
+      "id": "netflix_product_manager_emerging_formats",
+      "job": {
+        "path": "jobs/netflix_product_manager_emerging_formats_jr39645.md",
+        "reason": "no usable posting file matched the stable role identity",
+        "recoverable": true,
+        "status": "missing"
+      },
+      "manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_product_manager_emerging_formats/manifest.json",
+      "package_folder": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_product_manager_emerging_formats",
+      "selected_evidence_ids": [
+        "career_catalyst_ai_enabled_career_intelligence_application_operations_platform",
+        "just_for_us_podcast_audio_production_editing"
+      ],
+      "stale_fields": []
+    },
+    {
+      "id": "netflix_n_tech_manager_technology_systems_and_operations_creative",
+      "job": {
+        "path": "jobs/netflix_n_tech_manager_technology_systems_and_operations_creative_jr41221.md",
+        "reason": "no usable posting file matched the stable role identity",
+        "recoverable": true,
+        "status": "missing"
+      },
+      "manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_n_tech_manager_technology_systems_and_operations_creative/manifest.json",
+      "package_folder": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/netflix_n_tech_manager_technology_systems_and_operations_creative",
+      "selected_evidence_ids": [],
+      "stale_fields": []
+    },
+    {
+      "id": "about_tiktok_product_marketing_manager_tiktok_operations",
+      "job": {
+        "path": "jobs/about_tiktok_product_marketing_manager_tiktok_operations.md",
+        "reason": "no usable posting file matched the stable role identity",
+        "recoverable": true,
+        "status": "missing"
+      },
+      "manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/about_tiktok_product_marketing_manager_tiktok_operations/manifest.json",
+      "package_folder": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/about_tiktok_product_marketing_manager_tiktok_operations",
+      "selected_evidence_ids": [],
+      "stale_fields": []
+    },
+    {
+      "id": "3cloud_senior_director_digital_workplace",
+      "job": {
+        "path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/3cloud_senior_director_digital_workplace_8659863002.md",
+        "relative_path": "jobs/3cloud_senior_director_digital_workplace_8659863002.md",
+        "relinked": false,
+        "status": "valid"
+      },
+      "manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/manifest.json",
+      "package_folder": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace",
+      "selected_evidence_ids": [
+        "microsoft_365_digital_workplace_enablement_sharepoint_workflow_and_knowledge_hub",
+        "enterprise_collaboration_platform_adoption_stakeholder_enablement",
+        "disney_floodlight_tracking_database_and_data_technology_map",
+        "career_catalyst_ai_enabled_career_intelligence_application_operations_platform"
+      ],
+      "stale_fields": []
+    },
+    {
+      "id": "openai_program_manager_lead",
+      "job": {
+        "path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/openai_program_manager_lead_e6ddb290_3585_48ec_a331_d4fc4761af20.md",
+        "relative_path": "jobs/openai_program_manager_lead_e6ddb290_3585_48ec_a331_d4fc4761af20.md",
+        "relinked": false,
+        "status": "valid"
+      },
+      "manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/openai_program_manager_lead/manifest.json",
+      "package_folder": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/openai_program_manager_lead",
+      "selected_evidence_ids": [
+        "disney_launch_readiness_tracking_measurement_and_operational_governance",
+        "enterprise_media_operations_transformation",
+        "campaignos_campaign_operations_workflow_prototype",
+        "career_catalyst_ai_enabled_career_intelligence_application_operations_platform"
+      ],
+      "stale_fields": []
+    }
+  ],
+  "roles_with_repairs": 0,
+  "runtime_root": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime",
+  "schema": "career-catalyst/hotfix-34.3-path-repair",
+  "tracker_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/data/application_tracker.yml",
+  "tracker_sha256": "77ac6ff662f15b43509754a4222e7795b884525b1354de03272d63f1587ecb57"
+}

@@ -1,0 +1,306 @@
+{
+  "application_url": "https://netflix.wd108.myworkdayjobs.com/en-US/Netflix/job/Product-Manager--Ads--Supply-_JR41266?locations=84a618b29e90102fcd70873d84b807f4",
+  "archive_folder": "/Users/trisha.lynch/Documents/career-catalyst/archive/netflix-inc/2026-07-31_product-manager-ads-supply_netflix-inc-product-manager-ads-supply",
+  "archive_reason": "Withdrawn / Closed",
+  "archived_at": "2026-07-31T18:31:53.954364+00:00",
+  "company": "Netflix, Inc.",
+  "final_status": "Withdrawn / Closed",
+  "job_posting_sha256": "67c6dbb9b0a94cfe8344534659546aa850a24144579a308a08b7b3bebb38af5d",
+  "legacy_archive_reason": "Passed",
+  "legacy_status": "Pass",
+  "location": "US",
+  "match_score_snapshot": 67,
+  "match_tier_snapshot": "Stretch Match",
+  "materials": [
+    {
+      "filename": "materials/application_note.txt",
+      "label": "Application Note",
+      "sha256": "47674920e476a6765aa44c482be34e07a16664bb3efb944bf070eff0cbea685c",
+      "size": 473,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_application_note.txt"
+    },
+    {
+      "filename": "materials/ats_resume.docx",
+      "label": "ATS Resume",
+      "sha256": "f44c974edae893d86c3a101d5bc44b263ef226245b43b80148952c403528972f",
+      "size": 38976,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_ats_resume.docx"
+    },
+    {
+      "filename": "materials/cover_letter.docx",
+      "label": "Cover Letter",
+      "sha256": "1849934f114a044287c2a5ea2f8adb3bcb76649eab3cb4d66e3b02aa8e5a8a3f",
+      "size": 37614,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_cover_letter.docx"
+    },
+    {
+      "filename": "materials/cover_letter.txt",
+      "label": "cover_letter",
+      "sha256": "cea2a82509011e6de21aab50d1a154c97c9521470ea95baccc6da25d9571259e",
+      "size": 1980,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_cover_letter.txt"
+    },
+    {
+      "filename": "materials/follow_up_strategy.txt",
+      "label": "Follow-Up Strategy",
+      "sha256": "ec23d342e2762aefb8694b8c413a56494a8b140e6d6daccc7ddb70170fea318e",
+      "size": 3847,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_followup_strategy.txt"
+    },
+    {
+      "filename": "materials/hiring_manager_follow_up.txt",
+      "label": "Hiring Manager Follow-Up",
+      "sha256": "92d52f4bbc389cea7aede538b24253bba177c129e4ab59974a7ddcb13535eb59",
+      "size": 700,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_hiring_manager_followup.txt"
+    },
+    {
+      "filename": "materials/hiring_manager_message.txt",
+      "label": "Hiring Manager Message",
+      "sha256": "952e50ea03d2cbbb72d0c5ef137f4e694e4595c165997c8cffe00eade720f4fe",
+      "size": 852,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_hiring_manager_message.txt"
+    },
+    {
+      "filename": "materials/interview_prep.txt",
+      "label": "Interview Prep",
+      "sha256": "1b8fe3eb4c66189aceec6938b5a21a4ce831d55407e6cb107a3893c4ab98f94e",
+      "size": 1294,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_interview_prep.txt"
+    },
+    {
+      "filename": "materials/package_summary.txt",
+      "label": "Package Summary",
+      "sha256": "ba4030abaca221739b33ee6a93eea6a7b29a1a16532e8cde1c4158cb8a481e19",
+      "size": 643,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_package_summary.txt"
+    },
+    {
+      "filename": "materials/recruiter_follow_up.txt",
+      "label": "Recruiter Follow-Up",
+      "sha256": "4d059bd36a13ad5a0eebc33fcbc9d9db9bf7124bcce682cec0cc9397c566b56f",
+      "size": 539,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_recruiter_followup.txt"
+    },
+    {
+      "filename": "materials/recruiter_message.txt",
+      "label": "Recruiter Message",
+      "sha256": "783b2f5d4b44527dc0175b803f81e79d864220ace6783dbf8131d05a3dfc6d7c",
+      "size": 579,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_recruiter_message.txt"
+    },
+    {
+      "filename": "materials/referral_ask.txt",
+      "label": "Referral Ask",
+      "sha256": "c67f2ca152eaf02ca5c96e33de471ae8a492dd4c5ab84f4bb28243765e65815d",
+      "size": 542,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_referral_ask.txt"
+    },
+    {
+      "filename": "materials/strategy_pack.txt",
+      "label": "Strategy Pack",
+      "sha256": "08bbe72e6b14a872e43f5fe2c5328dc34e5a3b4ae68f6adcd3d1ef28cef7d924",
+      "size": 9394,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_strategy_pack.txt"
+    },
+    {
+      "filename": "materials/styled_resume.docx",
+      "label": "Styled Resume",
+      "sha256": "ed77f4947d843381a7259488e32f2ea3e8a0798242976b6888db64e09c4c5af3",
+      "size": 26728,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_styled_resume.docx"
+    },
+    {
+      "filename": "materials/tailored_resume.txt",
+      "label": "Tailored Resume",
+      "sha256": "5f10c1ea0892f5ab59e1ed42d36352a68f670b3b494e7d19aff02ea8af256519",
+      "size": 4535,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_resume.txt"
+    },
+    {
+      "filename": "materials/warm_contact_message.txt",
+      "label": "Warm Contact Message",
+      "sha256": "2158b8a5b3c4a33781567bf1bef5e14874c8055e0001f1a6606838d20831a919",
+      "size": 562,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_warm_contact_message.txt"
+    }
+  ],
+  "original_record": {
+    "application_history": [
+      {
+        "archive_reason": "Passed",
+        "date": "2026-07-29T22:09:55.431399+00:00",
+        "event": "role archived",
+        "status": "Withdrawn / Closed"
+      }
+    ],
+    "apply_recommendation": "Apply If Strategic",
+    "archive_reason": "Passed",
+    "archived": true,
+    "archived_at": "2026-07-29T22:09:55.431399+00:00",
+    "canonical_apply_domain": "netflix.wd108.myworkdayjobs.com",
+    "canonical_apply_url": "https://netflix.wd108.myworkdayjobs.com/en-US/Netflix/job/Product-Manager--Ads--Supply-_JR41266?locations=84a618b29e90102fcd70873d84b807f4",
+    "canonical_employer": "Netflix, Inc.",
+    "company": "Netflix, Inc.",
+    "company_aliases": [],
+    "company_category": "entertainment_streaming",
+    "company_inference_confidence": "Medium",
+    "company_voice_label": "Dynamic Entertainment Streaming",
+    "company_voice_profile": "dynamic_entertainment_streaming",
+    "company_voice_source": "dynamic_inference",
+    "confidence": "High",
+    "field_warnings": [
+      "Salary detected from job text. Review before applying.",
+      "Role family was inferred. Review if this is a strategic or product-ops role."
+    ],
+    "freshness": "Active",
+    "freshness_label": "Active / Good priority",
+    "freshness_risk": "Medium",
+    "greenhouse_backed_hint": false,
+    "id": "netflix_inc_product_manager_ads_supply",
+    "job_file": "jobs/netflix_inc_product_manager_ads_supply.md",
+    "location": "US",
+    "match_gaps": [
+      "Confirm the reporting line and decision authority before generating the package."
+    ],
+    "match_score": 67,
+    "match_strengths": [
+      "Functional alignment includes programmatic, marketing technology and measurement.",
+      "The role has meaningful ownership, though its level should be verified.",
+      "The entertainment context is adjacent to Trisha's target industries.",
+      "The disclosed compensation is aligned with or near Trisha's target.",
+      "The flexible arrangement supports practical fit."
+    ],
+    "match_summary": "There is credible alignment, but the tradeoffs deserve review before package generation.",
+    "match_tier": "Stretch Match",
+    "material_paths": {
+      "ATS Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_ats_resume.docx",
+      "Application Note": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_application_note.txt",
+      "Cover Letter": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_cover_letter.docx",
+      "Follow-Up Strategy": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_followup_strategy.txt",
+      "Hiring Manager Follow-Up": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_hiring_manager_followup.txt",
+      "Hiring Manager Message": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_hiring_manager_message.txt",
+      "Interview Prep": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_interview_prep.txt",
+      "Package Summary": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_package_summary.txt",
+      "Recruiter Follow-Up": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_recruiter_followup.txt",
+      "Recruiter Message": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_recruiter_message.txt",
+      "Referral Ask": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_referral_ask.txt",
+      "Strategy Pack": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_strategy_pack.txt",
+      "Styled Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_styled_resume.docx",
+      "Tailored Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_resume.txt",
+      "Warm Contact Message": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_warm_contact_message.txt"
+    },
+    "next_action": "Review fit and generate application package.",
+    "notes": "",
+    "official_url": "https://netflix.wd108.myworkdayjobs.com/en-US/Netflix/job/Product-Manager--Ads--Supply-_JR41266?locations=84a618b29e90102fcd70873d84b807f4",
+    "opportunity_dimensions": {
+      "Industry Alignment": 58,
+      "Interview Probability": 63,
+      "Location Fit": 55,
+      "Mission / Personal Alignment": 72,
+      "Posting Freshness": 82,
+      "Resume Fit": 67,
+      "Role Level Fit": 55,
+      "Salary Fit": 92
+    },
+    "opportunity_score": 67,
+    "original_source_url": "https://netflix.wd108.myworkdayjobs.com/en-US/Netflix/job/Product-Manager--Ads--Supply-_JR41266?locations=84a618b29e90102fcd70873d84b807f4",
+    "package_manifest": {
+      "applied_date": "",
+      "archive_reason": "Passed",
+      "archived": true,
+      "company": "Netflix, Inc.",
+      "files": {
+        "application_note": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_application_note.txt",
+        "ats_docx": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_ats_resume.docx",
+        "cover_letter": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_cover_letter.txt",
+        "cover_letter_docx": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_cover_letter.docx",
+        "followup_strategy": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_followup_strategy.txt",
+        "hiring_manager_followup": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_hiring_manager_followup.txt",
+        "hiring_manager_message": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_hiring_manager_message.txt",
+        "interview_prep": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_interview_prep.txt",
+        "package_summary": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_package_summary.txt",
+        "recruiter_followup": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_recruiter_followup.txt",
+        "recruiter_message": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_recruiter_message.txt",
+        "referral_ask": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_referral_ask.txt",
+        "resume_text": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_resume.txt",
+        "strategy_pack": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_strategy_pack.txt",
+        "styled_docx": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_styled_resume.docx",
+        "warm_contact_message": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_warm_contact_message.txt"
+      },
+      "generated_at": "2026-07-09T20:13:50.856646+00:00",
+      "legacy_files_moved": [
+        "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/old_generated_materials/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_ats_resume.md"
+      ],
+      "manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/manifest.json",
+      "materials": {
+        "ATS Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_ats_resume.docx",
+        "Application Note": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_application_note.txt",
+        "Cover Letter": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_cover_letter.docx",
+        "Follow-Up Strategy": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_followup_strategy.txt",
+        "Hiring Manager Follow-Up": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_hiring_manager_followup.txt",
+        "Hiring Manager Message": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_hiring_manager_message.txt",
+        "Interview Prep": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_interview_prep.txt",
+        "Package Summary": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_package_summary.txt",
+        "Recruiter Follow-Up": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_recruiter_followup.txt",
+        "Recruiter Message": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_recruiter_message.txt",
+        "Referral Ask": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_referral_ask.txt",
+        "Strategy Pack": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_strategy_pack.txt",
+        "Styled Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_styled_resume.docx",
+        "Tailored Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_resume.txt",
+        "Warm Contact Message": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_product_manager_ads_supply/netflix_product_manager_ads_supply_trisha_lynch_warm_contact_message.txt"
+      },
+      "prospect_id": "netflix_inc_product_manager_ads_supply",
+      "role_title": "Product Manager, Ads (Supply)",
+      "slug": "netflix_inc_product_manager_ads_supply",
+      "source_url": "https://netflix.wd108.myworkdayjobs.com/en-US/Netflix/job/Product-Manager--Ads--Supply-_JR41266?locations=84a618b29e90102fcd70873d84b807f4",
+      "status": "Pass",
+      "status_date": ""
+    },
+    "package_quality": {
+      "ats_keyword_match": 66,
+      "confidence_level": "Medium",
+      "confidence_score": 72,
+      "cover_letter_score": 86,
+      "resume_tailoring_score": 67,
+      "voice_match": 68
+    },
+    "posting_age_days": 17,
+    "posting_date": "2026-06-22",
+    "posting_status": "Open",
+    "pre_archive_status": "Withdrawn / Closed",
+    "priority": "Medium",
+    "recommended_action": "Review First",
+    "recommended_next_step": "Proceed using the canonical employer application.",
+    "requires_verification": false,
+    "role": "Product Manager, Ads (Supply)",
+    "role_aliases": [],
+    "role_family": "product_strategy_ops",
+    "salary_range": "$440,000.00 - $725,000.00",
+    "show_on_dashboard": false,
+    "source": "Workday",
+    "source_confidence": "High",
+    "source_domain": "netflix.wd108.myworkdayjobs.com",
+    "source_name": "Workday",
+    "source_trust_label": "Verified Company Source",
+    "source_type": "Employer ATS",
+    "source_url": "https://netflix.wd108.myworkdayjobs.com/en-US/Netflix/job/Product-Manager--Ads--Supply-_JR41266?locations=84a618b29e90102fcd70873d84b807f4",
+    "source_warnings": [],
+    "status": "Pass",
+    "status_updated_at": "2026-07-09T13:55:36",
+    "verification_notes": "No verification cautions detected.",
+    "verification_status": "Employer Source",
+    "work_arrangement": "Flexible"
+  },
+  "original_role_id": "netflix_inc_product_manager_ads_supply",
+  "role_title": "Product Manager, Ads (Supply)",
+  "schema_version": 2,
+  "source_metadata": {
+    "source": "Workday",
+    "source_name": "Workday",
+    "source_trust_label": "Verified Company Source",
+    "source_type": "Employer ATS",
+    "verification_status": "Employer Source"
+  },
+  "source_url": "https://netflix.wd108.myworkdayjobs.com/en-US/Netflix/job/Product-Manager--Ads--Supply-_JR41266?locations=84a618b29e90102fcd70873d84b807f4"
+}

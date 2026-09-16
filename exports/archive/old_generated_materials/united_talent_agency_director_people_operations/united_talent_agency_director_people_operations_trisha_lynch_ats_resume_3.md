@@ -1,0 +1,72 @@
+# Trisha Lynch
+
+Operations Leader | Entertainment | Workflow Governance | Cross-Functional Strategy
+
+Los Angeles, CA | [tslynch@mac.com](mailto:tslynch@mac.com) | LinkedIn: [https://www.linkedin.com/in/trisha-lynch-3433417](https://www.linkedin.com/in/trisha-lynch-3433417)
+
+## Profile
+
+Operations leader known for improving how cross-functional teams communicate, understand ownership, and adopt practical ways of working. Builds clear workflows, usable standards, and dependable communication practices that reduce day-to-day friction while helping teams execute business priorities with confidence.
+
+## Core Competencies
+
+- Cross-Functional Leadership
+- Team Enablement
+- Change Management
+- Stakeholder Communication
+- Ownership & Responsibility Clarity
+- Process Implementation
+- Workflow Governance
+- Operational Consistency
+- Executive Communication
+- Continuous Improvement
+- Business Operations
+- Marketing Operations
+
+## Platforms & Technologies
+
+### AI, Automation & Operational Systems
+
+ChatGPT, Claude, Codex, Perplexity, Python (Working Knowledge), AI Workflow Design, Process Automation
+
+### Workflow & Collaboration
+
+Airtable, Notion, Excel, Microsoft Office, Google Workspace, PowerPoint, Word
+
+### Publishing & Content
+
+WordPress, Mailchimp, Newsletter Development, Editorial Production
+
+## Professional Experience
+
+### OMG23 / Omnicom Media Group
+
+Burbank, CA | 2016-2026
+
+Campaign Manager to Group Director, Ad Operations, Marketing Science & Creative Management
+
+- Led cross-functional teams of 60+.
+- Introduced scalable workflows, governance practices, and execution standards across marketing, technology, analytics, and creative teams.
+- Aligned creative, marketing, media, analytics, technology, and operations teams supporting theatrical and streaming entertainment campaigns.
+- Established workflows, milestones, quality standards, and partner coordination for consistent campaign execution at scale.
+- Partnered across creative, marketing, media, analytics, engineering, technology, operations, and external partners supporting theatrical releases, streaming launches, and franchise/IP priorities.
+- Created and served as Managing Editor of Multiverse, an internal editorial publication reaching 400+ employees.
+- Advanced from Campaign Manager to Group Director while leading campaign operations across Disney Studios Theatrical and Disney Streaming/DSS.
+
+## Selected Projects
+
+## Earlier Career
+
+### Intermedia Advertising / US International Media
+
+Los Angeles, CA | 2008-2016
+
+Digital Media Operations & Planning: Digital media planning and operations roles supporting the transition from traditional media to digital ecosystems.
+
+- Built agency, publisher, and technology partner relationships.
+- Supported media operations and planning workflows.
+
+## Professional Development
+
+- Google Marketing Platform: CM360, DV360, Google Ads, YouTube, GA4
+- Current focus: AI & Operational Automation, Product Development, Business Operations, Organizational Systems, Entertainment Technology, Creative Leadership

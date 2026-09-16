@@ -1,0 +1,271 @@
+{
+  "application_url": "https://www.github.careers/careers-home/jobs/5516?lang=en-us",
+  "archive_folder": "/Users/trisha.lynch/Documents/career-catalyst/archive/github/2026-08-04_senior-product-operations-manager_github-senior-product-operations-manager",
+  "archive_reason": "Rejected",
+  "archived_at": "2026-08-04T22:48:56.280818+00:00",
+  "company": "GitHub",
+  "final_status": "Rejected",
+  "job_posting_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "legacy_archive_reason": "",
+  "legacy_status": "Reviewed",
+  "location": "United States",
+  "match_score_snapshot": 68,
+  "match_tier_snapshot": "Good Match",
+  "materials": [
+    {
+      "filename": "materials/application_note.txt",
+      "label": "Application Note",
+      "sha256": "eb7b0bb2cfb7b7ccaaf010f98279088869472d45ae3060575ba469a1c67f326b",
+      "size": 476,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_application_note_3.txt"
+    },
+    {
+      "filename": "materials/ats_resume.docx",
+      "label": "ATS Resume",
+      "sha256": "e1753b65e54af323fca9a30e0b7991dcb11fee495164bea3d19990db50e22241",
+      "size": 38982,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_ats_resume_3.docx"
+    },
+    {
+      "filename": "materials/cover_letter.docx",
+      "label": "Cover Letter",
+      "sha256": "3317c12baa2396dc5cf2007d76ba70b683a8e924dc93e0747e10ce8cbf399de3",
+      "size": 37621,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_cover_letter_3.docx"
+    },
+    {
+      "filename": "materials/cover_letter.txt",
+      "label": "cover_letter",
+      "sha256": "e425fe87b43cb8ac4c0534b1a6596d55ef08c052e5f6360a2c7d76f97b68b445",
+      "size": 2059,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_cover_letter_3.txt"
+    },
+    {
+      "filename": "materials/hiring_manager_message.txt",
+      "label": "Hiring Manager Message",
+      "sha256": "352e37e260f6771145570a67f5d8a51ec5ad13a006a4606cabb6735bdf452ee0",
+      "size": 855,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_hiring_manager_message_3.txt"
+    },
+    {
+      "filename": "materials/interview_prep.txt",
+      "label": "Interview Prep",
+      "sha256": "0d5244e4eb0cb7726b12ad27ffc3757c0d6f4b4c13972471da120d492ba78397",
+      "size": 1284,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_interview_prep_3.txt"
+    },
+    {
+      "filename": "materials/package_summary.txt",
+      "label": "Package Summary",
+      "sha256": "ff80b8e9c0a0cca315768c8c6ce09077a149a36d26786a41c0e7ae4d75af489d",
+      "size": 654,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_package_summary_3.txt"
+    },
+    {
+      "filename": "materials/recruiter_message.txt",
+      "label": "Recruiter Message",
+      "sha256": "5f9cb48fa79a8ff3b52022f0996d0acf93eb93896cf60410852a392f731bb173",
+      "size": 582,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_recruiter_message_3.txt"
+    },
+    {
+      "filename": "materials/strategy_pack.txt",
+      "label": "Strategy Pack",
+      "sha256": "d12a66c66f72bdd3419a9e3e82b0d9c2af9e5eadaa29931d001e26200085385f",
+      "size": 9395,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_strategy_pack_3.txt"
+    },
+    {
+      "filename": "materials/styled_resume.docx",
+      "label": "Styled Resume",
+      "sha256": "4ff171af45153459f075636efbce4b6a668fa164b2f89a664df2e7f42f389e4b",
+      "size": 26734,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_styled_resume_3.docx"
+    },
+    {
+      "filename": "materials/tailored_resume.txt",
+      "label": "Tailored Resume",
+      "sha256": "54abeba501c23577c8783799746536a9df59ac0ecc2d224baa5d8bd9beb0da82",
+      "size": 4570,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_resume_3.txt"
+    }
+  ],
+  "original_record": {
+    "application_history": [
+      {
+        "date": "2026-07-23",
+        "event": "status changed",
+        "from": "Drafted",
+        "to": "Applied"
+      },
+      {
+        "date": "2026-07-25",
+        "event": "status changed",
+        "from": "Applied",
+        "to": "Rejected"
+      }
+    ],
+    "application_portal_url": "",
+    "apply_recommendation": "Apply If Strategic",
+    "canonical_apply_domain": "github.careers",
+    "canonical_apply_url": "https://www.github.careers/careers-home/jobs/5516?lang=en-us",
+    "canonical_employer": "GitHub",
+    "company": "GitHub",
+    "company_aliases": [],
+    "company_category": "talent_agency_media",
+    "company_inference_confidence": "Medium",
+    "company_voice_label": "Dynamic Talent Agency Media",
+    "company_voice_profile": "dynamic_talent_agency_media",
+    "company_voice_source": "dynamic_inference",
+    "compensation_currency": "USD",
+    "compensation_manual_override": false,
+    "compensation_maximum": 329200.0,
+    "compensation_minimum": 124000.0,
+    "compensation_period": "year",
+    "compensation_raw": "USD $124,000.00 - USD $329,200.00 /Yr",
+    "compensation_source": "saved",
+    "confidence": "High",
+    "field_warnings": [
+      "Work arrangement was not detected. Review before saving.",
+      "Role family was inferred. Review if this is a strategic or product-ops role."
+    ],
+    "freshness": "Aging",
+    "freshness_label": "Aging / Apply if strong fit",
+    "freshness_risk": "Medium",
+    "greenhouse_backed_hint": false,
+    "id": "github_senior_product_operations_manager",
+    "job_file": "jobs/github_senior_product_operations_manager.md",
+    "legacy_status": "Reviewed",
+    "location": "United States",
+    "match_gaps": [
+      "The posting is aging at 27 days old."
+    ],
+    "match_score": 68,
+    "match_strengths": [
+      "Functional alignment includes workflow and process automation.",
+      "The role has meaningful ownership, though its level should be verified.",
+      "The disclosed compensation is aligned with or near Trisha's target.",
+      "The not specified arrangement supports practical fit.",
+      "Career evidence overlaps in Business Operations, Marketing Operations, Operational Strategy."
+    ],
+    "match_summary": "Good overall alignment, with a few cautions to weigh before investing further.",
+    "match_tier": "Good Match",
+    "material_paths": {
+      "ATS Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_ats_resume_3.docx",
+      "Application Note": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_application_note_3.txt",
+      "Cover Letter": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_cover_letter_3.docx",
+      "Hiring Manager Message": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_hiring_manager_message_3.txt",
+      "Interview Prep": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_interview_prep_3.txt",
+      "Job Description": "/Users/trisha.lynch/.codex/.chatgpt-projects/g-p-6a5d817ef0788191bbc5427a19234f4c/main_runtime_60cca23/jobs/github_senior_product_operations_manager.md",
+      "Package Summary": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_package_summary_3.txt",
+      "Recruiter Message": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_recruiter_message_3.txt",
+      "Strategy Pack": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_strategy_pack_3.txt",
+      "Styled Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_styled_resume_3.docx",
+      "Tailored Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_resume_3.txt"
+    },
+    "next_action": "Review fit and generate application package.",
+    "notes": "",
+    "official_url": "https://www.github.careers/careers-home/jobs/5516?lang=en-us",
+    "opportunity_dimensions": {
+      "Industry Alignment": 58,
+      "Interview Probability": 67,
+      "Location Fit": 100,
+      "Mission / Personal Alignment": 72,
+      "Posting Freshness": 58,
+      "Resume Fit": 68,
+      "Role Level Fit": 72,
+      "Salary Fit": 92
+    },
+    "opportunity_score": 73,
+    "original_source_url": "https://www.github.careers/careers-home/jobs/5516?lang=en-us",
+    "package_manifest": {
+      "applied_date": "",
+      "archive_reason": "",
+      "archived": false,
+      "company": "GitHub",
+      "files": {
+        "application_note": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_application_note_3.txt",
+        "ats_docx": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_ats_resume_3.docx",
+        "cover_letter": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_cover_letter_3.txt",
+        "cover_letter_docx": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_cover_letter_3.docx",
+        "hiring_manager_message": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_hiring_manager_message_3.txt",
+        "interview_prep": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_interview_prep_3.txt",
+        "package_summary": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_package_summary_3.txt",
+        "recruiter_message": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_recruiter_message_3.txt",
+        "resume_text": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_resume_3.txt",
+        "strategy_pack": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_strategy_pack_3.txt",
+        "styled_docx": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_styled_resume_3.docx"
+      },
+      "generated_at": "2026-07-23T16:48:04.008023+00:00",
+      "legacy_files_moved": [
+        "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/old_generated_materials/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_ats_resume_3.md"
+      ],
+      "manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/manifest_2.json",
+      "materials": {
+        "ATS Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_ats_resume_3.docx",
+        "Application Note": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_application_note_3.txt",
+        "Cover Letter": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_cover_letter_3.docx",
+        "Hiring Manager Message": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_hiring_manager_message_3.txt",
+        "Interview Prep": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_interview_prep_3.txt",
+        "Job Description": "/Users/trisha.lynch/.codex/.chatgpt-projects/g-p-6a5d817ef0788191bbc5427a19234f4c/main_runtime_60cca23/jobs/github_senior_product_operations_manager.md",
+        "Package Summary": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_package_summary_3.txt",
+        "Recruiter Message": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_recruiter_message_3.txt",
+        "Strategy Pack": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_strategy_pack_3.txt",
+        "Styled Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_styled_resume_3.docx",
+        "Tailored Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/github_senior_product_operations_manager/github_senior_product_operations_manager_trisha_lynch_resume_3.txt"
+      },
+      "prospect_id": "github_senior_product_operations_manager",
+      "role_title": "Senior Product Operations Manager",
+      "slug": "github_senior_product_operations_manager",
+      "source_url": "https://www.github.careers/careers-home/jobs/5516?lang=en-us",
+      "status": "Drafted",
+      "status_date": ""
+    },
+    "package_quality": {
+      "ats_keyword_match": 77,
+      "confidence_level": "Medium",
+      "confidence_score": 72,
+      "cover_letter_score": 82,
+      "resume_tailoring_score": 70,
+      "voice_match": 60
+    },
+    "posting_age_days": 27,
+    "posting_date": "2026-06-26",
+    "posting_status": "Open",
+    "posting_url": "https://www.github.careers/careers-home/jobs/5516?lang=en-us",
+    "priority": "Medium",
+    "recommended_action": "Generate Package",
+    "recommended_next_step": "Proceed using the canonical employer application.",
+    "requires_verification": false,
+    "role": "Senior Product Operations Manager",
+    "role_aliases": [],
+    "role_family": "product_strategy_ops",
+    "salary_range": "$124,000 \u2013 $329,200 per year",
+    "show_on_dashboard": false,
+    "source": "Company career page",
+    "source_confidence": "High",
+    "source_domain": "github.careers",
+    "source_name": "Company career page",
+    "source_trust_label": "Direct Employer",
+    "source_type": "Direct Employer",
+    "source_url": "https://www.github.careers/careers-home/jobs/5516?lang=en-us",
+    "source_warnings": [],
+    "status": "Rejected",
+    "status_updated_at": "2026-07-25T11:00:58",
+    "submitted_date": "2026-07-23",
+    "verification_notes": "Source identity inferred from an employer-owned domain or company-named careers label.",
+    "verification_status": "Employer Source",
+    "work_arrangement": "Not specified"
+  },
+  "original_role_id": "github_senior_product_operations_manager",
+  "role_title": "Senior Product Operations Manager",
+  "schema_version": 2,
+  "source_metadata": {
+    "source": "Company career page",
+    "source_name": "Company career page",
+    "source_trust_label": "Direct Employer",
+    "source_type": "Direct Employer",
+    "verification_status": "Employer Source"
+  },
+  "source_url": "https://www.github.careers/careers-home/jobs/5516?lang=en-us"
+}

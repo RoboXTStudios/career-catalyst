@@ -1,0 +1,1053 @@
+{
+  "prospect_id": "airbnb_marketing_operations_lead",
+  "slug": "airbnb_marketing_operations_lead",
+  "company": "Airbnb",
+  "role_title": "Marketing Operations Lead",
+  "status": "Considered",
+  "generated_at": "2026-08-06T17:22:36.043800+00:00",
+  "applied_date": "",
+  "status_date": "",
+  "source_url": "https://careers.airbnb.com/positions/8056124/",
+  "files": {
+    "resume_text": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/airbnb_marketing_operations_lead/airbnb_marketing_operations_lead_trisha_lynch_resume.txt",
+    "styled_docx": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/airbnb_marketing_operations_lead/airbnb_marketing_operations_lead_trisha_lynch_styled_resume.docx",
+    "ats_docx": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/airbnb_marketing_operations_lead/airbnb_marketing_operations_lead_trisha_lynch_ats_resume.docx",
+    "cover_letter": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/airbnb_marketing_operations_lead/airbnb_marketing_operations_lead_trisha_lynch_cover_letter.txt",
+    "cover_letter_docx": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/airbnb_marketing_operations_lead/airbnb_marketing_operations_lead_trisha_lynch_cover_letter.docx",
+    "recruiter_message": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/airbnb_marketing_operations_lead/airbnb_marketing_operations_lead_trisha_lynch_recruiter_message.txt",
+    "hiring_manager_message": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/airbnb_marketing_operations_lead/airbnb_marketing_operations_lead_trisha_lynch_hiring_manager_message.txt",
+    "application_note": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/airbnb_marketing_operations_lead/airbnb_marketing_operations_lead_trisha_lynch_application_note.txt",
+    "strategy_pack": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/airbnb_marketing_operations_lead/airbnb_marketing_operations_lead_trisha_lynch_strategy_pack.txt",
+    "interview_prep": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/airbnb_marketing_operations_lead/airbnb_marketing_operations_lead_trisha_lynch_interview_prep.txt",
+    "package_summary": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/airbnb_marketing_operations_lead/airbnb_marketing_operations_lead_trisha_lynch_package_summary.txt"
+  },
+  "archived": false,
+  "archive_reason": "",
+  "legacy_files_moved": [],
+  "role_intent": {
+    "primary_archetype": "martech_governance_adoption",
+    "package_role_family": "strategy_gtm_operations",
+    "package_role_label": "Marketing Operations/Strategy & Business Operations",
+    "secondary_archetypes": [
+      "pmo_program_delivery",
+      "business_operations_chief_of_staff"
+    ],
+    "confidence": "medium",
+    "primary_hiring_need": "Build and optimize the frameworks, precesses, tools, planning systems, and operating practices that help global Marketing and Creative teams scale efficiently and increase business impact.",
+    "required_outcomes": [
+      "standardize_taxonomy",
+      "improve_measurement_readiness",
+      "integrate_vendors",
+      "strengthen_quality",
+      "drive_platform_adoption"
+    ],
+    "reasoning_signals": [
+      "tracking",
+      "training",
+      "systems"
+    ],
+    "lead_evidence": [
+      "Marketing operations, Strategy and business operations, Annual planning and budgeting, Resource planning, Operating-system design, Process optimizations, Executive communications, Cross-functional leadership"
+    ],
+    "supporting_evidence": [
+      "Finance and analytics partnership, Measurement frameworks, Project tracking, Global marketing operations, Creative and production workflows, Ambiguous problem solving, Stakeholder alignment, Change adoption"
+    ],
+    "suppressed_evidence": [
+      "photography",
+      "unrelated_editorial_evidence",
+      "unrelated_ai_projects"
+    ],
+    "headline_profile": "Senior Strategy & Operations Leader | Transformation | AI Systems | Marketing Operations",
+    "earlier_career_policy": "omit",
+    "selected_project_limit": 0,
+    "target_max_pages": 2,
+    "primary_cover_letter_story": "martech_governance",
+    "secondary_cover_letter_story": "platform_adoption",
+    "generated_greeting": "Dear Airbnb Hiring Team,",
+    "effective_company_category": "Global Marketing Operations",
+    "effective_company_voice": "Mission-Driven Global Consumer Technology Marketplace",
+    "effective_role_family": "Marketing Operations/Strategy & Business Operations",
+    "role_intelligence_overrides": {
+      "company_voice": "Mission-Driven Global Consumer Technology Marketplace",
+      "category": "Global Marketing Operations",
+      "role_family": "Marketing Operations/Strategy & Business Operations",
+      "primary_hiring_need": "Build and optimize the frameworks, precesses, tools, planning systems, and operating practices that help global Marketing and Creative teams scale efficiently and increase business impact.",
+      "leading_themes": [
+        "Marketing operations, Strategy and business operations, Annual planning and budgeting, Resource planning, Operating-system design, Process optimizations, Executive communications, Cross-functional leadership"
+      ],
+      "supporting_themes": [
+        "Finance and analytics partnership, Measurement frameworks, Project tracking, Global marketing operations, Creative and production workflows, Ambiguous problem solving, Stakeholder alignment, Change adoption"
+      ]
+    }
+  },
+  "materials": {
+    "ATS Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/airbnb_marketing_operations_lead/airbnb_marketing_operations_lead_trisha_lynch_ats_resume.docx",
+    "Styled Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/airbnb_marketing_operations_lead/airbnb_marketing_operations_lead_trisha_lynch_styled_resume.docx",
+    "Tailored Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/airbnb_marketing_operations_lead/airbnb_marketing_operations_lead_trisha_lynch_resume.txt",
+    "Cover Letter": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/airbnb_marketing_operations_lead/airbnb_marketing_operations_lead_trisha_lynch_cover_letter.docx",
+    "Application Note": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/airbnb_marketing_operations_lead/airbnb_marketing_operations_lead_trisha_lynch_application_note.txt",
+    "Recruiter Message": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/airbnb_marketing_operations_lead/airbnb_marketing_operations_lead_trisha_lynch_recruiter_message.txt",
+    "Hiring Manager Message": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/airbnb_marketing_operations_lead/airbnb_marketing_operations_lead_trisha_lynch_hiring_manager_message.txt",
+    "Strategy Pack": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/airbnb_marketing_operations_lead/airbnb_marketing_operations_lead_trisha_lynch_strategy_pack.txt",
+    "Interview Prep": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/airbnb_marketing_operations_lead/airbnb_marketing_operations_lead_trisha_lynch_interview_prep.txt",
+    "Package Summary": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/airbnb_marketing_operations_lead/airbnb_marketing_operations_lead_trisha_lynch_package_summary.txt",
+    "Job Description": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/airbnb_marketing_operations_lead.md"
+  },
+  "tailoring_metadata": {
+    "selected_evidence": [
+      {
+        "id": "enterprise_media_operations_transformation",
+        "title": "Enterprise Media Operations Transformation",
+        "manual": true,
+        "relevance_score": 25,
+        "matched_signals": [
+          "across",
+          "analytics",
+          "business",
+          "collaboration",
+          "complex",
+          "cross",
+          "establishing",
+          "functional",
+          "leadership",
+          "led"
+        ]
+      },
+      {
+        "id": "operational_workflow_design_airtable_implementation",
+        "title": "Operational Workflow Design & Airtable Implementation",
+        "manual": true,
+        "relevance_score": 30,
+        "matched_signals": [
+          "across",
+          "base",
+          "business",
+          "cross",
+          "data",
+          "design",
+          "functional",
+          "information",
+          "management",
+          "marketing"
+        ]
+      },
+      {
+        "id": "enterprise_collaboration_platform_adoption_stakeholder_enablement",
+        "title": "Enterprise Collaboration Platform Adoption & Stakeholder Enablement",
+        "manual": true,
+        "relevance_score": 21,
+        "matched_signals": [
+          "across",
+          "change",
+          "collaboration",
+          "expertise",
+          "hours",
+          "management",
+          "more",
+          "new",
+          "office",
+          "operations"
+        ]
+      },
+      {
+        "id": "career_catalyst_ai_enabled_career_intelligence_application_operations_platform",
+        "title": "Career Catalyst \u2014 AI-Enabled Career Intelligence & Application Operations Platform",
+        "manual": true,
+        "relevance_score": 29,
+        "matched_signals": [
+          "across",
+          "application",
+          "candidate",
+          "career",
+          "change",
+          "data",
+          "design",
+          "experience",
+          "interview",
+          "job"
+        ]
+      }
+    ],
+    "selected_count": 4,
+    "used_anywhere_count": 3,
+    "omitted_from_package_count": 1,
+    "system_recommended_projects": [],
+    "resume_projects_used": [
+      "Operational Workflow Design & Airtable Implementation",
+      "Career Catalyst \u2014 AI-Enabled Career Intelligence & Application Operations Platform",
+      "Enterprise Media Operations Transformation"
+    ],
+    "cover_letter_projects_used": [
+      "Operational Workflow Design & Airtable Implementation",
+      "Career Catalyst \u2014 AI-Enabled Career Intelligence & Application Operations Platform"
+    ],
+    "projects_not_used": [
+      {
+        "id": "enterprise_collaboration_platform_adoption_stakeholder_enablement",
+        "title": "Enterprise Collaboration Platform Adoption & Stakeholder Enablement",
+        "reason": "Space limit: ranked below the top 3 selected Evidence records for this ATS resume."
+      }
+    ],
+    "artifact_usage": {
+      "ats_resume": {
+        "artifact_type": "ats_resume",
+        "artifact_label": "ATS resume",
+        "capacity": 3,
+        "selected_ids": [
+          "enterprise_media_operations_transformation",
+          "operational_workflow_design_airtable_implementation",
+          "enterprise_collaboration_platform_adoption_stakeholder_enablement",
+          "career_catalyst_ai_enabled_career_intelligence_application_operations_platform"
+        ],
+        "eligible": [
+          {
+            "id": "operational_workflow_design_airtable_implementation",
+            "title": "Operational Workflow Design & Airtable Implementation",
+            "source": "selected",
+            "user_order": 1,
+            "relevance_score": 30,
+            "matched_signals": [
+              "across",
+              "base",
+              "business",
+              "cross",
+              "data",
+              "design",
+              "functional",
+              "information",
+              "management",
+              "marketing"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "career_catalyst_ai_enabled_career_intelligence_application_operations_platform",
+            "title": "Career Catalyst \u2014 AI-Enabled Career Intelligence & Application Operations Platform",
+            "source": "selected",
+            "user_order": 3,
+            "relevance_score": 29,
+            "matched_signals": [
+              "across",
+              "application",
+              "candidate",
+              "career",
+              "change",
+              "data",
+              "design",
+              "experience",
+              "interview",
+              "job"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "enterprise_media_operations_transformation",
+            "title": "Enterprise Media Operations Transformation",
+            "source": "selected",
+            "user_order": 0,
+            "relevance_score": 25,
+            "matched_signals": [
+              "across",
+              "analytics",
+              "business",
+              "collaboration",
+              "complex",
+              "cross",
+              "establishing",
+              "functional",
+              "leadership",
+              "led"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "enterprise_collaboration_platform_adoption_stakeholder_enablement",
+            "title": "Enterprise Collaboration Platform Adoption & Stakeholder Enablement",
+            "source": "selected",
+            "user_order": 2,
+            "relevance_score": 21,
+            "matched_signals": [
+              "across",
+              "change",
+              "collaboration",
+              "expertise",
+              "hours",
+              "management",
+              "more",
+              "new",
+              "office",
+              "operations"
+            ],
+            "artifact_suitability": 2
+          }
+        ],
+        "ranked": [
+          {
+            "id": "operational_workflow_design_airtable_implementation",
+            "title": "Operational Workflow Design & Airtable Implementation",
+            "source": "selected",
+            "user_order": 1,
+            "relevance_score": 30,
+            "matched_signals": [
+              "across",
+              "base",
+              "business",
+              "cross",
+              "data",
+              "design",
+              "functional",
+              "information",
+              "management",
+              "marketing"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "career_catalyst_ai_enabled_career_intelligence_application_operations_platform",
+            "title": "Career Catalyst \u2014 AI-Enabled Career Intelligence & Application Operations Platform",
+            "source": "selected",
+            "user_order": 3,
+            "relevance_score": 29,
+            "matched_signals": [
+              "across",
+              "application",
+              "candidate",
+              "career",
+              "change",
+              "data",
+              "design",
+              "experience",
+              "interview",
+              "job"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "enterprise_media_operations_transformation",
+            "title": "Enterprise Media Operations Transformation",
+            "source": "selected",
+            "user_order": 0,
+            "relevance_score": 25,
+            "matched_signals": [
+              "across",
+              "analytics",
+              "business",
+              "collaboration",
+              "complex",
+              "cross",
+              "establishing",
+              "functional",
+              "leadership",
+              "led"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "enterprise_collaboration_platform_adoption_stakeholder_enablement",
+            "title": "Enterprise Collaboration Platform Adoption & Stakeholder Enablement",
+            "source": "selected",
+            "user_order": 2,
+            "relevance_score": 21,
+            "matched_signals": [
+              "across",
+              "change",
+              "collaboration",
+              "expertise",
+              "hours",
+              "management",
+              "more",
+              "new",
+              "office",
+              "operations"
+            ],
+            "artifact_suitability": 2
+          }
+        ],
+        "used": [
+          {
+            "id": "operational_workflow_design_airtable_implementation",
+            "title": "Operational Workflow Design & Airtable Implementation",
+            "source": "selected",
+            "user_order": 1,
+            "relevance_score": 30,
+            "matched_signals": [
+              "across",
+              "base",
+              "business",
+              "cross",
+              "data",
+              "design",
+              "functional",
+              "information",
+              "management",
+              "marketing"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "career_catalyst_ai_enabled_career_intelligence_application_operations_platform",
+            "title": "Career Catalyst \u2014 AI-Enabled Career Intelligence & Application Operations Platform",
+            "source": "selected",
+            "user_order": 3,
+            "relevance_score": 29,
+            "matched_signals": [
+              "across",
+              "application",
+              "candidate",
+              "career",
+              "change",
+              "data",
+              "design",
+              "experience",
+              "interview",
+              "job"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "enterprise_media_operations_transformation",
+            "title": "Enterprise Media Operations Transformation",
+            "source": "selected",
+            "user_order": 0,
+            "relevance_score": 25,
+            "matched_signals": [
+              "across",
+              "analytics",
+              "business",
+              "collaboration",
+              "complex",
+              "cross",
+              "establishing",
+              "functional",
+              "leadership",
+              "led"
+            ],
+            "artifact_suitability": 2
+          }
+        ],
+        "omitted": [
+          {
+            "id": "enterprise_collaboration_platform_adoption_stakeholder_enablement",
+            "title": "Enterprise Collaboration Platform Adoption & Stakeholder Enablement",
+            "source": "selected",
+            "user_order": 2,
+            "relevance_score": 21,
+            "matched_signals": [
+              "across",
+              "change",
+              "collaboration",
+              "expertise",
+              "hours",
+              "management",
+              "more",
+              "new",
+              "office",
+              "operations"
+            ],
+            "artifact_suitability": 2,
+            "reason": "Space limit: ranked below the top 3 selected Evidence records for this ATS resume."
+          }
+        ],
+        "fallback_used": []
+      },
+      "styled_resume": {
+        "artifact_type": "styled_resume",
+        "artifact_label": "styled resume",
+        "capacity": 3,
+        "selected_ids": [
+          "enterprise_media_operations_transformation",
+          "operational_workflow_design_airtable_implementation",
+          "enterprise_collaboration_platform_adoption_stakeholder_enablement",
+          "career_catalyst_ai_enabled_career_intelligence_application_operations_platform"
+        ],
+        "eligible": [
+          {
+            "id": "operational_workflow_design_airtable_implementation",
+            "title": "Operational Workflow Design & Airtable Implementation",
+            "source": "selected",
+            "user_order": 1,
+            "relevance_score": 30,
+            "matched_signals": [
+              "across",
+              "base",
+              "business",
+              "cross",
+              "data",
+              "design",
+              "functional",
+              "information",
+              "management",
+              "marketing"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "career_catalyst_ai_enabled_career_intelligence_application_operations_platform",
+            "title": "Career Catalyst \u2014 AI-Enabled Career Intelligence & Application Operations Platform",
+            "source": "selected",
+            "user_order": 3,
+            "relevance_score": 29,
+            "matched_signals": [
+              "across",
+              "application",
+              "candidate",
+              "career",
+              "change",
+              "data",
+              "design",
+              "experience",
+              "interview",
+              "job"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "enterprise_media_operations_transformation",
+            "title": "Enterprise Media Operations Transformation",
+            "source": "selected",
+            "user_order": 0,
+            "relevance_score": 25,
+            "matched_signals": [
+              "across",
+              "analytics",
+              "business",
+              "collaboration",
+              "complex",
+              "cross",
+              "establishing",
+              "functional",
+              "leadership",
+              "led"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "enterprise_collaboration_platform_adoption_stakeholder_enablement",
+            "title": "Enterprise Collaboration Platform Adoption & Stakeholder Enablement",
+            "source": "selected",
+            "user_order": 2,
+            "relevance_score": 21,
+            "matched_signals": [
+              "across",
+              "change",
+              "collaboration",
+              "expertise",
+              "hours",
+              "management",
+              "more",
+              "new",
+              "office",
+              "operations"
+            ],
+            "artifact_suitability": 2
+          }
+        ],
+        "ranked": [
+          {
+            "id": "operational_workflow_design_airtable_implementation",
+            "title": "Operational Workflow Design & Airtable Implementation",
+            "source": "selected",
+            "user_order": 1,
+            "relevance_score": 30,
+            "matched_signals": [
+              "across",
+              "base",
+              "business",
+              "cross",
+              "data",
+              "design",
+              "functional",
+              "information",
+              "management",
+              "marketing"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "career_catalyst_ai_enabled_career_intelligence_application_operations_platform",
+            "title": "Career Catalyst \u2014 AI-Enabled Career Intelligence & Application Operations Platform",
+            "source": "selected",
+            "user_order": 3,
+            "relevance_score": 29,
+            "matched_signals": [
+              "across",
+              "application",
+              "candidate",
+              "career",
+              "change",
+              "data",
+              "design",
+              "experience",
+              "interview",
+              "job"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "enterprise_media_operations_transformation",
+            "title": "Enterprise Media Operations Transformation",
+            "source": "selected",
+            "user_order": 0,
+            "relevance_score": 25,
+            "matched_signals": [
+              "across",
+              "analytics",
+              "business",
+              "collaboration",
+              "complex",
+              "cross",
+              "establishing",
+              "functional",
+              "leadership",
+              "led"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "enterprise_collaboration_platform_adoption_stakeholder_enablement",
+            "title": "Enterprise Collaboration Platform Adoption & Stakeholder Enablement",
+            "source": "selected",
+            "user_order": 2,
+            "relevance_score": 21,
+            "matched_signals": [
+              "across",
+              "change",
+              "collaboration",
+              "expertise",
+              "hours",
+              "management",
+              "more",
+              "new",
+              "office",
+              "operations"
+            ],
+            "artifact_suitability": 2
+          }
+        ],
+        "used": [
+          {
+            "id": "operational_workflow_design_airtable_implementation",
+            "title": "Operational Workflow Design & Airtable Implementation",
+            "source": "selected",
+            "user_order": 1,
+            "relevance_score": 30,
+            "matched_signals": [
+              "across",
+              "base",
+              "business",
+              "cross",
+              "data",
+              "design",
+              "functional",
+              "information",
+              "management",
+              "marketing"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "career_catalyst_ai_enabled_career_intelligence_application_operations_platform",
+            "title": "Career Catalyst \u2014 AI-Enabled Career Intelligence & Application Operations Platform",
+            "source": "selected",
+            "user_order": 3,
+            "relevance_score": 29,
+            "matched_signals": [
+              "across",
+              "application",
+              "candidate",
+              "career",
+              "change",
+              "data",
+              "design",
+              "experience",
+              "interview",
+              "job"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "enterprise_media_operations_transformation",
+            "title": "Enterprise Media Operations Transformation",
+            "source": "selected",
+            "user_order": 0,
+            "relevance_score": 25,
+            "matched_signals": [
+              "across",
+              "analytics",
+              "business",
+              "collaboration",
+              "complex",
+              "cross",
+              "establishing",
+              "functional",
+              "leadership",
+              "led"
+            ],
+            "artifact_suitability": 2
+          }
+        ],
+        "omitted": [
+          {
+            "id": "enterprise_collaboration_platform_adoption_stakeholder_enablement",
+            "title": "Enterprise Collaboration Platform Adoption & Stakeholder Enablement",
+            "source": "selected",
+            "user_order": 2,
+            "relevance_score": 21,
+            "matched_signals": [
+              "across",
+              "change",
+              "collaboration",
+              "expertise",
+              "hours",
+              "management",
+              "more",
+              "new",
+              "office",
+              "operations"
+            ],
+            "artifact_suitability": 2,
+            "reason": "Space limit: ranked below the top 3 selected Evidence records for this ATS resume."
+          }
+        ],
+        "fallback_used": []
+      },
+      "cover_letter": {
+        "artifact_type": "cover_letter",
+        "artifact_label": "cover letter",
+        "capacity": 2,
+        "selected_ids": [
+          "enterprise_media_operations_transformation",
+          "operational_workflow_design_airtable_implementation",
+          "enterprise_collaboration_platform_adoption_stakeholder_enablement",
+          "career_catalyst_ai_enabled_career_intelligence_application_operations_platform"
+        ],
+        "eligible": [
+          {
+            "id": "operational_workflow_design_airtable_implementation",
+            "title": "Operational Workflow Design & Airtable Implementation",
+            "source": "selected",
+            "user_order": 1,
+            "relevance_score": 30,
+            "matched_signals": [
+              "across",
+              "base",
+              "business",
+              "cross",
+              "data",
+              "design",
+              "functional",
+              "information",
+              "management",
+              "marketing"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "career_catalyst_ai_enabled_career_intelligence_application_operations_platform",
+            "title": "Career Catalyst \u2014 AI-Enabled Career Intelligence & Application Operations Platform",
+            "source": "selected",
+            "user_order": 3,
+            "relevance_score": 29,
+            "matched_signals": [
+              "across",
+              "application",
+              "candidate",
+              "career",
+              "change",
+              "data",
+              "design",
+              "experience",
+              "interview",
+              "job"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "enterprise_media_operations_transformation",
+            "title": "Enterprise Media Operations Transformation",
+            "source": "selected",
+            "user_order": 0,
+            "relevance_score": 25,
+            "matched_signals": [
+              "across",
+              "analytics",
+              "business",
+              "collaboration",
+              "complex",
+              "cross",
+              "establishing",
+              "functional",
+              "leadership",
+              "led"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "enterprise_collaboration_platform_adoption_stakeholder_enablement",
+            "title": "Enterprise Collaboration Platform Adoption & Stakeholder Enablement",
+            "source": "selected",
+            "user_order": 2,
+            "relevance_score": 21,
+            "matched_signals": [
+              "across",
+              "change",
+              "collaboration",
+              "expertise",
+              "hours",
+              "management",
+              "more",
+              "new",
+              "office",
+              "operations"
+            ],
+            "artifact_suitability": 2
+          }
+        ],
+        "ranked": [
+          {
+            "id": "operational_workflow_design_airtable_implementation",
+            "title": "Operational Workflow Design & Airtable Implementation",
+            "source": "selected",
+            "user_order": 1,
+            "relevance_score": 30,
+            "matched_signals": [
+              "across",
+              "base",
+              "business",
+              "cross",
+              "data",
+              "design",
+              "functional",
+              "information",
+              "management",
+              "marketing"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "career_catalyst_ai_enabled_career_intelligence_application_operations_platform",
+            "title": "Career Catalyst \u2014 AI-Enabled Career Intelligence & Application Operations Platform",
+            "source": "selected",
+            "user_order": 3,
+            "relevance_score": 29,
+            "matched_signals": [
+              "across",
+              "application",
+              "candidate",
+              "career",
+              "change",
+              "data",
+              "design",
+              "experience",
+              "interview",
+              "job"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "enterprise_media_operations_transformation",
+            "title": "Enterprise Media Operations Transformation",
+            "source": "selected",
+            "user_order": 0,
+            "relevance_score": 25,
+            "matched_signals": [
+              "across",
+              "analytics",
+              "business",
+              "collaboration",
+              "complex",
+              "cross",
+              "establishing",
+              "functional",
+              "leadership",
+              "led"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "enterprise_collaboration_platform_adoption_stakeholder_enablement",
+            "title": "Enterprise Collaboration Platform Adoption & Stakeholder Enablement",
+            "source": "selected",
+            "user_order": 2,
+            "relevance_score": 21,
+            "matched_signals": [
+              "across",
+              "change",
+              "collaboration",
+              "expertise",
+              "hours",
+              "management",
+              "more",
+              "new",
+              "office",
+              "operations"
+            ],
+            "artifact_suitability": 2
+          }
+        ],
+        "used": [
+          {
+            "id": "operational_workflow_design_airtable_implementation",
+            "title": "Operational Workflow Design & Airtable Implementation",
+            "source": "selected",
+            "user_order": 1,
+            "relevance_score": 30,
+            "matched_signals": [
+              "across",
+              "base",
+              "business",
+              "cross",
+              "data",
+              "design",
+              "functional",
+              "information",
+              "management",
+              "marketing"
+            ],
+            "artifact_suitability": 2
+          },
+          {
+            "id": "career_catalyst_ai_enabled_career_intelligence_application_operations_platform",
+            "title": "Career Catalyst \u2014 AI-Enabled Career Intelligence & Application Operations Platform",
+            "source": "selected",
+            "user_order": 3,
+            "relevance_score": 29,
+            "matched_signals": [
+              "across",
+              "application",
+              "candidate",
+              "career",
+              "change",
+              "data",
+              "design",
+              "experience",
+              "interview",
+              "job"
+            ],
+            "artifact_suitability": 2
+          }
+        ],
+        "omitted": [
+          {
+            "id": "enterprise_media_operations_transformation",
+            "title": "Enterprise Media Operations Transformation",
+            "source": "selected",
+            "user_order": 0,
+            "relevance_score": 25,
+            "matched_signals": [
+              "across",
+              "analytics",
+              "business",
+              "collaboration",
+              "complex",
+              "cross",
+              "establishing",
+              "functional",
+              "leadership",
+              "led"
+            ],
+            "artifact_suitability": 2,
+            "reason": "Space limit: ranked below the top 2 selected Evidence records for this cover letter."
+          },
+          {
+            "id": "enterprise_collaboration_platform_adoption_stakeholder_enablement",
+            "title": "Enterprise Collaboration Platform Adoption & Stakeholder Enablement",
+            "source": "selected",
+            "user_order": 2,
+            "relevance_score": 21,
+            "matched_signals": [
+              "across",
+              "change",
+              "collaboration",
+              "expertise",
+              "hours",
+              "management",
+              "more",
+              "new",
+              "office",
+              "operations"
+            ],
+            "artifact_suitability": 2,
+            "reason": "Space limit: ranked below the top 2 selected Evidence records for this cover letter."
+          }
+        ],
+        "fallback_used": []
+      }
+    },
+    "unselected_fallback_used": [],
+    "evidence_score_contribution": {
+      "before": 86,
+      "after": 88,
+      "delta": 2,
+      "matched_requirements": [
+        "cross-functional",
+        "business operations",
+        "marketing",
+        "operations",
+        "over",
+        "business"
+      ],
+      "explanation": "Selected Evidence matched additional verified role requirements."
+    },
+    "role_intelligence": {
+      "overrides": {
+        "company_voice": "Mission-Driven Global Consumer Technology Marketplace",
+        "category": "Global Marketing Operations",
+        "role_family": "Marketing Operations/Strategy & Business Operations",
+        "primary_hiring_need": "Build and optimize the frameworks, precesses, tools, planning systems, and operating practices that help global Marketing and Creative teams scale efficiently and increase business impact.",
+        "leading_themes": [
+          "Marketing operations, Strategy and business operations, Annual planning and budgeting, Resource planning, Operating-system design, Process optimizations, Executive communications, Cross-functional leadership"
+        ],
+        "supporting_themes": [
+          "Finance and analytics partnership, Measurement frameworks, Project tracking, Global marketing operations, Creative and production workflows, Ambiguous problem solving, Stakeholder alignment, Change adoption"
+        ]
+      },
+      "inferred": {
+        "profile_name": "dynamic_nonprofit_social_impact",
+        "company_name": "Airbnb",
+        "source": "dynamic_inference",
+        "company_category": "nonprofit_social_impact",
+        "role_family": "creative_marketing_ops",
+        "tone": [
+          "mission-aware",
+          "human",
+          "thoughtful",
+          "practical",
+          "creative-operations-aware",
+          "clear"
+        ],
+        "cover_letter_angle": [
+          "connect mission clarity with stakeholder alignment, thoughtful communication, and dependable operations",
+          "show how scalable systems can protect human-centered work and improve organizational focus",
+          "connect creative and marketing priorities with workflow, capacity, quality, and dependable delivery"
+        ],
+        "proof_points_to_emphasize": [
+          "cross-functional leadership and stakeholder communication",
+          "Multiverse editorial leadership and employee storytelling",
+          "workflow governance and scalable operating standards",
+          "entertainment marketing operations",
+          "creative workflows",
+          "CampaignOS"
+        ],
+        "proof_points_to_avoid": [
+          "invented nonprofit experience or personal connection to the mission"
+        ],
+        "avoid": [
+          "invented nonprofit experience or personal connection to the mission"
+        ],
+        "confidence": 0.68,
+        "confidence_label": "Medium",
+        "reasoning_summary": "The available text points to nonprofit_social_impact through signals including mission-driven, mission driven.",
+        "company_voice_label": "Dynamic Nonprofit Social Impact",
+        "company_category_label": "Nonprofit Social Impact",
+        "role_family_label": "Creative Marketing Ops"
+      },
+      "effective": {
+        "company_voice": "Mission-Driven Global Consumer Technology Marketplace",
+        "category": "Global Marketing Operations",
+        "role_family": "Marketing Operations/Strategy & Business Operations",
+        "primary_hiring_need": "Build and optimize the frameworks, precesses, tools, planning systems, and operating practices that help global Marketing and Creative teams scale efficiently and increase business impact."
+      }
+    }
+  }
+}

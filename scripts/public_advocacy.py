@@ -21,6 +21,13 @@ INTERNAL_POSITIONING_PATTERNS: dict[str, tuple[str, ...]] = {
     "unsupported_language": (
         r"\bunsupported experience\b", r"\bunsupported claim", r"\bnot demonstrated\b",
     ),
+    "claim_safety_disclaimer": (
+        r"\bwhile staying precise about the scope of my direct experience\b",
+        r"\bbased on the evidence available\b",
+        r"\bwhere my experience directly aligns\b",
+        r"\bkeep claims close to the facts\b",
+        r"\bgrounded in the role's actual priorities rather than assumptions\b",
+    ),
     "curiosity_close": (
         r"\bi (?:would|'d) welcome the (?:chance|opportunity) to learn\b",
         r"\bi (?:would|'d) like to learn\b",

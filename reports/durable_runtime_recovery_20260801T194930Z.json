@@ -1,0 +1,131 @@
+{
+  "created_at": "2026-08-01T19:49:31.994857+00:00",
+  "operation": "durable_runtime_reconstruction",
+  "deployed_commit": "a16753a5ab00e44ff5daaf3bc7a9c0223973966c",
+  "paths": {
+    "durable_code": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/code",
+    "durable_runtime": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime",
+    "durable_launcher": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/launch_career_catalyst.sh",
+    "durable_venv": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/venv",
+    "staging_origin": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime_staging_20260801T194008Z",
+    "staging_manifest_after_promotion": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/recovery/staging_manifest.json",
+    "source_selection_report": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/recovery/source_selection.json",
+    "exports": "/Users/trisha.lynch/Documents/career-catalyst/exports",
+    "archive": "/Users/trisha.lynch/Documents/career-catalyst/archive",
+    "backup": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_durable_runtime_recovery_20260801T193358Z",
+    "backup_manifest": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_durable_runtime_recovery_20260801T193358Z/backup_manifest.json",
+    "launcher_conf_backup": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_durable_runtime_recovery_20260801T193358Z/launcher/launcher.conf",
+    "installed_launcher": "/Users/trisha.lynch/Applications/Career Catalyst.app"
+  },
+  "source_selection": {
+    "application_tracker": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/runtime/data/application_tracker.yml",
+    "application_tracker_baseline_sha256": "aedec018cb19f4d2538242d118785e2e121e3f278df292f62e595db73801f19e",
+    "evidence_projects_baseline": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_sprint32_deploy_20260731T181731Z/production_runtime/data/evidence_projects.yml",
+    "capability_reviews": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_sprint32_deploy_20260731T181731Z/production_runtime/data/capability_reviews.yml",
+    "career_and_evidence_foundation": "/Users/trisha.lynch/Documents/career-catalyst/data",
+    "configuration": "Merged Sprint 33 defaults overlaid by current Documents configuration; role_intent_rules.yml retained from merged code.",
+    "jobs": "/Users/trisha.lynch/Documents/career-catalyst/jobs",
+    "templates": "Merged Sprint 33 templates overlaid by current Documents templates.",
+    "golden_resume": "/Users/trisha.lynch/Downloads/Trisha_Lynch_Golden_Resume_2026 (1).docx",
+    "exports_and_archives": "Current Documents-owned paths retained in place; no package or archive copied, moved, regenerated, or overwritten."
+  },
+  "reconstructed_records": {
+    "intentional_withdrawn_closed_ids": [
+      "about_tiktok_product_marketing_manager_tiktok_operations",
+      "netflix_product_manager_ads_platform_experimentation_foundations",
+      "playstation_head_global_creative_ops"
+    ],
+    "three_cloud_role_id": "3cloud_senior_director_digital_workplace",
+    "three_cloud_status": "Applied",
+    "three_cloud_application_date": "2026-08-01",
+    "three_cloud_compensation_disclosure_state": "not_listed",
+    "three_cloud_compensation_minimum": null,
+    "three_cloud_compensation_maximum": null,
+    "three_cloud_package": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace",
+    "three_cloud_selected_evidence_ids": [
+      "microsoft_365_digital_workplace_enablement_sharepoint_workflow_and_knowledge_hub",
+      "enterprise_collaboration_platform_adoption_stakeholder_enablement",
+      "disney_floodlight_tracking_database_and_data_technology_map",
+      "career_catalyst_ai_enabled_career_intelligence_application_operations_platform"
+    ],
+    "new_evidence_ids": [
+      "microsoft_365_digital_workplace_enablement_sharepoint_workflow_and_knowledge_hub",
+      "disney_floodlight_tracking_database_and_data_technology_map"
+    ]
+  },
+  "checksums": {
+    "backup_manifest_sha256": "ff1d150a8032fbade8834a4ce84a376ab7e0717c7392e03a839a2fc7cbcd35b0",
+    "final_tracker_sha256": "c5980faf8843878ec036ecb5db3b10e088671e83d5c2ee2ae2d232afbf940f44",
+    "final_evidence_projects_sha256": "dc05e1ff0df06a47c790d5bb72fa97b8af7fc98ea3be705706486f2b6b72231b",
+    "archive_index_sha256": "3fc6a5c29b9cddde7a596a66be3b4e308b4e6da55feaad52ad5598b9720bf7b4",
+    "archive_manifest_aggregate_sha256": "c028c48ed6179684e098a9fb4962b59dedc001b18d1a0e7e6c42fb05d127d22f",
+    "active_package_manifest_aggregate_sha256": "aea5633837b5b04c03bcf05d83262a264440bd033d9f445fb70a982b2ca95a78",
+    "three_cloud_package_aggregate_sha256": "8d99055b8c482ecead2c31e4042b0b139e25ea47459ef9e380f748cda4598ce1",
+    "three_cloud_manifest_sha256": "1a654ba2c389ba33ffe10a8b899900912ff5d02e88d4c70a88aa0048d713e2ba",
+    "original_checkout_status_sha256": "5b86eb3063e7f815509af97580dd7229f230891012fcdaac0dd7ee656a50d291"
+  },
+  "validated_state": {
+    "live_roles": 32,
+    "active_evidence_projects": 10,
+    "active_package_manifests": 21,
+    "archive_manifests": 22,
+    "status_counts": {
+      "All": 32,
+      "Prospect": 0,
+      "Considered": 2,
+      "Applied": 16,
+      "Under Consideration": 3,
+      "Interviewing": 0,
+      "Offer": 0,
+      "Rejected": 8,
+      "Withdrawn / Closed": 3
+    },
+    "critical_integrity_findings": 0,
+    "duplicate_package_directory_findings": 0,
+    "browser_console_errors": 0,
+    "health": "ok",
+    "url": "http://127.0.0.1:8503/",
+    "pid": 10045
+  },
+  "tests": [
+    {
+      "command": "python3 -m pytest -p no:cacheprovider -q tests/test_sprint33_evidence_compensation.py tests/test_hotfix_32_1_summary_filter_consistency.py",
+      "result": "13 passed"
+    },
+    {
+      "command": "python3 -m pytest -p no:cacheprovider -q tests/test_sprint29_5_launcher.py tests/test_sprint32_role_lifecycle_archive.py",
+      "result": "21 passed"
+    },
+    {
+      "command": "compile/import smoke checks",
+      "result": "5 source files compiled and 6 modules imported"
+    },
+    {
+      "command": "git diff --check",
+      "result": "passed"
+    }
+  ],
+  "immutability": {
+    "snapshot_source_files_rechecked": 152,
+    "snapshot_source_file_changes_excluding_launcher_conf": 0,
+    "exports_modified": false,
+    "archives_modified": false,
+    "three_cloud_package_regenerated": false,
+    "cleanup_run": false,
+    "sprint32_migration_run": false
+  },
+  "non_blocking_follow_ups": [
+    "The original 3Cloud manifest points to a missing temporary-worktree job-description file. No posting content was fabricated; the role is flagged for later posting-text recovery.",
+    "The unchanged Electronic Arts manifest uses stale generic filenames for two DOCX files; the corresponding EA-named ATS résumé and cover letter remain present. Exports and the manifest were not changed.",
+    "The legacy tests/test_launcher.py expects the intentionally obsolete Open_Career_Catalyst.command file and errors on merged main; current launcher, lifecycle, Hotfix 32.1, and Sprint 33 focused tests pass."
+  ],
+  "rollback": {
+    "steps": [
+      "Stop only PID 10045 after confirming it is the Career Catalyst listener on 127.0.0.1:8503.",
+      "Restore launcher.conf from /Users/trisha.lynch/Documents/career-catalyst/backups/pre_durable_runtime_recovery_20260801T193358Z/launcher/launcher.conf.",
+      "Keep the durable code, runtime, and venv directories in place for investigation; do not delete them.",
+      "Use /Users/trisha.lynch/Documents/career-catalyst/backups/pre_durable_runtime_recovery_20260801T193358Z/backup_manifest.json to verify any runtime source needed for recovery.",
+      "Exports and archives require no rollback because they were not modified."
+    ]
+  }
+}

@@ -1,0 +1,256 @@
+{
+  "application_url": "https://netflix.wd108.myworkdayjobs.com/en-US/Netflix/job/Specialist--Performance-Marketing_JR40473?locations=84a618b29e90102fcd70873d84b807f4",
+  "archive_folder": "/Users/trisha.lynch/Documents/career-catalyst/archive/netflix-inc/2026-07-31_specialist-performance-marketing_netflix-inc-specialist-performance-marketing",
+  "archive_reason": "Withdrawn / Closed",
+  "archived_at": "2026-07-31T18:31:52.232215+00:00",
+  "company": "Netflix, Inc.",
+  "final_status": "Withdrawn / Closed",
+  "job_posting_sha256": "4e69854da9d18e17f89cd8b1d107ee4ed2b2e159e8540585266e90b9afc4d8ad",
+  "legacy_archive_reason": "Passed",
+  "legacy_status": "Pass",
+  "location": "Los Angeles, United States of America",
+  "match_score_snapshot": 66,
+  "match_tier_snapshot": "Stretch Match",
+  "materials": [
+    {
+      "filename": "materials/application_note.txt",
+      "label": "Application Note",
+      "sha256": "ad8ccbed9ec33392d9ecee68ea0b650e244a22bdaf33a60c65d907b8a8da72b5",
+      "size": 481,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_application_note.txt"
+    },
+    {
+      "filename": "materials/ats_resume.docx",
+      "label": "ATS Resume",
+      "sha256": "903722e6c1f4b33d539b2abca86b03e922dd24e79258d53f8faaebe957ddae72",
+      "size": 38980,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_ats_resume.docx"
+    },
+    {
+      "filename": "materials/cover_letter.docx",
+      "label": "Cover Letter",
+      "sha256": "10cd37a915d985fd054e4b589fc1941806b083113974a65e0ba0f4b710e54439",
+      "size": 37655,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_cover_letter.docx"
+    },
+    {
+      "filename": "materials/cover_letter.txt",
+      "label": "cover_letter",
+      "sha256": "ad52d5e843aa1d22abbf6486c90a5d44152cf9f6ebaae4ca8ac82390ee81f32d",
+      "size": 2079,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_cover_letter.txt"
+    },
+    {
+      "filename": "materials/hiring_manager_message.txt",
+      "label": "Hiring Manager Message",
+      "sha256": "e70567ecffacb51beb12f6bbe62e2529fdf4f7e52257a1637ace76110ef26c70",
+      "size": 828,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_hiring_manager_message.txt"
+    },
+    {
+      "filename": "materials/interview_prep.txt",
+      "label": "Interview Prep",
+      "sha256": "fa1d52f1f4b6d592132f2589e82ae17cfee02d73b852175867e0766933100da0",
+      "size": 1307,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_interview_prep.txt"
+    },
+    {
+      "filename": "materials/package_summary.txt",
+      "label": "Package Summary",
+      "sha256": "270e12f4a9c00155bd5be3282be58df2ad2e537f212e5ac89d77e711ebfdcabd",
+      "size": 644,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_package_summary.txt"
+    },
+    {
+      "filename": "materials/recruiter_message.txt",
+      "label": "Recruiter Message",
+      "sha256": "48c3aee8698f86c927ef557af1d4739e3c5c52aa80cc9887d91d72ce4b7e8028",
+      "size": 555,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_recruiter_message.txt"
+    },
+    {
+      "filename": "materials/strategy_pack.txt",
+      "label": "Strategy Pack",
+      "sha256": "a8027359af2aba37a22d1c9435d11bc178a1105307e84e7c971baf5ec16363b2",
+      "size": 9392,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_strategy_pack.txt"
+    },
+    {
+      "filename": "materials/styled_resume.docx",
+      "label": "Styled Resume",
+      "sha256": "5ab665b7f2860ee0765a921aed2be68811598e40b8826ac0b25d7621a870d2e0",
+      "size": 26735,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_styled_resume.docx"
+    },
+    {
+      "filename": "materials/tailored_resume.txt",
+      "label": "Tailored Resume",
+      "sha256": "e4933730a897cae9f5a05eae3693b9cc2355dd5bd770320f8e24f7d44305b4aa",
+      "size": 4525,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_resume.txt"
+    }
+  ],
+  "original_record": {
+    "application_history": [
+      {
+        "archive_reason": "Passed",
+        "date": "2026-07-29T22:09:53.776313+00:00",
+        "event": "role archived",
+        "status": "Withdrawn / Closed"
+      }
+    ],
+    "apply_recommendation": "Apply If Strategic",
+    "archive_reason": "Passed",
+    "archived": true,
+    "archived_at": "2026-07-29T22:09:53.776313+00:00",
+    "canonical_apply_domain": "netflix.wd108.myworkdayjobs.com",
+    "canonical_apply_url": "https://netflix.wd108.myworkdayjobs.com/en-US/Netflix/job/Specialist--Performance-Marketing_JR40473?locations=84a618b29e90102fcd70873d84b807f4",
+    "canonical_employer": "Netflix, Inc.",
+    "company": "Netflix, Inc.",
+    "company_aliases": [],
+    "company_category": "entertainment_streaming",
+    "company_inference_confidence": "Medium",
+    "company_voice_label": "Dynamic Entertainment Streaming",
+    "company_voice_profile": "dynamic_entertainment_streaming",
+    "company_voice_source": "dynamic_inference",
+    "confidence": "High",
+    "field_warnings": [
+      "Salary detected from job text. Review before applying.",
+      "Role family was inferred. Review if this is a strategic or product-ops role."
+    ],
+    "freshness": "Fresh",
+    "freshness_label": "Fresh / High priority",
+    "freshness_risk": "Low",
+    "greenhouse_backed_hint": false,
+    "id": "netflix_inc_specialist_performance_marketing",
+    "job_file": "jobs/netflix_inc_specialist_performance_marketing.md",
+    "location": "Los Angeles, United States of America",
+    "match_gaps": [
+      "Confirm the reporting line and decision authority before generating the package."
+    ],
+    "match_score": 66,
+    "match_strengths": [
+      "Functional alignment includes ad/media operations, marketing technology and measurement.",
+      "The role level is not explicit enough to confirm seniority fit.",
+      "The entertainment context is adjacent to Trisha's target industries.",
+      "The disclosed compensation is aligned with or near Trisha's target.",
+      "The flexible arrangement supports practical fit."
+    ],
+    "match_summary": "There is credible alignment, but the tradeoffs deserve review before package generation.",
+    "match_tier": "Stretch Match",
+    "material_paths": {
+      "ATS Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_ats_resume.docx",
+      "Application Note": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_application_note.txt",
+      "Cover Letter": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_cover_letter.docx",
+      "Hiring Manager Message": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_hiring_manager_message.txt",
+      "Interview Prep": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_interview_prep.txt",
+      "Package Summary": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_package_summary.txt",
+      "Recruiter Message": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_recruiter_message.txt",
+      "Strategy Pack": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_strategy_pack.txt",
+      "Styled Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_styled_resume.docx",
+      "Tailored Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_resume.txt"
+    },
+    "next_action": "Review fit and generate application package.",
+    "notes": "",
+    "official_url": "https://netflix.wd108.myworkdayjobs.com/en-US/Netflix/job/Specialist--Performance-Marketing_JR40473?locations=84a618b29e90102fcd70873d84b807f4",
+    "opportunity_dimensions": {
+      "Industry Alignment": 72,
+      "Interview Probability": 65,
+      "Location Fit": 100,
+      "Mission / Personal Alignment": 62,
+      "Posting Freshness": 100,
+      "Resume Fit": 66,
+      "Role Level Fit": 55,
+      "Salary Fit": 92
+    },
+    "opportunity_score": 74,
+    "original_source_url": "https://netflix.wd108.myworkdayjobs.com/en-US/Netflix/job/Specialist--Performance-Marketing_JR40473?locations=84a618b29e90102fcd70873d84b807f4",
+    "package_manifest": {
+      "applied_date": "",
+      "archive_reason": "Passed",
+      "archived": true,
+      "company": "Netflix, Inc.",
+      "files": {
+        "application_note": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_application_note.txt",
+        "ats_docx": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_ats_resume.docx",
+        "cover_letter": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_cover_letter.txt",
+        "cover_letter_docx": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_cover_letter.docx",
+        "hiring_manager_message": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_hiring_manager_message.txt",
+        "interview_prep": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_interview_prep.txt",
+        "package_summary": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_package_summary.txt",
+        "recruiter_message": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_recruiter_message.txt",
+        "resume_text": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_resume.txt",
+        "strategy_pack": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_strategy_pack.txt",
+        "styled_docx": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_styled_resume.docx"
+      },
+      "generated_at": "2026-07-09T20:06:21.557547+00:00",
+      "legacy_files_moved": [
+        "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/old_generated_materials/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_ats_resume_2.md"
+      ],
+      "manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/manifest.json",
+      "materials": {
+        "ATS Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_ats_resume.docx",
+        "Application Note": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_application_note.txt",
+        "Cover Letter": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_cover_letter.docx",
+        "Hiring Manager Message": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_hiring_manager_message.txt",
+        "Interview Prep": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_interview_prep.txt",
+        "Package Summary": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_package_summary.txt",
+        "Recruiter Message": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_recruiter_message.txt",
+        "Strategy Pack": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_strategy_pack.txt",
+        "Styled Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_styled_resume.docx",
+        "Tailored Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/passed/netflix_inc_specialist_performance_marketing/netflix_specialist_performance_marketing_trisha_lynch_resume.txt"
+      },
+      "prospect_id": "netflix_inc_specialist_performance_marketing",
+      "role_title": "Specialist, Performance Marketing",
+      "slug": "netflix_inc_specialist_performance_marketing",
+      "source_url": "https://netflix.wd108.myworkdayjobs.com/en-US/Netflix/job/Specialist--Performance-Marketing_JR40473?locations=84a618b29e90102fcd70873d84b807f4",
+      "status": "Pass",
+      "status_date": ""
+    },
+    "package_quality": {
+      "ats_keyword_match": 65,
+      "confidence_level": "Medium",
+      "confidence_score": 71,
+      "cover_letter_score": 86,
+      "resume_tailoring_score": 66,
+      "voice_match": 68
+    },
+    "posting_age_days": 2,
+    "posting_date": "2026-07-07",
+    "posting_status": "Open",
+    "pre_archive_status": "Withdrawn / Closed",
+    "priority": "Medium",
+    "recommended_action": "Review First",
+    "recommended_next_step": "Proceed using the canonical employer application.",
+    "requires_verification": false,
+    "role": "Specialist, Performance Marketing",
+    "role_aliases": [],
+    "role_family": "creative_marketing_ops",
+    "salary_range": "$153,000.00 - $240,000.00",
+    "show_on_dashboard": false,
+    "source": "Workday",
+    "source_confidence": "High",
+    "source_domain": "netflix.wd108.myworkdayjobs.com",
+    "source_name": "Workday",
+    "source_trust_label": "Verified Company Source",
+    "source_type": "Employer ATS",
+    "source_url": "https://netflix.wd108.myworkdayjobs.com/en-US/Netflix/job/Specialist--Performance-Marketing_JR40473?locations=84a618b29e90102fcd70873d84b807f4",
+    "source_warnings": [],
+    "status": "Pass",
+    "status_updated_at": "2026-07-09T13:55:58",
+    "verification_notes": "No verification cautions detected.",
+    "verification_status": "Employer Source",
+    "work_arrangement": "Flexible"
+  },
+  "original_role_id": "netflix_inc_specialist_performance_marketing",
+  "role_title": "Specialist, Performance Marketing",
+  "schema_version": 2,
+  "source_metadata": {
+    "source": "Workday",
+    "source_name": "Workday",
+    "source_trust_label": "Verified Company Source",
+    "source_type": "Employer ATS",
+    "verification_status": "Employer Source"
+  },
+  "source_url": "https://netflix.wd108.myworkdayjobs.com/en-US/Netflix/job/Specialist--Performance-Marketing_JR40473?locations=84a618b29e90102fcd70873d84b807f4"
+}

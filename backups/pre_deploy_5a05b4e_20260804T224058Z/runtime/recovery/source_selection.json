@@ -1,0 +1,32 @@
+{
+  "created_at": "2026-08-01T19:40:10.376353+00:00",
+  "staging_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime_staging_20260801T194008Z",
+  "deployed_commit": "a16753a5ab00e44ff5daaf3bc7a9c0223973966c",
+  "sources": {
+    "application_tracker": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/runtime/data/application_tracker.yml",
+    "intentional_status_deltas": "Already present in manifest-verified post-reconciliation tracker; exact IDs revalidated before copy.",
+    "evidence_projects_baseline": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_sprint32_deploy_20260731T181731Z/production_runtime/data/evidence_projects.yml",
+    "capability_reviews": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_sprint32_deploy_20260731T181731Z/production_runtime/data/capability_reviews.yml",
+    "current_career_and_evidence_data": "/Users/trisha.lynch/Documents/career-catalyst/data",
+    "configuration": "Merged defaults from /Users/trisha.lynch/Library/Application Support/Career Catalyst/code/config overlaid by current user configuration from /Users/trisha.lynch/Documents/career-catalyst/config",
+    "jobs": "/Users/trisha.lynch/Documents/career-catalyst/jobs",
+    "templates": "Merged defaults from /Users/trisha.lynch/Library/Application Support/Career Catalyst/code/templates overlaid by current user templates from /Users/trisha.lynch/Documents/career-catalyst/templates",
+    "ground_control": "/Users/trisha.lynch/Documents/career-catalyst/ground_control",
+    "golden_resume": "/Users/trisha.lynch/Downloads/Trisha_Lynch_Golden_Resume_2026 (1).docx",
+    "exports": "/Users/trisha.lynch/Documents/career-catalyst/exports",
+    "archive": "/Users/trisha.lynch/Documents/career-catalyst/archive",
+    "three_cloud_package": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace"
+  },
+  "authoritative_deltas": {
+    "withdrawn_role_ids": [
+      "about_tiktok_product_marketing_manager_tiktok_operations",
+      "netflix_product_manager_ads_platform_experimentation_foundations",
+      "playstation_head_global_creative_ops"
+    ],
+    "new_evidence_project_ids": [
+      "microsoft_365_digital_workplace_enablement_sharepoint_workflow_and_knowledge_hub",
+      "disney_floodlight_tracking_database_and_data_technology_map"
+    ],
+    "three_cloud_role_id": "3cloud_senior_director_digital_workplace"
+  }
+}

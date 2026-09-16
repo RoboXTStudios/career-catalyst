@@ -15,11 +15,13 @@ from docx.opc.constants import RELATIONSHIP_TYPE as RT
 from docx.shared import Inches, Pt, RGBColor, Twips
 
 try:
+    from .docx_metadata import DocxMetadataError, clean_docx_metadata
     from .filename_utils import build_upload_filename, short_company_name
     from .human_positioning import PERSONAL_PROJECT_TERMS, validate_applicant_evidence
     from .load_data import DataLoadError, load_yaml_file
     from .parse_job import JobParseError, parse_job_description
 except ImportError:
+    from docx_metadata import DocxMetadataError, clean_docx_metadata
     from filename_utils import build_upload_filename, short_company_name
     from human_positioning import PERSONAL_PROJECT_TERMS, validate_applicant_evidence
     from load_data import DataLoadError, load_yaml_file
@@ -864,7 +866,13 @@ def _export_docx(
     output_path.parent.mkdir(parents=True, exist_ok=True)
     try:
         document.save(str(output_path))
-    except OSError as error:
+        context = _resume_context(markdown, source_path, root)
+        clean_docx_metadata(
+            output_path,
+            title=f"{context['candidate_name']} - {context['job_title']} Resume",
+            subject=f"{context['job_title']} at {context['company']}",
+        )
+    except (OSError, DocxMetadataError) as error:
         raise DocxExportError(f"Unable to save DOCX resume {output_path}: {error}") from error
 
     return {

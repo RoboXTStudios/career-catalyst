@@ -1,0 +1,7 @@
+Notes
+-----
+Reopened as a new Prospect from archived role live_nation_worldwide_inc_ln_concerts_architectural_design_manager.
+
+Status history
+--------------
+{"date": "2026-08-07", "event": "status changed", "from": "Prospect", "to": "Withdrawn / Closed"}

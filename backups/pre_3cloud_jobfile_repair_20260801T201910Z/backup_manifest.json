@@ -1,0 +1,373 @@
+{
+  "created_at": "2026-08-01T20:19:11.785476+00:00",
+  "purpose": "Pre-3Cloud job-file repair backup",
+  "role_id": "3cloud_senior_director_digital_workplace",
+  "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z",
+  "file_count": 52,
+  "entries": [
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/data/application_tracker.yml",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/data/application_tracker.yml",
+      "relative_path": "runtime/data/application_tracker.yml",
+      "size": 744456,
+      "sha256": "c5980faf8843878ec036ecb5db3b10e088671e83d5c2ee2ae2d232afbf940f44"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/3cloud_senior_director_digital_workplace/manifest.json",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/exports/3cloud/manifest.json",
+      "relative_path": "exports/3cloud/manifest.json",
+      "size": 9040,
+      "sha256": "1a654ba2c389ba33ffe10a8b899900912ff5d02e88d4c70a88aa0048d713e2ba"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/600_umg_recordings_inc_senior_director_project_and_pmo_lead.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/600_umg_recordings_inc_senior_director_project_and_pmo_lead.md",
+      "relative_path": "runtime/jobs/600_umg_recordings_inc_senior_director_project_and_pmo_lead.md",
+      "size": 8809,
+      "sha256": "351b07a6a131cd6fe0ae8565933ef4d9ecd156dccc218f39fb40ea6bbfc3992d"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/600_umg_recordings_inc_vice_president_planning_and_forecasting_coe_lead_1395690500.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/600_umg_recordings_inc_vice_president_planning_and_forecasting_coe_lead_1395690500.md",
+      "relative_path": "runtime/jobs/600_umg_recordings_inc_vice_president_planning_and_forecasting_coe_lead_1395690500.md",
+      "size": 7859,
+      "sha256": "55ff15ee9525e858f057e2b905cd4371b91394ef19b7194cddad37aa10881a02"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/README.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/README.md",
+      "relative_path": "runtime/jobs/README.md",
+      "size": 330,
+      "sha256": "96af4f4ec0778e68b6da8b4ddf4a9fddf0bb644a59146517bd1d06d7dbfbf0aa"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/associate_director_crm_martech_spotify.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/associate_director_crm_martech_spotify.md",
+      "relative_path": "runtime/jobs/associate_director_crm_martech_spotify.md",
+      "size": 4438,
+      "sha256": "e861e04a1b1ee4ec940616113827f76485820aff1f47dd940000b10d5b37520c"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/associate_manager_ucan_marketing_operations_netflix.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/associate_manager_ucan_marketing_operations_netflix.md",
+      "relative_path": "runtime/jobs/associate_manager_ucan_marketing_operations_netflix.md",
+      "size": 7666,
+      "sha256": "034294fc7f5af00082ac8c5b47fbbd7a5bc1dfe75044556a7c63428624c7fd85"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/azira_director_chief_of_staff_and_business_operations.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/azira_director_chief_of_staff_and_business_operations.md",
+      "relative_path": "runtime/jobs/azira_director_chief_of_staff_and_business_operations.md",
+      "size": 5314,
+      "sha256": "d5600cff9ea4ba788c3b839a42a0864e61b2cdfa2ddd4e18d7a890ac6b700e52"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/beast_industries_head_of_programming.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/beast_industries_head_of_programming.md",
+      "relative_path": "runtime/jobs/beast_industries_head_of_programming.md",
+      "size": 5902,
+      "sha256": "2ee337f9a36f35e1338fbd3380faffe16769a265cd13e757793a7f9a930ad05a"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/deloitte_us_contact_center_operations_and_transformation_functional_manager_359033.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/deloitte_us_contact_center_operations_and_transformation_functional_manager_359033.md",
+      "relative_path": "runtime/jobs/deloitte_us_contact_center_operations_and_transformation_functional_manager_359033.md",
+      "size": 10971,
+      "sha256": "84eab94a68beb946f91cbf0b24bdc144a8c6d4e5c54153ec5634aca0a65bfbeb"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/deloitte_us_engineering_delivery_manager_ii_service_management_lead_354891.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/deloitte_us_engineering_delivery_manager_ii_service_management_lead_354891.md",
+      "relative_path": "runtime/jobs/deloitte_us_engineering_delivery_manager_ii_service_management_lead_354891.md",
+      "size": 6200,
+      "sha256": "89f4c9d5b89a33db4a9405d943f7b94492aeded9eaaaef251d5effa91f63960c"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/director_concert_communications_live_nation_worldwide_inc.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/director_concert_communications_live_nation_worldwide_inc.md",
+      "relative_path": "runtime/jobs/director_concert_communications_live_nation_worldwide_inc.md",
+      "size": 13756,
+      "sha256": "5604888da33e16aad69d5a7c6003a3d9796993724006389098c60182f7e03e9c"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/director_of_matrix_operations_organizational_efficiency_fieldai.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/director_of_matrix_operations_organizational_efficiency_fieldai.md",
+      "relative_path": "runtime/jobs/director_of_matrix_operations_organizational_efficiency_fieldai.md",
+      "size": 6661,
+      "sha256": "59b0137ca7e0462b962f04b7f0dc0ed86a2f52f962a3b2e05602da9ad1bb0f17"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/director_strategy_operations_product_technology_disney_entertainment_and_espn_product_technology.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/director_strategy_operations_product_technology_disney_entertainment_and_espn_product_technology.md",
+      "relative_path": "runtime/jobs/director_strategy_operations_product_technology_disney_entertainment_and_espn_product_technology.md",
+      "size": 4615,
+      "sha256": "78db4c086c02c54cccec905f9666e0ed492b61fd2f9584232813653111ad15f0"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/director_talent_growth_the_walt_disney_company_corporate.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/director_talent_growth_the_walt_disney_company_corporate.md",
+      "relative_path": "runtime/jobs/director_talent_growth_the_walt_disney_company_corporate.md",
+      "size": 5213,
+      "sha256": "b6b528f6096a37f41cd183c26ec5bf948af93ad23305d81d12cdf0968331859a"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/director_transformation_united_talent_agency.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/director_transformation_united_talent_agency.md",
+      "relative_path": "runtime/jobs/director_transformation_united_talent_agency.md",
+      "size": 6076,
+      "sha256": "723cfdfea5d1adb2012b621cd4d535a1d7862a5d0d40d66885936b8d1dbb5df8"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/disney_entertainment_and_espn_product_and_technology_principal_product_mgr.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/disney_entertainment_and_espn_product_and_technology_principal_product_mgr.md",
+      "relative_path": "runtime/jobs/disney_entertainment_and_espn_product_and_technology_principal_product_mgr.md",
+      "size": 10524,
+      "sha256": "01eea5f1bb62f8bf051e4b8cd5d394d6f04de020414bb65e4531d2d62e433226"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/electronic_arts_senior_manager_marketing_operations.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/electronic_arts_senior_manager_marketing_operations.md",
+      "relative_path": "runtime/jobs/electronic_arts_senior_manager_marketing_operations.md",
+      "size": 7957,
+      "sha256": "6c765736e95521f79f81570616ad87b613ecc1345dd27c8e741e756b4cff72ee"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/figma_director_business_operations_6092343004.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/figma_director_business_operations_6092343004.md",
+      "relative_path": "runtime/jobs/figma_director_business_operations_6092343004.md",
+      "size": 9072,
+      "sha256": "9a483b30e42d88e3a3857a9e786e44f59eed7702fda57e3daee6743210278cf0"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/google_strategy_ops_lead_youtube_auction_brand.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/google_strategy_ops_lead_youtube_auction_brand.md",
+      "relative_path": "runtime/jobs/google_strategy_ops_lead_youtube_auction_brand.md",
+      "size": 3210,
+      "sha256": "3fad1d9c9af08719d3638305f3bf0fb45326ff0cc8219c11174847b5b24b6efe"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/live_nation_worldwide_inc_ln_concerts_architectural_design_manager.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/live_nation_worldwide_inc_ln_concerts_architectural_design_manager.md",
+      "relative_path": "runtime/jobs/live_nation_worldwide_inc_ln_concerts_architectural_design_manager.md",
+      "size": 12252,
+      "sha256": "f58d4a6986eb33247fb95bed9f8a972ae253fe1afa2537c608e9c77da5eb647d"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/mrbeastyoutube_head_of_programming_6119486004.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/mrbeastyoutube_head_of_programming_6119486004.md",
+      "relative_path": "runtime/jobs/mrbeastyoutube_head_of_programming_6119486004.md",
+      "size": 6591,
+      "sha256": "22f5a69abe983c4c6b533381b5a0d42aca1dc12d3fdfc7081fe6e5dca42aa5d1"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/netflix_inc_ai_product_manager_content_platform_operations_and_publishing.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/netflix_inc_ai_product_manager_content_platform_operations_and_publishing.md",
+      "relative_path": "runtime/jobs/netflix_inc_ai_product_manager_content_platform_operations_and_publishing.md",
+      "size": 7794,
+      "sha256": "74e7239490dca1263dd5b3f130be948d6c19ded17fdb1893c6a69495a726d869"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/netflix_inc_product_manager_ads_supply.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/netflix_inc_product_manager_ads_supply.md",
+      "relative_path": "runtime/jobs/netflix_inc_product_manager_ads_supply.md",
+      "size": 6544,
+      "sha256": "67c6dbb9b0a94cfe8344534659546aa850a24144579a308a08b7b3bebb38af5d"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/netflix_inc_program_manager_design.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/netflix_inc_program_manager_design.md",
+      "relative_path": "runtime/jobs/netflix_inc_program_manager_design.md",
+      "size": 9409,
+      "sha256": "7b78b52fa71be4941db89a48bda418ec449bcc106d1ebe178ea51b51d22efab6"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/netflix_inc_specialist_performance_marketing.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/netflix_inc_specialist_performance_marketing.md",
+      "relative_path": "runtime/jobs/netflix_inc_specialist_performance_marketing.md",
+      "size": 6578,
+      "sha256": "4e69854da9d18e17f89cd8b1d107ee4ed2b2e159e8540585266e90b9afc4d8ad"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/paramount_director_marketing_operations.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/paramount_director_marketing_operations.md",
+      "relative_path": "runtime/jobs/paramount_director_marketing_operations.md",
+      "size": 4638,
+      "sha256": "ba4208475e024f0acf1cef9d584281cd345bb4ccda56803b33c50b55feaf85f2"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/paramount_director_product_martech_and_engagement_platforms_1395690500.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/paramount_director_product_martech_and_engagement_platforms_1395690500.md",
+      "relative_path": "runtime/jobs/paramount_director_product_martech_and_engagement_platforms_1395690500.md",
+      "size": 11677,
+      "sha256": "509ccaef7cf7fff66cb5a85c0ec9061f2de984ffe1536ffde078f626f3c568d7"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/playstation_director_ad_ops_technology.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/playstation_director_ad_ops_technology.md",
+      "relative_path": "runtime/jobs/playstation_director_ad_ops_technology.md",
+      "size": 2429,
+      "sha256": "a151ed8a6f4b564416dfa220901bc10a3cbaf1e71d72094bacdf553d2e8a2d72"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/playstation_head_global_creative_product_dev_ops.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/playstation_head_global_creative_product_dev_ops.md",
+      "relative_path": "runtime/jobs/playstation_head_global_creative_product_dev_ops.md",
+      "size": 2867,
+      "sha256": "91425924276231fcbf78ebb29869ec28d2dce24169b415b2f3ff5380b512c78e"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/product_strategy_and_operations_director_disney_entertainment_and_espn_product_technology.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/product_strategy_and_operations_director_disney_entertainment_and_espn_product_technology.md",
+      "relative_path": "runtime/jobs/product_strategy_and_operations_director_disney_entertainment_and_espn_product_technology.md",
+      "size": 4829,
+      "sha256": "0178f797c9e222106457f3ac4aca085aceb3e3c410cd8f0904d858591f8adc2e"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/reddit_lead_program_manager_vendor_operations_8010425.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/reddit_lead_program_manager_vendor_operations_8010425.md",
+      "relative_path": "runtime/jobs/reddit_lead_program_manager_vendor_operations_8010425.md",
+      "size": 9074,
+      "sha256": "caab7d69dc86075b76253600c038966a28fe7a67b18ba868642b13039212005c"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/reddit_manager_technical_solutions_8068464.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/reddit_manager_technical_solutions_8068464.md",
+      "relative_path": "runtime/jobs/reddit_manager_technical_solutions_8068464.md",
+      "size": 8476,
+      "sha256": "fc15ddba33429b7797eb73caebc3239c21b671fbeab44c3d02a6e592c561f65c"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/sample_job_description.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/sample_job_description.md",
+      "relative_path": "runtime/jobs/sample_job_description.md",
+      "size": 2679,
+      "sha256": "754e94ba25e60dcf4b435e71d51f87623363de76ddf43c24a3b338c61ac122d9"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/senior_copywriter_content_strategist_bandsintown.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/senior_copywriter_content_strategist_bandsintown.md",
+      "relative_path": "runtime/jobs/senior_copywriter_content_strategist_bandsintown.md",
+      "size": 4795,
+      "sha256": "de13e10b4085dc237d57347328e6335c37077f5537f46cf34bccd51d0aef820a"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/senior_director_team_operations_universal_music_group_umg_recordings_inc.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/senior_director_team_operations_universal_music_group_umg_recordings_inc.md",
+      "relative_path": "runtime/jobs/senior_director_team_operations_universal_music_group_umg_recordings_inc.md",
+      "size": 7954,
+      "sha256": "a52bd9c88fa383aa941b29abfc03f793c6fb0d6e55666f0ba3328328d94271cc"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/sr_manager_strategic_integration_operations_warner_chappell_music_inc.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/sr_manager_strategic_integration_operations_warner_chappell_music_inc.md",
+      "relative_path": "runtime/jobs/sr_manager_strategic_integration_operations_warner_chappell_music_inc.md",
+      "size": 13060,
+      "sha256": "c1816cf1ac6b360fefec834627e1880fd3eb7a8a142392ec08500dc7b88d6a79"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/sr_technical_project_manager_aeg_worldwide_axs.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/sr_technical_project_manager_aeg_worldwide_axs.md",
+      "relative_path": "runtime/jobs/sr_technical_project_manager_aeg_worldwide_axs.md",
+      "size": 9945,
+      "sha256": "415ec64437b4f62986a3888b1acb521fb541ecbab342b72216e86ac8d3308c6c"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/strategic_operations_senior_manager_crunchyroll.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/strategic_operations_senior_manager_crunchyroll.md",
+      "relative_path": "runtime/jobs/strategic_operations_senior_manager_crunchyroll.md",
+      "size": 5985,
+      "sha256": "c1de778e0d1a86a8381698594f4c94cedfd5cbb8ce79f9a92fb6d326f50ce089"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/united_talent_agency_director_people_operations.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/united_talent_agency_director_people_operations.md",
+      "relative_path": "runtime/jobs/united_talent_agency_director_people_operations.md",
+      "size": 3885,
+      "sha256": "f4cf97e889a861d7f39cf7739707744801446c00df95ce31f569d0bfc0fc1764"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/warner_elektra_atlantic_corporation_vp_operations_r_027404.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/warner_elektra_atlantic_corporation_vp_operations_r_027404.md",
+      "relative_path": "runtime/jobs/warner_elektra_atlantic_corporation_vp_operations_r_027404.md",
+      "size": 8425,
+      "sha256": "77366fb8b9ffc839ebe01400cabd0d0f55d9cdd588f8f6e11a8c7b567e99c7d8"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/jobs/youtube_strategy_and_operations_associate_youtube_music_and_premium.md",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/jobs/youtube_strategy_and_operations_associate_youtube_music_and_premium.md",
+      "relative_path": "runtime/jobs/youtube_strategy_and_operations_associate_youtube_music_and_premium.md",
+      "size": 4899,
+      "sha256": "b9b295b4da865bff7f090757b388c838120a4ea47dac69806e77cf46d19402a9"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/config/company_voice_profiles.yml",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/config/company_voice_profiles.yml",
+      "relative_path": "runtime/config/company_voice_profiles.yml",
+      "size": 4373,
+      "sha256": "0da80cf274115be448ec5675b5c3cae9a10bec2520262eb152403e2bbe43eedd"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/config/evidence_cards.yml",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/config/evidence_cards.yml",
+      "relative_path": "runtime/config/evidence_cards.yml",
+      "size": 7790,
+      "sha256": "79a700d5007fd41b99572c08b7227df3fb066745cc73f87615b37d5cd7f5833f"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/config/role_editing_rules.yml",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/config/role_editing_rules.yml",
+      "relative_path": "runtime/config/role_editing_rules.yml",
+      "size": 4342,
+      "sha256": "ab6f9d684d475a0bce15454502f68084ab45f748455ef17d99989650d921e81f"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/config/role_intent_rules.yml",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/config/role_intent_rules.yml",
+      "relative_path": "runtime/config/role_intent_rules.yml",
+      "size": 25730,
+      "sha256": "406147d6157b0a2baba48b4d5cb3a812691ac14336976769d9ad5b5e2f64a71a"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/config/role_profiles.yml",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/config/role_profiles.yml",
+      "relative_path": "runtime/config/role_profiles.yml",
+      "size": 2576,
+      "sha256": "d1f6152994ed07e3e38d681ef7e31296abd025eff91655f6a754afa0f3a32dc4"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/config/settings.yml",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/config/settings.yml",
+      "relative_path": "runtime/config/settings.yml",
+      "size": 765,
+      "sha256": "4a135674c79c0c769d0bf2b35a620461378c5e1dac36315a5d30057e82434f28"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/config/target_companies.yml",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/config/target_companies.yml",
+      "relative_path": "runtime/config/target_companies.yml",
+      "size": 2328,
+      "sha256": "9f4c0f21c0ced33a3158bf58e34c0c3a6917a27108a5df21be3cf6f0809b9fb8"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/config/voice.yml",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/config/voice.yml",
+      "relative_path": "runtime/config/voice.yml",
+      "size": 1536,
+      "sha256": "6231f56ab61d5ae25fdfbdd565101693a40545f1da465d3644a863a3da46821f"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime/config/writing_voice_profiles.yml",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/runtime/config/writing_voice_profiles.yml",
+      "relative_path": "runtime/config/writing_voice_profiles.yml",
+      "size": 944,
+      "sha256": "d0c515108b5da461be301773fa973b8b40cc8c344edd7452326e3eced0dcf609"
+    },
+    {
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/3cloud_selected_evidence.json",
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_3cloud_jobfile_repair_20260801T201910Z/3cloud_selected_evidence.json",
+      "relative_path": "3cloud_selected_evidence.json",
+      "size": 2040,
+      "sha256": "e5f8174a58813fa09888b69b5c57f59ac5e12446426966f808ded405e3d437bf"
+    }
+  ]
+}

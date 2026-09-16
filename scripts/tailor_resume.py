@@ -147,6 +147,7 @@ PROJECT_RELEVANCE_TERMS = {
 }
 
 PathInput = Union[str, Path]
+RESUME_EVIDENCE_LIMIT = 4
 
 
 class ResumeTailoringError(Exception):
@@ -250,6 +251,7 @@ def _select_core_competencies(
     parsed_job: Dict[str, Any],
     match_report: Dict[str, Any],
     resume_profile: str,
+    resume_evidence: Sequence[Dict[str, Any]] = (),
 ) -> List[str]:
     skills = _all_skills(career_data)
     job_keywords = [str(keyword) for keyword in parsed_job.get("keywords", [])]
@@ -264,6 +266,47 @@ def _select_core_competencies(
         ranked.append((score, -index, skill))
 
     selected = [skill for _score, _index, skill in sorted(ranked, reverse=True) if _score > 0]
+    evidence_competencies = _dedupe(
+        str(skill)
+        for item in resume_evidence
+        for skill in item.get("skills") or []
+        if str(skill).strip()
+    )
+    job_text = _normalize_text(str(parsed_job.get("raw_text") or ""))
+    talent_requested = any(
+        signal in job_text
+        for signal in (
+            "people leadership",
+            "talent development",
+            "team building",
+            "coaching",
+            "organizational development",
+            "team leadership",
+        )
+    )
+    competency_order = {
+        competency: index for index, competency in enumerate(evidence_competencies)
+    }
+    evidence_competencies.sort(
+        key=lambda skill: (
+            -(
+                (20 if _normalize_text(skill) in job_text else 0)
+                + (
+                    15
+                    if talent_requested
+                    and any(
+                        signal in _normalize_text(skill)
+                        for signal in ("people leadership", "coaching", "team leadership")
+                    )
+                    else 0
+                )
+                + len(set(_normalize_text(skill).split()) & set(job_text.split()))
+            ),
+            competency_order[skill],
+        )
+    )
+    # Evidence enriches the role-tailored competency set without crowding it out.
+    selected = evidence_competencies[:6] + selected
     if classify_role_lens(parsed_job)["primary"] == "people_operations":
         selected = list(PEOPLE_OPERATIONS_TRANSFERABLE_COMPETENCIES) + selected
     if is_google_youtube_role(parsed_job):
@@ -535,10 +578,17 @@ def _render_markdown(
     parsed_job: Dict[str, Any],
     match_report: Dict[str, Any],
     resume_profile: str,
+    resume_evidence: Sequence[Dict[str, Any]] = (),
 ) -> str:
     personal_brand = career_data["data"]["personal_brand"]
     candidate = personal_brand["candidate"]
-    competencies = _select_core_competencies(career_data, parsed_job, match_report, resume_profile)
+    competencies = _select_core_competencies(
+        career_data,
+        parsed_job,
+        match_report,
+        resume_profile,
+        resume_evidence,
+    )
     platforms = _platform_categories(career_data)
     if classify_role_lens(parsed_job)["primary"] == "people_operations":
         platforms = [
@@ -550,6 +600,21 @@ def _render_markdown(
         positions[0] if positions else {},
     )
     experience_bullets = _select_experience_bullets(career_data, parsed_job, resume_profile)
+    professional_evidence = [
+        str(item.get("description") or "").strip()
+        for item in resume_evidence
+        if "omg23" in _normalize_text(
+            f"{item.get('career_period') or ''} {item.get('company') or ''}"
+        )
+        and str(item.get("description") or "").strip()
+    ]
+    experience_bullets = _dedupe([*professional_evidence, *experience_bullets])[:10]
+    independent_evidence = [
+        str(item.get("description") or "").strip()
+        for item in resume_evidence
+        if str(item.get("description") or "").strip()
+        and str(item.get("description") or "").strip() not in professional_evidence
+    ]
     selected_projects = _selected_projects(career_data, parsed_job, resume_profile)
     earlier_position = _earlier_career(career_data)
     development = _professional_development(career_data)
@@ -597,6 +662,11 @@ def _render_markdown(
             ]
         )
         lines.extend(f"- {bullet}" for bullet in experience_bullets)
+        lines.append("")
+
+    if independent_evidence:
+        lines.extend(["## Selected Impact", ""])
+        lines.extend(f"- {bullet}" for bullet in independent_evidence)
         lines.append("")
 
     lines.extend(["## Selected Projects", ""])
@@ -688,16 +758,37 @@ def tailor_resume(
     parsed_job["role_interpretation"] = dict(
         match_report.get("role_interpretation") or role_interpretation
     )
+    role_selected = selected_evidence(match_report.get("role_evidence_selection") or {})
+    manual_evidence = [
+        item for item in role_selected if item.get("selected_by") == "User override"
+    ]
+    automatic_evidence = [
+        item for item in role_selected if item.get("selected_by") != "User override"
+    ]
+    resume_evidence = [
+        item
+        for item in [*manual_evidence, *automatic_evidence]
+        if item.get("selected_by") == "User override"
+        or (item.get("recommended_usage") or {}).get("resume", True)
+    ][:RESUME_EVIDENCE_LIMIT]
     markdown = cleanup_repeated_words(
-        _render_markdown(career_data, parsed_job, match_report, resume_profile)
+        _render_markdown(
+            career_data,
+            parsed_job,
+            match_report,
+            resume_profile,
+            resume_evidence,
+        )
     )
     evidence_profile = load_evidence_profile(root)
-    role_selected = selected_evidence(match_report.get("role_evidence_selection") or {})
     resume_recommendations = [
-        item for item in role_selected
+        item for item in resume_evidence
         if item.get("resume_visibility") != "Fully Represented"
-        and (item.get("recommended_usage") or {}).get("resume_recommendations", True)
-    ][:8]
+        and (
+            item.get("selected_by") == "User override"
+            or (item.get("recommended_usage") or {}).get("resume_recommendations", True)
+        )
+    ]
     if not resume_recommendations:
         resume_recommendations = [
             item for item in select_profile_evidence(
@@ -772,6 +863,8 @@ def tailor_resume(
         ),
         "career_coach": career_coach,
         "evidence_profile_recommendations": resume_recommendations,
+        "resume_selected_evidence": resume_evidence,
+        "resume_evidence_limit": RESUME_EVIDENCE_LIMIT,
         "evidence_gap_analysis": match_report.get("evidence_gap_analysis", {}),
         "role_evidence_selection": match_report.get("role_evidence_selection", {}),
     }

@@ -1,0 +1,8 @@
+Notes
+-----
+None
+
+Status history
+--------------
+{"date": "2026-07-20", "event": "status changed", "from": "Drafted", "to": "Withdrawn / Closed"}
+{"archive_reason": "Hidden / Invalid", "date": "2026-07-29T22:09:58.743043+00:00", "event": "role archived", "status": "Withdrawn / Closed"}

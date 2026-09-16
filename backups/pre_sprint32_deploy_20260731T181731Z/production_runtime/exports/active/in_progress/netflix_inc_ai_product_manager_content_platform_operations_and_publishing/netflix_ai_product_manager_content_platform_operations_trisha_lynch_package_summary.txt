@@ -1,0 +1,29 @@
+# Application Package Summary
+
+## Opportunity
+
+- Overall Score: 79/100
+- Apply Recommendation: Apply If Strategic
+- Freshness: Active / Good priority
+- Posting Status: Open
+- Posting Date: 2026-07-01
+- Salary: $400,000.00 - $640,000.00
+
+### Score Dimensions
+
+- Resume Fit: 76/100
+- Salary Fit: 92/100
+- Industry Alignment: 72/100
+- Role Level Fit: 72/100
+- Location Fit: 100/100
+- Mission / Personal Alignment: 72/100
+- Posting Freshness: 82/100
+- Interview Probability: 74/100
+
+## Package Quality Check
+
+- Resume Tailoring Score: 77/100
+- Cover Letter Score: 86/100
+- ATS Keyword Match: 82/100
+- Voice Match: 68/100
+- Confidence Level: Medium

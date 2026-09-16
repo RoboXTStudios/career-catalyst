@@ -1,0 +1,54 @@
+# Application Package Summary
+
+## Opportunity
+
+- Overall Score: 83/100
+- Apply Recommendation: Apply Immediately
+- Freshness: Fresh / High priority
+- Posting Status: Open
+- Posting Date: 2026-08-03
+- Salary: $176,800 – $265,200 per year
+
+### Score Dimensions
+
+- Resume Fit: 74/100
+- Salary Fit: 100/100
+- Industry Alignment: 58/100
+- Role Level Fit: 100/100
+- Location Fit: 100/100
+- Mission / Personal Alignment: 62/100
+- Posting Freshness: 100/100
+- Interview Probability: 75/100
+
+## Package Quality Check
+
+- Resume Tailoring Score: 74/100
+- Cover Letter Score: 100/100
+- ATS Keyword Match: 73/100
+- Voice Match: 99/100
+- Confidence Level: High
+
+## Evidence Usage
+
+- Selected: 3
+- Used anywhere: 3
+- Omitted from the entire package: 0
+
+- Career Catalyst - AI-Enabled Career Intelligence & Application Operations Platform - Requirements supported: product development, across, against, built, capabilities, content, data, design, designed, enabled. ATS résumé: Used; styled résumé: Used; cover letter: Used
+- Disney+ Launch Readiness - Tracking, Measurement and Operational Governance - Requirements supported: across, campaigns, communication, cross, data, delivery, design, enterprise, execution, executive. ATS résumé: Used; styled résumé: Used; cover letter: Used
+- Enterprise Media Operations Transformation - Requirements supported: across, brands, business, campaigns, complex, cross, enterprise, execution, functional, governance. ATS résumé: Used; styled résumé: Used; cover letter: Not used (Space limit: ranked below the top 2 selected Evidence records for this cover letter.)
+
+### Unselected Fallback Evidence
+
+- None
+
+## Candidate-Facing Quality Report
+
+- Role requirements referenced: ['cross-functional', 'paramount', 'product', 'engagement', 'martech', 'content', 'cbs', 'platforms']
+- Evidence used: ['Career Catalyst - AI-Enabled Career Intelligence & Application Operations Platform', 'Disney+ Launch Readiness - Tracking, Measurement and Operational Governance']
+- Unsupported-claim check: passed
+- Generic-language check: passed
+- Employer-name check: passed
+- Age-language check: passed
+- Punctuation check: passed
+- Page-length result: one page / within word limit

@@ -1,0 +1,16 @@
+**pycache**/
+*.pyc
+.DS_Store
+.env
+exports/docx/*.docx
+exports/pdf/*.pdf
+
+~$*.docx
+
+# Generated material clutter / temporary files
+exports/**/~$*.docx
+exports/**/.DS_Store
+exports/archive/cleanup_reports/*.json
+
+# Ground Control local-first runtime state
+ground_control/local_state.json

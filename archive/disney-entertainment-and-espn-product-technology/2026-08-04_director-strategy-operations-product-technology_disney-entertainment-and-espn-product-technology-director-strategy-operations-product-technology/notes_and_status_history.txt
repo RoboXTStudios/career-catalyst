@@ -1,0 +1,9 @@
+Notes
+-----
+https://disney.wd5.myworkdayjobs.com/en-US/disneycareer/userHome
+
+Workday Status: Application Received
+
+Status history
+--------------
+{"date": "2026-07-30", "event": "status changed", "from": "Applied", "to": "Rejected"}

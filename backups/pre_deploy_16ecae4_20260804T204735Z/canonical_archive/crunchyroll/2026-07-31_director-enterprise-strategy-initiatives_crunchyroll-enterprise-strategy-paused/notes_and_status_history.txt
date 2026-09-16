@@ -1,0 +1,7 @@
+Notes
+-----
+Strong potential fit but not applied yet.
+
+Status history
+--------------
+{"archive_reason": "Hidden / Invalid", "date": "2026-07-29T22:09:40.289135+00:00", "event": "role archived", "status": "Withdrawn / Closed"}

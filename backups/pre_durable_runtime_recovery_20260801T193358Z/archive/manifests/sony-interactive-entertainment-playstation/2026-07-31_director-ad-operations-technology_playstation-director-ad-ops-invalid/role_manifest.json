@@ -1,0 +1,103 @@
+{
+  "application_url": "",
+  "archive_folder": "/Users/trisha.lynch/Documents/career-catalyst/archive/sony-interactive-entertainment-playstation/2026-07-31_director-ad-operations-technology_playstation-director-ad-ops-invalid",
+  "archive_reason": "Withdrawn / Closed",
+  "archived_at": "2026-07-31T18:31:36.331116+00:00",
+  "company": "Sony Interactive Entertainment / PlayStation",
+  "final_status": "Withdrawn / Closed",
+  "job_posting_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "legacy_archive_reason": "Hidden / Invalid",
+  "legacy_status": "Invalid/Hidden",
+  "location": "",
+  "match_score_snapshot": 94,
+  "match_tier_snapshot": "Strong Match",
+  "materials": [],
+  "original_record": {
+    "application_history": [
+      {
+        "archive_reason": "Hidden / Invalid",
+        "date": "2026-07-29T22:09:38.561318+00:00",
+        "event": "role archived",
+        "status": "Withdrawn / Closed"
+      }
+    ],
+    "apply_recommendation": "Apply Immediately",
+    "archive_reason": "Hidden / Invalid",
+    "archived": true,
+    "archived_at": "2026-07-29T22:09:38.561318+00:00",
+    "company": "Sony Interactive Entertainment / PlayStation",
+    "company_aliases": [
+      "PlayStation",
+      "Sony Interactive Entertainment",
+      "SIE"
+    ],
+    "company_category": "gaming_fandom",
+    "company_inference_confidence": "Medium",
+    "company_voice_label": "Dynamic Gaming Fandom",
+    "company_voice_profile": "dynamic_gaming_fandom",
+    "company_voice_source": "dynamic_inference",
+    "confidence": "High",
+    "follow_up_status": "Not applicable",
+    "freshness": "Stale",
+    "freshness_label": "Unknown freshness / Verify manually",
+    "id": "playstation_director_ad_ops_invalid",
+    "match_gaps": [
+      "Posting age is unknown; verify that the role is still active."
+    ],
+    "match_score": 94,
+    "match_strengths": [
+      "Functional alignment includes ad/media operations, programmatic, campaign operations.",
+      "The seniority is aligned with Trisha's director/head-of target level.",
+      "The entertainment context is adjacent to Trisha's target industries.",
+      "The disclosed compensation is aligned with or near Trisha's target.",
+      "The remote arrangement supports practical fit."
+    ],
+    "match_summary": "Strong alignment across Trisha's core experience, target level, and practical priorities.",
+    "match_tier": "Strong Match",
+    "next_action": "Verify the current employer posting and apply path manually.",
+    "notes": "Official detail page appeared active, but application flow was broken or unavailable. Do not pursue unless role is reposted with a working application.",
+    "opportunity_dimensions": {
+      "Industry Alignment": 58,
+      "Interview Probability": 85,
+      "Location Fit": 100,
+      "Mission / Personal Alignment": 62,
+      "Posting Freshness": 50,
+      "Resume Fit": 94,
+      "Role Level Fit": 100,
+      "Salary Fit": 100
+    },
+    "opportunity_score": 84,
+    "package_quality": {
+      "ats_keyword_match": 100,
+      "confidence_level": "High",
+      "confidence_score": 87,
+      "cover_letter_score": 86,
+      "resume_tailoring_score": 95,
+      "voice_match": 68
+    },
+    "posting_date": "",
+    "posting_status": "Open",
+    "pre_archive_status": "Withdrawn / Closed",
+    "priority": "Do Not Pursue",
+    "recommended_action": "Generate Package",
+    "role": "Director, Ad Operations & Technology",
+    "role_family": "product_strategy_ops",
+    "salary_range": "$224,400-$336,600 USD",
+    "show_on_dashboard": false,
+    "source": "Official PlayStation detail page but broken/unavailable apply flow",
+    "source_verified": true,
+    "status": "Invalid/Hidden",
+    "status_updated_at": "2026-07-06T08:34:38",
+    "suggested_follow_up_date": "",
+    "verification_notes": "source URL is missing; posting date missing; verify manually",
+    "verification_status": "Cannot Verify"
+  },
+  "original_role_id": "playstation_director_ad_ops_invalid",
+  "role_title": "Director, Ad Operations & Technology",
+  "schema_version": 2,
+  "source_metadata": {
+    "source": "Official PlayStation detail page but broken/unavailable apply flow",
+    "verification_status": "Cannot Verify"
+  },
+  "source_url": ""
+}

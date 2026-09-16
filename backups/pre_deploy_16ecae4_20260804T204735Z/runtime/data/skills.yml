@@ -1,0 +1,56 @@
+skill_groups:
+  business_and_operations:
+    - Business Operations
+    - Marketing Operations
+    - Program Leadership
+    - Process Excellence
+    - Workflow Governance
+    - Operational Strategy
+    - Change Management
+    - Stakeholder Management
+  leadership_and_strategy:
+    - Cross-Functional Leadership
+    - Team Leadership
+    - Creative Operations
+    - Measurement & Analytics
+    - Entertainment Marketing
+    - Emerging Media
+  ai_and_systems:
+    - AI Workflow Design
+    - Operational Automation
+    - Product Development
+    - Organizational Systems
+    - Schema-Driven Workflows
+    - Validation Frameworks
+  platforms_and_tools:
+    ad_tech:
+      - CM360
+      - DV360
+      - The Trade Desk
+      - Innovid
+      - DoubleVerify
+      - IAS
+      - LiveRamp
+      - VideoAmp
+      - TransUnion
+      - Meta Ads
+      - Google Marketing Platform
+    ai_tools:
+      - ChatGPT
+      - Claude
+      - Codex
+      - Perplexity
+    productivity:
+      - Airtable
+      - Notion
+      - Microsoft Office
+      - Google Workspace
+      - Excel
+      - PowerPoint
+      - Word
+    publishing:
+      - WordPress
+      - Mailchimp
+      - Substack
+    technical:
+      - Python working knowledge

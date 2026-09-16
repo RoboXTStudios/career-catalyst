@@ -1,0 +1,49 @@
+voice_name: "Calm Practical Operator"
+
+tone:
+  - calm
+  - thoughtful
+  - observant
+  - practical
+  - clear
+  - human
+  - confident
+  - grounded
+  - slightly conversational
+
+avoid:
+  - "I am writing to express my interest"
+  - "I believe I would be a strong fit"
+  - "leveraging my experience"
+  - "dynamic professional"
+  - "proven track record"
+  - "proven record"
+  - "seasoned professional"
+  - "veteran"
+  - "extensive experience"
+  - "results-driven"
+  - "dynamic leader"
+  - "accomplished executive"
+  - "highly accomplished"
+  - "years of experience"
+  - "over two decades"
+  - "long-term hands-on experience"
+  - "dating back to the early 2000s"
+  - "synergies"
+  - "thrilled"
+  - "perfect fit"
+  - "rockstar"
+  - "ninja"
+
+rules:
+  - "No em dashes"
+  - "Do not invent relationships or referrals"
+  - "Show warmth through specificity"
+  - "Keep confidence calm and earned"
+  - "Avoid keyword stuffing"
+  - "Lead with identity, curiosity, problem solving, outcomes, transformation, practicality, and evidence"
+  - "Demonstrate capability with projects, systems, decisions, and measurable impact instead of asserting seniority"
+  - "Cover letters explain why the problem matters and tell a connected story instead of repeating resume bullets"
+  - "Recruiter messages are concise, conversational, low-pressure, and do not lead with tenure"
+  - "Hiring manager messages sound like a thoughtful note from a future colleague"
+  - "Avoid sales copy, motivational language, consultant jargon, executive buzzwords, and forced excitement"

@@ -1,0 +1,42 @@
+platform_categories:
+  - name: "AdTech & Measurement"
+    items:
+      - "CM360"
+      - "DV360"
+      - "The Trade Desk"
+      - "Innovid"
+      - "DoubleVerify"
+      - "IAS"
+      - "LiveRamp"
+      - "VideoAmp"
+      - "TransUnion"
+      - "Meta Ads"
+      - "Google Marketing Platform"
+
+  - name: "AI, Automation & Operational Systems"
+    items:
+      - "ChatGPT"
+      - "Claude"
+      - "Codex"
+      - "Perplexity"
+      - "Python (Working Knowledge)"
+      - "AI Workflow Design"
+      - "Process Automation"
+
+  - name: "Workflow & Collaboration"
+    items:
+      - "Airtable"
+      - "Notion"
+      - "Excel"
+      - "Microsoft Office"
+      - "Google Workspace"
+      - "PowerPoint"
+      - "Word"
+
+  - name: "Publishing & Content"
+    items:
+      - "WordPress"
+      - "Mailchimp"
+      - "Substack"
+      - "Newsletter Development"
+      - "Editorial Production"

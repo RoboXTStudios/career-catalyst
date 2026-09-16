@@ -1,0 +1,116 @@
+# Career Intelligence and Interview Prep
+
+## Product Manager, Emerging Formats at Netflix
+
+> These are posting-based inferences, not verified internal company information.
+
+## What the hiring manager is likely hiring for
+
+- Exercise product judgment across strategy, roadmap choices, prioritization, and tradeoffs.
+- Turn ambiguous business and user needs into clear priorities and practical decisions.
+- Create alignment across product, technology, analytics, operations, and business stakeholders.
+- Balance near-term delivery with durable operating clarity and measurable outcomes.
+- Guide launch, readiness, adoption, and follow-through across dependent teams.
+- Use evidence and measurement to clarify decisions and assess progress.
+
+## Likely First-Screen Priorities
+
+- A clear explanation of product or operating judgment grounded in real decisions.
+- Evidence of prioritization, cross-functional influence, and reliable execution.
+- Precise ownership language and a practical approach to measurement and learning.
+
+## Likely Interview Questions
+
+### Strategy and product judgment
+
+**How do you turn a broad product or business need into a clear direction?**
+
+- What they are testing: Product judgment, problem framing, and disciplined choice-making.
+- Answer direction: Describe how you clarify the user and business need, define decision criteria, surface tradeoffs, and align stakeholders before committing to a path.
+- Best verified evidence: Career Catalyst product development, Workflow governance and Airtable adoption
+- Caution: Frame Career Catalyst as active product development and CampaignOS only as a working prototype; keep prior title history precise.
+
+### Execution and prioritization
+
+**Tell me about a time you had to prioritize competing needs under a fixed timeline.**
+
+- What they are testing: Tradeoff quality, operating discipline, and accountable delivery.
+- Answer direction: Use a situation where leadership priorities became an operating plan, then explain the choices, governance, readiness signals, and outcome.
+- Best verified evidence: Workflow governance and Airtable adoption, Disney+ launch support
+- Caution: Keep ownership precise and distinguish coordination from sole product-roadmap ownership.
+
+### Cross-functional leadership
+
+**How have you aligned teams with different incentives around one outcome?**
+
+- What they are testing: Influence, operating clarity, and leadership across functions.
+- Answer direction: Explain how you established shared goals, decision rights, cadences, and escalation paths while leading 10 direct reports across an integrated 64-person organization.
+- Best verified evidence: Integrated operational leadership, Workflow governance and Airtable adoption
+- Caution: Distinguish strategic and operational leadership across the broader organization from direct people management, and do not imply engineering management.
+
+### Stakeholder management
+
+**How do you create trust when senior stakeholders disagree on priorities?**
+
+- What they are testing: Executive communication, listening, and decision support.
+- Answer direction: Show how you made constraints visible, separated facts from assumptions, and translated leadership priorities into a decision-ready operating plan.
+- Best verified evidence: Integrated operational leadership, Workflow governance and Airtable adoption
+- Caution: Do not imply knowledge of this company's internal stakeholders or current team dynamics.
+
+### Data, measurement, and decision-making
+
+**How do you decide what to measure and when the data is sufficient to act?**
+
+- What they are testing: Measurement judgment and the ability to connect signals to decisions.
+- Answer direction: Start with the decision, identify the smallest reliable signals, establish data-quality checks, and explain how results change the next action.
+- Best verified evidence: Workflow governance and Airtable adoption, Disney+ launch support
+- Caution: Do not invent revenue outcomes or metrics that are not in the verified record.
+
+### Role-specific domain knowledge
+
+**What does strong product leadership look like when authority is distributed across teams?**
+
+- What they are testing: Adjacent product leadership, partnership, and practical operating judgment.
+- Answer direction: Connect product thinking to requirements, user needs, validation, prioritization, adoption, and cross-functional operating systems.
+- Best verified evidence: Career Catalyst product development, Workflow governance and Airtable adoption
+- Caution: Position the experience as adjacent product leadership; do not claim unsupported end-to-end ownership of a Disney product roadmap.
+
+## Best Evidence and STAR Stories
+
+- **Just for Us Podcast — Audio Production & Editing**: Produced and edited the full ten-episode series, with multiple episodes released on Spotify. The project provided hands-on experience in a collaborative podcast environment, including multi-speaker audio editing, post-production, quality assurance, revision management, and release preparation.
+- **Career Catalyst — AI-Enabled Career Intelligence & Application Operations Platform**: Built and launched an actively used local application that centralizes prospect evaluation, verified career evidence, role-specific materials, follow-up planning, interview preparation, and application status management. Established deterministic role-context and candidate-claim safeguards to improve the accuracy and consistency of generated materials. Created a Git-ready development and release workflow with focused testing; the most recent major release passed 232 targeted regression tests.
+- **Enterprise Media Operations Transformation**: Established more consistent operational standards, improved cross-functional collaboration, increased visibility into complex initiatives, and created scalable processes that supported execution across multiple business units.
+- **Integrated operational leadership**: Led 10 direct reports and provided strategic and operational leadership across an integrated 64-person organization.
+- **Workflow governance and Airtable adoption**: Translated leadership priorities into operating plans, workflow governance, training, adoption, and clearer execution across stakeholders.
+
+## Likely Concerns or Gaps
+
+- **Concern:** The title path is rooted in operations and transformation, while this opportunity uses a senior product-management title.  
+  **Bridge:** The relevant through-line is adjacent product leadership: translating needs into requirements, making tradeoffs, building governance, enabling adoption, and aligning product, technology, analytics, media, creative, and business stakeholders.
+
+## Questions Trisha Should Ask
+
+- Which decisions and operating outcomes would define strong progress for this role in the first six months?
+- How are user needs, business priorities, and technical constraints brought together when roadmap tradeoffs are made?
+- Where would this role need to build the strongest cross-functional relationships first?
+- How does the team evaluate readiness, adoption, and learning after a launch or major change?
+
+## Tell Me About Yourself
+
+I am an operations and transformation leader who has spent my career turning complex, cross-functional work into clearer decisions and more reliable execution. At OMG23 (Omnicom Media Group), I advanced through five roles, led 10 direct reports, and provided strategic and operational leadership across an integrated 64-person organization supporting demanding entertainment work. I have also built workflow-governance and adoption systems, supported Disney+ launch readiness, and now apply that operating experience to active product development through Career Catalyst. What connects those experiences is practical judgment: understanding the need, aligning the right people, testing the approach, and making execution easier to trust.
+
+## Why This Company / Why This Role
+
+I am interested in Netflix and the Product Manager, Emerging Formats opportunity because the saved posting emphasizes the combination of judgment, prioritization, cross-functional delivery, and operating clarity that has defined my strongest work. The role offers a chance to connect user and business needs to practical choices, align stakeholders around those choices, and build the conditions for reliable delivery and learning. That is a grounded extension of the leadership, governance, launch-readiness, and product-development work I have already done.
+
+## First 90-Day Themes
+
+- Understand the users, business goals, decision context, and success measures before prescribing solutions.
+- Map stakeholders, dependencies, current workflows, and where decisions or handoffs lose clarity.
+- Assess the roadmap or operating plan against user value, business need, delivery risk, and available evidence.
+- Clarify priorities, decision rights, and the cadence for surfacing tradeoffs and resolving blockers.
+- Establish a small set of useful readiness, adoption, and outcome signals; identify and validate early opportunities to improve operating clarity.
+
+## Voice Reminder
+
+Use these as natural frameworks, not memorized speeches. Answer the question asked, choose one verified story, and keep ownership precise.

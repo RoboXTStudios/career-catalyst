@@ -1,0 +1,64 @@
+{
+  "hotfix": "33.1",
+  "root_cause": "Selected Evidence and work-history text were assembled after the existing em-dash policy check. The OpenAI cover letter gained an em dash from the grounded Evidence paragraph.",
+  "offending_text": "In Disney+ Launch Readiness — Tracking, Measurement and Operational Governance, served as a senior Ad Operations member of the Disney+ launch task force, partnering with Disney Technology and Disney Streaming Services on tracking and measurement readiness.",
+  "normalization": {
+    "function": "scripts.text_cleanup.normalize_candidate_text",
+    "rule": "Replace em-dash runs, spaced or unspaced, with one spaced hyphen; preserve ordinary hyphens, ranges, and URLs.",
+    "call_paths": [
+      "cleanup_repeated_words -> resumes and cover letters",
+      "generate_career_intelligence",
+      "generate_followups",
+      "save_package_summary"
+    ],
+    "idempotent": true
+  },
+  "branch": "codex/hotfix-33-1-candidate-punctuation-normalization",
+  "commit": "053336cdc5ec452e392fe0241b4b802bd4128eb3",
+  "pull_request": "https://github.com/RoboXTStudios/career-catalyst/pull/36",
+  "backup": {
+    "runtime_and_tracker": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_hotfix_33_1_20260801T215000Z",
+    "runtime_manifest_sha256": "2dc20c6f926c81b5cc66c45c55aaa5cb973c997f0cd80f20bf780f9e822dc4ae",
+    "code_rollback": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_hotfix_33_1_code_deploy_20260801T215700Z",
+    "code_manifest_sha256": "4f7bb9dc1c859d527075f75c148e15f6bd41f9b5c7960c2ee624d527e4683a85"
+  },
+  "qa": {
+    "path": "/private/tmp/career-catalyst-hotfix33_1_qa_20260801T220200Z/runtime/qa_exports/active/in_progress/openai_program_manager_lead",
+    "artifact_count": 12,
+    "em_dash_count": 0,
+    "score": 91,
+    "selected_evidence_count": 4,
+    "source_evidence_titles_unchanged": true,
+    "candidate_language_age_claims": false,
+    "employer_language_violation": false
+  },
+  "tests": {
+    "dedicated": "6 passed",
+    "focused_regression": "47 passed; one pre-existing strategy-pack filename assertion failed on baseline",
+    "diff_check": "passed"
+  },
+  "deployment": {
+    "durable_code_root": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/code",
+    "synchronized_files": [
+      "scripts/text_cleanup.py",
+      "scripts/career_intelligence.py",
+      "scripts/generate_followups.py",
+      "scripts/package_quality.py"
+    ],
+    "tracker_sha256_before": "b514c2d8aa3f0b204321fee19b22107dd5ed0ae003f47cccd6ac01ce90a8ad96",
+    "tracker_sha256_after": "b514c2d8aa3f0b204321fee19b22107dd5ed0ae003f47cccd6ac01ce90a8ad96",
+    "last_health_check": "ok",
+    "last_pid": 17410,
+    "url": "http://127.0.0.1:8503",
+    "browser_console": "blocked by pre-existing missing job 3cloud_senior_director_digital_workplace"
+  },
+  "protections": {
+    "source_evidence_mutated": false,
+    "tracker_changed": false,
+    "migration": false,
+    "cleanup": false,
+    "archive_changed": false,
+    "application_submitted": false,
+    "threecloud_record_changed": false
+  }
+}

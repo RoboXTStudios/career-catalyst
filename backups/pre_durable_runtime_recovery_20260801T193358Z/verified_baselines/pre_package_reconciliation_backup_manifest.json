@@ -1,0 +1,388 @@
+{
+  "archive_manifest_digest": "597101e8f896fe2f247635478716e392e612b63ea8f2ccf0324a683ccc29f50c",
+  "entries": [
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/runtime/data/application_tracker.yml",
+      "sha256": "aedec018cb19f4d2538242d118785e2e121e3f278df292f62e595db73801f19e",
+      "size": 730908,
+      "source_path": "/Users/trisha.lynch/.codex/.chatgpt-projects/g-p-6a5d817ef0788191bbc5427a19234f4c/main_runtime_60cca23/data/application_tracker.yml"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/reports/sprint32_package_reconciliation_plan_20260731T215000Z.json",
+      "sha256": "36a9224c559ed13afb41483e5fab80f05f92375c576e86b3b168cc9d779a4548",
+      "size": 40103,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/reports/sprint32_package_reconciliation_plan_20260731T215000Z.json"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/reports/sprint32_package_reconciliation_plan_20260731T215000Z.md",
+      "sha256": "ac7bc786cd9d2b55c32ad1f481b5154671d8299c969f4752ec96b7c35e4d8f68",
+      "size": 8232,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/reports/sprint32_package_reconciliation_plan_20260731T215000Z.md"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_application_note.txt",
+      "sha256": "a8b94e0bbd427692ea285f2a9dbb4780eaa9b32dab18dfc607add0cb660d8e8f",
+      "size": 493,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_application_note.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_ats_resume.docx",
+      "sha256": "e7c003978e93354510b6b62196b45b75813fc19f2b4c18cde6c908569a338ba6",
+      "size": 38843,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_ats_resume.docx"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_cover_letter.docx",
+      "sha256": "3d3f489be56082d0282ddb6b44388e904cb14064d4cee780d61a608caa495aa9",
+      "size": 37643,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_cover_letter.docx"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_cover_letter.txt",
+      "sha256": "aec48fa8d9b3110f752b64c303646757e002befab13f1a484be9bacde3ee2828",
+      "size": 2003,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_cover_letter.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_hiring_manager_message.txt",
+      "sha256": "05de4bf0f4f5c81d60211532a7dd8206ca55055897891662afdef77b57d44a98",
+      "size": 839,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_hiring_manager_message.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_interview_prep.txt",
+      "sha256": "403e84fda9aba5065c3259a52b2506f7ffd10caad1795f8dc45756edc6966f7d",
+      "size": 1309,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_interview_prep.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_package_summary.txt",
+      "sha256": "f1881fab9850ea8ebe593835624990fc89622d52d8341853aa5430b916969fd1",
+      "size": 658,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_package_summary.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_recruiter_message.txt",
+      "sha256": "8168083ae5b2dd34d8b872a72495f03cd6ca6f5f02c4f00479a02fc4d8baa234",
+      "size": 566,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_recruiter_message.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_resume.txt",
+      "sha256": "45c1b35017d9de29c8ba4764ec7eba2ddc66ff4cae841301da2c6fb7fe014b9c",
+      "size": 4237,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_resume.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_strategy_pack.txt",
+      "sha256": "734c01f3b7e72b2be9b92da5a53ed84bcd9b5499029c40d8ca8f747bd1c12063",
+      "size": 9450,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_strategy_pack.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_styled_resume.docx",
+      "sha256": "d52aec742183b8b6510e2c98abac2f3fd7d94ed3d36ec922292568cf296842db",
+      "size": 26595,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_styled_resume.docx"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/manifest.json",
+      "sha256": "2c97db87b33e07c821e09e305f8fdfd48f32cb39bf0d3f715336e4544597b8e1",
+      "size": 5806,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/manifest.json"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_application_note.txt",
+      "sha256": "a8b94e0bbd427692ea285f2a9dbb4780eaa9b32dab18dfc607add0cb660d8e8f",
+      "size": 493,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_application_note.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_ats_resume.docx",
+      "sha256": "09881e8de5c6ab2189525a055968b9bd2440914ed14a5afbbf5a2fb36ba43ce7",
+      "size": 28853,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_ats_resume.docx"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_cover_letter.docx",
+      "sha256": "9937c93157af7653fb2a2a4f388ae1cf97101fef7412c6af1ca988d000acab9c",
+      "size": 27397,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_cover_letter.docx"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_cover_letter.txt",
+      "sha256": "eca87b8a17332947bb3f00dffa2b6aee521b5abf52ade544b0d41e73ca559095",
+      "size": 1986,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_cover_letter.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_followup_strategy.txt",
+      "sha256": "4acdc0eeca5098cc72617a587e95f8061c51d2e74726e936c4b2a731535aeb40",
+      "size": 3865,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_followup_strategy.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_hiring_manager_followup.txt",
+      "sha256": "7c715f1e6cbe4b37cb270817a34760f8e4bfd4ddb80a5908e7cffd10518244b3",
+      "size": 691,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_hiring_manager_followup.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_hiring_manager_message.txt",
+      "sha256": "05de4bf0f4f5c81d60211532a7dd8206ca55055897891662afdef77b57d44a98",
+      "size": 839,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_hiring_manager_message.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_interview_prep.txt",
+      "sha256": "403e84fda9aba5065c3259a52b2506f7ffd10caad1795f8dc45756edc6966f7d",
+      "size": 1309,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_interview_prep.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_package_summary.txt",
+      "sha256": "f1881fab9850ea8ebe593835624990fc89622d52d8341853aa5430b916969fd1",
+      "size": 658,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_package_summary.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_recruiter_followup.txt",
+      "sha256": "0f22845f87ec4f588d2a23291afa003783494745cb7588a3f4d33af65008cd72",
+      "size": 549,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_recruiter_followup.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_recruiter_message.txt",
+      "sha256": "8168083ae5b2dd34d8b872a72495f03cd6ca6f5f02c4f00479a02fc4d8baa234",
+      "size": 566,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_recruiter_message.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_referral_ask.txt",
+      "sha256": "8770d3647b5025b8e7f5b419ceede87b2f89ad49016c9fb03e48e31bd6f5f794",
+      "size": 552,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_referral_ask.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_resume.txt",
+      "sha256": "8ffcdde08870d4232f791b14569ddeeb115a4a6aeaf03da2bcfeb3288f24da6b",
+      "size": 4577,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_resume.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_strategy_pack.txt",
+      "sha256": "734c01f3b7e72b2be9b92da5a53ed84bcd9b5499029c40d8ca8f747bd1c12063",
+      "size": 9450,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_strategy_pack.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_styled_resume.docx",
+      "sha256": "53b3b571050f0213a6df026bf8e810717d7bf4887fd5c093c7c4c4d848bff161",
+      "size": 26743,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_styled_resume.docx"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_warm_contact_message.txt",
+      "sha256": "d3ba9576e0197ffa23bde974184d4718addbb2b63b2cea716ef25f27d4e985cb",
+      "size": 572,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/azira_director_chief_staff_business_operations_trisha_lynch_warm_contact_message.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/azira_director_chief_of_staff_business_operations/manifest.json",
+      "sha256": "e61684a91b1f168f812aa6188288f153bf11fcdedf3974bb5537b23eddd241d3",
+      "size": 8043,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations/manifest.json"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/applied_followup/disney_entertainment_and_espn_product_technology_principal_product_mgr/disney_entertainment_and_espn_principal_product_mgr_trisha_lynch_application_note.txt",
+      "sha256": "8ac7738739900b62dda30f1d2731393f90426a753a9ecb425f2fa683311f697d",
+      "size": 521,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/disney_entertainment_and_espn_product_technology_principal_product_mgr/disney_entertainment_and_espn_principal_product_mgr_trisha_lynch_application_note.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/applied_followup/disney_entertainment_and_espn_product_technology_principal_product_mgr/disney_entertainment_and_espn_principal_product_mgr_trisha_lynch_ats_resume.docx",
+      "sha256": "44a3f9556c98bb5bb7719d00aaba11776f96d75242e0ea8376bce9d7aa595689",
+      "size": 38607,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/disney_entertainment_and_espn_product_technology_principal_product_mgr/disney_entertainment_and_espn_principal_product_mgr_trisha_lynch_ats_resume.docx"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/applied_followup/disney_entertainment_and_espn_product_technology_principal_product_mgr/disney_entertainment_and_espn_principal_product_mgr_trisha_lynch_cover_letter.docx",
+      "sha256": "e13a72f5ea56c28e0ae313e9fc857c281adb5024dc3908495b02269c301496b2",
+      "size": 37596,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/disney_entertainment_and_espn_product_technology_principal_product_mgr/disney_entertainment_and_espn_principal_product_mgr_trisha_lynch_cover_letter.docx"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/applied_followup/disney_entertainment_and_espn_product_technology_principal_product_mgr/disney_entertainment_and_espn_principal_product_mgr_trisha_lynch_cover_letter.txt",
+      "sha256": "ec90ef2a2c9363f533679967a32b61a0de259d7d3362d240436a89646878c922",
+      "size": 1977,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/disney_entertainment_and_espn_product_technology_principal_product_mgr/disney_entertainment_and_espn_principal_product_mgr_trisha_lynch_cover_letter.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/applied_followup/disney_entertainment_and_espn_product_technology_principal_product_mgr/disney_entertainment_and_espn_principal_product_mgr_trisha_lynch_hiring_manager_message.txt",
+      "sha256": "4156ae9d27ce4442bc132bed4177f7ef187540535ed03c7be6ba228babb06219",
+      "size": 897,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/disney_entertainment_and_espn_product_technology_principal_product_mgr/disney_entertainment_and_espn_principal_product_mgr_trisha_lynch_hiring_manager_message.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/applied_followup/disney_entertainment_and_espn_product_technology_principal_product_mgr/disney_entertainment_and_espn_principal_product_mgr_trisha_lynch_interview_prep.txt",
+      "sha256": "90c824314833df7c77ec17494d92d7e4f661c68f8fd91234c1bf3abec04001a9",
+      "size": 9153,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/disney_entertainment_and_espn_product_technology_principal_product_mgr/disney_entertainment_and_espn_principal_product_mgr_trisha_lynch_interview_prep.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/applied_followup/disney_entertainment_and_espn_product_technology_principal_product_mgr/disney_entertainment_and_espn_principal_product_mgr_trisha_lynch_package_summary.txt",
+      "sha256": "a665b25597453a662b143db940c7a5acb732e4b85ea659e14d041bcbf7f0f50b",
+      "size": 663,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/disney_entertainment_and_espn_product_technology_principal_product_mgr/disney_entertainment_and_espn_principal_product_mgr_trisha_lynch_package_summary.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/applied_followup/disney_entertainment_and_espn_product_technology_principal_product_mgr/disney_entertainment_and_espn_principal_product_mgr_trisha_lynch_recruiter_message.txt",
+      "sha256": "087c27c85e42e4e45110a18bcf8a7d646f002d58fee79c16f1b151545c407196",
+      "size": 635,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/disney_entertainment_and_espn_product_technology_principal_product_mgr/disney_entertainment_and_espn_principal_product_mgr_trisha_lynch_recruiter_message.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/applied_followup/disney_entertainment_and_espn_product_technology_principal_product_mgr/disney_entertainment_and_espn_principal_product_mgr_trisha_lynch_resume.txt",
+      "sha256": "ea29fbbf8ae726a2338be40b61003ac84cb0bdccba8b4f5d654994d37aa7538a",
+      "size": 3509,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/disney_entertainment_and_espn_product_technology_principal_product_mgr/disney_entertainment_and_espn_principal_product_mgr_trisha_lynch_resume.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/applied_followup/disney_entertainment_and_espn_product_technology_principal_product_mgr/disney_entertainment_and_espn_principal_product_mgr_trisha_lynch_strategy_pack.txt",
+      "sha256": "3f43daa066f87992e9d1d3e0871eb57dc9fea493c14b0b5bc4853009d731e972",
+      "size": 9235,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/disney_entertainment_and_espn_product_technology_principal_product_mgr/disney_entertainment_and_espn_principal_product_mgr_trisha_lynch_strategy_pack.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/applied_followup/disney_entertainment_and_espn_product_technology_principal_product_mgr/disney_entertainment_and_espn_principal_product_mgr_trisha_lynch_styled_resume.docx",
+      "sha256": "da6a3406bfe4decaa2eebc302fdf456d5932fc42d2c6e84e2dbce30d6b045164",
+      "size": 26315,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/disney_entertainment_and_espn_product_technology_principal_product_mgr/disney_entertainment_and_espn_principal_product_mgr_trisha_lynch_styled_resume.docx"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/applied_followup/disney_entertainment_and_espn_product_technology_principal_product_mgr/manifest.json",
+      "sha256": "542d83ff3ee8c3775b472ecd0835e6f3e589f0ce64c02501f6ce073571d2e849",
+      "size": 8021,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/disney_entertainment_and_espn_product_technology_principal_product_mgr/manifest.json"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/applied_followup/disney_entertainment_and_espn_product_technology_principal_product_mgr/versions/20260729T223336Z/disney_entertainment_and_espn_principal_product_mgr_trisha_lynch_interview_prep.txt",
+      "sha256": "b6095530d488d5aeff7404ee097b98e218f6f1adf19fc0bceba405ec1d7a2177",
+      "size": 1353,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/disney_entertainment_and_espn_product_technology_principal_product_mgr/versions/20260729T223336Z/disney_entertainment_and_espn_principal_product_mgr_trisha_lynch_interview_prep.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/TWDC_Principal_Product_Manager_Trisha_Lynch_ats_resume.docx",
+      "sha256": "89fac9679925ff74f7514dc89fb4e4e2915e9ef76766dbb1d2ab2b22f4f18d67",
+      "size": 28889,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/TWDC_Principal_Product_Manager_Trisha_Lynch_ats_resume.docx"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/TWDC_Principal_Product_Manager_Trisha_Lynch_cover_letter.docx",
+      "sha256": "adc8bac8a87ebbc47717123aadb90f60124e2383f979e6583f05925adff8b4c1",
+      "size": 27561,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/TWDC_Principal_Product_Manager_Trisha_Lynch_cover_letter.docx"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/application_note.txt",
+      "sha256": "8ac7738739900b62dda30f1d2731393f90426a753a9ecb425f2fa683311f697d",
+      "size": 521,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/application_note.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/cover_letter.txt",
+      "sha256": "399ffff899814e26a7fa689992c71ccf4ecfadaf08e58abeb31ac53a843e66ca",
+      "size": 1871,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/cover_letter.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/followup_strategy.txt",
+      "sha256": "3df49a408a6b19ef57229b3bb32c06f25ce8b0fc28757c18e90ce4eaf97089e4",
+      "size": 4052,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/followup_strategy.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/hiring_manager_followup.txt",
+      "sha256": "cd462c9537ba384d81085be2c5e7bbb2077e9c950064e9118723dabd9b1258a8",
+      "size": 735,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/hiring_manager_followup.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/hiring_manager_message.txt",
+      "sha256": "4156ae9d27ce4442bc132bed4177f7ef187540535ed03c7be6ba228babb06219",
+      "size": 897,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/hiring_manager_message.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/interview_prep.txt",
+      "sha256": "b6095530d488d5aeff7404ee097b98e218f6f1adf19fc0bceba405ec1d7a2177",
+      "size": 1353,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/interview_prep.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/manifest.json",
+      "sha256": "a075c6e30a22f100bdc78bcf6b3532cb5894415cdc360fe24b07308f9ab4bc85",
+      "size": 6933,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/manifest.json"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/package_summary.txt",
+      "sha256": "6692d1cd2ba1df132aa5b49cb0d74c6770adea6e1e8e299aea3ac750b2d9a722",
+      "size": 662,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/package_summary.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/recruiter_followup.txt",
+      "sha256": "7a8998fe1c88aa083fc1bc79edda0c62a789466f059fb92114a17476265ee8aa",
+      "size": 574,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/recruiter_followup.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/recruiter_message.txt",
+      "sha256": "087c27c85e42e4e45110a18bcf8a7d646f002d58fee79c16f1b151545c407196",
+      "size": 635,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/recruiter_message.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/referral_ask.txt",
+      "sha256": "2461bbfd161ef50c973198e25afa5e4c9291f392c3158e86d3d435b9196a34f9",
+      "size": 577,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/referral_ask.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/resume.txt",
+      "sha256": "4a6d8297bba5d23e82e5991cabf9ef1fa75592e9e97a897cabd95a90602295cb",
+      "size": 5079,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/resume.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/strategy_pack.txt",
+      "sha256": "ff1329d167df37c8f034e73b3921165338a53638f2773b461f563346c5bba5da",
+      "size": 9457,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/strategy_pack.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/styled_resume.docx",
+      "sha256": "a4bad28ae51869c8b365015311d4827817b244b14d62f6dc89c00692a25410ba",
+      "size": 26962,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/styled_resume.docx"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/warm_contact_message.txt",
+      "sha256": "e35b2f1f054d0762e0ca8c2e30dc5a0737a34eb3193105af90e6c4adf72f17b0",
+      "size": 597,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/warm_contact_message.txt"
+    },
+    {
+      "backup_path": "/Users/trisha.lynch/Documents/career-catalyst/backups/pre_package_reconciliation_20260731T215000Z/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/~$ver_letter.docx",
+      "sha256": "c407d3132241bdb81e07a3ea4b57ae0e2421fdb7e070714b23d9f0df4400541a",
+      "size": 162,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr/~$ver_letter.docx"
+    }
+  ],
+  "evidence_sha256": "9ade31bfdad9bbd28e709136b8b2062d69c94473cf4eaf538438b90d146b572d",
+  "file_count": 63,
+  "schema_version": 1,
+  "timestamp": "20260731T215000Z",
+  "tracker_sha256": "aedec018cb19f4d2538242d118785e2e121e3f278df292f62e595db73801f19e"
+}

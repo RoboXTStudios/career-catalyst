@@ -1,0 +1,94 @@
+evidence_cards:
+  - id: omg23_disney_leadership
+    label: OMG23 (Omnicom Media Group) entertainment leadership
+    short_description: Large-scale entertainment campaign operations leadership across Disney theatrical and streaming work.
+    proof_points:
+      - Advanced through five roles from Campaign Manager to Group Director while leading enterprise operations and transformation work across Disney Studios, Disney+, Searchlight Pictures, Corporate Brand Management, and related theatrical, streaming, and franchise priorities.
+      - Led 10 direct reports and provided strategic and operational leadership across an integrated 64-person organization spanning Ad Operations, Creative Management, and Marketing Science and Analytics.
+    tags: [entertainment_marketing_operations, creative_operations, cross_functional_leadership, team_leadership, team_enablement, measurable_impact, ambiguity_reduction]
+    strongest_role_fits: [entertainment marketing operations, creative operations, media operations]
+    when_to_use: Use when a role needs entertainment marketing, campaign operations, stakeholder coordination, or senior delivery leadership.
+    when_to_avoid: Avoid as the lead proof point for roles that are primarily founder, editorial, or unrelated to marketing operations.
+    confidence_level: high
+    source: data/achievements.yml:omg23_advancement,cross_functional_leadership
+  - id: campaignos
+    label: CampaignOS
+    short_description: AI-enabled operations platform focused on workflow governance, QA, validation, and reporting.
+    proof_points:
+      - Designed and developed an AI-powered operations platform around schema-driven workflows, validation frameworks, and operational reporting.
+      - Built from recurring enterprise entertainment operations problems, not positioned as a launched enterprise SaaS company.
+    tags: [ai_workflows, product_thinking, martech, governance, qa, builder, systems_built, ambiguity_reduction]
+    strongest_role_fits: [builder role, martech operations, product operations, AI operations]
+    when_to_use: Use when AI workflows, automation, workflow systems, product thinking, martech, or builder orientation are directly relevant.
+    when_to_avoid: Do not include by default for traditional PMO or generic operations roles unless the job clearly asks for automation, systems, or product thinking.
+    confidence_level: high
+    source: data/projects.yml:CampaignOS;data/achievements.yml:campaignos_ai_operations
+  - id: career_catalyst
+    label: Career Catalyst
+    short_description: Personal career strategy and materials generation system demonstrating builder mindset and practical AI workflow design.
+    proof_points:
+      - Built a role-aware system for parsing opportunities, scoring fit, and generating application materials from structured evidence.
+    tags: [builder, ai_workflows, product_thinking, career_strategy, systems_built, ambiguity_reduction]
+    strongest_role_fits: [human agency builder role, AI workflow role, product operations]
+    when_to_use: Use for builder-friendly, human agency, AI workflow, or product-minded roles.
+    when_to_avoid: Avoid for traditional PMO, governance-only, or conservative enterprise roles unless tooling/building is requested.
+    confidence_level: medium
+    source: repository behavior and project scope
+  - id: roboxt_studios
+    label: RoboXT Studios
+    short_description: Early-stage creative and AI studio concept; useful only where entrepreneurial creative systems are relevant.
+    proof_points:
+      - Represents creative operating point of view and experimentation, not a launched agency.
+    tags: [builder, creative_work, ai_workflows, entrepreneurship]
+    strongest_role_fits: [human agency builder role, startup operations, creative AI role]
+    when_to_use: Use only for entrepreneurial, builder-friendly, or creative AI roles.
+    when_to_avoid: Avoid for traditional PMO, governance, entertainment marketing operations, or conservative enterprise roles.
+    confidence_level: low
+    source: early-stage concept notes
+  - id: governance_qa_delivery
+    label: Governance, QA, and delivery leadership
+    short_description: Practical operating discipline across workflows, quality standards, risk visibility, and dependable delivery.
+    proof_points:
+      - Introduced scalable workflows, governance practices, and execution standards across marketing, technology, analytics, and creative teams.
+      - Connected quality assurance, measurement readiness, and partner coordination in campaign delivery.
+    tags: [governance, qa, pmo, cross_functional_leadership, change_adoption, ownership_clarity, usable_standards, ambiguity_reduction]
+    strongest_role_fits: [traditional PMO, governance, delivery leadership, operations]
+    when_to_use: Use for PMO, governance, delivery, process excellence, QA, or executive visibility roles.
+    when_to_avoid: Avoid making it sound more technical or quantified than the stored evidence supports.
+    confidence_level: high
+    source: data/achievements.yml:workflow_governance,disney_plus_launch_support
+  - id: martech_campaign_execution
+    label: Martech and campaign execution
+    short_description: Campaign, platform, measurement, and operational workflows across entertainment advertisers.
+    proof_points:
+      - Translated Google and YouTube platform capabilities into campaign execution, measurement readiness, and operational workflows.
+      - Connected brand objectives, platform activation, analytics, technology, and delivery across large entertainment advertisers.
+    tags: [martech, adtech, campaign_execution, measurement, entertainment_marketing_operations, cross_functional_leadership]
+    strongest_role_fits: [martech operations, CRM operations, adtech operations, GTM activation]
+    when_to_use: Use for martech, CRM, lifecycle, adtech, platform activation, or measurement-readiness roles.
+    when_to_avoid: Avoid implying formal Google employment or unsupported platform partnership.
+    confidence_level: high
+    source: data/achievements.yml:google_youtube_platform_familiarity
+  - id: multiverse_editorial
+    label: OMG23 Multiverse editorial leadership
+    short_description: Internal editorial leadership combining audience judgment, contributor coordination, and dependable publishing operations.
+    proof_points:
+      - Created and served as Managing Editor of Multiverse, an internal editorial publication reaching 400+ employees.
+      - Built a contributor process around creativity, innovation, culture, music, and employee storytelling.
+    tags: [editorial, storytelling, creative_operations, employee_communication, interesting_project, systems_built, measurable_impact]
+    strongest_role_fits: [content strategy, editorial operations, community role, creative operations]
+    when_to_use: Use when a role values editorial judgment, content systems, audience understanding, or community communication.
+    when_to_avoid: Avoid when editorial evidence would distract from a role centered on governance, PMO, or technical delivery.
+    confidence_level: high
+    source: data/achievements.yml:multiverse_editorial
+  - id: photography_creative_voice
+    label: Photography and creative voice
+    short_description: Creative practice and visual/editorial judgment that can support audience, content, or creative operations narratives.
+    proof_points:
+      - Demonstrates creative judgment and human voice when the role explicitly values content, photography, storytelling, or creative practice.
+    tags: [photography, creative_work, storytelling, editorial, interesting_project]
+    strongest_role_fits: [creative operations, content strategy, community role]
+    when_to_use: Use only when the role explicitly values creative practice, visual storytelling, or editorial voice.
+    when_to_avoid: Avoid for PMO, governance, martech, or entertainment operations roles where it distracts from role evidence.
+    confidence_level: medium
+    source: personal creative practice

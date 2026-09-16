@@ -1,0 +1,110 @@
+{
+  "application_url": "",
+  "archive_folder": "/Users/trisha.lynch/Documents/career-catalyst/archive/warner-chappell-music-inc/2026-08-04_sr-manager-strategic-integration-operations_warner-chappell-music-inc-sr-manager-strategic-integration-operations",
+  "archive_reason": "Rejected",
+  "archived_at": "2026-08-04T22:48:51.923086+00:00",
+  "company": "Warner Chappell Music Inc",
+  "final_status": "Rejected",
+  "job_posting_sha256": "c1816cf1ac6b360fefec834627e1880fd3eb7a8a142392ec08500dc7b88d6a79",
+  "legacy_archive_reason": "",
+  "legacy_status": "Paused",
+  "location": "USA - Los Angeles - 777 S. Santa Fe Ave, United States of America",
+  "match_score_snapshot": 68,
+  "match_tier_snapshot": "Good Match",
+  "materials": [],
+  "original_record": {
+    "application_history": [
+      {
+        "date": "2026-07-31",
+        "event": "status changed",
+        "from": "Considered",
+        "to": "Rejected"
+      }
+    ],
+    "application_portal_url": "",
+    "apply_recommendation": "Apply If Strategic",
+    "company": "Warner Chappell Music Inc",
+    "company_aliases": [],
+    "company_category": "music_entertainment_operations",
+    "company_inference_confidence": "High",
+    "company_voice_label": "Music + Operational Transformation",
+    "company_voice_profile": "dynamic_music_entertainment_operations",
+    "company_voice_source": "dynamic_inference",
+    "confidence": "High",
+    "follow_up_status": "Due now",
+    "freshness": "Stale",
+    "freshness_label": "Stale / Lower priority",
+    "id": "warner_chappell_music_inc_sr_manager_strategic_integration_operations",
+    "job_file": "jobs/sr_manager_strategic_integration_operations_warner_chappell_music_inc.md",
+    "lifecycle_migration": {
+      "migrated_at": "20260731T183134Z",
+      "migration": "sprint32_role_lifecycle",
+      "original_status": "Paused"
+    },
+    "location": "USA - Los Angeles - 777 S. Santa Fe Ave, United States of America",
+    "match_gaps": [
+      "Compensation is below the $120k caution threshold; pursue only if the role is a strategic doorway.",
+      "The heavy on-site requirement is a practical constraint, especially at lower pay.",
+      "The posting is stale at 56 days old."
+    ],
+    "match_score": 68,
+    "match_strengths": [
+      "Functional alignment includes workflow and process automation, strategic operations.",
+      "The seniority is aligned with Trisha's senior manager/lead target range.",
+      "The music context is adjacent to Trisha's target industries.",
+      "Career evidence overlaps in Business Operations, Process Excellence, Operational Strategy."
+    ],
+    "match_summary": "This could be a strategic doorway into a target industry, but the compensation gap is material.",
+    "match_tier": "Good Match",
+    "next_action": "Review fit and generate application package.",
+    "notes": "Applied with $100k salary expectation due posted range. Treat as music-industry doorway opportunity, not survival compensation.\n\nhttps://wmg.wd1.myworkdayjobs.com/en-US/WMGUS/userHome\n\nWorkday Status: None - may be stale",
+    "official_url": "https://wmg.wd1.myworkdayjobs.com/en-US/WMGUS/job/Sr-Manager--Strategic-Integration---Operations_R-027620?utm_source=chatgpt.com",
+    "opportunity_dimensions": {
+      "Industry Alignment": 72,
+      "Interview Probability": 74,
+      "Location Fit": 100,
+      "Mission / Personal Alignment": 82,
+      "Posting Freshness": 25,
+      "Resume Fit": 68,
+      "Role Level Fit": 85,
+      "Salary Fit": 20
+    },
+    "opportunity_score": 66,
+    "package_quality": {
+      "ats_keyword_match": 69,
+      "confidence_level": "Medium",
+      "confidence_score": 78,
+      "cover_letter_score": 89,
+      "resume_tailoring_score": 68,
+      "voice_match": 88
+    },
+    "posting_age_days": 56,
+    "posting_date": "2026-05-05",
+    "posting_status": "Open",
+    "posting_url": "https://wmg.wd1.myworkdayjobs.com/en-US/WMGUS/job/Sr-Manager--Strategic-Integration---Operations_R-027620?utm_source=chatgpt.com",
+    "priority": "Medium",
+    "recommended_action": "Generate Package",
+    "role": "Sr. Manager, Strategic Integration & Operations",
+    "role_aliases": [],
+    "role_family": "business_operations",
+    "salary_range": "$85",
+    "show_on_dashboard": true,
+    "source": "Official career page",
+    "source_verified": true,
+    "status": "Rejected",
+    "status_updated_at": "2026-07-31T11:54:50",
+    "submitted_date": "2026-06-30",
+    "suggested_follow_up_date": "2026-07-05",
+    "verification_notes": "posting is 64 days old; verify that it is still active",
+    "verification_status": "Employer Source",
+    "work_arrangement": "Not specified"
+  },
+  "original_role_id": "warner_chappell_music_inc_sr_manager_strategic_integration_operations",
+  "role_title": "Sr. Manager, Strategic Integration & Operations",
+  "schema_version": 2,
+  "source_metadata": {
+    "source": "Official career page",
+    "verification_status": "Employer Source"
+  },
+  "source_url": "https://wmg.wd1.myworkdayjobs.com/en-US/WMGUS/job/Sr-Manager--Strategic-Integration---Operations_R-027620?utm_source=chatgpt.com"
+}

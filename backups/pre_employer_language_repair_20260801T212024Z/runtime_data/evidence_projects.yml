@@ -1,0 +1,351 @@
+evidence_projects:
+- id: enterprise_media_operations_transformation
+  title: Enterprise Media Operations Transformation
+  employer: OMG23
+  client: The Walt Disney Company
+  business_unit: The Walt Disney Company
+  industry: Entertainment & Media
+  function: Operations
+  project_type: Operations Project Management
+  problem: A large enterprise media organization managed high-volume campaigns across theatrical releases, streaming, television, and corporate brands. As the business evolved, teams needed more consistent operational processes, stronger governance, clearer ownership, and scalable workflows to support increasingly complex marketing initiatives.
+  actions: Led cross-functional initiatives to improve media operations by redesigning workflows, establishing governance and quality-assurance standards, aligning stakeholders across media, marketing, analytics, and technology teams, and implementing scalable operational processes.
+  results: Established more consistent operational standards, improved cross-functional collaboration, increased visibility into complex initiatives, and created scalable processes that supported execution across multiple business units.
+  skills: []
+  technologies: []
+  tags:
+  - Media Operations
+  - Governance
+  - Quality Assurance
+  - Cross-Functional Leadership
+  - Process Improvement
+  - Program Management
+  - Business Transformation
+  supporting_evidence: []
+  links: []
+  notes: ''
+  status: Active
+- id: enterprise_collaboration_platform_adoption_stakeholder_enablement
+  title: Enterprise Collaboration Platform Adoption & Stakeholder Enablement
+  employer: OMG23
+  client: The Walt Disney Company
+  business_unit: The Walt Disney Company
+  industry: Entertainment & Media
+  function: Operations
+  project_type: Change Management
+  problem: A large entertainment organization was transitioning to Microsoft Teams and needed practical support to help stakeholders adopt the platform, navigate new collaboration tools, and establish consistent ways of working. Adoption depended on accessible guidance and trusted users who could support teams through the change.
+  actions: Served as a Microsoft Teams power user and stakeholder resource during the rollout. Held recurring office hours for Disney stakeholders, answered platform and workflow questions, helped users troubleshoot adoption challenges, and identified and coordinated a network of champions and power users who could provide peer support across teams.
+  results: Improved stakeholder readiness and supported broader adoption of Microsoft Teams through practical guidance and peer support. The champion network expanded internal expertise, helped resolve questions more efficiently, and created a sustainable support structure as teams adjusted to new collaboration practices.
+  skills: []
+  technologies:
+  - Microsoft Teams
+  tags:
+  - Change Management
+  - Technology Adoption
+  - Stakeholder Enablement
+  - Training
+  - Office Hours
+  - Champion Network
+  - Collaboration
+  supporting_evidence: []
+  links: []
+  notes: ''
+  status: Active
+- id: operational_workflow_design_airtable_implementation
+  title: Operational Workflow Design & Airtable Implementation
+  employer: OMG23
+  client: Disney Performance Marketing
+  business_unit: Disney Performance Marketing
+  industry: Entertainment & Media
+  function: Marketing Operations
+  project_type: Technology Implementation Project Management
+  problem: Disney Performance Marketing needed a centralized way to track multiple concurrent campaigns across its intellectual properties while reducing reliance on Google Sheets, Google Docs, and disconnected internal systems. Teams lacked a consistent source of truth for campaign status, documentation, and cross-functional reporting.
+  actions: Coordinated stakeholders across Disney Performance Marketing, OMG23 Marketing Science, business operations, and technical teams to support the Airtable implementation. Connected Disney and agency technology teams, tested workflows, trained users, and helped configure campaign tracking, status reporting, linked databases, a knowledge base, and automations. Established naming conventions, permissions, quality assurance, standardized workflows, and data-quality practices.
+  results: Created a centralized source of truth for campaign activity across teams, reducing duplicate work and the need for frequent status emails. The implementation improved visibility, strengthened data consistency, and provided a more structured and scalable way to manage campaign information before the platform was transitioned to the client.
+  skills: []
+  technologies:
+  - Airtable
+  - Google Sheets
+  - Google Docs
+  tags:
+  - Workflow Design
+  - Process Improvement
+  - Technology Implementation
+  - Campaign Tracking
+  - Status Reporting
+  - Data Governance
+  - Quality Assurance
+  - User Training
+  - Source of Truth
+  supporting_evidence: []
+  links: []
+  notes: ''
+  status: Active
+- id: enterprise_employee_engagement_community_fundraising_initiative
+  title: Enterprise Employee Engagement & Community Fundraising Initiative
+  employer: OMG23
+  industry: Entertainment & Media
+  function: Operations
+  project_type: Change Management
+  duration: Approximately three weeks
+  problem: During the Southern California wildfires, employee morale was affected as teams were asked to participate in a scheduled company engagement event while surrounding communities were experiencing significant loss. Leadership wanted to strengthen company culture, but employees also needed a meaningful way to support those affected.
+  actions: Proposed and led a company-wide fundraising initiative that transformed an employee event into a community-impact campaign. Secured more than $35,000 in partner pledges, coordinated executive stakeholders, managed communications and logistics, and organized a raffle-based donation program supporting World Central Kitchen, Pasadena Humane, Altadena Girls, and the Los Angeles Fire Relief Fund.
+  results: Achieved 100% employee participation and directed more than $35,000 in pledged donations to wildfire-relief organizations. The initiative transformed a routine engagement event into a meaningful community response, strengthened employee morale, and aligned company culture with the needs of the moment.
+  skills: []
+  technologies: []
+  tags:
+  - Employee Engagement
+  - Community Impact
+  - Fundraising
+  - Crisis Response
+  - Executive Stakeholder Management
+  - Internal Communications
+  - Event Operations
+  - Culture
+  - Leadership
+  supporting_evidence: []
+  links: []
+  notes: ''
+  status: Active
+- title: Just for Us Podcast — Audio Production & Editing
+  employer: Independent collaborative project
+  client: Just for Us Podcast
+  business_unit: Just for Us Podcast
+  timeframe: Ten-episode series · June - September 2019
+  industry: Podcasting / Audio Media
+  function: Audio Production & Post-Production
+  project_type: Podcast Production and Editing
+  problem: Four former OMG23 colleagues developed a conversational podcast that required an audio-production workflow capable of turning multi-participant recordings into polished, platform-ready episodes.
+  actions: Served as audio producer and editor for a ten-episode podcast series. Edited and structured recorded conversations, refined pacing and episode flow, cleaned dialogue, balanced audio levels, managed revisions, performed quality control, and prepared final episode files for release.
+  results: Produced and edited the full ten-episode series, with multiple episodes released on Spotify. The project provided hands-on experience in a collaborative podcast environment, including multi-speaker audio editing, post-production, quality assurance, revision management, and release preparation.
+  skills:
+  - Podcast Production
+  - Audio Editing
+  - Audio Post-Production
+  - Dialogue Editing
+  - Content Editing
+  - Story and Episode Flow
+  - Quality Control
+  - Collaborative Production
+  - Revision Management
+  - Content Operations
+  technologies:
+  - Adobe Premiere Pro
+  - Audacity
+  tags:
+  - Podcasting
+  - Audio Production
+  - Post-Production
+  - Spotify
+  - Entertainment
+  - Collaborative Media
+  - Multi-Host Podcast
+  links:
+  - https://open.spotify.com/show/1PygpRfq6Dno2Y7irgVNJR?si=2eccf5db298e454f
+  supporting_evidence:
+  - https://open.spotify.com/show/1PygpRfq6Dno2Y7irgVNJR?si=2eccf5db298e454f
+  notes: ''
+  status: Active
+  id: just_for_us_podcast_audio_production_editing
+- title: Career Catalyst — AI-Enabled Career Intelligence & Application Operations Platform
+  employer: RoboXT Studios
+  client: Career Catalyst
+  business_unit: Career Catalyst
+  timeframe: June 2026 - Present
+  industry: Career Technology / Software
+  function: Product Management / Product Operations / AI Workflow Design
+  project_type: AI-Enabled Product Development
+  problem: Managing a senior-level job search required manually evaluating job postings, matching opportunities to verified experience, tailoring application materials, tracking statuses, and preparing follow-up and interview content across disconnected systems. Existing tools did not provide a reliable single source of truth or adequate safeguards against stale role context, unsupported claims, and inconsistent application materials.
+  actions: Created and led development of Career Catalyst, an AI-enabled application and career-intelligence system. Defined the product vision, requirements, feature priorities, workflows, acceptance criteria, and release guardrails. Designed capabilities for prospect intake, match scoring, evidence selection, role-intent analysis, tailored résumé and cover-letter generation, follow-up planning, interview preparation, application tracking, and role archiving. Managed iterative development through GitHub, AI-assisted coding, focused regression testing, quality assurance, debugging, and production-data protections.
+  results: Built and launched an actively used local application that centralizes prospect evaluation, verified career evidence, role-specific materials, follow-up planning, interview preparation, and application status management. Established deterministic role-context and candidate-claim safeguards to improve the accuracy and consistency of generated materials. Created a Git-ready development and release workflow with focused testing; the most recent major release passed 232 targeted regression tests.
+  skills:
+  - Product Strategy; Product Management; Product Operations; Requirements Definition; Roadmap Prioritization; User-Centered Workflow Design; AI Workflow Design; Prompt Engineering; Career Intelligence; Process Automation; Quality Assurance; Regression Testing; Data Governance; Change Management; Release Management
+  technologies:
+  - Python; Streamlit; Git; GitHub; YAML; Markdown; DOCX Automation; OpenAI Codex; AI-Assisted Development Tools
+  tags:
+  - AI Product; Career Technology; Workflow Automation; Product Operations; Candidate Experience; Human-in-the-Loop AI; LLM Applications; Personal Software
+  links: []
+  supporting_evidence: []
+  notes: ''
+  status: Active
+  id: career_catalyst_ai_enabled_career_intelligence_application_operations_platform
+- title: CampaignOS — Campaign Operations Workflow Prototype
+  employer: RoboXT Studios
+  client: CampaignOS
+  business_unit: CampaignOS
+  timeframe: June 2026-Present
+  industry: Advertising Technology / Marketing Operations
+  function: Product Strategy / Product Operations / Workflow Design
+  project_type: Working Product Prototype
+  problem: Complex campaign operations often rely on fragmented spreadsheets, documents, emails, and manual status updates, creating inconsistent handoffs, limited visibility, duplicated work, and preventable quality risks.
+  actions: Designed and developed CampaignOS as a working prototype for centralizing campaign intake, workflow stages, ownership, documentation, status visibility, governance, and quality assurance. Defined the product concept, user needs, requirements, information structure, operating logic, and core workflow experience based on firsthand advertising-operations challenges.
+  results: Created a functioning prototype that demonstrates how campaign teams could manage requirements, dependencies, approvals, quality controls, and execution visibility through one structured workflow. CampaignOS remains a working prototype and has not been commercially launched.
+  skills:
+  - Product Strategy; Product Requirements; Product Operations; User Needs Analysis; Workflow Design; Campaign Operations; Process Architecture; Governance; Quality Assurance; Information Architecture; Product Prototyping
+  technologies:
+  - ChatGPT
+  - Codex
+  - Claude
+  - Python
+  tags:
+  - AdTech; Marketing Operations; Campaign Management; Product Prototype; Workflow Automation; Governance; Quality Assurance
+  links: []
+  supporting_evidence: []
+  notes: 'Candidate-facing résumé bullet:
+
+
+    Designed and developed CampaignOS, a working campaign-operations prototype that centralizes intake, requirements, ownership, workflow stages, governance, quality assurance, and execution visibility.'
+  status: Active
+  id: campaignos_campaign_operations_workflow_prototype
+- title: RoboXT Studios — Independent Creative and Product Studio
+  employer: RoboXT Studios
+  client: Independent Studio
+  business_unit: Independent Studio
+  timeframe: July 2026-Present
+  industry: Creative Media / Digital Publishing / Independent Business
+  function: Creative Direction / Product Strategy / Content Operations
+  project_type: Brand, Website and Creative Platform Development
+  problem: Creative, editorial, photography, product, and consulting work existed across disconnected formats without a unified public platform, clear brand system, or central destination for audiences and prospective clients.
+  actions: Founded and developed RoboXT Studios as an independent creative and product platform. Defined the brand positioning, site architecture, visual direction, editorial strategy, service offering, and project presentation. Built and launched the WordPress website, created The Signal editorial section, organized the photography archive, developed project and services pages, and established supporting Instagram, TikTok, and YouTube channels.
+  results: Launched a live public studio platform that brings together editorial work, photography, creative services, and active product projects under one cohesive brand. Secured the @roboxtstudios handle across major social platforms and established a foundation for future audience, client, and product development.
+  skills:
+  - Creative Direction; Brand Strategy; Content Strategy; Editorial Development; Website Strategy; Information Architecture; Digital Publishing; Photography Curation; Product Positioning; Content Operations; Audience Development; Quality Assurance
+  technologies:
+  - WordPress; Microsoft 365; Adobe tools or other creative platforms you actually used
+  tags:
+  - Creative Studio; Digital Publishing; Editorial; Photography; Brand Development; Website Launch; Independent Business; Content Operations
+  links:
+  - https://roboxtstudios.com
+  supporting_evidence:
+  - https://roboxtstudios.com
+  notes: 'Candidate-facing résumé bullet:
+
+
+    Founded and launched RoboXT Studios, an independent creative and product platform integrating editorial content, photography, services, and active product projects through a cohesive public brand and website.'
+  status: Active
+  id: roboxt_studios_independent_creative_and_product_studio
+- id: microsoft_365_digital_workplace_enablement_sharepoint_workflow_and_knowledge_hub
+  title: Microsoft 365 Digital Workplace Enablement — SharePoint Workflow and Knowledge Hub
+  employer: OMG23 (Omnicom Media Group)
+  organization: OMG23 (Omnicom Media Group)
+  client: The Walt Disney Company
+  business_unit: Disney account operations
+  industry: Entertainment Marketing / Advertising Operations
+  function: Digital Workplace / Operations Transformation / Knowledge Management
+  project_type: Microsoft 365 Workflow and Collaboration Solution
+  status: Active
+  timeframe: During OMG23 tenure
+  timeframe_review_required: true
+  problem: Campaign-trafficking requests, operating documentation, training materials, and process guidance were distributed across emails, files, and informal team knowledge, limiting visibility and making consistent execution harder to maintain.
+  actions: Designed and built a SharePoint-based trafficking queue that centralized campaign intake, ownership, status visibility, and operational handoffs. Also created the AdOps Documentation Hub in SharePoint as a central source for standard operating procedures, training materials, workflow guidance, governance standards, and team reference content. Structured the sites and information so employees could locate current resources, understand requirements, and work through more consistent processes.
+  results: Established centralized digital-workplace resources for campaign operations, improving access to operational information, workflow visibility, knowledge sharing, and consistency across the team.
+  skills:
+  - Microsoft 365
+  - SharePoint
+  - Digital Workplace
+  - Enterprise Collaboration
+  - Workflow Design
+  - Knowledge Management
+  - Information Architecture
+  - Process Governance
+  - Documentation Strategy
+  - Change Management
+  - Employee Adoption
+  - Training and Enablement
+  - Operations Transformation
+  technologies:
+  - Microsoft SharePoint
+  - Microsoft 365
+  - Microsoft Teams
+  tags:
+  - Digital Workplace
+  - SharePoint
+  - Knowledge Management
+  - Workflow Design
+  - Operations Transformation
+  supporting_evidence: []
+  links: []
+  candidate_facing_resume_bullet: Designed and launched a SharePoint-based campaign-trafficking queue and AdOps Documentation Hub, centralizing intake, status visibility, operating procedures, training resources, and governance for enterprise campaign operations.
+  notes: Timeframe uses the approved fallback and is flagged for later user review.
+  provenance: User-authoritative durable runtime reconstruction delta, 2026-08-01
+- id: disney_floodlight_tracking_database_and_data_technology_map
+  title: Disney Floodlight Tracking Database and Data Technology Map
+  employer: OMG23 (Omnicom Media Group)
+  organization: OMG23 (Omnicom Media Group)
+  client: The Walt Disney Company
+  business_unit: The Walt Disney Company
+  timeframe: Built 2016–2018; used until the 2019/2020 team restructuring following the Disney+ launch
+  industry: Entertainment Marketing / Advertising Technology
+  function: Marketing Technology / Data Operations / Measurement Governance
+  project_type: Database and Technical Knowledge System
+  status: Active
+  problem: Floodlight tracking information and technical reference materials were distributed across spreadsheets, emails, and individual team knowledge, making it difficult to maintain consistent records, understand the broader tag technology stack, and support reliable implementation and troubleshooting.
+  actions: Designed and built a Microsoft Access database for centralized Floodlight tracking, using Microsoft Excel as the structured raw-data source. Organized tracking information into a repeatable system that supported visibility, continuity, and ongoing measurement operations. Also created a Disney Data Cheat Sheet mapping the tools and technologies used across the client’s tag stack and measurement environment.
+  results: The database became the primary Floodlight tracking system used by the Disney account team before the organization restructured following the Disney+ launch. It improved access to tracking information, strengthened technical knowledge sharing, and created a more consistent operational foundation for measurement and tag-management work.
+  skills:
+  - Microsoft Access
+  - Microsoft Excel
+  - Database Design
+  - Data Governance
+  - Measurement Operations
+  - Marketing Technology
+  - Information Architecture
+  - Technical Documentation
+  - Knowledge Management
+  - Workflow Design
+  - Taxonomy Development
+  - Quality Assurance
+  technologies:
+  - Microsoft Access
+  - Microsoft Excel
+  - Floodlight
+  tags:
+  - Database Design
+  - Measurement Operations
+  - Marketing Technology
+  - Data Governance
+  - Knowledge Management
+  supporting_evidence: []
+  links: []
+  candidate_facing_resume_bullet: Built a Microsoft Access and Excel-based Floodlight tracking database that became the Disney account team’s primary tracking system, and developed a technical reference mapping the tools and technologies across its tag and measurement stack.
+  notes: ''
+  provenance: User-authoritative durable runtime reconstruction delta, 2026-08-01
+- title: Disney+ Launch Readiness — Tracking, Measurement and Operational Governance
+  employer: OMG23 (Omnicom Media Group)
+  client: The Walt Disney Company — Disney+ / Disney Streaming Services
+  business_unit: The Walt Disney Company — Disney+ / Disney Streaming Services
+  timeframe: Disney+ launch period, 2019-2020
+  industry: Entertainment / Streaming Media
+  function: Launch Operations / Marketing Technology / Measurement Operations
+  project_type: Cross-Functional Platform Launch Readiness
+  problem: Disney+ required coordinated launch readiness across marketing, technology, media, analytics, and operational teams. Tracking structures, platform requirements, taxonomies, pixel implementation, measurement standards, quality assurance, and team workflows needed to be aligned before launch.
+  actions: 'Served as a senior Ad Operations member of the Disney+ launch task force, partnering with Disney Technology and Disney Streaming Services on tracking and measurement readiness.
+
+
+    Helped translate platform and campaign requirements into operational workflows, governance standards, taxonomies, implementation guidance, and quality-control processes. Supported pixel implementation, tracking validation, issue resolution, documentation, and cross-functional coordination across media, analytics, technology, and operational stakeholders.
+
+
+    Contributed to launch-readiness reviews by surfacing dependencies, clarifying ownership, identifying risks, and helping teams resolve implementation issues before campaigns went live.'
+  results: 'Supported the launch readiness of Disney+ marketing operations by establishing clearer tracking requirements, governance, implementation standards, and quality-assurance practices. Helped improve alignment across teams responsible for campaign activation, data collection, measurement, and launch execution.
+
+
+    Avoid claiming that you personally launched Disney+ or owned the entire program. Your strongest—and accurate—position is that you were a senior task-force contributor responsible for critical operational and measurement-readiness work.'
+  skills:
+  - Launch Readiness; Program Operations; Cross-Functional Leadership; Marketing Technology; Measurement Strategy; Tracking Governance; Taxonomy Development; Quality Assurance; Risk Management; Dependency Management; Stakeholder Coordination; Process Design; Technical Documentation; Issue Resolution; Executive Communication
+  technologies:
+  - Proprietary
+  tags:
+  - Streaming Launch; Disney+; Launch Operations; MarTech; Measurement; Governance; Cross-Functional Delivery; Quality Assurance; Enterprise Programs
+  links: []
+  supporting_evidence: []
+  notes: 'Candidate-facing résumé bullet
+
+
+    Supported Disney+ launch readiness as a senior Ad Operations task-force member, partnering with Disney Technology and Disney Streaming Services on tracking governance, taxonomies, pixel implementation, measurement readiness, quality assurance, and cross-functional issue resolution.
+
+
+    Stronger OpenAI-oriented version
+
+
+    Supported Disney+ launch readiness by translating complex marketing and technology requirements into governance, tracking standards, launch dependencies, quality controls, and coordinated execution across media, analytics, operations, and platform teams.'
+  status: Active
+  id: disney_launch_readiness_tracking_measurement_and_operational_governance

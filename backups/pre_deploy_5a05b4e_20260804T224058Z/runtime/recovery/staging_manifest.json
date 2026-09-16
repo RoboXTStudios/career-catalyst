@@ -1,0 +1,432 @@
+{
+  "created_at": "2026-08-01T19:40:10.382607+00:00",
+  "staging_path": "/Users/trisha.lynch/Library/Application Support/Career Catalyst/runtime_staging_20260801T194008Z",
+  "file_count": 85,
+  "entries": [
+    {
+      "path": ".streamlit/config.toml",
+      "size": 258,
+      "sha256": "c11bf7fd16dbc1001c5f95e437d8998546228caa32f7485dca800e8edc320697"
+    },
+    {
+      "path": "config/company_voice_profiles.yml",
+      "size": 4373,
+      "sha256": "0da80cf274115be448ec5675b5c3cae9a10bec2520262eb152403e2bbe43eedd"
+    },
+    {
+      "path": "config/evidence_cards.yml",
+      "size": 7790,
+      "sha256": "79a700d5007fd41b99572c08b7227df3fb066745cc73f87615b37d5cd7f5833f"
+    },
+    {
+      "path": "config/role_editing_rules.yml",
+      "size": 4342,
+      "sha256": "ab6f9d684d475a0bce15454502f68084ab45f748455ef17d99989650d921e81f"
+    },
+    {
+      "path": "config/role_intent_rules.yml",
+      "size": 25730,
+      "sha256": "406147d6157b0a2baba48b4d5cb3a812691ac14336976769d9ad5b5e2f64a71a"
+    },
+    {
+      "path": "config/role_profiles.yml",
+      "size": 2576,
+      "sha256": "d1f6152994ed07e3e38d681ef7e31296abd025eff91655f6a754afa0f3a32dc4"
+    },
+    {
+      "path": "config/settings.yml",
+      "size": 765,
+      "sha256": "4a135674c79c0c769d0bf2b35a620461378c5e1dac36315a5d30057e82434f28"
+    },
+    {
+      "path": "config/target_companies.yml",
+      "size": 2328,
+      "sha256": "9f4c0f21c0ced33a3158bf58e34c0c3a6917a27108a5df21be3cf6f0809b9fb8"
+    },
+    {
+      "path": "config/voice.yml",
+      "size": 1536,
+      "sha256": "6231f56ab61d5ae25fdfbdd565101693a40545f1da465d3644a863a3da46821f"
+    },
+    {
+      "path": "config/writing_voice_profiles.yml",
+      "size": 944,
+      "sha256": "d0c515108b5da461be301773fa973b8b40cc8c344edd7452326e3eced0dcf609"
+    },
+    {
+      "path": "data/achievements.yml",
+      "size": 3606,
+      "sha256": "ee93b633f32b161b78d16a557d491c6673dddab9bcd9392274a641353a20fed3"
+    },
+    {
+      "path": "data/application_tracker.yml",
+      "size": 744456,
+      "sha256": "c5980faf8843878ec036ecb5db3b10e088671e83d5c2ee2ae2d232afbf940f44"
+    },
+    {
+      "path": "data/capability_graph.yml",
+      "size": 933,
+      "sha256": "2d4e318bf1f66ae414b415b367517b06fb0263314b5dff41edb93aa2f53d066e"
+    },
+    {
+      "path": "data/capability_reviews.yml",
+      "size": 1365,
+      "sha256": "740d5f172b95b1f92a960408f8e946f6f66c5ce5350ce7cdf90dbdf09e61cd98"
+    },
+    {
+      "path": "data/certifications.yml",
+      "size": 232,
+      "sha256": "17f4eacb83b874b91dade0ff34a0e6fdb5d998dc2de7986684e777a40e180c3f"
+    },
+    {
+      "path": "data/evidence_profile.yml",
+      "size": 46353,
+      "sha256": "2d1343adaf20a5cbb5fc648d8c6fdf61d187ed9e2d645253f0764b8eb4919a15"
+    },
+    {
+      "path": "data/evidence_projects.yml",
+      "size": 20697,
+      "sha256": "dc05e1ff0df06a47c790d5bb72fa97b8af7fc98ea3be705706486f2b6b72231b"
+    },
+    {
+      "path": "data/evidence_summary.yml",
+      "size": 3379,
+      "sha256": "e22352a04e2fc9e9562d31b04f056fead72c1021f7973204f64d9bb6788bd93b"
+    },
+    {
+      "path": "data/personal_brand.yml",
+      "size": 3589,
+      "sha256": "8c19495ab4bf4ae9167a75f0c4e5d7f7bf94dbcc5359903fb86c0fdcdb5cf9d3"
+    },
+    {
+      "path": "data/platforms.yml",
+      "size": 878,
+      "sha256": "5a2d1b91e3c2bddd4f6cd70e3d19bf33819e3d01b694bb271478af261701626d"
+    },
+    {
+      "path": "data/positions.yml",
+      "size": 1976,
+      "sha256": "bf9546dec8f20e8ad15b7007dc96c529d4585f98aff3158e71668fe0d33bd2b6"
+    },
+    {
+      "path": "data/projects.yml",
+      "size": 1487,
+      "sha256": "a8114494840126881aff1237595ba8f3123df1d6689bbcc20461476c1aae0889"
+    },
+    {
+      "path": "data/skills.yml",
+      "size": 1206,
+      "sha256": "aab4244672be976cf1cebd3bda9a72223cbbde6be745199cb1a41ed999f22907"
+    },
+    {
+      "path": "ground_control/README.md",
+      "size": 602,
+      "sha256": "71fbf903bc0f95a957d7f2300aba57531650c9607198d0e47cd7cf0cc0c824ea"
+    },
+    {
+      "path": "ground_control/__init__.py",
+      "size": 46,
+      "sha256": "11234c5dffb0b612c957a884e730f1a01ff49691be53e419233216f533577bae"
+    },
+    {
+      "path": "ground_control/app.py",
+      "size": 26339,
+      "sha256": "9d03f0d9969d249f9d94683d90833047fc56c0a7e2aa2af965bf2c8b608be15c"
+    },
+    {
+      "path": "ground_control/career.py",
+      "size": 2377,
+      "sha256": "653b8d2e89ccf279213dc1289f9c7f3506da1e9c68e5b3a7b445a5a5609f54d2"
+    },
+    {
+      "path": "ground_control/local_state.json",
+      "size": 2842,
+      "sha256": "f4b8ac6e7eaacdc857b9ec9d7f3f273cdf9c71626818d7f319953fd25dcf34d6"
+    },
+    {
+      "path": "ground_control/local_time.py",
+      "size": 1107,
+      "sha256": "1037eda0898fcfe6217f001b2c1d3d59e3267e78635479a84ad0a61d1929847b"
+    },
+    {
+      "path": "ground_control/mission_engine.py",
+      "size": 8628,
+      "sha256": "4f3453d234b3e78ca2a155710bdfcfcd1d02d5b2131ff602def68f18ffef4720"
+    },
+    {
+      "path": "ground_control/model.py",
+      "size": 6808,
+      "sha256": "7e469d617e8a5305c6bd474d5c77426050e00617d737d335d4e0074d4a228aea"
+    },
+    {
+      "path": "ground_control/seed_data.py",
+      "size": 1074,
+      "sha256": "de312c002141dca5f4f521b313df00023654036a05505793284c19f6f89e78ca"
+    },
+    {
+      "path": "ground_control/state.py",
+      "size": 9139,
+      "sha256": "c2edfbf87c13d205dfca28fee5ae55bb7eb93b1547e406e66bd4508fc5098e39"
+    },
+    {
+      "path": "jobs/600_umg_recordings_inc_senior_director_project_and_pmo_lead.md",
+      "size": 8809,
+      "sha256": "351b07a6a131cd6fe0ae8565933ef4d9ecd156dccc218f39fb40ea6bbfc3992d"
+    },
+    {
+      "path": "jobs/600_umg_recordings_inc_vice_president_planning_and_forecasting_coe_lead_1395690500.md",
+      "size": 7859,
+      "sha256": "55ff15ee9525e858f057e2b905cd4371b91394ef19b7194cddad37aa10881a02"
+    },
+    {
+      "path": "jobs/README.md",
+      "size": 330,
+      "sha256": "96af4f4ec0778e68b6da8b4ddf4a9fddf0bb644a59146517bd1d06d7dbfbf0aa"
+    },
+    {
+      "path": "jobs/associate_director_crm_martech_spotify.md",
+      "size": 4438,
+      "sha256": "e861e04a1b1ee4ec940616113827f76485820aff1f47dd940000b10d5b37520c"
+    },
+    {
+      "path": "jobs/associate_manager_ucan_marketing_operations_netflix.md",
+      "size": 7666,
+      "sha256": "034294fc7f5af00082ac8c5b47fbbd7a5bc1dfe75044556a7c63428624c7fd85"
+    },
+    {
+      "path": "jobs/azira_director_chief_of_staff_and_business_operations.md",
+      "size": 5314,
+      "sha256": "d5600cff9ea4ba788c3b839a42a0864e61b2cdfa2ddd4e18d7a890ac6b700e52"
+    },
+    {
+      "path": "jobs/beast_industries_head_of_programming.md",
+      "size": 5902,
+      "sha256": "2ee337f9a36f35e1338fbd3380faffe16769a265cd13e757793a7f9a930ad05a"
+    },
+    {
+      "path": "jobs/deloitte_us_contact_center_operations_and_transformation_functional_manager_359033.md",
+      "size": 10971,
+      "sha256": "84eab94a68beb946f91cbf0b24bdc144a8c6d4e5c54153ec5634aca0a65bfbeb"
+    },
+    {
+      "path": "jobs/deloitte_us_engineering_delivery_manager_ii_service_management_lead_354891.md",
+      "size": 6200,
+      "sha256": "89f4c9d5b89a33db4a9405d943f7b94492aeded9eaaaef251d5effa91f63960c"
+    },
+    {
+      "path": "jobs/director_concert_communications_live_nation_worldwide_inc.md",
+      "size": 13756,
+      "sha256": "5604888da33e16aad69d5a7c6003a3d9796993724006389098c60182f7e03e9c"
+    },
+    {
+      "path": "jobs/director_of_matrix_operations_organizational_efficiency_fieldai.md",
+      "size": 6661,
+      "sha256": "59b0137ca7e0462b962f04b7f0dc0ed86a2f52f962a3b2e05602da9ad1bb0f17"
+    },
+    {
+      "path": "jobs/director_strategy_operations_product_technology_disney_entertainment_and_espn_product_technology.md",
+      "size": 4615,
+      "sha256": "78db4c086c02c54cccec905f9666e0ed492b61fd2f9584232813653111ad15f0"
+    },
+    {
+      "path": "jobs/director_talent_growth_the_walt_disney_company_corporate.md",
+      "size": 5213,
+      "sha256": "b6b528f6096a37f41cd183c26ec5bf948af93ad23305d81d12cdf0968331859a"
+    },
+    {
+      "path": "jobs/director_transformation_united_talent_agency.md",
+      "size": 6076,
+      "sha256": "723cfdfea5d1adb2012b621cd4d535a1d7862a5d0d40d66885936b8d1dbb5df8"
+    },
+    {
+      "path": "jobs/disney_entertainment_and_espn_product_and_technology_principal_product_mgr.md",
+      "size": 10524,
+      "sha256": "01eea5f1bb62f8bf051e4b8cd5d394d6f04de020414bb65e4531d2d62e433226"
+    },
+    {
+      "path": "jobs/electronic_arts_senior_manager_marketing_operations.md",
+      "size": 7957,
+      "sha256": "6c765736e95521f79f81570616ad87b613ecc1345dd27c8e741e756b4cff72ee"
+    },
+    {
+      "path": "jobs/figma_director_business_operations_6092343004.md",
+      "size": 9072,
+      "sha256": "9a483b30e42d88e3a3857a9e786e44f59eed7702fda57e3daee6743210278cf0"
+    },
+    {
+      "path": "jobs/google_strategy_ops_lead_youtube_auction_brand.md",
+      "size": 3210,
+      "sha256": "3fad1d9c9af08719d3638305f3bf0fb45326ff0cc8219c11174847b5b24b6efe"
+    },
+    {
+      "path": "jobs/live_nation_worldwide_inc_ln_concerts_architectural_design_manager.md",
+      "size": 12252,
+      "sha256": "f58d4a6986eb33247fb95bed9f8a972ae253fe1afa2537c608e9c77da5eb647d"
+    },
+    {
+      "path": "jobs/mrbeastyoutube_head_of_programming_6119486004.md",
+      "size": 6591,
+      "sha256": "22f5a69abe983c4c6b533381b5a0d42aca1dc12d3fdfc7081fe6e5dca42aa5d1"
+    },
+    {
+      "path": "jobs/netflix_inc_ai_product_manager_content_platform_operations_and_publishing.md",
+      "size": 7794,
+      "sha256": "74e7239490dca1263dd5b3f130be948d6c19ded17fdb1893c6a69495a726d869"
+    },
+    {
+      "path": "jobs/netflix_inc_product_manager_ads_supply.md",
+      "size": 6544,
+      "sha256": "67c6dbb9b0a94cfe8344534659546aa850a24144579a308a08b7b3bebb38af5d"
+    },
+    {
+      "path": "jobs/netflix_inc_program_manager_design.md",
+      "size": 9409,
+      "sha256": "7b78b52fa71be4941db89a48bda418ec449bcc106d1ebe178ea51b51d22efab6"
+    },
+    {
+      "path": "jobs/netflix_inc_specialist_performance_marketing.md",
+      "size": 6578,
+      "sha256": "4e69854da9d18e17f89cd8b1d107ee4ed2b2e159e8540585266e90b9afc4d8ad"
+    },
+    {
+      "path": "jobs/paramount_director_marketing_operations.md",
+      "size": 4638,
+      "sha256": "ba4208475e024f0acf1cef9d584281cd345bb4ccda56803b33c50b55feaf85f2"
+    },
+    {
+      "path": "jobs/paramount_director_product_martech_and_engagement_platforms_1395690500.md",
+      "size": 11677,
+      "sha256": "509ccaef7cf7fff66cb5a85c0ec9061f2de984ffe1536ffde078f626f3c568d7"
+    },
+    {
+      "path": "jobs/playstation_director_ad_ops_technology.md",
+      "size": 2429,
+      "sha256": "a151ed8a6f4b564416dfa220901bc10a3cbaf1e71d72094bacdf553d2e8a2d72"
+    },
+    {
+      "path": "jobs/playstation_head_global_creative_product_dev_ops.md",
+      "size": 2867,
+      "sha256": "91425924276231fcbf78ebb29869ec28d2dce24169b415b2f3ff5380b512c78e"
+    },
+    {
+      "path": "jobs/product_strategy_and_operations_director_disney_entertainment_and_espn_product_technology.md",
+      "size": 4829,
+      "sha256": "0178f797c9e222106457f3ac4aca085aceb3e3c410cd8f0904d858591f8adc2e"
+    },
+    {
+      "path": "jobs/reddit_lead_program_manager_vendor_operations_8010425.md",
+      "size": 9074,
+      "sha256": "caab7d69dc86075b76253600c038966a28fe7a67b18ba868642b13039212005c"
+    },
+    {
+      "path": "jobs/reddit_manager_technical_solutions_8068464.md",
+      "size": 8476,
+      "sha256": "fc15ddba33429b7797eb73caebc3239c21b671fbeab44c3d02a6e592c561f65c"
+    },
+    {
+      "path": "jobs/sample_job_description.md",
+      "size": 2679,
+      "sha256": "754e94ba25e60dcf4b435e71d51f87623363de76ddf43c24a3b338c61ac122d9"
+    },
+    {
+      "path": "jobs/senior_copywriter_content_strategist_bandsintown.md",
+      "size": 4795,
+      "sha256": "de13e10b4085dc237d57347328e6335c37077f5537f46cf34bccd51d0aef820a"
+    },
+    {
+      "path": "jobs/senior_director_team_operations_universal_music_group_umg_recordings_inc.md",
+      "size": 7954,
+      "sha256": "a52bd9c88fa383aa941b29abfc03f793c6fb0d6e55666f0ba3328328d94271cc"
+    },
+    {
+      "path": "jobs/sr_manager_strategic_integration_operations_warner_chappell_music_inc.md",
+      "size": 13060,
+      "sha256": "c1816cf1ac6b360fefec834627e1880fd3eb7a8a142392ec08500dc7b88d6a79"
+    },
+    {
+      "path": "jobs/sr_technical_project_manager_aeg_worldwide_axs.md",
+      "size": 9945,
+      "sha256": "415ec64437b4f62986a3888b1acb521fb541ecbab342b72216e86ac8d3308c6c"
+    },
+    {
+      "path": "jobs/strategic_operations_senior_manager_crunchyroll.md",
+      "size": 5985,
+      "sha256": "c1de778e0d1a86a8381698594f4c94cedfd5cbb8ce79f9a92fb6d326f50ce089"
+    },
+    {
+      "path": "jobs/united_talent_agency_director_people_operations.md",
+      "size": 3885,
+      "sha256": "f4cf97e889a861d7f39cf7739707744801446c00df95ce31f569d0bfc0fc1764"
+    },
+    {
+      "path": "jobs/warner_elektra_atlantic_corporation_vp_operations_r_027404.md",
+      "size": 8425,
+      "sha256": "77366fb8b9ffc839ebe01400cabd0d0f55d9cdd588f8f6e11a8c7b567e99c7d8"
+    },
+    {
+      "path": "jobs/youtube_strategy_and_operations_associate_youtube_music_and_premium.md",
+      "size": 4899,
+      "sha256": "b9b295b4da865bff7f090757b388c838120a4ea47dac69806e77cf46d19402a9"
+    },
+    {
+      "path": "recovery/source_selection.json",
+      "size": 2485,
+      "sha256": "5581a482c755b94d28f2c71501df69032b31a790844a9dcdb8b549281fd2d349"
+    },
+    {
+      "path": "templates/.DS_Store",
+      "size": 6148,
+      "sha256": "2219112c9ce2f08a1eb69eb7a2d6697997c83c2a0cbe486b9b7181f715eb97f9"
+    },
+    {
+      "path": "templates/cover_letters/standard_cover_letter.md",
+      "size": 335,
+      "sha256": "12b897d8ee637d8c0418f1be837f396fc4fa2ea1ac62a73c9f506ec6b71480ab"
+    },
+    {
+      "path": "templates/docx/README.md",
+      "size": 365,
+      "sha256": "7aab278185bea958d551ed667eb1e86d1c3b71e7a35e47ffd826dd489e4b2720"
+    },
+    {
+      "path": "templates/docx/styled_resume_template.docx",
+      "size": 31031,
+      "sha256": "c9779497966c031b953198a6635d59dd8bcb9977e64d177c98207ca2ba3c4202"
+    },
+    {
+      "path": "templates/interview/interview_prep.md",
+      "size": 412,
+      "sha256": "67da2b53e8865301bdef9a6c5633c187b6bb0d0c62773adfd3d01e7917981a59"
+    },
+    {
+      "path": "templates/messages/hiring_manager_message.md",
+      "size": 211,
+      "sha256": "bed631c666a834f31214040b851a9df0aa97e3a74c1feacbf30551483834b931"
+    },
+    {
+      "path": "templates/messages/recruiter_message.md",
+      "size": 202,
+      "sha256": "5ffe487ca3d1a73800cc5e2731c12cdecb43f2cf031838b4497d347750f863a6"
+    },
+    {
+      "path": "templates/resumes/entertainment_marketing.md",
+      "size": 558,
+      "sha256": "3d74aee2ca9a24de2bf3d7480f3cd91bff01db564a7b3a612a3c3a38752ac13b"
+    },
+    {
+      "path": "templates/resumes/executive_operations.md",
+      "size": 477,
+      "sha256": "9f3c549757d470692998eb2619456b03db15a95247199dc2d43ed74c6e12f15a"
+    },
+    {
+      "path": "templates/resumes/music_industry.md",
+      "size": 547,
+      "sha256": "d2a04c160938c5daa10bf9973029451a852840e3249651098a4fda519ced2c99"
+    },
+    {
+      "path": "templates/resumes/product_ai.md",
+      "size": 632,
+      "sha256": "124cc968608627d23de6849d88eb0cd0e2a79ec3a8ae858eb94f306ee4fc66a9"
+    }
+  ]
+}

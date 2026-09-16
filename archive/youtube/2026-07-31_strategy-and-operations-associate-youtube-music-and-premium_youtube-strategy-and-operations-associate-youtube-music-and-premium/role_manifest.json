@@ -1,0 +1,403 @@
+{
+  "application_url": "https://www.google.com/about/careers/applications/jobs/results/76395963106632390-strategy-and-operations-associate/",
+  "archive_folder": "/Users/trisha.lynch/Documents/career-catalyst/archive/youtube/2026-07-31_strategy-and-operations-associate-youtube-music-and-premium_youtube-strategy-and-operations-associate-youtube-music-and-premium",
+  "archive_reason": "Withdrawn / Closed",
+  "archived_at": "2026-07-31T18:32:02.610389+00:00",
+  "company": "YouTube",
+  "final_status": "Withdrawn / Closed",
+  "job_posting_sha256": "b9b295b4da865bff7f090757b388c838120a4ea47dac69806e77cf46d19402a9",
+  "legacy_archive_reason": "Hidden / Invalid",
+  "legacy_status": "Reviewed",
+  "location": "US",
+  "match_score_snapshot": 63,
+  "match_tier_snapshot": "Stretch Match",
+  "materials": [
+    {
+      "filename": "materials/application_note.txt",
+      "label": "Application Note",
+      "sha256": "b07d496f217288bdaad43911959779cffe44b70c2e068b9f3a0a5295dfa07194",
+      "size": 531,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_application_note.txt"
+    },
+    {
+      "filename": "materials/ats_resume.docx",
+      "label": "ATS Resume",
+      "sha256": "ad8ae79313775463f6fb3483361fc4a0b7937b76ce679575c00ce95eecae36e7",
+      "size": 38731,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_ats_resume.docx"
+    },
+    {
+      "filename": "materials/cover_letter.docx",
+      "label": "Cover Letter",
+      "sha256": "b56b36167a39e51a39af00ec638896e2aa5d46e7bab2972f17dc307ec1c94391",
+      "size": 37508,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_cover_letter.docx"
+    },
+    {
+      "filename": "materials/cover_letter.txt",
+      "label": "cover_letter",
+      "sha256": "49923bb20878f12359182fac88ae739c3a4654321b33753ce48f37cb13dba1d0",
+      "size": 1907,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_cover_letter.txt"
+    },
+    {
+      "filename": "materials/hiring_manager_message.txt",
+      "label": "Hiring Manager Message",
+      "sha256": "6db05237a2febf5ccc3aa65142531707f567a98149decea8890c49858f26e29b",
+      "size": 1167,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_hiring_manager_message.txt"
+    },
+    {
+      "filename": "materials/interview_prep.txt",
+      "label": "Interview Prep",
+      "sha256": "ac6b9cbdebcf72b38685f9afd10b392c1ece2cd8b432cab15325db398fffe0e4",
+      "size": 1524,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_interview_prep.txt"
+    },
+    {
+      "filename": "materials/package_summary.txt",
+      "label": "Package Summary",
+      "sha256": "27c7d2b023e4efd4db2b8f0be2ecc01a405f330a89002d00deac289c26238d6f",
+      "size": 651,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_package_summary.txt"
+    },
+    {
+      "filename": "materials/recruiter_message.txt",
+      "label": "Recruiter Message",
+      "sha256": "f777cccca7bf047e80c85ea2c8f897a1cc6d52866dbe06571fed4f5bdfa37e82",
+      "size": 650,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_recruiter_message.txt"
+    },
+    {
+      "filename": "materials/strategy_pack.txt",
+      "label": "Strategy Pack",
+      "sha256": "5166726b8f47e306a32493096b52489851687cab7e0100fc59628adc722ea2b4",
+      "size": 9005,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_strategy_pack.txt"
+    },
+    {
+      "filename": "materials/styled_resume.docx",
+      "label": "Styled Resume",
+      "sha256": "af81ce912a1c244f07006e8bb6483f32ac4dc058a4e620b7eb0016dd84b9225e",
+      "size": 26476,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_styled_resume.docx"
+    },
+    {
+      "filename": "materials/tailored_resume.txt",
+      "label": "Tailored Resume",
+      "sha256": "4c01b3db0759b89ef3179301fed108c6e239bae7c3fc172e0296fdcd1db3371c",
+      "size": 3678,
+      "source_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_resume.txt"
+    }
+  ],
+  "original_record": {
+    "application_history": [
+      {
+        "date": "2026-07-19",
+        "event": "status changed",
+        "from": "Drafted",
+        "to": "Withdrawn / Closed"
+      },
+      {
+        "archive_reason": "Hidden / Invalid",
+        "date": "2026-07-29T22:10:05.453956+00:00",
+        "event": "role archived",
+        "status": "Withdrawn / Closed"
+      }
+    ],
+    "apply_recommendation": "Watch / Recheck",
+    "archive_reason": "Hidden / Invalid",
+    "archived": true,
+    "archived_at": "2026-07-29T22:10:05.453956+00:00",
+    "canonical_apply_domain": "google.com",
+    "canonical_apply_url": "https://www.google.com/about/careers/applications/jobs/results/76395963106632390-strategy-and-operations-associate/",
+    "canonical_employer": "YouTube",
+    "company": "YouTube",
+    "company_aliases": [],
+    "company_category": "product_technology",
+    "company_inference_confidence": "High",
+    "company_voice_label": "Dynamic Product Technology",
+    "company_voice_profile": "google_youtube",
+    "company_voice_source": "known_profile",
+    "confidence": "High",
+    "context_fingerprint": "7cb47c8bcb60d044398c068fb05831313b7dfe1107f52b80550976f92b3d4cab",
+    "field_warnings": [
+      "Posting date unavailable"
+    ],
+    "freshness": "Unknown freshness",
+    "freshness_label": "Unknown freshness / Verify manually",
+    "freshness_risk": "Unknown",
+    "greenhouse_backed_hint": false,
+    "id": "youtube_strategy_and_operations_associate_youtube_music_and_premium",
+    "job_file": "jobs/youtube_strategy_and_operations_associate_youtube_music_and_premium.md",
+    "legacy_status": "Reviewed",
+    "location": "US",
+    "match_gaps": [
+      "The on-site requirement should be weighed against commute and compensation.",
+      "Posting age is unknown; verify that the role is still active.",
+      "The role is below Trisha's target seniority."
+    ],
+    "match_score": 63,
+    "match_strengths": [
+      "Functional alignment includes strategic operations.",
+      "The music context is adjacent to Trisha's target industries.",
+      "The disclosed compensation is aligned with or near Trisha's target.",
+      "Career evidence overlaps in Business Operations, Marketing Operations, Operational Strategy."
+    ],
+    "match_summary": "There is credible alignment, but the tradeoffs deserve review before package generation.",
+    "match_tier": "Stretch Match",
+    "material_paths": {
+      "ATS Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_ats_resume.docx",
+      "Application Note": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_application_note.txt",
+      "Cover Letter": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_cover_letter.docx",
+      "Hiring Manager Message": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_hiring_manager_message.txt",
+      "Interview Prep": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_interview_prep.txt",
+      "Package Summary": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_package_summary.txt",
+      "Recruiter Message": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_recruiter_message.txt",
+      "Strategy Pack": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_strategy_pack.txt",
+      "Styled Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_styled_resume.docx",
+      "Tailored Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_resume.txt"
+    },
+    "metadata_status": "Metadata unavailable",
+    "next_action": "Review fit and generate application package.",
+    "notes": "",
+    "official_url": "https://www.google.com/about/careers/applications/jobs/results/76395963106632390-strategy-and-operations-associate/",
+    "opportunity_dimensions": {
+      "Industry Alignment": 58,
+      "Interview Probability": 59,
+      "Location Fit": 42,
+      "Mission / Personal Alignment": 52,
+      "Posting Freshness": 50,
+      "Resume Fit": 63,
+      "Role Level Fit": 55,
+      "Salary Fit": 84
+    },
+    "opportunity_score": 59,
+    "original_source_url": "https://www.google.com/about/careers/applications/jobs/results/76395963106632390-strategy-and-operations-associate/",
+    "package_manifest": {
+      "applied_date": "",
+      "archive_reason": "Hidden / Invalid",
+      "archived": true,
+      "company": "YouTube",
+      "context_fingerprint": "7cb47c8bcb60d044398c068fb05831313b7dfe1107f52b80550976f92b3d4cab",
+      "files": {
+        "application_note": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_application_note.txt",
+        "ats_docx": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_ats_resume.docx",
+        "cover_letter": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_cover_letter.txt",
+        "cover_letter_docx": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_cover_letter.docx",
+        "hiring_manager_message": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_hiring_manager_message.txt",
+        "interview_prep": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_interview_prep.txt",
+        "package_summary": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_package_summary.txt",
+        "recruiter_message": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_recruiter_message.txt",
+        "resume_text": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_resume.txt",
+        "strategy_pack": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_strategy_pack.txt",
+        "styled_docx": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_styled_resume.docx"
+      },
+      "generated_at": "2026-07-18T01:40:46.377436+00:00",
+      "legacy_files_moved": [
+        "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/old_generated_materials/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_ats_resume_2.md"
+      ],
+      "manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/manifest.json",
+      "materials": {
+        "ATS Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_ats_resume.docx",
+        "Application Note": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_application_note.txt",
+        "Cover Letter": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_cover_letter.docx",
+        "Hiring Manager Message": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_hiring_manager_message.txt",
+        "Interview Prep": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_interview_prep.txt",
+        "Package Summary": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_package_summary.txt",
+        "Recruiter Message": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_recruiter_message.txt",
+        "Strategy Pack": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_strategy_pack.txt",
+        "Styled Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_styled_resume.docx",
+        "Tailored Resume": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/hidden_invalid/youtube_strategy_and_operations_associate_youtube_music_and_premium/youtube_strategy_operations_associate_youtube_music_premium_trisha_lynch_resume.txt"
+      },
+      "prospect_id": "youtube_strategy_and_operations_associate_youtube_music_and_premium",
+      "prospect_revision": 1,
+      "role_title": "Strategy and Operations Associate, YouTube Music and Premium",
+      "slug": "youtube_strategy_and_operations_associate_youtube_music_and_premium",
+      "source_url": "https://www.google.com/about/careers/applications/jobs/results/76395963106632390-strategy-and-operations-associate/",
+      "status": "Withdrawn / Closed",
+      "status_date": ""
+    },
+    "package_quality": {
+      "ats_keyword_match": 72,
+      "confidence_level": "High",
+      "confidence_score": 82,
+      "cover_letter_score": 94,
+      "resume_tailoring_score": 65,
+      "voice_match": 99
+    },
+    "posting_date": "",
+    "posting_status": "Verify manually",
+    "pre_archive_status": "Withdrawn / Closed",
+    "priority": "Medium",
+    "prospect_revision": 1,
+    "recommended_action": "Review First",
+    "recommended_next_step": "Posting date unavailable; the package can still be prepared.",
+    "requirement_map": [
+      {
+        "evidence_ids": [],
+        "normalized_concept": "as a part of the youtube product partnerships team you will drive partner strategy and manage the key relationships that",
+        "prohibited_overclaim_language": [],
+        "requirement": "As a part of the YouTube Product Partnerships team, you will drive partner strategy and manage the key relationships that help to build, distribute, grow, and protect YouTube\u2019s products globally.",
+        "safe_vocabulary": [],
+        "strength": "Unknown"
+      },
+      {
+        "evidence_ids": [],
+        "normalized_concept": "you will know how to assess partnership opportunities in any situation define a strategy and work closely within our tea",
+        "prohibited_overclaim_language": [],
+        "requirement": "You will know how to assess partnership opportunities in any situation, define a strategy, and work closely within our team, and with Product, Marketing, and other stakeholders to drive critical partnerships that help evolve our business.",
+        "safe_vocabulary": [],
+        "strength": "Unknown"
+      },
+      {
+        "evidence_ids": [],
+        "normalized_concept": "as a partnerships strategy and operations manager you will work closely with the youtube partner program ytpp leadership",
+        "prohibited_overclaim_language": [],
+        "requirement": "As a Partnerships Strategy and Operations Manager, you will work closely with the YouTube Partner Program (YTPP) leadership team to help the business grow and operate effectively, ensuring our teams are maintaining a holistic view of partners and executing against YouTube\u2019s most critical priorities.",
+        "safe_vocabulary": [],
+        "strength": "Unknown"
+      },
+      {
+        "evidence_ids": [],
+        "normalized_concept": "your role includes driving deliverables for critical internal alignment and approval forums preparing key leaders for in",
+        "prohibited_overclaim_language": [],
+        "requirement": "Your role includes driving deliverables for critical internal alignment and approval forums, preparing key leaders for internal and external commitments (e.g., partner meetings), supporting annual strategic planning and Objectives and Key Results (OKRs) processes, and effectively communicating our teams\u2019 contributions and impact.",
+        "safe_vocabulary": [],
+        "strength": "Unknown"
+      },
+      {
+        "evidence_ids": [],
+        "normalized_concept": "your ability to quickly analyze a challenge with strategic and quantitative accuracy will help propel strategic prioriti",
+        "prohibited_overclaim_language": [],
+        "requirement": "Your ability to quickly analyze a challenge with strategic and quantitative accuracy will help propel strategic priorities across the team.",
+        "safe_vocabulary": [],
+        "strength": "Unknown"
+      },
+      {
+        "evidence_ids": [],
+        "normalized_concept": "you will simultaneously develop a specialization in some product areas but maintain a generalist mindset to flex into ou",
+        "prohibited_overclaim_language": [],
+        "requirement": "You will simultaneously develop a specialization in some product areas but maintain a generalist mindset to flex into our most urgent needs.",
+        "safe_vocabulary": [],
+        "strength": "Unknown"
+      },
+      {
+        "evidence_ids": [],
+        "normalized_concept": "individual pay is determined by factors including job related skills experience and relevant education or training",
+        "prohibited_overclaim_language": [],
+        "requirement": "Individual pay is determined by factors including job-related skills, experience, and relevant education or training.",
+        "safe_vocabulary": [],
+        "strength": "Unknown"
+      },
+      {
+        "evidence_ids": [],
+        "normalized_concept": "own internal and external executive level presentations including partner reviews and partner strategy agreement approva",
+        "prohibited_overclaim_language": [],
+        "requirement": "Own internal and external executive-level presentations, including partner reviews, and partner strategy/agreement approval forums, bringing a strong sense of narrative and slide design to ensure materials are polished and effective for discussions and driving decision-making.",
+        "safe_vocabulary": [],
+        "strength": "Unknown"
+      },
+      {
+        "evidence_ids": [],
+        "normalized_concept": "drive the annual planning and global regional objectives and key results okr processes in close collaboration with ytpp ",
+        "prohibited_overclaim_language": [],
+        "requirement": "Drive the annual planning and global/regional Objectives and Key Results (OKR) processes in close collaboration with YTPP and cross-functional leadership.",
+        "safe_vocabulary": [],
+        "strength": "Unknown"
+      },
+      {
+        "evidence_ids": [],
+        "normalized_concept": "lead critical strategic and operational projects based on emergent business needs engaging early in discussions on behal",
+        "prohibited_overclaim_language": [],
+        "requirement": "Lead critical strategic and operational projects based on emergent business needs, engaging early in discussions on behalf of the business (including with cross-functional teams) to scope new projects.",
+        "safe_vocabulary": [],
+        "strength": "Unknown"
+      },
+      {
+        "evidence_ids": [],
+        "normalized_concept": "identify problems and issues across organizations create programs and processes to solve them and influence cross functi",
+        "prohibited_overclaim_language": [],
+        "requirement": "Identify problems and issues across organizations, create programs and processes to solve them, and influence cross-functional teams and leadership to bring them to life.",
+        "safe_vocabulary": [],
+        "strength": "Unknown"
+      },
+      {
+        "evidence_ids": [],
+        "normalized_concept": "collaborate with cross functional teams like product marketing and legal to apply insights toward understanding business",
+        "prohibited_overclaim_language": [],
+        "requirement": "Collaborate with cross-functional teams like Product, Marketing, and Legal to apply insights toward understanding business-influencing trends.",
+        "safe_vocabulary": [],
+        "strength": "Unknown"
+      },
+      {
+        "evidence_ids": [],
+        "normalized_concept": "bachelor s degree or equivalent practical experience",
+        "prohibited_overclaim_language": [],
+        "requirement": "Bachelor's degree or equivalent practical experience.",
+        "safe_vocabulary": [],
+        "strength": "Unknown"
+      },
+      {
+        "evidence_ids": [],
+        "normalized_concept": "4 years of experience in a management consulting sales operations business strategy or corporate advisory role",
+        "prohibited_overclaim_language": [],
+        "requirement": "4 years of experience in a management consulting, sales operations, business strategy or corporate advisory role.",
+        "safe_vocabulary": [],
+        "strength": "Unknown"
+      },
+      {
+        "evidence_ids": [],
+        "normalized_concept": "3 years of experience in a strategy and operations or consulting role",
+        "prohibited_overclaim_language": [],
+        "requirement": "3 years of experience in a strategy and operations or consulting role.",
+        "safe_vocabulary": [],
+        "strength": "Unknown"
+      },
+      {
+        "evidence_ids": [],
+        "normalized_concept": "3 years of experience working with executive stakeholders",
+        "prohibited_overclaim_language": [],
+        "requirement": "3 years of experience working with executive stakeholders.",
+        "safe_vocabulary": [],
+        "strength": "Unknown"
+      }
+    ],
+    "requires_verification": false,
+    "role": "Strategy and Operations Associate, YouTube Music and Premium",
+    "role_aliases": [],
+    "role_family": "community_growth",
+    "role_lens": "chief_of_staff_executive_operations",
+    "role_lens_confidence": 0.62,
+    "salary_range": "$124000 - $178000",
+    "secondary_role_lens": "strategic_operations",
+    "show_on_dashboard": false,
+    "source": "Google Careers",
+    "source_confidence": "High",
+    "source_domain": "google.com",
+    "source_name": "Google Careers",
+    "source_recognition": "Known source",
+    "source_trust_label": "Direct Employer",
+    "source_type": "Direct Employer",
+    "source_url": "https://www.google.com/about/careers/applications/jobs/results/76395963106632390-strategy-and-operations-associate/",
+    "source_warnings": [
+      "Posting date unavailable"
+    ],
+    "status": "Withdrawn / Closed",
+    "status_updated_at": "2026-07-19T11:29:03",
+    "verification_notes": "posting date unavailable; Official Google Careers source.",
+    "verification_status": "Employer Source",
+    "work_arrangement": "On-site"
+  },
+  "original_role_id": "youtube_strategy_and_operations_associate_youtube_music_and_premium",
+  "role_title": "Strategy and Operations Associate, YouTube Music and Premium",
+  "schema_version": 2,
+  "source_metadata": {
+    "source": "Google Careers",
+    "source_name": "Google Careers",
+    "source_trust_label": "Direct Employer",
+    "source_type": "Direct Employer",
+    "verification_status": "Employer Source"
+  },
+  "source_url": "https://www.google.com/about/careers/applications/jobs/results/76395963106632390-strategy-and-operations-associate/"
+}

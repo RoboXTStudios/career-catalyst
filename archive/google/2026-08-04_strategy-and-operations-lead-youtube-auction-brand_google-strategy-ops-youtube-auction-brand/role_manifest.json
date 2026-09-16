@@ -1,0 +1,106 @@
+{
+  "application_url": "",
+  "archive_folder": "/Users/trisha.lynch/Documents/career-catalyst/archive/google/2026-08-04_strategy-and-operations-lead-youtube-auction-brand_google-strategy-ops-youtube-auction-brand",
+  "archive_reason": "Rejected",
+  "archived_at": "2026-08-04T22:48:48.652974+00:00",
+  "company": "Google",
+  "final_status": "Rejected",
+  "job_posting_sha256": "3fad1d9c9af08719d3638305f3bf0fb45326ff0cc8219c11174847b5b24b6efe",
+  "legacy_archive_reason": "",
+  "legacy_status": "Rejected",
+  "location": "",
+  "match_score_snapshot": 78,
+  "match_tier_snapshot": "Good Match",
+  "materials": [],
+  "original_record": {
+    "apply_recommendation": "Apply If Strategic",
+    "company": "Google",
+    "company_aliases": [
+      "Google",
+      "YouTube"
+    ],
+    "company_category": "product_technology",
+    "company_inference_confidence": "High",
+    "company_voice_label": "Dynamic Product Technology",
+    "company_voice_profile": "google_youtube",
+    "company_voice_source": "known_profile",
+    "confidence": "Medium",
+    "freshness": "Unknown freshness",
+    "freshness_label": "Unknown freshness / Verify manually",
+    "id": "google_strategy_ops_youtube_auction_brand",
+    "match_gaps": [
+      "Work arrangement is not specified.",
+      "Posting age is unknown; verify that the role is still active."
+    ],
+    "match_score": 78,
+    "match_strengths": [
+      "Functional alignment includes workflow and process automation, strategic operations.",
+      "The seniority is aligned with Trisha's senior manager/lead target range.",
+      "The disclosed compensation is aligned with or near Trisha's target.",
+      "Career evidence overlaps in Business Operations, Marketing Operations, Program Leadership."
+    ],
+    "match_summary": "Good overall alignment, with a few cautions to weigh before investing further.",
+    "match_tier": "Good Match",
+    "next_action": "",
+    "notes": "Submitted application using Google-tailored styled resume and cover letter. Strong YouTube, GTM operations, product activation, large advertiser, Google advertising product familiarity, and operational excellence fit.",
+    "opportunity_dimensions": {
+      "Industry Alignment": 58,
+      "Interview Probability": 75,
+      "Location Fit": 100,
+      "Mission / Personal Alignment": 42,
+      "Posting Freshness": 50,
+      "Resume Fit": 78,
+      "Role Level Fit": 100,
+      "Salary Fit": 92
+    },
+    "opportunity_score": 77,
+    "package_quality": {
+      "ats_keyword_match": 86,
+      "confidence_level": "High",
+      "confidence_score": 90,
+      "cover_letter_score": 94,
+      "resume_tailoring_score": 80,
+      "voice_match": 99
+    },
+    "posting_date": "",
+    "posting_status": "Open",
+    "priority": "Do Not Pursue",
+    "recommended_action": "Generate Package",
+    "reconciliation_provenance": {
+      "package_versions": [
+        {
+          "action": "preserve version",
+          "prospect_id": "google_strategy_ops_youtube_auction_brand",
+          "retained_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/reconciliation_versions/google_strategy_ops_youtube_auction_brand/sprint27_5/084fb61bd8c0/google_strategy_operations_lead_youtube_auction_brand_trisha_lynch_ats_resume.docx",
+          "source": "/Users/trisha.lynch/.codex/.chatgpt-projects/g-p-6a5d817ef0788191bbc5427a19234f4c/sprint27_5_repair/exports/docx/google_strategy_operations_lead_youtube_auction_brand_trisha_lynch_ats_resume.docx",
+          "source_sha256": "084fb61bd8c06ee914d9c6ffc80ecf75a4e6c8eaceed8e7759de41cbfe66b1b3"
+        },
+        {
+          "action": "preserve version",
+          "prospect_id": "google_strategy_ops_youtube_auction_brand",
+          "retained_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/archive/reconciliation_versions/google_strategy_ops_youtube_auction_brand/sprint27_5/6fdc80af4581/google_strategy_operations_lead_youtube_auction_brand_trisha_lynch_styled_resume.docx",
+          "source": "/Users/trisha.lynch/.codex/.chatgpt-projects/g-p-6a5d817ef0788191bbc5427a19234f4c/sprint27_5_repair/exports/docx/google_strategy_operations_lead_youtube_auction_brand_trisha_lynch_styled_resume.docx",
+          "source_sha256": "6fdc80af4581d5fc6392c8293ad9d0d1ebd5c53b4f7d0f12caa97a50f3510658"
+        }
+      ]
+    },
+    "role": "Strategy and Operations Lead, YouTube Auction Brand",
+    "role_aliases": [
+      "Strategy and Operations Lead YouTube Auction Brand",
+      "Strategy Ops Lead YouTube Auction Brand"
+    ],
+    "role_family": "gtm_product_activation",
+    "salary_range": "US $152,000-$222,000 USD + 15% bonus target + equity + benefits",
+    "show_on_dashboard": false,
+    "source": "Official Google Careers",
+    "status": "Rejected",
+    "submitted_date": "2026-06-27"
+  },
+  "original_role_id": "google_strategy_ops_youtube_auction_brand",
+  "role_title": "Strategy and Operations Lead, YouTube Auction Brand",
+  "schema_version": 2,
+  "source_metadata": {
+    "source": "Official Google Careers"
+  },
+  "source_url": ""
+}

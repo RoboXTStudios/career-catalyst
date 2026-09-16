@@ -1,0 +1,34 @@
+{
+  "entries": [
+    {
+      "canonical_reconciliation_manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/legacy_versions/reconciliation_manifest.json",
+      "company": "Azira",
+      "original_file_count": 17,
+      "original_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations",
+      "original_total_size": 117143,
+      "original_tree_sha256": "2a062c3e14c8f3da662d9ac65a8d6abc1d4ed7ae8c096cbdb6944c9dfcf1fa96",
+      "quarantine_path": "/Users/trisha.lynch/Documents/career-catalyst/cleanup_quarantine/20260731T215000Z/duplicate_packages/active/in_progress/azira_director_chief_of_staff_business_operations",
+      "reason": "Alternate duplicate package reconciled into canonical legacy_versions and preserved in quarantine",
+      "role_id": "azira_director_chief_of_staff_business_operations",
+      "role_title": "Director, Chief of Staff & Business Operations",
+      "schema_version": 1,
+      "timestamp": "20260731T215000Z"
+    },
+    {
+      "canonical_reconciliation_manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/disney_entertainment_and_espn_product_technology_principal_product_mgr/legacy_versions/reconciliation_manifest.json",
+      "company": "Disney Entertainment and ESPN Product & Technology",
+      "original_file_count": 18,
+      "original_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr",
+      "original_total_size": 117517,
+      "original_tree_sha256": "172357a46c7bf2f2c2127550439edf1afe6214b9b306aab0b81792d3b0b72513",
+      "quarantine_path": "/Users/trisha.lynch/Documents/career-catalyst/cleanup_quarantine/20260731T215000Z/duplicate_packages/active/in_progress/disney_entertainment_and_espn_product_technology_principal_product_mgr",
+      "reason": "Alternate duplicate package reconciled into canonical legacy_versions and preserved in quarantine",
+      "role_id": "disney_entertainment_and_espn_product_technology_principal_product_mgr",
+      "role_title": "Principal Product Mgr",
+      "schema_version": 1,
+      "timestamp": "20260731T215000Z"
+    }
+  ],
+  "schema_version": 1,
+  "timestamp": "20260731T215000Z"
+}

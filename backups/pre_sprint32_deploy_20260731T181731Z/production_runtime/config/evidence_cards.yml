@@ -1,0 +1,292 @@
+evidence_cards:
+- id: omg23_disney_leadership
+  label: OMG23 / Disney entertainment leadership
+  short_description: Large-scale entertainment campaign operations leadership across
+    Disney theatrical and streaming work.
+  proof_points:
+  - Advanced from Campaign Manager to Group Director while leading Disney Studios
+    Theatrical and Disney Streaming/DSS campaign operations.
+  - Led 10 direct reports and provided strategic and operational leadership across
+    an integrated 64-person organization spanning Ad Operations, Creative Management,
+    and Marketing Science and Analytics.
+  tags:
+  - entertainment_marketing_operations
+  - creative_operations
+  - operations_leadership
+  - executive_communication
+  strongest_role_fits:
+  - entertainment marketing operations
+  - creative operations
+  - media operations
+  when_to_use: Use when a role needs entertainment marketing, campaign operations,
+    stakeholder coordination, or senior delivery leadership.
+  when_to_avoid: Avoid as the lead proof point for roles that are primarily founder,
+    editorial, or unrelated to marketing operations.
+  confidence_level: high
+  source: data/achievements.yml:omg23_advancement,cross_functional_leadership
+- id: campaignos
+  label: CampaignOS
+  short_description: Working prototype for AI-powered campaign operations focused
+    on workflow governance, QA, validation, and reporting.
+  proof_points:
+  - Designed an AI-powered campaign operations concept around schema-driven workflows,
+    validation frameworks, and operational reporting.
+  - Built from recurring enterprise entertainment operations problems and retained
+    as a working prototype pending representative campaign data and practical testing.
+  tags:
+  - ai_workflows
+  - product_thinking
+  - martech
+  - governance
+  - qa
+  - builder
+  strongest_role_fits:
+  - builder role
+  - martech operations
+  - product operations
+  - AI operations
+  when_to_use: Use when AI workflows, automation, workflow systems, product thinking,
+    martech, or builder orientation are directly relevant.
+  when_to_avoid: Do not include by default for traditional PMO or generic operations
+    roles unless the job clearly asks for automation, systems, or product thinking.
+  confidence_level: high
+  source: data/projects.yml:CampaignOS;data/achievements.yml:campaignos_ai_operations
+- id: career_catalyst
+  label: Career Catalyst
+  short_description: Personal career strategy and materials generation system demonstrating
+    builder mindset and practical AI workflow design.
+  proof_points:
+  - Built a role-aware system for parsing opportunities, scoring fit, and generating
+    application materials from structured evidence.
+  tags:
+  - builder
+  - ai_workflows
+  - product_thinking
+  - career_strategy
+  strongest_role_fits:
+  - human agency builder role
+  - AI workflow role
+  - product operations
+  when_to_use: Use for builder-friendly, human agency, AI workflow, or product-minded
+    roles.
+  when_to_avoid: Avoid for traditional PMO, governance-only, or conservative enterprise
+    roles unless tooling/building is requested.
+  confidence_level: medium
+  source: repository behavior and project scope
+- id: roboxt_studios
+  label: RoboXT Studios
+  short_description: Launched public creative platform combining editorial work, photography,
+    digital projects, creative direction, and technology-enabled experimentation.
+  proof_points:
+  - Demonstrates public creative-platform strategy, information architecture, WordPress
+    development, visual direction, content production, and brand development.
+  tags:
+  - builder
+  - creative_work
+  - ai_workflows
+  - entrepreneurship
+  strongest_role_fits:
+  - human agency builder role
+  - startup operations
+  - creative AI role
+  when_to_use: Use only for entrepreneurial, builder-friendly, or creative AI roles.
+  when_to_avoid: Avoid for traditional PMO, governance, entertainment marketing operations,
+    or conservative enterprise roles.
+  confidence_level: medium
+  source: early-stage concept notes
+- id: governance_qa_delivery
+  label: Governance, QA, and delivery leadership
+  short_description: Practical operating discipline across workflows, quality standards,
+    risk visibility, and dependable delivery.
+  proof_points:
+  - Introduced scalable workflows, governance practices, and execution standards across
+    marketing, technology, analytics, and creative teams.
+  - Connected quality assurance, measurement readiness, and partner coordination in
+    campaign delivery.
+  tags:
+  - governance
+  - qa
+  - pmo
+  - operations_leadership
+  - executive_communication
+  strongest_role_fits:
+  - traditional PMO
+  - governance
+  - delivery leadership
+  - operations
+  when_to_use: Use for PMO, governance, delivery, process excellence, QA, or executive
+    visibility roles.
+  when_to_avoid: Avoid making it sound more technical or quantified than the stored
+    evidence supports.
+  confidence_level: high
+  source: data/achievements.yml:workflow_governance,disney_plus_launch_support
+- id: martech_campaign_execution
+  label: Martech and campaign execution
+  short_description: Campaign, platform, measurement, and operational workflows across
+    entertainment advertisers.
+  proof_points:
+  - Translated Google and YouTube platform capabilities into campaign execution, measurement
+    readiness, and operational workflows.
+  - Connected brand objectives, platform activation, analytics, technology, and delivery
+    across large entertainment advertisers.
+  tags:
+  - martech
+  - adtech
+  - campaign_execution
+  - measurement
+  - entertainment_marketing_operations
+  strongest_role_fits:
+  - martech operations
+  - CRM operations
+  - adtech operations
+  - GTM activation
+  when_to_use: Use for martech, CRM, lifecycle, adtech, platform activation, or measurement-readiness
+    roles.
+  when_to_avoid: Avoid implying formal Google employment or unsupported platform partnership.
+  confidence_level: high
+  source: data/achievements.yml:google_youtube_platform_familiarity
+- id: photography_creative_voice
+  label: Photography and creative voice
+  short_description: Creative practice and visual/editorial judgment that can support
+    audience, content, or creative operations narratives.
+  proof_points:
+  - Demonstrates creative judgment and human voice when the role explicitly values
+    content, photography, storytelling, or creative practice.
+  tags:
+  - photography
+  - creative_work
+  - storytelling
+  - editorial
+  strongest_role_fits:
+  - creative operations
+  - content strategy
+  - community role
+  when_to_use: Use only when the role explicitly values creative practice, visual
+    storytelling, or editorial voice.
+  when_to_avoid: Avoid for PMO, governance, martech, or entertainment operations roles
+    where it distracts from role evidence.
+  confidence_level: medium
+  source: personal creative practice
+- id: career_catalyst_codex_delivery
+  label: Career Catalyst Codex-directed Development
+  short_description: Directed Codex through scoped software-development sprints with
+    explicit context, goals, architecture, implementation constraints, tests, and
+    completion-report requirements.
+  proof_points:
+  - Directed Codex through scoped software-development sprints with explicit context,
+    goals, architecture, implementation constraints, tests, and completion-report
+    requirements.
+  tags:
+  - Codex
+  - ai_workflows
+  - implementation direction
+  - product_thinking
+  - sprints
+  - structured prompting
+  - technical_program_leadership
+  strongest_role_fits:
+  - AI Program Leadership
+  - AI Product Owner
+  when_to_use: Use for application strategy, career analytics, cover letter, hiring
+    manager lens, interview, linkedin, match scoring, recruiter messages, role interpreter.
+  when_to_avoid: Do not claim sole software engineering.
+  confidence_level: high
+  source: Sprint 24 AI Product and Codex evidence, July 2026
+  usage_controls:
+    resume: false
+    cover_letter: true
+    interview: true
+    linkedin: true
+    recruiter_messages: true
+    match_scoring: true
+    hiring_manager_lens: true
+    role_interpreter: true
+    application_strategy: true
+    career_analytics: true
+  provenance:
+    where: Conversation
+    when: July 2026
+    how: Explicitly confirmed by the user in the Sprint 24 AI Product and Codex evidence
+      specification
+    confidence: High
+  preserved_record:
+    id: career_catalyst_codex_delivery
+    title: Career Catalyst Codex-directed Development
+    description: Directed Codex through scoped software-development sprints with explicit
+      context, goals, architecture, implementation constraints, tests, and completion-report
+      requirements.
+    category: AI Systems
+    subcategory: AI-assisted implementation direction
+    skills:
+    - Codex implementation direction
+    - structured prompting
+    - sprint-based development
+    - technical program leadership
+    platforms:
+    - OpenAI Codex
+    - Git
+    - GitHub
+    industries:
+    - Career Technology
+    - Artificial Intelligence
+    clients: []
+    evidence_type: User Confirmed
+    source: Conversation
+    source_reference: Sprint 24 AI Product and Codex evidence, July 2026
+    confidence: High
+    verification_status: User Confirmed
+    resume_visibility: Not Included
+    recommended_usage:
+      resume: false
+      cover_letter: true
+      interview: true
+      linkedin: true
+      recruiter_messages: true
+      match_scoring: true
+      hiring_manager_lens: true
+      role_interpreter: true
+      application_strategy: true
+      career_analytics: true
+    recommended_usage_notes: []
+    positioning_emphases:
+    - AI Program Leadership
+    - AI Product Owner
+    career_period: Independent product development
+    company: Independent
+    role: Codex Implementation Director
+    years: null
+    related_evidence:
+    - career_catalyst_ai_product
+    - career_catalyst_requirements_engineering
+    - career_catalyst_software_delivery
+    - career_catalyst_product_testing
+    related_projects:
+    - Career Catalyst
+    related_tools:
+    - OpenAI Codex
+    - Git
+    - GitHub
+    technical_depth: Moderate
+    leadership_scope: Scoped and directed iterative AI-assisted implementation
+    customer_facing: Not specified
+    people_management: Directed an AI coding agent; no engineering-team management
+      claimed
+    tags:
+    - Codex
+    - structured prompting
+    - implementation direction
+    - sprints
+    notes:
+    - Do not claim sole software engineering.
+    provenance:
+      where: Conversation
+      when: July 2026
+      how: Explicitly confirmed by the user in the Sprint 24 AI Product and Codex
+        evidence specification
+      confidence: High
+    last_updated: '2026-07-18T00:00:00+00:00'
+    created_at: '2026-07-18T00:00:00+00:00'
+    updated_at: '2026-07-18T00:00:00+00:00'
+  reconciliation:
+    report_sha256: 624f895157d2d0b1da394adedc0c670aa2acc290143cc8579c1deae5f168caa5
+    preserved_record_sha256: 1a9952a3b08ff8587b7daa8d3d43029180c1f189e76fdd6f4ecb00c478fcfff4

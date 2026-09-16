@@ -1,0 +1,47 @@
+voice_name: "Warm Executive Operator"
+
+tone:
+  - warm
+  - human
+  - confident
+  - strategic
+  - grounded
+  - slightly enthusiastic
+
+avoid:
+  - "I am writing to express my interest"
+  - "I believe I would be a strong fit"
+  - "leveraging my experience"
+  - "dynamic professional"
+  - "proven track record"
+  - "synergies"
+  - "thrilled"
+  - "perfect fit"
+  - "rockstar"
+  - "ninja"
+  - "20+ years"
+  - "two decades"
+  - "nearly two decades"
+  - "seasoned"
+  - "veteran"
+  - "decades of experience"
+  - "FX"
+  - "Disney Branded Television"
+  - "National Geographic"
+  - "Bachelor's degree"
+  - "Bachelor degree"
+  - "Master's degree"
+  - "Master degree"
+  - "MBA"
+  - "doctorate"
+  - "PhD"
+
+rules:
+  - "No em dashes"
+  - "Do not invent relationships or referrals"
+  - "Show warmth through specificity"
+  - "Keep confidence calm and earned"
+  - "Avoid keyword stuffing"
+  - "Describe capability, scope, progression, and impact without age-signaling language"
+  - "Do not present FX, Disney Branded Television, or National Geographic as candidate-supported brands"
+  - "Do not add an academic degree or credential that is not present in the approved candidate baseline"

@@ -1,0 +1,14 @@
+{
+  "canonical_reconciliation_manifest_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/applied_followup/azira_director_chief_of_staff_business_operations/legacy_versions/reconciliation_manifest.json",
+  "company": "Azira",
+  "original_file_count": 17,
+  "original_path": "/Users/trisha.lynch/Documents/career-catalyst/exports/active/in_progress/azira_director_chief_of_staff_business_operations",
+  "original_total_size": 117143,
+  "original_tree_sha256": "2a062c3e14c8f3da662d9ac65a8d6abc1d4ed7ae8c096cbdb6944c9dfcf1fa96",
+  "quarantine_path": "/Users/trisha.lynch/Documents/career-catalyst/cleanup_quarantine/20260731T215000Z/duplicate_packages/active/in_progress/azira_director_chief_of_staff_business_operations",
+  "reason": "Alternate duplicate package reconciled into canonical legacy_versions and preserved in quarantine",
+  "role_id": "azira_director_chief_of_staff_business_operations",
+  "role_title": "Director, Chief of Staff & Business Operations",
+  "schema_version": 1,
+  "timestamp": "20260731T215000Z"
+}
