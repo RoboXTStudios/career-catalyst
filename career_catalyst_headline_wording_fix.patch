@@ -1,0 +1,23 @@
+diff --git a/tests/test_sprint35b_document_writing.py b/tests/test_sprint35b_document_writing.py
+index b52cd95..3f71eae 100644
+--- a/tests/test_sprint35b_document_writing.py
++++ b/tests/test_sprint35b_document_writing.py
+@@ -29,7 +29,17 @@ from tests.test_sprint35_package_scoring_reliability import (
+ # every candidate-facing document should present the same person. See
+ # scripts/role_intent.py for where per-archetype headline/summary overrides
+ # were intentionally removed.
+-GOLDEN_MASTER_HEADLINE = "Senior Operations & Transformation Leader | MarTech | AI Systems | Entertainment"
++#
++# Read the headline directly from personal_brand.yml rather than hardcoding
++# it here — the resume renderer does the same (see scripts/tailor_resume.py),
++# so this test stays correct even if the wording in personal_brand.yml is
++# tweaked later, instead of raising a false alarm.
++def _golden_master_headline() -> str:
++    brand = yaml.safe_load((ROOT / "data" / "personal_brand.yml").read_text())
++    return str(brand["candidate"]["headline"])
++
++
++GOLDEN_MASTER_HEADLINE = _golden_master_headline()
+ 
+ CASES = (
+     (
