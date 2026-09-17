@@ -1,7 +1,0 @@
-Hello,
-
-I'm reaching out about the Senior Director, Team Operations role at Universal Music Group (UMG Recordings Inc). It stood out because it connects transformation thinking, stakeholder recommendations, operating models, and execution. My experience spans senior stakeholder alignment, operating-model design, and CampaignOS as strategy translated into a working system. That combination of clear context and disciplined execution is where I do my best work. If you're the right person to speak with, I would be glad to share more. If not, would you mind pointing me in the right direction?
-
-Best,
-
-Trisha Lynch

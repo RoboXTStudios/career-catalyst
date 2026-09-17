@@ -1,5 +1,0 @@
-pid=17272
-port=8503
-url=http://127.0.0.1:8503
-code_root=/Users/trisha.lynch/.codex/.chatgpt-projects/g-p-6a5d817ef0788191bbc5427a19234f4c/main_verification_sprint28_5_dd3675a
-entrypoint=/Users/trisha.lynch/.codex/.chatgpt-projects/g-p-6a5d817ef0788191bbc5427a19234f4c/main_verification_sprint28_5_dd3675a/launchers/career_catalyst_entrypoint.py

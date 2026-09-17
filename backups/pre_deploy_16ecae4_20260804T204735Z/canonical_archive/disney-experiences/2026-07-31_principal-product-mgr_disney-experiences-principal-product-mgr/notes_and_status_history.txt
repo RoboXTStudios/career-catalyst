@@ -1,8 +1,0 @@
-Notes
------
-None
-
-Status history
---------------
-{"date": "2026-07-29", "event": "status changed", "from": "Under Consideration", "to": "Withdrawn / Closed"}
-{"archive_reason": "Hidden / Invalid", "date": "2026-07-29T22:10:08.808724+00:00", "event": "role archived", "status": "Withdrawn / Closed"}

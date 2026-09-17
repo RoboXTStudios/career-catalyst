@@ -1,7 +1,0 @@
-Notes
------
-None
-
-Status history
---------------
-{"archive_reason": "Hidden / Invalid", "date": "2026-07-29T22:09:48.645372+00:00", "event": "role archived", "status": "Withdrawn / Closed"}

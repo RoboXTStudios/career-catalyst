@@ -1,7 +1,0 @@
-Hello,
-
-I'm reaching out about the Sr. Manager, Strategic Integration & Operations role at Warner Chappell Music Inc. It stood out because it connects ownership, capacity, decision cadence, and reliable cross-functional execution. I have led teams of 60+ and built workflow governance, execution standards, dashboards, and operational reporting. That combination of clear context and disciplined execution is where I do my best work. If you're the right person to speak with, I would be glad to share more. If not, would you mind pointing me in the right direction?
-
-Best,
-
-Trisha Lynch

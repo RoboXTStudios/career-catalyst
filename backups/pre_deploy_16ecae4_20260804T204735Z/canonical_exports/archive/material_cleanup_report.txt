@@ -1,9 +1,0 @@
-Career Catalyst Material Cleanup Report
-
-Active role folders: 2
-Archived role folders: 1
-Legacy Markdown files archived (total): 282
-Legacy TXT files archived (total): 282
-Legacy files retained for review: 56
-Files/roles left as-is: 56
-Warnings / needs review: None

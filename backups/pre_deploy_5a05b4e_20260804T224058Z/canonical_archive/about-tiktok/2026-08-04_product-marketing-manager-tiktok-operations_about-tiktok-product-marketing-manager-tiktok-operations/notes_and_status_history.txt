@@ -1,8 +1,0 @@
-Notes
------
-None
-
-Status history
---------------
-{"date": "2026-07-30", "event": "status changed", "from": "Drafted", "to": "Paused"}
-{"date": "2026-07-31", "event": "status changed", "from": "Considered", "to": "Withdrawn / Closed"}
