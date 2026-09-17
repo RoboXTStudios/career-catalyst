@@ -9,7 +9,7 @@ applications:
   role_aliases:
   - Head Global Creative Product Development Operations
   - Head of Global Creative and Product Development Operations
-  status: Withdrawn / Closed
+  status: Rejected
   priority: Do Not Pursue
   source: Official Greenhouse
   submitted_date: '2026-06-27'
@@ -58,7 +58,7 @@ applications:
   - Posting age is unknown; verify that the role is still active.
   recommended_action: Generate Package
   confidence: High
-  status_updated_at: '2026-07-13T11:54:34'
+  status_updated_at: '2026-09-17'
   legacy_status: Paused
 - id: google_strategy_ops_youtube_auction_brand
   company: Google
@@ -200,7 +200,7 @@ applications:
   role: Director, Marketing Operations
   role_aliases:
   - Director Marketing Operations
-  status: Withdrawn / Closed
+  status: Rejected
   priority: High
   source: Official Paramount Careers
   submitted_date: '2026-06-29'
@@ -255,7 +255,7 @@ applications:
   recommended_action: Generate Package
   confidence: High
   follow_up_status: Follow-up sent
-  status_updated_at: '2026-07-21T09:29:11'
+  status_updated_at: '2026-09-17'
   suggested_follow_up_date: '2026-07-04'
   verification_status: Employer Source
   verification_notes: Source label indicates an employer careers page, but the original source URL was not stored. Verify manually if needed.; posting date missing; verify manually
@@ -6855,7 +6855,7 @@ applications:
   company_aliases: []
   role: Product Strategy and Operations Director
   role_aliases: []
-  status: Withdrawn / Closed
+  status: Rejected
   priority: Do Not Pursue
   source: Company career page
   notes: "already applied on 6/28/26 \nhttps://jobs.disneycareers.com/job/san-francisco/product-strategy-and-operations-director/391/95265580544"
@@ -6927,7 +6927,7 @@ applications:
     voice_match: 90
     confidence_level: High
     confidence_score: 91
-  status_updated_at: '2026-07-13T12:00:33'
+  status_updated_at: '2026-09-17'
   legacy_status: Invalid/Hidden
   posting_url: https://www.disneycareers.com/en/job/san-francisco/product-strategy-and-operations-director/391/95265580544
   application_portal_url: ''
@@ -24811,7 +24811,7 @@ applications:
   company_aliases: []
   role: Director, People Operations
   role_aliases: []
-  status: Withdrawn / Closed
+  status: Rejected
   priority: Medium
   source: Ashby
   notes: ''
@@ -24868,7 +24868,7 @@ applications:
   legacy_status: Reviewed
   posting_url: https://jobs.ashbyhq.com/united-talent-agency/ca81fbe4-1f8b-4718-be84-d1feb6989bc4
   application_portal_url: ''
-  status_updated_at: '2026-07-19T11:29:26'
+  status_updated_at: '2026-09-17'
   application_history:
   - event: status changed
     from: Drafted
@@ -25436,7 +25436,7 @@ applications:
   company_aliases: []
   role: Strategy and Operations Associate, YouTube Music and Premium
   role_aliases: []
-  status: Withdrawn / Closed
+  status: Rejected
   priority: Medium
   source: Google Careers
   notes: ''
@@ -25656,7 +25656,7 @@ applications:
     voice_match: 99
     confidence_level: High
     confidence_score: 82
-  status_updated_at: '2026-07-19T11:29:03'
+  status_updated_at: '2026-09-17'
   application_history:
   - event: status changed
     from: Drafted
