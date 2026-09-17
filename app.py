@@ -806,6 +806,7 @@ def apply_dashboard_status_action(
         "applied": {"status": "Applied", "show_on_dashboard": True},
         "reviewed": {"status": "Drafted", "show_on_dashboard": True},
         "paused": {"status": "Withdrawn / Closed", "show_on_dashboard": False},
+        "rejected": {"status": "Rejected", "show_on_dashboard": False},
         "pass": {"status": "Withdrawn / Closed", "show_on_dashboard": False},
         "invalid_hidden": {"status": "Withdrawn / Closed", "show_on_dashboard": False},
         "active": {"status": "Drafted", "show_on_dashboard": True},
@@ -1646,7 +1647,7 @@ def _render_role_card(
                 st.caption(f"Legacy status: {legacy}")
 
         with st.expander("More actions", expanded=False):
-            more_columns = st.columns(4)
+            more_columns = st.columns(5)
             bucket = workflow_status_bucket(application)
             if get_record_status(application) not in {"Rejected", "Withdrawn / Closed"} and more_columns[0].button(
                 "Withdraw / Close",
@@ -1656,7 +1657,15 @@ def _render_role_card(
                 apply_dashboard_status_action(tracker_id, "paused", PROJECT_ROOT)
                 st.session_state["dashboard_notice"] = "Role moved to Withdrawn / Closed."
                 st.rerun()
-            if more_columns[1].button(
+            if get_record_status(application) != "Rejected" and more_columns[1].button(
+                "Reject",
+                key=f"dashboard_more_reject_{tracker_id}",
+                use_container_width=True,
+            ):
+                apply_dashboard_status_action(tracker_id, "rejected", PROJECT_ROOT)
+                st.session_state["dashboard_notice"] = "Role marked as Rejected."
+                st.rerun()
+            if more_columns[2].button(
                 "Verify manually",
                 key=f"dashboard_more_verify_{tracker_id}",
                 use_container_width=True,
@@ -1665,7 +1674,7 @@ def _render_role_card(
                     st.session_state, dashboard_role_reference(application)
                 )
                 st.rerun()
-            if get_record_status(application) == "Drafted" and more_columns[2].button(
+            if get_record_status(application) == "Drafted" and more_columns[3].button(
                 "Keep Drafted",
                 key=f"dashboard_more_reviewed_{tracker_id}",
                 use_container_width=True,
@@ -1674,7 +1683,7 @@ def _render_role_card(
                 st.session_state["dashboard_notice"] = "Role remains Drafted."
                 st.rerun()
             follow_up_action = follow_up_action_state(application)
-            if follow_up_action["eligible"] and more_columns[3].button(
+            if follow_up_action["eligible"] and more_columns[4].button(
                 "Generate Follow-Up",
                 key=f"dashboard_more_followup_{tracker_id}",
                 use_container_width=True,
@@ -1687,7 +1696,7 @@ def _render_role_card(
                     st.session_state["dashboard_notice"] = "Follow-up materials generated."
                     st.rerun()
             elif not follow_up_action["eligible"]:
-                more_columns[3].caption(
+                more_columns[4].caption(
                     f"{follow_up_action['label']}: {follow_up_action['reason']}"
                 )
 
