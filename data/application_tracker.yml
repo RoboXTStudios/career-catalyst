@@ -2631,18 +2631,12 @@ applications:
   company_aliases: []
   role: Director, Concert Communications
   role_aliases: []
-  status: Under Consideration
+  status: Rejected
   priority: High
   source: Workday
-  notes: 'https://livenation.wd503.myworkdayjobs.com/en-US/LNExternalSite/userHome?q=media&timeType=def6fe28d9a210a683974354a3d819b6&Location_Region_State_Province=ec3d210e4240442e99a28fa70419aec5&Location_Country=bc33aa3152ec42d4995f4791a106ed09
-
-
-    Workday Status: Under Consideration
-
-
-    Workday Status: Under Consideration'
+  notes: "https://livenation.wd503.myworkdayjobs.com/en-US/LNExternalSite/userHome?q=media&timeType=def6fe28d9a210a683974354a3d819b6&Location_Region_State_Province=ec3d210e4240442e99a28fa70419aec5&Location_Country=bc33aa3152ec42d4995f4791a106ed09\n\nWorkday Status: Under Consideration\n\nWorkday Status: Under Consideration\n\nUpdate: Received rejection via email in early September 2026."
   next_action: Review fit and generate application package.
-  show_on_dashboard: true
+  show_on_dashboard: false
   official_url: https://livenation.wd503.myworkdayjobs.com/en-US/LNExternalSite/details/Director--Concert-Communications_JR-89915?q=director%20communications
   application_portal_url: https://livenation.wd503.myworkdayjobs.com/en-US/LNExternalSite/userHome?locations=6a80e5db313d01094e8178466c01d374&locations=6a80e5db313d011d25a219466c01a674&locations=4dc3f073ea69106bf6465030854bda50&locations=4dc3f073ea69106bf61611aeb776d8ab&locations=4dc3f073ea69106bf5849dde2086d269&timeType=def6fe28d9a210a683974354a3d819b6
   location: Beverly Hills, CA, USA, United States of America
@@ -2692,11 +2686,11 @@ applications:
   canonical_employer: Live Nation Worldwide, Inc.
   recommended_next_step: Proceed using the canonical employer application.
   submitted_date: '2026-07-01'
-  status_updated_at: '2026-07-13T11:51:02'
+  status_updated_at: '2026-09-17'
   source_verified: true
   follow_up_status: Follow-up sent
   suggested_follow_up_date: '2026-07-06'
-  legacy_status: Active
+  legacy_status: 'Closed'
   posting_url: https://livenation.wd503.myworkdayjobs.com/en-US/LNExternalSite/details/Director--Concert-Communications_JR-89915?q=director%20communications
   role_lens: business_operations
   secondary_role_lens: program_portfolio_management
