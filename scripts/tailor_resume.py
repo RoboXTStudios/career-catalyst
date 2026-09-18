@@ -10,7 +10,7 @@ try:
     from .filename_utils import build_upload_filename
     from .load_data import load_all_yaml
     from .evidence_engine import load_writing_voice_profile
-    from .evidence_profile import load_evidence_profile, select_profile_evidence
+    from .evidence_profile import infer_framing_lens, load_evidence_profile, select_profile_evidence
     from .role_evidence_selection import selected_evidence
     from .human_positioning import (
         professional_summary,
@@ -34,7 +34,7 @@ except ImportError:
     from filename_utils import build_upload_filename
     from load_data import load_all_yaml
     from evidence_engine import load_writing_voice_profile
-    from evidence_profile import load_evidence_profile, select_profile_evidence
+    from evidence_profile import infer_framing_lens, load_evidence_profile, select_profile_evidence
     from role_evidence_selection import selected_evidence
     from human_positioning import (
         professional_summary,
@@ -600,20 +600,28 @@ def _render_markdown(
         positions[0] if positions else {},
     )
     experience_bullets = _select_experience_bullets(career_data, parsed_job, resume_profile)
+    role_framing = infer_framing_lens(
+        parsed_job.get("job_title") or "", parsed_job.get("raw_text") or ""
+    )
+
+    def framed_description(item: Dict[str, Any]) -> str:
+        framing = item.get("framing", {}).get(role_framing) if role_framing else None
+        return str(framing or item.get("description") or "").strip()
+
     professional_evidence = [
-        str(item.get("description") or "").strip()
+        framed_description(item)
         for item in resume_evidence
         if "omg23" in _normalize_text(
             f"{item.get('career_period') or ''} {item.get('company') or ''}"
         )
-        and str(item.get("description") or "").strip()
+        and framed_description(item)
     ]
     experience_bullets = _dedupe([*professional_evidence, *experience_bullets])[:10]
     independent_evidence = [
-        str(item.get("description") or "").strip()
+        framed_description(item)
         for item in resume_evidence
-        if str(item.get("description") or "").strip()
-        and str(item.get("description") or "").strip() not in professional_evidence
+        if framed_description(item)
+        and framed_description(item) not in professional_evidence
     ]
     selected_projects = _selected_projects(career_data, parsed_job, resume_profile)
     earlier_position = _earlier_career(career_data)

@@ -20,7 +20,7 @@ try:
         update_status,
     )
     from .dynamic_role_intelligence import get_effective_voice_profile
-    from .evidence_profile import evidence_as_card
+    from .evidence_profile import evidence_as_card, infer_framing_lens
     from .export_docx import export_ats_docx, export_styled_docx
     from .generate_application_note import generate_application_note
     from .generate_cover_letter import generate_cover_letter
@@ -61,7 +61,7 @@ except ImportError:
         update_status,
     )
     from dynamic_role_intelligence import get_effective_voice_profile
-    from evidence_profile import evidence_as_card
+    from evidence_profile import evidence_as_card, infer_framing_lens
     from export_docx import export_ats_docx, export_styled_docx
     from generate_application_note import generate_application_note
     from generate_cover_letter import generate_cover_letter
@@ -410,7 +410,9 @@ def build_package_context(
         intelligence["hiring_manager_lens"],
         match_report,
         [
-            evidence_as_card(item)
+            evidence_as_card(
+                item, role_framing=infer_framing_lens(role_title, job_description)
+            )
             for item in selected_evidence(intelligence["role_evidence_selection"])
         ],
     )

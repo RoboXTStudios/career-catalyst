@@ -451,13 +451,41 @@ def select_profile_evidence(
     return [item for _score, _id, item in ranked[:max_items]]
 
 
-def evidence_as_card(item: dict[str, Any]) -> dict[str, Any]:
+def infer_framing_lens(job_title: str, job_text: str = "") -> str:
+    """Choose evidence phrasing from the title, then strong job-text signals."""
+    title = (job_title or "").lower()
+    if any(term in title for term in (
+        "program manager", "programme manager", "technical program manager", "tpm",
+    )):
+        return "program_manager"
+    if any(term in title for term in (
+        "operations manager", "director of operations", "operations director",
+        "vp, operations", "vp operations", "business operations",
+    )):
+        return "operations_manager"
+    text = (job_text or "")[:4000].lower()
+    program_count = sum(text.count(term) for term in (
+        "program management", "cross-functional program", "program delivery", "milestones",
+    ))
+    operations_count = sum(text.count(term) for term in (
+        "day-to-day operations", "operational efficiency", "process improvement", "resourcing",
+    ))
+    if program_count >= 2 and program_count > operations_count:
+        return "program_manager"
+    if operations_count >= 2 and operations_count > program_count:
+        return "operations_manager"
+    return ""
+
+
+def evidence_as_card(item: dict[str, Any], role_framing: Optional[str] = None) -> dict[str, Any]:
     """Adapt one canonical Evidence object to the legacy evidence-card interface."""
+    framing = item.get("framing", {}).get(role_framing) if role_framing else None
+    description = framing or item.get("description")
     return {
         "id": str(item.get("id")),
         "label": str(item.get("title")),
-        "short_description": str(item.get("description")),
-        "proof_points": [str(item.get("description"))],
+        "short_description": str(description),
+        "proof_points": [str(description)],
         "tags": _dedupe(
             [item.get("category"), item.get("subcategory"), *(item.get("skills") or []), *(item.get("tags") or [])]
         ),

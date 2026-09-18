@@ -23,6 +23,7 @@ try:
     from .evidence_engine import load_evidence_cards, load_writing_voice_profile
     from .evidence_profile import (
         evidence_as_card,
+        infer_framing_lens,
         load_evidence_profile,
     )
     from .capability_graph import load_capability_graph
@@ -67,7 +68,7 @@ except ImportError:
     from company_voice import company_voice_context
     from cover_letter_quality import cover_letter_quality_pass
     from evidence_engine import load_evidence_cards, load_writing_voice_profile
-    from evidence_profile import evidence_as_card, load_evidence_profile
+    from evidence_profile import evidence_as_card, infer_framing_lens, load_evidence_profile
     from capability_graph import load_capability_graph
     from role_evidence_selection import selected_evidence as selected_role_evidence
     from employer_identity import (
@@ -180,7 +181,15 @@ def load_generation_context(
         item for item in exact_role_evidence
         if (item.get("recommended_usage") or {}).get("interview", True)
     ][:8]
-    exact_role_evidence_cards = [evidence_as_card(item) for item in exact_role_evidence]
+    exact_role_evidence_cards = [
+        evidence_as_card(
+            item,
+            role_framing=infer_framing_lens(
+                parsed_job.get("job_title") or "", parsed_job.get("raw_text") or ""
+            ),
+        )
+        for item in exact_role_evidence
+    ]
     combined_selected_evidence = list(exact_role_evidence_cards)
     effective_voice = dict(voice_context.get("effective_voice_profile") or {})
     effective_voice.update({
