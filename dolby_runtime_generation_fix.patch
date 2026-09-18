@@ -1,0 +1,246 @@
+--- a/scripts/candidate_output.py
++++ b/scripts/candidate_output.py
+@@ -254,7 +254,7 @@
+     ).lower()
+     customer = any(
+         phrase in text
+-        for phrase in ("customer experience", "customer success", "customer journey", "voice of customer")
++        for phrase in ("customer experience", "customer success", "voice of customer")
+     )
+     traditional_saas = customer and any(
+         phrase in text
+@@ -310,9 +310,17 @@
+ }
+ 
+ 
+-def evidence_recipe(archetype: str, limit: int = 6) -> list[str]:
++def evidence_recipe(archetype: str, limit: int = 6, framing: Mapping[str, str] | None = None) -> list[str]:
+     keys = EVIDENCE_RECIPES.get(archetype, EVIDENCE_RECIPES["general_operations"])
+-    return [COMMON_EVIDENCE[key] for key in keys[:limit]]
++    descriptions = dict(COMMON_EVIDENCE)
++    for key, evidence_id in {
++        "delivery": "campaign_operations_leadership",
++        "airtable": "workflow_design",
++        "disney_plus": "launch_readiness",
++    }.items():
++        if (framing or {}).get(evidence_id):
++            descriptions[key] = framing[evidence_id]
++    return [descriptions[key] for key in keys[:limit]]
+ 
+ 
+ def _product_evidence_cover_letter(
+@@ -544,6 +552,14 @@
+             "turning priorities into measurable, consistent progress. I would value the opportunity to discuss how this experience "
+             f"could support the {role} team."
+         )
++    framing = context.get("framed_evidence") or {}
++    if not adjacency["customer_experience"] and all(
++        framing.get(key) for key in (
++            "campaign_operations_leadership", "workflow_design", "launch_readiness"
++        )
++    ):
++        execution = " ".join((framing["campaign_operations_leadership"], framing["workflow_design"]))
++        proof = framing["launch_readiness"]
+     content = "\n\n".join((greeting, opening, leadership, execution, proof, closing, "Best,\n\nTrisha Lynch"))
+     validate_candidate_output(content, context="Generated cover letter")
+     return content
+--- a/scripts/generate_cover_letter.py
++++ b/scripts/generate_cover_letter.py
+@@ -12,6 +12,7 @@
+ 
+ try:
+     from .docx_quality import sanitize_docx
++    from .evidence_framing import load_framed_evidence
+     from .candidate_output import (
+         candidate_cover_letter,
+         cover_letter_evidence_decision,
+@@ -60,6 +61,7 @@
+     from .role_intent import build_role_intent
+ except ImportError:
+     from docx_quality import sanitize_docx
++    from evidence_framing import load_framed_evidence
+     from candidate_output import (
+         candidate_cover_letter,
+         cover_letter_evidence_decision,
+@@ -148,6 +150,7 @@
+     editing_plan = material_editing_plan(parsed_job, root, shared_role_intent)
+     context = {
+         "root": root,
++        "framed_evidence": load_framed_evidence(root, parsed_job),
+         "career_data": career_data,
+         "voice": career_data["config"].get("voice", {}),
+         "writing_voice": writing_voice,
+--- a/scripts/tailor_resume.py
++++ b/scripts/tailor_resume.py
+@@ -5,6 +5,7 @@
+ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
+ 
+ try:
++    from .evidence_framing import load_framed_evidence
+     from .candidate_output import (
+         competency_recipe,
+         evidence_recipe,
+@@ -41,6 +42,7 @@
+     from .text_cleanup import cleanup_repeated_words, normalize_candidate_text
+     from .role_intent import build_role_intent
+ except ImportError:
++    from evidence_framing import load_framed_evidence
+     from candidate_output import (
+         competency_recipe,
+         evidence_recipe,
+@@ -600,6 +602,7 @@
+         return evidence_recipe(
+             archetype,
+             int((role_intent or {}).get("resume", {}).get("omg23_bullet_limit") or 6),
++            framing=career_data.get("framed_evidence"),
+         )
+ 
+     candidate_bullets = []
+@@ -1188,6 +1191,7 @@
+         if parsed_job_override is not None
+         else parse_job_description(root / job_path)
+     )
++    career_data["framed_evidence"] = load_framed_evidence(root, parsed_job)
+     shared_role_intent = role_intent or build_role_intent(parsed_job, root)
+     evidence_selection = select_evidence_for_artifact(
+         parsed_job,
+--- /dev/null
++++ b/scripts/evidence_framing.py
+@@ -0,0 +1,41 @@
++"""Load role-specific evidence phrasing afresh for each generation."""
++from pathlib import Path
++import yaml
++
++def infer_framing_lens(job_title: str, job_text: str = "") -> str:
++    """Choose evidence phrasing from the title, then strong job-text signals."""
++    title = (job_title or "").lower()
++    if any(term in title for term in (
++        "program manager", "programme manager", "technical program manager", "tpm",
++    )):
++        return "program_manager"
++    if any(term in title for term in (
++        "operations manager", "director of operations", "operations director",
++        "vp, operations", "vp operations", "business operations",
++    )):
++        return "operations_manager"
++    text = (job_text or "")[:4000].lower()
++    program_count = sum(text.count(term) for term in (
++        "program management", "cross-functional program", "program delivery", "milestones",
++    ))
++    operations_count = sum(text.count(term) for term in (
++        "day-to-day operations", "operational efficiency", "process improvement", "resourcing",
++    ))
++    if program_count >= 2 and program_count > operations_count:
++        return "program_manager"
++    if operations_count >= 2 and operations_count > program_count:
++        return "operations_manager"
++    return ""
++
++
++def load_framed_evidence(project_root, parsed_job):
++    lens = infer_framing_lens(parsed_job.get("job_title") or "", parsed_job.get("raw_text") or parsed_job.get("job_description") or "")
++    path = Path(project_root) / "data" / "evidence_profile.yml"
++    if not lens or not path.is_file():
++        return {}
++    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
++    return {
++        item["id"]: item["framing"][lens]
++        for item in data.get("evidence", [])
++        if (item.get("framing") or {}).get(lens)
++    }
+--- /dev/null
++++ b/tests/test_dolby_generation_isolation.py
+@@ -0,0 +1,41 @@
++from pathlib import Path
++import shutil
++
++from scripts.candidate_output import domain_adjacency
++from scripts.generate_cover_letter import generate_cover_letter, load_generation_context
++from scripts.parse_job import parse_job_description
++from scripts.tailor_resume import tailor_resume
++
++ROOT = Path(__file__).resolve().parents[1]
++
++
++def test_customer_journeys_do_not_classify_content_operations_as_cx():
++    assert not domain_adjacency({'job_title': 'Content Operations Manager', 'raw_text': 'Enable connected customer journeys across content channels.'})['customer_experience']
++    assert domain_adjacency({'job_title': 'Director, Customer Experience Strategy'})['customer_experience']
++
++
++def test_gitlab_then_dolby_then_gitlab_builds_fresh_context(tmp_path):
++    for directory in ('data', 'config'):
++        shutil.copytree(ROOT / directory, tmp_path / directory)
++    shutil.copy2(ROOT / 'tests/fixtures/dolby_evidence_framing.yml', tmp_path / 'data/evidence_profile.yml')
++    jobs = tmp_path / 'jobs'
++    jobs.mkdir()
++    for name in ('gitlab_director_customer_experience_strategy', 'dolby_content_operations_manager'):
++        shutil.copy2(ROOT / 'tests/fixtures/jobs' / f'{name}.md', jobs / f'{name}.md')
++    texts = []
++    for name in ('gitlab_director_customer_experience_strategy', 'dolby_content_operations_manager', 'gitlab_director_customer_experience_strategy'):
++        result = generate_cover_letter(jobs / f'{name}.md', tmp_path)
++        texts.append(Path(result['output_path']).read_text())
++    assert 'transferable to Customer Experience' in texts[0]
++    assert texts[0] == texts[2]
++    assert 'Dear Dolby Hiring Team,' in texts[1]
++    assert 'Customer Experience' not in texts[1]
++    assert 'GitLab' not in texts[1]
++    assert 'spreadsheet-based tracking to a shared Airtable system' in texts[1]
++    assert 'Disney+ campaign on an ongoing basis' in texts[1]
++    job = jobs / 'dolby_content_operations_manager.md'
++    context = load_generation_context(job, tmp_path)
++    resume = tailor_resume('executive_operations', job, tmp_path, role_intent=context['role_intent'])
++    content = Path(resume['output_path']).read_text()
++    assert 'spreadsheet-based tracking to a shared Airtable system' in content
++    assert 'Disney+ campaign on an ongoing basis' in content
+--- /dev/null
++++ b/tests/fixtures/jobs/dolby_content_operations_manager.md
+@@ -0,0 +1,19 @@
++# Content Operations Manager
++
++Company: Dolby
++Tracker ID: dolby_content_operations_manager
++Location: US
++Work arrangement: Flexible
++Salary range: $123,000 – $169,000 per year
++Compensation status: provided
++Posting date: 2026-09-17
++Official source: Company career page
++Official URL: https://jobs.dolby.com/careers/job/44487895?jobPipeline=Indeed
++Canonical apply URL: https://jobs.dolby.com/careers/job/44487895?jobPipeline=Indeed
++Source type: Direct Employer
++Trust label: Direct Employer
++Verification status: Employer Source
++
++## Job Description
++
++Join the leader in entertainment innovation and help us design the future. At Dolby, science meets art, and high tech means more than computer code. As a member of the Dolby team, you’ll see and hear the results of your work everywhere, from movie theaters to smartphones. We continue to revolutionize how people create, deliver, and enjoy entertainment worldwide. To do that, we need the absolute best talent. We’re big enough to give you all the resources you need, and small enough so you can make a real difference and earn recognition for your work. We offer a collegial culture, challenging projects, and excellent compensation and benefits, not to mention a Flex Work approach that is truly flexible to support where, when, and how you do your best work. The Marketing department creates passion and relevance for the "Dolby Difference" driving sell-in and sell-thru of Dolby enabled devices, services, content, and experiences across multiple constituents – partners, creators, consumers, and developers. The Content Operations role sits at the intersection of Social, Digital, CRM, and Regional Marketing teams, providing structure, intelligence, and scalability across Dolby's global content ecosystem. This role manages the Global Content Calendar and the operational infrastructure that enables content to move efficiently across digital and social channels, teams, and markets. A core expectation of this role is leveraging AI-powered tools and automation to modernize how content is planned, coordinated, optimized, and activated. This role is responsible not only for managing timelines, but also for creating intelligent workflows that reduce manual effort, increase visibility, improve content reuse, and enable more connected customer journeys. This role does not define creative direction or channel strategy. Instead, it serves as a key coordination function that connects teams, systems, and execution. Global Content Calendar & Planning Infrastructure * Manage and maintain Dolby's Global Content Calendar as a centralized planning system across Global and Regional Social, Digital, and CRM teams. * Establish governance, standards, and operating cadences that support consistent calendar adoption and usage. * Develop scalable planning frameworks that support campaign launches, always-on programs, and regional activations. * Utilize automation and AI-assisted planning tools to improve visibility, conflict identification, sequencing, and readiness tracking. AI-Enabled Workflow Design & Orchestration * Design and implement AI-assisted workflows that support content planning, tagging, metadata generation, summarization, sequencing, and cross-channel coordination. * Develop shared prompt frameworks, templates, and playbooks that support consistent AI adoption across teams and regions. * Partner with Digital and Platform teams to integrate AI capabilities into content planning and orchestration systems. * Continuously evaluate emerging tools and technologies to improve operational efficiency, effectiveness, and scalability. Cross-Channel Content Orchestration * Serve as a key operational partner across Global Social, Digital, CRM, and Regional Marketing teams. * Align campaign timelines, launch sequencing, and channel activation plans across the content ecosystem. * Identify opportunities for coordinated storytelling, content reuse, and cross-channel amplification. * Ensure channel requirements and dependencies are considered early in planning cycles. Automation & Operational Scalability * Identify and implement automation opportunities across planning, coordination, and reporting workflows using AI-enabled and low-code/no-code solutions. * Improve operational efficiency by streamlining intake processes, approvals, readiness tracking, and cross-team handoffs. * Build repeatable operational frameworks that can be effectively scaled across markets and channels. Activation Readiness & Distribution Alignment * Partner with channel stakeholders to ensure assets are delivered in appropriate formats and within required timelines. * Support launch readiness by validating publishing schedules, dependencies, and handoff requirements. * Enable modular content distribution and reuse across platforms and regions. Content Intelligence & Continuous Optimization * Use AI-assisted analysis to identify patterns across planning activities, performance indicators, publishing cadence, and content utilization. * Translate insights into operational improvements and planning optimizations. * Track orchestration health metrics, including lead time, asset reuse, calendar accuracy, and cross-channel activation rates. Responsible AI & Governance Partnership * Partner with Legal, IT, and Information Security teams to support responsible and compliant use of AI technologies. * Establish guidelines and best practices that promote effective, ethical, and compliant AI usage within content workflows. * Help communicate and reinforce responsible AI standards and operational practices across teams. What You'll Bring * 5+ years of experience in content operations, marketing operations, content strategy, program management, or a related field within a global, multi-team organization. Experience supporting regional, matrixed, or distributed marketing organizations is preferred. * Experience managing a global content calendar, planning system, or similar cross-functional process adopted by multiple teams and stakeholders. * Experience designing and implementing AI-assisted workflows, including content tagging, metadata generation, summarization, sequencing, or related content operations processes. Experience developing scalable workflows and practices that can be adopted across teams is preferred. * Strong systems-thinking skills, with the ability to develop governance models, operating cadences, documentation, and playbooks that support consistency and scalability across markets and teams. * Experience collaborating across Social, Digital, CRM, Regional Marketing, and other cross-functional teams, translating diverse requirements and dependencies into actionable plans. * Experience partnering with Legal, IT, Information Security, Compliance, or related stakeholders to support the responsible adoption of new technologies and translate requirements into practical guidance for teams. * Strong analytical skills, including experience measuring operational effectiveness through metrics such as lead time, asset reuse, planning accuracy, and activation effectiveness, and applying findings to improve processes. * Experience leveraging automation, low-code/no-code platforms, or workflow optimization tools to improve efficiency, reduce manual work, and enhance team productivity. * Ability to work effectively in an operational leadership role, enabling creative, marketing, and channel teams through strong planning, coordination, and execution support. The Los Angeles Area base salary range for this full-time position is $123,000 - 169,000, which can vary if outside this location, plus bonus, benefits, and some roles may also include equity. Our salary ranges are determined by role, level, and location. Within the range, individual pay is determined by work location and additional factors, including job-related skills, competencies, experience, market demands, internal parity, and relevant education or training. Your recruiter can share more about the specific salary range and perks and benefits for your location during the hiring process. Dolby will consider qualified applicants with criminal histories in a manner consistent with the requirements of San Francisco Police Code, Article 49, and Administrative Code, Article 12 #LI-JB1 Equal Employment Opportunity: Dolby is proud to be an equal opportunity employer. Our success depends on the combined skills and talents of all our employees. We are committed to making employment decisions without regard to race, religious creed, color, age, sex, sexual orientation, gender identity, national origin, religion, marital status, family status, medical condition, disability, military service, pregnancy, childbirth and related medical conditions or any other classification protected by federal, state, and local laws and ordinances.
+--- /dev/null
++++ b/tests/fixtures/dolby_evidence_framing.yml
+@@ -0,0 +1,27 @@
++evidence:
++- id: campaign_operations_leadership
++  framing:
++    program_manager: Owned the Disney+ advertising rebuild as a defined program, coordinating
++      creative, media, analytics, technology, and operations teams against specific
++      delivery milestones after the business moved back from a competing agency, growing
++      managed budgets from $5M to $25M+ per title.
++    operations_manager: Led enterprise campaign operations supporting Disney Studios
++      Theatrical and Disney Streaming/DSS on an ongoing basis, building and running
++      the operating structure that coordinated creative, media, analytics, technology,
++      and operations teams across the full slate.
++- id: launch_readiness
++  framing:
++    program_manager: Ran launch readiness as a milestone-driven program for the Disney+
++      launch and relaunch, using checklists, validation gates, and escalation procedures
++      scoped to specific launch dates and deliverables.
++    operations_manager: Built and operated the standing launch-readiness function,
++      including checklists, validation processes, and escalation procedures used across
++      every Disney Studios and Disney+ campaign on an ongoing basis.
++- id: workflow_design
++  framing:
++    program_manager: Delivered a defined initiative migrating Disney's campaign tracking
++      from spreadsheets to a shared Airtable system, managing the rollout end-to-end
++      and onboarding agency and client teams onto the new workflow.
++    operations_manager: Designed and maintained the scalable workflows, governance,
++      and handoff standards underpinning day-to-day campaign operations, including
++      migrating the team from spreadsheet-based tracking to a shared Airtable system.
