@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 try:
+    from .evidence_framing import load_framed_evidence
     from .candidate_output import (
         competency_recipe,
         evidence_recipe,
@@ -41,6 +42,7 @@ try:
     from .text_cleanup import cleanup_repeated_words, normalize_candidate_text
     from .role_intent import build_role_intent
 except ImportError:
+    from evidence_framing import load_framed_evidence
     from candidate_output import (
         competency_recipe,
         evidence_recipe,
@@ -600,6 +602,7 @@ def _select_experience_bullets(
         return evidence_recipe(
             archetype,
             int((role_intent or {}).get("resume", {}).get("omg23_bullet_limit") or 6),
+            framing=career_data.get("framed_evidence"),
         )
 
     candidate_bullets = []
@@ -1188,6 +1191,7 @@ def tailor_resume(
         if parsed_job_override is not None
         else parse_job_description(root / job_path)
     )
+    career_data["framed_evidence"] = load_framed_evidence(root, parsed_job)
     shared_role_intent = role_intent or build_role_intent(parsed_job, root)
     evidence_selection = select_evidence_for_artifact(
         parsed_job,

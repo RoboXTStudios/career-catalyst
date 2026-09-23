@@ -254,7 +254,7 @@ def domain_adjacency(parsed_job: Mapping[str, Any]) -> dict[str, bool]:
     ).lower()
     customer = any(
         phrase in text
-        for phrase in ("customer experience", "customer success", "customer journey", "voice of customer")
+        for phrase in ("customer experience", "customer success", "voice of customer")
     )
     traditional_saas = customer and any(
         phrase in text
@@ -310,9 +310,17 @@ EVIDENCE_RECIPES = {
 }
 
 
-def evidence_recipe(archetype: str, limit: int = 6) -> list[str]:
+def evidence_recipe(archetype: str, limit: int = 6, framing: Mapping[str, str] | None = None) -> list[str]:
     keys = EVIDENCE_RECIPES.get(archetype, EVIDENCE_RECIPES["general_operations"])
-    return [COMMON_EVIDENCE[key] for key in keys[:limit]]
+    descriptions = dict(COMMON_EVIDENCE)
+    for key, evidence_id in {
+        "delivery": "campaign_operations_leadership",
+        "airtable": "workflow_design",
+        "disney_plus": "launch_readiness",
+    }.items():
+        if (framing or {}).get(evidence_id):
+            descriptions[key] = framing[evidence_id]
+    return [descriptions[key] for key in keys[:limit]]
 
 
 def _product_evidence_cover_letter(
@@ -544,6 +552,14 @@ def candidate_cover_letter(context: Mapping[str, Any]) -> str:
             "turning priorities into measurable, consistent progress. I would value the opportunity to discuss how this experience "
             f"could support the {role} team."
         )
+    framing = context.get("framed_evidence") or {}
+    if not adjacency["customer_experience"] and all(
+        framing.get(key) for key in (
+            "campaign_operations_leadership", "workflow_design", "launch_readiness"
+        )
+    ):
+        execution = " ".join((framing["campaign_operations_leadership"], framing["workflow_design"]))
+        proof = framing["launch_readiness"]
     content = "\n\n".join((greeting, opening, leadership, execution, proof, closing, "Best,\n\nTrisha Lynch"))
     validate_candidate_output(content, context="Generated cover letter")
     return content

@@ -12,6 +12,7 @@ from docx.shared import Inches, Pt, RGBColor
 
 try:
     from .docx_quality import sanitize_docx
+    from .evidence_framing import load_framed_evidence
     from .candidate_output import (
         candidate_cover_letter,
         cover_letter_evidence_decision,
@@ -60,6 +61,7 @@ try:
     from .role_intent import build_role_intent
 except ImportError:
     from docx_quality import sanitize_docx
+    from evidence_framing import load_framed_evidence
     from candidate_output import (
         candidate_cover_letter,
         cover_letter_evidence_decision,
@@ -148,6 +150,7 @@ def load_generation_context(
     editing_plan = material_editing_plan(parsed_job, root, shared_role_intent)
     context = {
         "root": root,
+        "framed_evidence": load_framed_evidence(root, parsed_job),
         "career_data": career_data,
         "voice": career_data["config"].get("voice", {}),
         "writing_voice": writing_voice,
