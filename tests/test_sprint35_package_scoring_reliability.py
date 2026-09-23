@@ -263,7 +263,12 @@ def test_campaignos_guard_identifies_every_reference_as_a_working_prototype():
 def test_cover_letter_project_prose_has_explicit_subjects_and_resume_bullets_remain_allowed():
     project = _fixture_evidence(["enterprise_media_operations_transformation"])[0]
     paragraph = cover_letter_project_paragraph(project, {})
-    assert paragraph.startswith("Through Enterprise Media Operations Transformation, I led")
+    # Cover-letter prose states the facts directly, without naming the
+    # internal Evidence card title (see test_cover_letter_evidence_uses_
+    # facts_without_card_titles); the project's title still surfaces in
+    # resume headings, just not in cover-letter narrative.
+    assert paragraph.startswith("I led")
+    assert "Enterprise Media Operations Transformation" not in paragraph
     assert "This work improved" in paragraph
     assert missing_subject_prose_fragments(paragraph) == []
     assert missing_subject_prose_fragments(
@@ -430,7 +435,11 @@ def test_sanitized_role_package_completes_transactionally(
 
     if role_id.startswith("twitch"):
         assert "Just for Us" in cover_letter
-        assert "Enterprise Media Operations Transformation" in cover_letter
+        # The cover letter states this project's facts without naming the
+        # internal Evidence card title (deliberately, to keep letter prose
+        # natural); the title still shows up in the résumé heading, so
+        # check candidate_text (which spans both) rather than the letter alone.
+        assert "Enterprise Media Operations Transformation" in candidate_text
         assert "Just for Us Podcast" in summary
         assert "ATS résumé: Used" in summary.split("Just for Us Podcast", 1)[1].splitlines()[0]
         assert "cover letter: Used" in summary.split("Just for Us Podcast", 1)[1].splitlines()[0]
