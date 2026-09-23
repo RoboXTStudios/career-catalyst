@@ -319,6 +319,20 @@ def save_material(
     }
 
 
+_GENERIC_FILLER_SENTENCES = [
+    "The through line in my experience is building operating conditions that help people make sound decisions, protect quality, and deliver dependable work.",
+    "Across entertainment campaigns and internal transformation work, I have learned to ask direct questions, make tradeoffs visible, and keep the solution proportionate to the problem.",
+    "I am equally comfortable shaping the plan, working through the details with a team, and giving leaders a concise view of what needs a decision.",
+    "That combination of strategic range and hands-on follow-through has helped me earn trust across creative, marketing, analytics, technology, and operations partners.",
+    "I would approach the first months by learning how work moves today, where teams lose time or context, and which small changes would create meaningful momentum.",
+    "I am drawn to roles where better operations do more than improve a dashboard; they give talented people more room to focus on thoughtful, high-quality work.",
+    "That is the kind of contribution I am looking to make next, with curiosity, candor, and respect for what is already working.",
+    "My background has taught me to move between strategy and execution without treating either as the easy part, and to communicate clearly when the path is still taking shape.",
+    "I bring the patience to understand a complicated environment and the urgency to make useful progress once the real problem is clear.",
+    "Most of all, I value work that leaves a team stronger: clearer about its priorities, more confident in its decisions, and better equipped for what comes next.",
+]
+
+
 def _cover_letter_value_sentences(context: Dict[str, Any]) -> List[str]:
     parsed_job = context.get("parsed_job", {})
     company = str(parsed_job.get("company") or "the team")
@@ -381,13 +395,24 @@ def _cover_letter_value_sentences(context: Dict[str, Any]) -> List[str]:
 def _expand_cover_letter(content: str, context: Dict[str, Any], target: int = 285) -> str:
     additions: List[str] = []
     existing = re.sub(r"\s+", " ", str(content or "")).strip().lower()
-    for sentence in _cover_letter_value_sentences(context):
-        normalized = re.sub(r"\s+", " ", sentence).strip().lower()
-        if normalized and normalized in existing:
-            continue
-        additions.append(sentence)
-        if _word_count(content + "\n\n" + " ".join(additions)) >= target:
-            break
+
+    def _add_from(sentences: List[str]) -> bool:
+        """Append not-yet-used sentences; return True once target is reached."""
+        for sentence in sentences:
+            normalized = re.sub(r"\s+", " ", sentence).strip().lower()
+            if normalized and (normalized in existing or sentence in additions):
+                continue
+            additions.append(sentence)
+            if _word_count(content + "\n\n" + " ".join(additions)) >= target:
+                return True
+        return False
+
+    reached_target = _add_from(_cover_letter_value_sentences(context))
+    # The role-specific pool above is short for some role families. Rather than
+    # give up and leave the letter under the required minimum, draw on the
+    # broader generic reserve for any additional words still needed.
+    if not reached_target:
+        _add_from(_GENERIC_FILLER_SENTENCES)
     if not additions:
         return content
     paragraph = " ".join(additions)
@@ -488,7 +513,7 @@ def _ground_cover_letter_in_selected_evidence(
     projects = list(decision.get("used_projects") or [])
     existing_text = str(content or "").lower()
 
-    def already_allocated(project: Dict[str, Any]) -> bool:
+    def already_allocated(project: Dict[str, Any], paragraph: str) -> bool:
         aliases = {
             str(project.get("id") or "").strip().lower(),
             project_title(project).strip().lower(),
@@ -497,13 +522,22 @@ def _ground_cover_letter_in_selected_evidence(
             aliases.add("just for us")
         if project_kind(project) == "career_catalyst":
             aliases.add("career catalyst")
-        return any(alias and alias in existing_text for alias in aliases)
+        if any(alias and alias in existing_text for alias in aliases):
+            return True
+        # Some archetype letters (for example the strategy/GTM and
+        # experiential builders) already call cover_letter_project_paragraph
+        # directly while assembling their narrative, so the resulting prose
+        # never names the project by title or id. Comparing the generated
+        # paragraph text itself catches that case and keeps this grounding
+        # step from re-inserting a proof point that is already present.
+        normalized_paragraph = re.sub(r"\s+", " ", str(paragraph or "")).strip().lower()
+        return bool(normalized_paragraph) and normalized_paragraph in existing_text
 
     evidence_paragraphs = [
         paragraph
         for project in projects
-        if not already_allocated(project)
-        and (paragraph := cover_letter_project_paragraph(project, context["parsed_job"]))
+        if (paragraph := cover_letter_project_paragraph(project, context["parsed_job"]))
+        and not already_allocated(project, paragraph)
     ]
     if not evidence_paragraphs:
         return content

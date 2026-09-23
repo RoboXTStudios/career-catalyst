@@ -613,10 +613,10 @@ def cover_letter_project_paragraph(
     corpus = " ".join(_flatten(project)).lower()
     if kind == "career_catalyst" and "product" in corpus:
         return (
-            "I am actively developing an AI-enabled career intelligence and "
-            "application-operations product. I translate user needs into product vision, requirements, "
-            "feature priorities, workflows, acceptance criteria, iterative testing, and release guardrails, "
-            "hands-on work that connects product judgment with disciplined delivery."
+            "Career Catalyst is a current, hands-on proof point: I am actively developing an AI-enabled "
+            "career intelligence and application-operations product. I translate user needs into product "
+            "vision, requirements, feature priorities, workflows, acceptance criteria, iterative testing, "
+            "and release guardrails, work that connects product judgment with disciplined delivery."
         )
     if kind == "podcast" and re.search(r"\b(ten|10)[ -]episode", corpus):
         return (
