@@ -135,6 +135,64 @@ DYNAMIC_ROLE_WRITING = {
 }
 
 
+_OMG23_LEADERSHIP = (
+    "At OMG23 / OMD Entertainment, Omnicom Media Group, I led 10 direct reports and provided strategic and "
+    "operational leadership across an integrated 64-person organization spanning Ad Operations, Creative "
+    "Management, and Marketing Science and Analytics."
+)
+
+# Headline and profile per role family, used when no specific archetype matched
+# (primary archetype general_operations), so a role never falls back to the
+# base headline.  Every claim restates canonical career data.
+FAMILY_PROFILES = {
+    "creative_marketing_ops": (
+        "Senior Creative & Marketing Operations Leader | Workflow | Campaign Delivery | Entertainment",
+        "Senior creative and marketing operations leader who keeps high-volume entertainment campaigns moving "
+        "through clear workflows, quality standards, and capacity visibility. " + _OMG23_LEADERSHIP,
+    ),
+    "business_operations": (
+        "Senior Business Operations Leader | Operating Cadence | Governance | Cross-Functional Delivery",
+        "Senior business operations leader who creates ownership, decision cadence, and reliable reporting "
+        "across functions. " + _OMG23_LEADERSHIP,
+    ),
+    "transformation_advisory": (
+        "Senior Transformation Leader | Operating Models | Stakeholder Alignment | Implementation",
+        "Senior transformation leader who turns a clear hypothesis into an operating model, a stakeholder "
+        "recommendation, and an implementation plan people adopt. " + _OMG23_LEADERSHIP,
+    ),
+    "ai_operations_systems": (
+        "Senior Operations & AI Systems Leader | Workflow Automation | Governance | Operational Visibility",
+        "Senior operations leader who builds AI-enabled workflow systems for readiness, quality assurance, "
+        "validation, and reporting, with CampaignOS as a working prototype. " + _OMG23_LEADERSHIP,
+    ),
+    "streaming_strategy": (
+        "Senior Entertainment Operations Leader | Streaming | Theatrical | Franchise Campaigns",
+        "Senior entertainment operations leader who directed execution for multimillion-dollar theatrical, "
+        "streaming, and franchise campaigns and helped operationalize the Disney+ launch. " + _OMG23_LEADERSHIP,
+    ),
+    "gtm_product_activation": (
+        "Senior Platform Activation Leader | GTM | Measurement Readiness | Adoption",
+        "Senior operations leader with hands-on experience activating Google advertising products, including "
+        "YouTube, and building measurement readiness and adoption across enterprise campaigns. " + _OMG23_LEADERSHIP,
+    ),
+    "music_content_strategy": (
+        "Senior Content & Creative Operations Leader | Music | Editorial Systems | Audience",
+        "Senior content and creative operations leader with audio production and editorial experience, "
+        "including Multiverse and RoboXT Studios, who builds repeatable content systems. " + _OMG23_LEADERSHIP,
+    ),
+    "editorial_content_strategy": (
+        "Senior Editorial & Content Operations Leader | Voice | Content Systems | Audience",
+        "Senior editorial and content operations leader who created Multiverse, an internal publication "
+        "reaching 400+ employees, and builds repeatable content workflows. " + _OMG23_LEADERSHIP,
+    ),
+    "community_growth": (
+        "Senior Audience & Community Programs Leader | Content | Measurement | Entertainment",
+        "Senior operations leader who connects audience insight with community programs, editorial voice, "
+        "and measurement, drawing on Multiverse and entertainment campaign work. " + _OMG23_LEADERSHIP,
+    ),
+}
+
+
 def load_role_intent_rules(project_root: str | Path | None = None) -> dict[str, Any]:
     root = Path(project_root) if project_root is not None else Path.cwd()
     candidates = (SOURCE_ROLE_INTENT_RULES_PATH, root / ROLE_INTENT_RULES_PATH)
@@ -459,6 +517,9 @@ def build_role_intent(
             "priorities and cross-functional delivery, connecting streaming launch readiness, active "
             "product development, and hands-on media production with practical product judgment."
         )
+    family_profile = FAMILY_PROFILES.get(dynamic_family)
+    if family_profile and primary == DEFAULT_ARCHETYPE and not agency_delivery:
+        resume["headline"], resume["summary"] = family_profile
     dynamic_writing = DYNAMIC_ROLE_WRITING.get(dynamic_family)
     explicit_need, explicit_lead, explicit_support, explicit_suppressed = _explicit_operational_guidance(
         text,

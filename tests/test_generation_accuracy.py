@@ -147,3 +147,72 @@ def test_age_signal_detection_ignores_ordinary_durations():
     assert candidate_language_violations("Brought more than a decade of expertise.")
     assert candidate_language_violations("Leader with 15+ years in media.")
     assert not candidate_language_violations("Managed 6 campaigns in 2 years with 10 direct reports.")
+
+
+SONY_JOB = ROOT / "tests" / "fixtures" / "jobs" / "sony_music_director_media_commercial_music_group.md"
+MEDIA_EVIDENCE = {
+    "id": "media_ops",
+    "title": "Release Campaign Operations",
+    "actions": "Ran campaign setup and trafficking in CM360 and DV360 with pixel tagging and measurement QA.",
+    "results": "Kept tracking and measurement accurate across theatrical releases.",
+}
+
+
+def test_letter_names_covered_posting_requirements():
+    from scripts.generate_cover_letter import _name_posting_requirements
+    from scripts.requirement_matching import concepts_in
+
+    parsed = parse_job_description(SONY_JOB)
+    context = {"parsed_job": parsed, "associated_evidence_projects": [MEDIA_EVIDENCE]}
+    letter = "Dear Sony Music Entertainment Hiring Team,\n\nI lead operations work.\n\nBest,\n\nTrisha Lynch"
+    named = _name_posting_requirements(letter, context)
+    assert "Sony Music Entertainment's posting emphasizes" in named
+    assert len(concepts_in(named) & {"ad_operations", "programmatic", "tracking_tagging", "measurement"}) >= 2
+    # Nothing to name without covering Evidence: warn instead of claiming.
+    bare = {"parsed_job": parsed, "associated_evidence_projects": []}
+    assert _name_posting_requirements(letter, bare) == letter
+    assert bare["material_warnings"]
+
+
+def test_letter_review_items_flag_missing_company_requirements_and_duplicates():
+    from scripts.package_quality import cover_letter_review_items
+
+    parsed = parse_job_description(SONY_JOB)
+    bullet = "Influenced platform implementation and designed repeatable workflows across internal teams and partners."
+    resume = f"## Projects\n\n- {bullet}\n"
+    letter = f"Dear Hiring Team,\n\nI care about good work.\n\n{bullet}\n\nBest,\n\nTrisha Lynch"
+    items = cover_letter_review_items(letter, resume, parsed)
+    assert any("does not name Sony Music Entertainment" in item for item in items)
+    assert any("fewer than two" in item for item in items)
+    assert any("paragraph 3 repeats a résumé bullet" in item for item in items)
+    good = (
+        "Dear Sony Music Entertainment Hiring Team,\n\n"
+        "Campaign setup across programmatic and paid social, with tracking and tagging done right.\n\nBest"
+    )
+    assert cover_letter_review_items(good, resume, parsed) == []
+
+
+def test_generic_operating_conditions_closing_is_removed_from_every_letter():
+    from scripts.generate_cover_letter import _remove_repeated_dynamic_closing
+
+    letter = (
+        "Dear Team,\n\nI ran release campaigns. The through line in my experience is building operating "
+        "conditions that help people make sound decisions, protect quality, and deliver dependable work.\n\nBest"
+    )
+    cleaned = _remove_repeated_dynamic_closing(letter, {"role_intent": {"package_role_family": "community_growth"}})
+    assert "operating conditions" not in cleaned
+    assert "I ran release campaigns." in cleaned
+
+
+@pytest.mark.parametrize("title, text, expected", [
+    ("Director, Special Projects", "Grow our creator community and member engagement.", "Audience & Community"),
+    ("Director, Operations", "Own operating cadence and reporting.", "Business Operations"),
+    ("Media Director", "Build media plans and buying across CTV and programmatic.", "Paid Media Execution"),
+])
+def test_headline_follows_role_family_instead_of_base_profile(title, text, expected):
+    from scripts.role_intent import build_role_intent
+
+    intent = build_role_intent({"job_title": title, "raw_text": text, "company": "Acme"}, ROOT)
+    headline = intent["resume"]["headline_profile"]
+    assert expected in headline
+    assert headline != "Senior Operations & Transformation Leader | MarTech | AI Systems | Entertainment"
