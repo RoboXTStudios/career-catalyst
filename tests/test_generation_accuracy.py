@@ -238,3 +238,14 @@ def test_headline_follows_role_family_instead_of_base_profile(title, text, expec
     headline = intent["resume"]["headline_profile"]
     assert expected in headline
     assert headline != "Senior Operations & Transformation Leader | MarTech | AI Systems | Entertainment"
+
+
+def test_coverage_matrix_requirements_exclude_posting_boilerplate():
+    from scripts.submission_readiness import _requirements
+
+    rows = [row["original_jd_wording"].lower() for row in _requirements(parse_job_description(SONY_JOB))]
+    assert any("programmatic" in row for row in rows)
+    assert any("award nominations" in row for row in rows)
+    for boilerplate in ("what we give you", "california pay range", "$115,000", "equal employment",
+                        "global community", "pension", "about sony music"):
+        assert not any(boilerplate in row for row in rows), boilerplate

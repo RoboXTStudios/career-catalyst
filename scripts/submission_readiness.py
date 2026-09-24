@@ -8,6 +8,11 @@ from collections import Counter
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+try:
+    from .dynamic_role_intelligence import strip_posting_boilerplate
+except ImportError:
+    from dynamic_role_intelligence import strip_posting_boilerplate
+
 
 STOP_WORDS = {
     "a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "has",
@@ -156,9 +161,37 @@ def _raw_section_sentences(parsed_job: Mapping[str, Any], heading: str) -> list[
     ]
 
 
+_PAY_OR_HEADING_RE = re.compile(
+    r"^(?:\$?\s?[\d,.]+(?:\s*[kKmM])?(?:\s*(?:-|–|to)\s*\$?\s?[\d,.]+(?:\s*[kKmM])?)?\s*(?:usd|per year|annually|/\s*year)?)$",
+    flags=re.IGNORECASE,
+)
+
+
+def _posting_body_filter(parsed_job: Mapping[str, Any]):
+    """Return a predicate that keeps only text outside employer boilerplate.
+
+    Benefits, EEO, pay-range, and About-company sections describe the employer,
+    not the job, and must not appear as "unsupported requirements".
+    """
+    raw = str(parsed_job.get("raw_text") or parsed_job.get("job_description") or "")
+    if not raw.strip():
+        return lambda _original: True
+    kept = f" {_normalized(strip_posting_boilerplate(raw))} "
+
+    def keep(original: str) -> bool:
+        text = str(original or "").strip()
+        if not text or text.endswith(":") or _PAY_OR_HEADING_RE.match(text):
+            return False
+        normalized = _normalized(text)
+        return bool(normalized) and f" {normalized} " in kept
+
+    return keep
+
+
 def _requirements(parsed_job: Mapping[str, Any]) -> list[dict[str, Any]]:
     requirements: list[dict[str, Any]] = []
     seen: set[str] = set()
+    in_posting_body = _posting_body_filter(parsed_job)
     fields = (
         ("qualifications", "qualification", "required"),
         ("required_qualifications", "qualification", "required"),
@@ -170,6 +203,9 @@ def _requirements(parsed_job: Mapping[str, Any]) -> list[dict[str, Any]]:
         raw_values = _flatten(parsed_job.get(field))
         values = _coalesce_fragments(raw_values) if "qualification" in category else raw_values
         for combined in values:
+            # Judge the posting's own line, not phrases derived from it by splitting.
+            if not in_posting_body(combined):
+                continue
             candidates = _split_requirement(combined) if "qualification" in category else [combined]
             for original in candidates:
                 original = re.sub(r"\s+", " ", original).strip(" -•\t")
@@ -187,7 +223,7 @@ def _requirements(parsed_job: Mapping[str, Any]) -> list[dict[str, Any]]:
                 )
     for original in _raw_section_sentences(parsed_job, "Job Description"):
         normalized = _normalized(original)
-        if normalized in seen:
+        if normalized in seen or not in_posting_body(original):
             continue
         seen.add(normalized)
         requirements.append(
@@ -201,7 +237,7 @@ def _requirements(parsed_job: Mapping[str, Any]) -> list[dict[str, Any]]:
     if not requirements:
         for sentence in re.split(r"(?<=[.!?])\s+|\n+", str(parsed_job.get("raw_text") or "")):
             normalized = _normalized(sentence)
-            if 12 <= len(normalized) <= 320 and normalized not in seen:
+            if 12 <= len(normalized) <= 320 and normalized not in seen and in_posting_body(sentence):
                 seen.add(normalized)
                 requirements.append(
                     {
