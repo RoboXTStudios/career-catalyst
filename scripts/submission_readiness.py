@@ -23,6 +23,14 @@ _NON_CLAIM_FIELDS = frozenset({
 })
 
 
+# "Partnered across creative, media planning, analytics ..." names the
+# functions someone worked alongside; collaboration is not ownership.
+_ADJACENCY_RE = re.compile(
+    r"\b(?:partnered|collaborated|worked alongside)\s+(?:across|with|alongside)\b[^.;]*",
+    flags=re.IGNORECASE,
+)
+
+
 def _claim_text(value: Any) -> list[str]:
     if isinstance(value, Mapping):
         return [
@@ -33,7 +41,7 @@ def _claim_text(value: Any) -> list[str]:
         ]
     if isinstance(value, (list, tuple, set)):
         return [text for nested in value for text in _claim_text(nested)]
-    return [str(value)] if value not in (None, "") else []
+    return [_ADJACENCY_RE.sub(" ", str(value))] if value not in (None, "") else []
 
 
 def _claim_concepts(record: Mapping[str, Any]) -> set[str]:

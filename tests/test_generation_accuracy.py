@@ -281,3 +281,19 @@ def test_coverage_matrix_grades_with_shared_concepts():
     assert "fyc_ops" in after["evidence_ids"]
     # Guardrail text never supplies a concept.
     assert "media_ops" not in awards_row([guarded])["evidence_ids"]
+
+
+
+def test_matrix_needs_negotiation_evidence_and_ignores_partnered_across_lists():
+    from scripts.golden_resume import load_golden_resume
+    from scripts.submission_readiness import _claim_concepts, build_requirement_coverage_matrix
+
+    assert "media_planning" not in _claim_concepts(
+        {"statement": "Partnered across creative, marketing, media planning, and analytics leaders."}
+    )
+    planner = {"id": "planner", "actions": "Built media plans and led media planning for retail clients."}
+    matrix = build_requirement_coverage_matrix(
+        parse_job_description(SONY_JOB), load_golden_resume(ROOT), [planner], ""
+    )
+    row = next(r for r in matrix if r["original_jd_wording"].startswith("Traditional media planning and strong negotiation"))
+    assert row["coverage"] != "PROVEN"

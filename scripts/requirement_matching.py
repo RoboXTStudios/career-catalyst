@@ -64,6 +64,10 @@ CONCEPTS: dict[str, tuple[str, tuple[str, ...]]] = {
         "media buying", "media buy", "media buys", "traditional media", "out of home",
         "ooh", "media programs", "media mix",
     )),
+    # Negotiation is its own skill; planning experience does not establish it.
+    "media_negotiation": ("media negotiation", (
+        "negotiate", "negotiates", "negotiated", "negotiating", "negotiation", "negotiations",
+    )),
     "optimization": ("campaign optimization", (
         "optimization", "optimizations", "optimize", "optimizing", "campaign flights",
         "a b testing", "test new ad products",
