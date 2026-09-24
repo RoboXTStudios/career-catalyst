@@ -35,6 +35,10 @@ try:
         public_artifact_selection,
     )
     from .filename_utils import build_upload_filename, company_display_name
+    from .requirement_matching import (
+        CONTEXT_CONCEPTS, GENERIC_CONCEPTS, concept_label, concepts_in, match_evidence_to_requirements,
+        posting_requirements,
+    )
     from .resume_foundation import (
         CandidateLanguageError,
         candidate_language_violations,
@@ -84,6 +88,10 @@ except ImportError:
         public_artifact_selection,
     )
     from filename_utils import build_upload_filename, company_display_name
+    from requirement_matching import (
+        CONTEXT_CONCEPTS, GENERIC_CONCEPTS, concept_label, concepts_in, match_evidence_to_requirements,
+        posting_requirements,
+    )
     from resume_foundation import (
         CandidateLanguageError,
         candidate_language_violations,
@@ -320,7 +328,6 @@ def save_material(
 
 
 _GENERIC_FILLER_SENTENCES = [
-    "The through line in my experience is building operating conditions that help people make sound decisions, protect quality, and deliver dependable work.",
     "Across entertainment campaigns and internal transformation work, I have learned to ask direct questions, make tradeoffs visible, and keep the solution proportionate to the problem.",
     "I am equally comfortable shaping the plan, working through the details with a team, and giving leaders a concise view of what needs a decision.",
     "That combination of strategic range and hands-on follow-through has helped me earn trust across creative, marketing, analytics, technology, and operations partners.",
@@ -379,7 +386,6 @@ def _cover_letter_value_sentences(context: Dict[str, Any]) -> List[str]:
     return [
         role_sentence,
         f"That is the perspective I would bring to {company}, along with calm stakeholder leadership and a habit of turning recurring friction into a clearer, more dependable way of working.",
-        "The through line in my experience is building operating conditions that help people make sound decisions, protect quality, and deliver dependable work.",
         "Across entertainment campaigns and internal transformation work, I have learned to ask direct questions, make tradeoffs visible, and keep the solution proportionate to the problem.",
         "I am equally comfortable shaping the plan, working through the details with a team, and giving leaders a concise view of what needs a decision.",
         "That combination of strategic range and hands-on follow-through has helped me earn trust across creative, marketing, analytics, technology, and operations partners.",
@@ -471,8 +477,64 @@ def repair_cover_letter_content(content: str, context: Dict[str, Any]) -> str:
     return content
 
 
+_GENERIC_CLOSING_RE = re.compile(
+    r"[^.!?\n]*\bthrough line in my experience is building operating conditions\b[^.!?\n]*[.!?][ \t]*",
+    flags=re.IGNORECASE,
+)
+
+
+def _join_labels(labels: List[str]) -> str:
+    if len(labels) <= 2:
+        return " and ".join(labels)
+    return ", ".join(labels[:-1]) + f", and {labels[-1]}"
+
+
+def _name_posting_requirements(content: str, context: Dict[str, Any]) -> str:
+    """Make sure the letter names 2-3 specific posting requirements.
+
+    Only requirements the selected Evidence covers are named, so the sentence
+    never claims work the record does not support.  Letters that already name
+    two or more of the posting's specific requirements are left unchanged.
+    """
+    parsed_job = context.get("parsed_job") or {}
+    posting_concepts = {
+        concept for row in posting_requirements(parsed_job) for concept in row["concepts"]
+    } - CONTEXT_CONCEPTS - GENERIC_CONCEPTS
+    if len(concepts_in(content) & posting_concepts) >= 2:
+        return content
+    coverage = match_evidence_to_requirements(
+        parsed_job, list(context.get("associated_evidence_projects") or [])
+    )
+    counts: Dict[str, int] = {}
+    for row in coverage["requirements"]:
+        for concept in row["matched_concepts"]:
+            if concept in posting_concepts:
+                counts[concept] = counts.get(concept, 0) + 1
+    ranked = sorted(counts, key=lambda concept: (-counts[concept], concept))[:3]
+    if len(ranked) < 2:
+        context.setdefault("material_warnings", []).append(
+            "Cover letter could not name two specific posting requirements because the selected "
+            "Evidence covers fewer than two of them."
+        )
+        return content
+    company = company_display_name(parsed_job.get("company") or "") or "the team"
+    sentence = (
+        f"{company}'s posting emphasizes {_join_labels([concept_label(c) for c in ranked])}, "
+        "and those are the areas where my experience is most direct."
+    )
+    paragraphs = [p for p in re.split(r"\n\s*\n", str(content or "").strip()) if p.strip()]
+    if len(paragraphs) >= 2:
+        paragraphs[1] = paragraphs[1].rstrip() + " " + sentence
+    else:
+        paragraphs.append(sentence)
+    return "\n\n".join(paragraphs)
+
+
 def _remove_repeated_dynamic_closing(content: str, context: Dict[str, Any]) -> str:
-    """Remove the generic operating-style paragraph from dynamic letters only."""
+    """Remove generic closing filler from every letter; the operating-style
+    paragraph is removed from dynamic letters only."""
+    content = _GENERIC_CLOSING_RE.sub("", str(content or ""))
+    content = re.sub(r"\n[ \t]*\n(?:[ \t]*\n)+", "\n\n", content).strip()
     role_family = str(
         (context.get("role_intent") or {}).get("package_role_family")
         or (context.get("role_intelligence") or {}).get("role_family")
@@ -1581,6 +1643,7 @@ def generate_cover_letter(
         _cover_letter_content(context), context
     )
     grounded_content = _remove_repeated_dynamic_closing(grounded_content, context)
+    grounded_content = _name_posting_requirements(grounded_content, context)
     role_family = str(
         (context.get("role_intent") or {}).get("package_role_family")
         or (context.get("role_intelligence") or {}).get("role_family")

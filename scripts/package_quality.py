@@ -8,7 +8,10 @@ from pathlib import Path
 from typing import Any, Dict, Mapping
 
 try:
-    from .filename_utils import build_upload_filename
+    from .filename_utils import build_upload_filename, company_display_name
+    from .requirement_matching import (
+        CONTEXT_CONCEPTS, GENERIC_CONCEPTS, concept_label, concepts_in, posting_requirements,
+    )
     from .text_cleanup import normalize_candidate_text
     from .candidate_output import validate_candidate_output
     from .career_claims import validate_public_career_claims
@@ -16,7 +19,10 @@ try:
     from .package_context import PackageContextMismatchError, validate_material_context
     from .resume_foundation import validate_candidate_language
 except ImportError:
-    from filename_utils import build_upload_filename
+    from filename_utils import build_upload_filename, company_display_name
+    from requirement_matching import (
+        CONTEXT_CONCEPTS, GENERIC_CONCEPTS, concept_label, concepts_in, posting_requirements,
+    )
     from text_cleanup import normalize_candidate_text
     from candidate_output import validate_candidate_output
     from career_claims import validate_public_career_claims
@@ -265,6 +271,60 @@ def _override_conflict_reasons(
     return reasons
 
 
+def _word_tokens(text: str) -> list[str]:
+    return re.findall(r"[a-z0-9$]+", str(text or "").lower())
+
+
+def cover_letter_review_items(
+    cover_text: str,
+    resume_text: str,
+    parsed_job: Mapping[str, Any] | None,
+) -> list[str]:
+    """Non-blocking letter checks: company named, 2+ posting requirements named,
+    and no paragraph that repeats a résumé bullet."""
+    if not cover_text:
+        return []
+    items: list[str] = []
+    parsed = dict(parsed_job or {})
+    company = company_display_name(parsed.get("company") or "").strip()
+    if company and company.lower() not in {"company", "unknown"} and company.lower() not in cover_text.lower():
+        items.append(f"Cover letter does not name {company}.")
+    requirement_concepts = {
+        concept
+        for row in posting_requirements(parsed)
+        for concept in row["concepts"]
+    } - CONTEXT_CONCEPTS - GENERIC_CONCEPTS
+    if requirement_concepts:
+        named = concepts_in(cover_text) & requirement_concepts
+        if len(named) < 2:
+            items.append(
+                "Cover letter names fewer than two of the posting's specific requirements"
+                + (f" (only {', '.join(sorted(concept_label(c) for c in named))})." if named else ".")
+            )
+    bullets = [
+        line[2:].strip()
+        for line in str(resume_text or "").splitlines()
+        if line.startswith("- ") and len(_word_tokens(line)) >= 8
+    ]
+    paragraphs = [p.strip() for p in re.split(r"\n\s*\n", cover_text) if p.strip()]
+    for index, paragraph in enumerate(paragraphs, start=1):
+        paragraph_tokens = set(_word_tokens(paragraph))
+        for bullet in bullets:
+            bullet_tokens = _word_tokens(bullet)
+            overlap = sum(1 for token in bullet_tokens if token in paragraph_tokens) / len(bullet_tokens)
+            sentences = re.split(r"(?<=[.!?])\s+", paragraph)
+            closest = max(
+                SequenceMatcher(None, bullet.lower(), sentence.lower()).ratio() for sentence in sentences
+            )
+            if overlap >= 0.85 or closest >= 0.85:
+                items.append(
+                    f"Cover letter paragraph {index} repeats a résumé bullet: \u201c{bullet[:90]}\u201d. "
+                    "Use the letter to add context the résumé does not."
+                )
+                break
+    return items
+
+
 def evaluate_candidate_facing_quality(
     artifacts: Mapping[str, Any],
     *,
@@ -353,9 +413,13 @@ def evaluate_candidate_facing_quality(
                 )
     combined = "\n\n".join(texts.values())
     reasons.extend(_override_conflict_reasons(combined, tailoring_metadata))
+    review_items = cover_letter_review_items(
+        cover_text, texts.get("ats_resume") or texts.get("styled_resume") or "", parsed_job
+    )
     return {
         "status": "BLOCKED" if reasons else "PASS",
         "blocking_reasons": list(dict.fromkeys(reasons)),
+        "review_items": review_items,
         "artifacts_checked": list(texts),
         "checks": {
             "duplicate_proof": not any("repeats the" in reason for reason in reasons),

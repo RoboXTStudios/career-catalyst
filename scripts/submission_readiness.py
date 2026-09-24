@@ -601,6 +601,7 @@ def build_interview_conversion_gate(
         *[f"Unsupported requirement: {row.get('original_jd_wording')}" for row in unsupported[:6]],
         *[f"Weakly supported requirement: {row.get('original_jd_wording')}" for row in weak[:4]],
         *[str(item) for item in credibility.get("review_items") or []],
+        *[str(item) for item in candidate_qa.get("review_items") or []],
     ]
     status = "READY TO SUBMIT" if not blocking and not review_items and voice.get("status") == "PASS" and specificity.get("status") == "PASS" else "NEEDS REVIEW"
     strengths = [row for row in coverage_matrix if row.get("coverage") in {"PROVEN", "TRANSFERABLE"}]
