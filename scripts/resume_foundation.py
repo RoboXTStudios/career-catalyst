@@ -146,20 +146,44 @@ def _evidence_is_candidate_usable(project: dict[str, Any]) -> bool:
     }
 
 
+def _age_signal_locations(labelled_values: list[tuple[str, Any]]) -> list[str]:
+    """Describe where age-signaling wording sits in the candidate source."""
+    notices = []
+    for label, value in labelled_values:
+        fields = value.items() if isinstance(value, dict) else [("", value)]
+        for field, nested in fields:
+            for text in _flatten_strings(nested):
+                for match in AGE_SIGNAL_RE.finditer(text):
+                    where = f"{label} ({field})" if field else label
+                    notices.append(f"{where}: \u201c{match.group(0)}\u201d")
+    return list(dict.fromkeys(notices))
+
+
 def _validate_active_foundation(
     loaded: dict[str, Any],
     info: dict[str, Any],
-) -> None:
+) -> list[str]:
+    """Raise on unsupported claims; return age-signaling notices instead of failing.
+
+    Age-signaling wording is presentation, not a false claim: generated
+    materials rewrite it and are validated again after rewriting, so the
+    source only needs to be flagged for the person to edit.
+    """
     active_values: list[Any] = []
+    labelled_values: list[tuple[str, Any]] = []
     for relative_path in info["baseline_files"]:
         key = Path(relative_path).stem
         value = loaded["data"].get(key, {})
         if relative_path == info["supplemental_evidence_source"]:
             evidence = value.get("evidence_projects", []) if isinstance(value, dict) else []
-            active_values.extend(
+            usable = [
                 project
                 for project in evidence
                 if isinstance(project, dict) and _evidence_is_candidate_usable(project)
+            ]
+            active_values.extend(usable)
+            labelled_values.extend(
+                (f"Evidence \"{project.get('title') or project.get('id')}\"", project) for project in usable
             )
         elif relative_path == "data/personal_brand.yml" and isinstance(value, dict):
             # Guardrails name prohibited claims so validators can enforce them;
@@ -167,27 +191,42 @@ def _validate_active_foundation(
             active_values.append(
                 {key: nested for key, nested in value.items() if key != "claim_guardrails"}
             )
+            labelled_values.append((relative_path, active_values[-1]))
         else:
             active_values.append(value)
+            labelled_values.append((relative_path, value))
 
     evidence_source = info["supplemental_evidence_source"]
     if evidence_source not in info["baseline_files"]:
         evidence_key = Path(evidence_source).stem
         evidence = loaded["data"].get(evidence_key, {}).get("evidence_projects", [])
-        active_values.extend(
+        usable = [
             project
             for project in evidence
             if isinstance(project, dict) and _evidence_is_candidate_usable(project)
+        ]
+        active_values.extend(usable)
+        labelled_values.extend(
+            (f"Evidence \"{project.get('title') or project.get('id')}\"", project) for project in usable
         )
     validate_candidate_language(
         "\n".join(_flatten_strings(active_values)),
         context="Active canonical candidate source",
         unsupported_brands=info["unsupported_brand_claims"],
-        age_signaling=info["age_signaling_exclusions"],
+        age_signaling=(),
         education_claims=info["education_claim_exclusions"],
         hard_exclusions=info["canonical_hard_exclusions"],
         candidate_facing=False,
     )
+    configured_age = tuple(info["age_signaling_exclusions"])
+    notices = _age_signal_locations(labelled_values)
+    text = "\n".join(_flatten_strings(active_values))
+    for phrase in configured_age:
+        if re.search(rf"(?<!\w){re.escape(phrase)}(?!\w)", text, flags=re.IGNORECASE) and not any(
+            phrase.lower() in notice.lower() for notice in notices
+        ):
+            notices.append(f"candidate source: \u201c{phrase}\u201d")
+    return notices
 
 
 def _foundation_info(root: Path, loaded: dict[str, Any]) -> dict[str, Any]:
@@ -248,3 +287,10 @@ def load_resume_foundation(project_root: PathInput = None) -> dict[str, Any]:
     info = _foundation_info(root, loaded)
     _validate_active_foundation(loaded, info)
     return loaded
+
+
+def candidate_source_notices(project_root: PathInput = None) -> list[str]:
+    """Return age-signaling wording in the active candidate source, by record and field."""
+    root = Path(project_root) if project_root is not None else Path.cwd()
+    loaded = load_all_yaml(root)
+    return _validate_active_foundation(loaded, _foundation_info(root, loaded))

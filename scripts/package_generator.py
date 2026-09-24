@@ -59,7 +59,7 @@ try:
     from .tailor_resume import tailor_resume
     from .evidence_engine import evidence_projects_for_role
     from .evidence_engine import evidence_placeholders, load_evidence_projects
-    from .resume_foundation import load_resume_foundation
+    from .resume_foundation import candidate_source_notices, load_resume_foundation
     from .evidence_tailoring import (
         evidence_score_contribution,
         output_use_metadata,
@@ -133,7 +133,7 @@ except ImportError:
     from tailor_resume import tailor_resume
     from evidence_engine import evidence_projects_for_role
     from evidence_engine import evidence_placeholders, load_evidence_projects
-    from resume_foundation import load_resume_foundation
+    from resume_foundation import candidate_source_notices, load_resume_foundation
     from evidence_tailoring import evidence_score_contribution, output_use_metadata
     from golden_resume import load_golden_resume
     from submission_readiness import (
@@ -343,6 +343,11 @@ def preflight_package_generation(
     try:
         load_resume_foundation(root)
         ready.append("Candidate source files resolve")
+        for notice in candidate_source_notices(root):
+            auto_repairs.append(
+                "Age-signaling wording in your candidate source will be rewritten in generated "
+                f"materials; edit the source to clear this notice. {notice}"
+            )
     except Exception as error:
         blocking_issues.append(f"Candidate source files could not be loaded: {error}")
     try:
