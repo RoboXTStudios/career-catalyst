@@ -33,6 +33,7 @@ ROLE_FAMILY_LABELS = {
     "music_partnerships_label_relations": "Music Partnerships & Label Relations",
     "experiential_live_event_production": "Experiential Production / Live Event Production",
     "strategy_gtm_operations": "Strategy & GTM Operations",
+    "paid_media": "Paid Media / Media Planning & Buying",
     "generic_senior_operator": "Senior Operations Leadership",
 }
 

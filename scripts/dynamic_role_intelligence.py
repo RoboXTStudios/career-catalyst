@@ -44,8 +44,20 @@ ROLE_FAMILIES = (
     "music_partnerships_label_relations",
     "experiential_live_event_production",
     "strategy_gtm_operations",
+    "paid_media",
     "generic_senior_operator",
 )
+
+# How a role family was reached.  Title and responsibility-density rules are
+# explicit; fallback rules are keyword guesses that a person should confirm
+# before candidate materials inherit them.
+ROLE_FAMILY_BASIS_CONFIDENCE = {
+    "title": "High",
+    "responsibilities": "High",
+    "fallback_signal": "Medium",
+    "fallback_title_keyword": "Medium",
+    "default": "Low",
+}
 
 
 def extract_seniority(job_title: str = "") -> dict[str, str | None]:
@@ -371,6 +383,15 @@ ROLE_GUIDANCE = {
         "angle": "turn streaming, content, franchise/IP, and audience priorities into a strategy teams can execute",
         "proof_points": ["theatrical and streaming operations", "franchise/IP execution", "cross-functional systems"],
     },
+    "paid_media": {
+        "tone": ["media-fluent", "precise", "commercial", "execution-focused"],
+        "angle": "connect paid media execution with campaign setup, trafficking and tagging quality, measurement and tracking, optimization, and release-driven or awards-season campaign timing",
+        "proof_points": [
+            "enterprise entertainment media operations and campaign activation",
+            "platform governance, tagging, and measurement readiness",
+            "release-driven theatrical and streaming campaign execution",
+        ],
+    },
     "community_growth": {
         "tone": ["community-minded", "human", "growth-aware"],
         "angle": "connect audience insight and community trust with clear programs, content, measurement, and sustainable growth",
@@ -546,10 +567,209 @@ def is_agency_delivery_role(job_title: str = "", job_description: str = "") -> b
     )
 
 
+_ROLE_SECTION_HEADING_RE = re.compile(
+    r"^(?:about (?:the |this )?(?:role|job|position|opportunity|team|you)\b"
+    r"|what you(?:'| wi)ll (?:do|bring)|responsibilities|key responsibilities"
+    r"|qualifications|requirements|who you are|what you bring|the role|the opportunity"
+    r"|role summary|job summary|overview|skills|preferred|nice to have|experience)",
+    flags=re.IGNORECASE,
+)
+_BOILERPLATE_HEADING_RE = re.compile(
+    r"^(?:about (?!(?:the |this )?(?:role|job|position|opportunity|team|you)\b)[\w .,&'’-]{2,60}"
+    r"|who we are|our company|our story|life at [\w .&'’-]+"
+    r"|(?:our |employee )?benefits(?: and perks| & perks)?|perks(?: and benefits| & benefits)?"
+    r"|what we (?:give|offer)(?: you)?|why (?:join us|work (?:here|with us))"
+    r"|compensation(?: and benefits| & benefits)?|(?:[\w ]+ )?pay (?:transparency|range)|salary(?: range)?"
+    r"|equal (?:employment )?opportunity(?: employer)?|eeo(?: statement)?"
+    r"|diversity,? equity,? (?:and |& )?inclusion|accommodations?|reasonable accommodations?"
+    r"|legal(?: disclaimer)?|disclaimer|privacy(?: notice| policy)?|e-?verify)\b",
+    flags=re.IGNORECASE,
+)
+_BOILERPLATE_PARAGRAPH_RE = re.compile(
+    r"\b(?:is an? equal (?:employment )?opportunity|equal opportunity employer"
+    r"|without regard to (?:race|age|religion|sex)|regardless of (?:age|race|disability)|reasonable accommodations?"
+    r"|e-?verify|pay transparency|(?:base )?(?:salary|pay|compensation) range for this"
+    r"|anticipated (?:annual )?(?:base )?(?:salary|pay)|in accordance with (?:applicable )?(?:law|laws)"
+    r"|we (?:offer|provide) (?:a )?(?:comprehensive|competitive) benefits)\b",
+    flags=re.IGNORECASE,
+)
+
+
+def _heading_text(line: str) -> str:
+    text = re.sub(r"^[#>*\-\s]+|[*_\s]+$", "", line.strip())
+    text = re.sub(r"^\*\*|\*\*$", "", text).strip()
+    return text.rstrip(":").strip()
+
+
+# Section labels that often appear inline in single-line imported postings,
+# e.g. "... campaigns. What we give you: An inclusive community ...".
+_INLINE_HEADING_RE = re.compile(
+    r"(?<!\w)(what we (?:give|offer)(?: you)?|(?:our |employee )?benefits(?: and perks| & perks)?"
+    r"|perks(?: and benefits| & benefits)?|who we are|who are we\?|about us"
+    r"|what you(?:'|’| wi)ll (?:do|lead|bring)|key responsibilities|responsibilities"
+    r"|qualifications|requirements|who you are|what you bring|equal (?:employment )?opportunity(?: employer)?"
+    r"|(?:[a-z]+ )?pay (?:transparency|range))\s*(?::|(?<=\?))\s*",
+    flags=re.IGNORECASE,
+)
+_SMALL_HEADING_WORDS = {"a", "an", "and", "at", "for", "in", "of", "on", "our", "the", "to", "we", "you", "&"}
+
+
+def _looks_like_heading(line: str) -> bool:
+    stripped = line.strip()
+    if not stripped or len(stripped.split()) > 10:
+        return False
+    text = _heading_text(stripped)
+    if not text:
+        return False
+    words = text.split()
+    short_title_line = (
+        len(words) <= 6
+        and not re.search(r"[.!?,;]$", text)
+        and (
+            text.isupper()
+            or all(word[:1].isupper() or word.lower() in _SMALL_HEADING_WORDS for word in words)
+        )
+    )
+    return (
+        stripped.startswith("#")
+        or stripped.endswith(":")
+        or (stripped.startswith("**") and stripped.rstrip(":").endswith("**"))
+        or short_title_line
+        or (not re.search(r"[.!?]$", text) and bool(
+            _BOILERPLATE_HEADING_RE.match(text) or _ROLE_SECTION_HEADING_RE.match(text)
+        ))
+    )
+
+
+def _without_boilerplate_sentences(line: str) -> str:
+    sentences = re.split(r"(?<=[.!?])\s+", line)
+    return " ".join(
+        sentence for sentence in sentences if not _BOILERPLATE_PARAGRAPH_RE.search(sentence)
+    )
+
+
+def strip_posting_boilerplate(job_description: str = "") -> str:
+    """Remove company, benefits, EEO, and legal/compensation boilerplate.
+
+    Used only for role-family detection: employer boilerplate such as "a global
+    community" or "our mission" describes the company, not the job.  Callers keep
+    the original posting text for company inference and candidate materials.
+    """
+    original = str(job_description or "")
+    text = _INLINE_HEADING_RE.sub(lambda match: f"\n{match.group(1)}:\n", original)
+    lines = text.splitlines()
+    kept: list[str] = []
+    skipping = False
+    for line in lines:
+        if _looks_like_heading(line):
+            heading = _heading_text(line)
+            if _BOILERPLATE_HEADING_RE.match(heading) and not _ROLE_SECTION_HEADING_RE.match(heading):
+                skipping = True
+                continue
+            skipping = False
+        if skipping:
+            continue
+        kept.append(_without_boilerplate_sentences(line))
+    stripped = "\n".join(kept)
+    # A section that never closes must not swallow the responsibilities; keep
+    # sentence-level cleanup only when section skipping removed most of the text.
+    if len(original) > 400 and len(stripped.strip()) < 0.3 * len(original.strip()):
+        return "\n".join(_without_boilerplate_sentences(line) for line in lines)
+    return stripped
+
+
+_PAID_MEDIA_TITLE_PHRASES = (
+    "paid media", "paid social", "paid search", "media planning", "media planner",
+    "media buying", "media buyer", "media supervisor", "media investment",
+    "media activation", "media negotiation", "ad operations", "ad ops",
+    "advertising operations", "programmatic", "communications planning",
+)
+# Titles that use "media" for other disciplines keep their existing families.
+_NON_PAID_MEDIA_PREFIXES = {
+    "social", "digital", "news", "rich", "broadcast", "earned", "owned", "new",
+    "interactive", "multi", "mixed", "creative", "print",
+}
+_NON_PAID_MEDIA_SUFFIXES = {
+    "relations", "production", "producer", "producers", "asset", "assets", "library",
+    "services", "technology", "tech", "engineer", "engineering", "editor", "archive",
+    "archivist", "sales", "content", "lab", "systems", "rights", "monitoring",
+    "operations", "manager", "coordinator", "specialist", "communications", "intern",
+}
+_MEDIA_ROLE_NOUNS = {
+    "director", "manager", "head", "vp", "vice", "president", "lead", "supervisor",
+    "executive", "strategist", "of", "senior", "sr", "associate", "group",
+}
+PAID_MEDIA_RESPONSIBILITY_SIGNALS = (
+    "media plan", "media plans", "media planning", "media buying", "media buy",
+    "media buys", "media negotiation", "media negotiations", "negotiate media",
+    "media spend", "media budget", "media budgets", "media mix", "media partners",
+    "media vendors", "media strategy", "paid media", "paid social", "paid search",
+    "ctv", "connected tv", "programmatic", "dsp", "dsps", "demand side platform",
+    "ad platforms", "ad operations", "ad ops", "ad trafficking", "trafficking",
+    "flighting", "media optimization", "campaign optimization", "out of home",
+    "ooh", "linear tv", "tracking and tagging", "reach and frequency", "cpm",
+)
+
+
+def _media_title_core(job_title: str) -> list[str]:
+    """Return title tokens before any trailing team or division qualifier."""
+    core = re.split(r"\s[-–—|]\s|\(|\|", str(job_title or ""), maxsplit=1)[0]
+    return _normalize(core).split()
+
+
+def _media_title_kind(job_title: str) -> str:
+    """Classify how a title uses "media": paid, other, or absent."""
+    title = _normalize(job_title)
+    if any(_contains_phrase(title, phrase) for phrase in _PAID_MEDIA_TITLE_PHRASES):
+        return "paid"
+    tokens = _media_title_core(job_title)
+    if "media" not in tokens:
+        return "other" if _contains_phrase(title, "media") else "absent"
+    index = tokens.index("media")
+    before = tokens[index - 1] if index > 0 else ""
+    after = tokens[index + 1] if index + 1 < len(tokens) else ""
+    if before in _NON_PAID_MEDIA_PREFIXES or after in _NON_PAID_MEDIA_SUFFIXES:
+        return "other"
+    # "Director, Media" / "Head of Media" / "Media Director": media is the role noun.
+    if (not after and before in _MEDIA_ROLE_NOUNS) or (
+        after in {"director", "supervisor", "lead", "strategist", "executive", "planner", "buyer"}
+        and (not before or before in _MEDIA_ROLE_NOUNS)
+    ):
+        return "media_noun"
+    return "other"
+
+
+def _paid_media_hits(description: str) -> list[str]:
+    return [
+        signal for signal in PAID_MEDIA_RESPONSIBILITY_SIGNALS
+        if _contains_phrase(description, signal)
+    ]
+
+
+def _has_any_phrase(text: str, signals: Iterable[str]) -> bool:
+    return any(_contains_phrase(text, signal) for signal in signals)
+
+
 def detect_role_family(job_title: str = "", job_description: str = "") -> str:
     """Infer one role family from title-first, deterministic rules."""
+    return classify_role_family(job_title, job_description)["role_family"]
+
+
+def classify_role_family(job_title: str = "", job_description: str = "") -> Dict[str, Any]:
+    """Return the role family plus how it was reached and how confident to be."""
+    family, basis = _classify_role_family(job_title, job_description)
+    confidence = ROLE_FAMILY_BASIS_CONFIDENCE[basis]
+    return {
+        "role_family": family,
+        "basis": basis,
+        "confidence_label": confidence,
+        "needs_confirmation": confidence in {"Medium", "Low"},
+    }
+
+
+def _classify_role_family(job_title: str = "", job_description: str = "") -> Tuple[str, str]:
     title = _normalize(job_title)
-    description = _normalize(job_description)
+    description = _normalize(strip_posting_boilerplate(job_description))
     combined = f"{title} {description}"
     music_context = any(
         signal in combined
@@ -638,14 +858,20 @@ def detect_role_family(job_title: str = "", job_description: str = "") -> str:
     )
     production_hits = [signal for signal in production_signals if _contains_phrase(combined, signal)]
     production_density = len(production_hits)
+    media_title = _media_title_kind(job_title)
+    paid_media_hits = _paid_media_hits(description)
     if _contains_phrase(title, "agency operations"):
-        return "business_operations"
+        return "business_operations", "title"
     if product_marketing_title:
-        return "product_marketing"
+        return "product_marketing", "title"
     if product_operations_title:
-        return "product_strategy_ops"
+        return "product_strategy_ops", "title"
+    # Paid media is title-first: "Director, Media" names the discipline even
+    # when the division ("Commercial Music Group") or boilerplate says otherwise.
+    if media_title == "paid" or (media_title == "media_noun" and len(paid_media_hits) >= 2):
+        return "paid_media", "title"
     if campaign_management_title:
-        return "strategy_gtm_operations"
+        return "strategy_gtm_operations", "title"
     if (experiential_title and production_density >= 2) or (
         production_density >= 5
         and any(_contains_phrase(combined, signal) for signal in (
@@ -653,25 +879,25 @@ def detect_role_family(job_title: str = "", job_description: str = "") -> str:
             "fabrication", "onsite production", "production logistics",
         ))
     ):
-        return "experiential_live_event_production"
+        return "experiential_live_event_production", "title" if experiential_title else "responsibilities"
     if (
         marketing_operations_title
         and not any(signal in title for signal in ("integration", "shared services", "multi-brand"))
         and any(signal in combined for signal in marketing_operations_signals)
     ):
-        return "strategy_gtm_operations"
+        return "strategy_gtm_operations", "title"
     if "label relations" in title or (
         "music partnerships" in combined and any(signal in title for signal in ("manager", "lead", "director"))
     ):
-        return "music_partnerships_label_relations"
+        return "music_partnerships_label_relations", "title"
     if any(signal in title for signal in ("sales strategy operations", "sales strategy and operations")):
-        return "strategy_gtm_operations"
+        return "strategy_gtm_operations", "title"
 
     if (wmg_context or (music_operations_company and "integration operations" in title)) and operations_context and any(
         signal in title
         for signal in ("operations", "integration", "transformation", "strategy")
     ):
-        return "business_operations"
+        return "business_operations", "title"
 
     if any(
         signal in title
@@ -687,32 +913,37 @@ def detect_role_family(job_title: str = "", job_description: str = "") -> str:
             "cross-functional operations",
         )
     ) and not explicit_product_strategy:
-        return "business_operations"
+        return "business_operations", "title"
 
     if any(
         signal in title
         for signal in ("copywriter", "content strategist", "editorial", "content marketing", "content strategy")
     ):
-        return "music_content_strategy" if music_context else "editorial_content_strategy"
+        return ("music_content_strategy" if music_context else "editorial_content_strategy"), "title"
     if any(signal in title for signal in ("marketing operations", "creative operations", "campaign operations", "brand operations")):
-        return "creative_marketing_ops"
+        return "creative_marketing_ops", "title"
     if any(signal in title for signal in ("matrix operations", "organizational efficiency", "ai operations")):
         if any(
             _contains_phrase(combined, signal)
             for signal in ("ai", "artificial intelligence", "automation", "robotics", "startup")
         ):
-            return "ai_operations_systems"
-        return "business_operations"
+            return "ai_operations_systems", "title"
+        return "business_operations", "title"
     if any(signal in title for signal in ("transformation", "advisory", "consultant", "consulting")):
-        return "transformation_advisory"
+        return "transformation_advisory", "title"
     if "creative" in title and "operations" in title:
-        return "creative_marketing_ops"
+        return "creative_marketing_ops", "title"
     if any(signal in title for signal in ("product", "technology")) and (
         explicit_product_strategy or any(signal in combined for signal in ("strategy", "roadmap", "okr"))
     ) and any(
         signal in combined for signal in ("strategy", "operations", "roadmap", "okr")
     ):
-        return "product_strategy_ops"
+        return "product_strategy_ops", "title"
+    # Responsibility density: a generic title whose posting is plainly about
+    # planning, buying, trafficking, and optimizing paid media.  Titles that use
+    # "media" for another discipline (social media, media relations) are exempt.
+    if media_title != "other" and len(paid_media_hits) >= 4:
+        return "paid_media", "responsibilities"
     if (
         any(
             signal in combined
@@ -720,7 +951,7 @@ def detect_role_family(job_title: str = "", job_description: str = "") -> str:
         )
         or any(signal in title for signal in ("gtm", "go to market"))
     ):
-        return "gtm_product_activation"
+        return "gtm_product_activation", "responsibilities"
     product_marketing_responsibilities = sum(
         1
         for signal in (
@@ -731,41 +962,49 @@ def detect_role_family(job_title: str = "", job_description: str = "") -> str:
         if _contains_phrase(description, signal)
     )
     if product_marketing_responsibilities >= 2:
-        return "product_marketing"
+        return "product_marketing", "responsibilities"
     if any(signal in combined for signal in ("streaming", "franchise", "content slate", "studios")) and any(
         signal in title for signal in ("strategy", "operations", "initiatives")
     ):
-        return "streaming_strategy"
-    if any(signal in combined for signal in ("community", "audience growth", "fan growth", "member growth")):
-        return "community_growth"
-    if any(signal in combined for signal in ("transformation", "advisory", "operating model", "consultant", "consulting")):
-        return "transformation_advisory"
-    if any(signal in combined for signal in ("matrix operations", "organizational efficiency", "capacity planning", "operating cadence")):
-        if any(
-            _contains_phrase(combined, signal)
-            for signal in ("ai", "artificial intelligence", "automation", "robotics", "startup")
-        ):
-            return "ai_operations_systems"
-        return "business_operations"
-    if any(signal in combined for signal in ("marketing operations", "creative operations", "campaign workflow", "campaign operations")):
-        return "creative_marketing_ops"
+        return "streaming_strategy", "responsibilities"
+    # Fallbacks below are keyword guesses over the boilerplate-stripped posting.
+    # Match whole words/phrases only so "community" in a benefits blurb or "ai"
+    # inside another word cannot pick the family.
+    if _has_any_phrase(combined, ("community", "communities", "audience growth", "fan growth", "member growth")):
+        return "community_growth", "fallback_signal"
+    if _has_any_phrase(combined, ("transformation", "advisory", "operating model", "operating models", "consultant", "consultants", "consulting")):
+        return "transformation_advisory", "fallback_signal"
+    if _has_any_phrase(combined, (
+        "matrix operations", "organizational efficiency", "capacity planning",
+        "operating cadence", "operating cadences",
+    )):
+        if _has_any_phrase(combined, ("ai", "artificial intelligence", "automation", "robotics", "startup")):
+            return "ai_operations_systems", "fallback_signal"
+        return "business_operations", "fallback_signal"
+    if _has_any_phrase(combined, (
+        "marketing operations", "creative operations", "campaign workflow",
+        "campaign workflows", "campaign operations",
+    )):
+        return "creative_marketing_ops", "fallback_signal"
     if any(signal in title for signal in ("strategy operations", "strategy and operations")):
-        return "business_operations"
+        return "business_operations", "title"
     if any(signal in title for signal in ("product operations", "product strategy")) and explicit_product_strategy:
-        return "product_strategy_ops"
+        return "product_strategy_ops", "title"
     if (
-        any(signal in combined for signal in ("roadmap", "okr", "product", "technology"))
+        _has_any_phrase(combined, ("roadmap", "okr", "product", "technology"))
         and any(signal in title for signal in ("strategy", "operations", "director", "lead"))
         and explicit_product_strategy
     ):
-        return "product_strategy_ops"
+        return "product_strategy_ops", "responsibilities"
     if any(signal in title for signal in ("business operations", "strategic operations", "strategy operations", "integration operations", "operations director", "chief of staff", "program operations")):
-        return "business_operations"
-    if any(signal in title for signal in ("marketing", "creative", "brand", "campaign")):
-        return "creative_marketing_ops"
-    if any(signal in title for signal in ("director", "head", "lead", "vice president", "vp", "chief")):
-        return "generic_senior_operator"
-    return "generic_senior_operator"
+        return "business_operations", "title"
+    if _has_any_phrase(title, ("marketing", "creative", "brand", "branding", "campaign", "campaigns")):
+        return "creative_marketing_ops", "fallback_title_keyword"
+    return "generic_senior_operator", "default"
+
+
+def role_family_guidance_points(role_family: str) -> list[str]:
+    return list(ROLE_GUIDANCE.get(role_family, {}).get("proof_points", []))
 
 
 def _proof_guidance(company_category: str, role_family: str) -> Tuple[list[str], list[str]]:
@@ -788,6 +1027,19 @@ def _effective_proof_guidance(company_category: str, role_family: str) -> Tuple[
             "venue, fabrication, and onsite logistics",
         ]
         avoid = _dedupe((*avoid, "unrelated editorial or content systems", "MarTech campaign execution"))
+    if role_family == "paid_media":
+        emphasize = _dedupe((
+            *role_family_guidance_points("paid_media"),
+            "campaign setup, trafficking, and optimization handoffs",
+            "measurement, tracking, and tagging quality",
+            "release-driven and awards-season campaign timing",
+            "trade media and publisher partner coordination",
+        ))
+        avoid = _dedupe((
+            *avoid,
+            "community, editorial, or audience-growth framing",
+            "unsupported media negotiation, buying-authority, or budget-ownership claims",
+        ))
     return emphasize, avoid
 
 
@@ -800,7 +1052,8 @@ def build_dynamic_voice_profile(
     """Build normalized local voice guidance for an unknown company."""
     context = infer_company_context(company_name, job_title, job_description, source_url)
     category = context["company_category"]
-    role_family = detect_role_family(job_title, job_description)
+    role_classification = classify_role_family(job_title, job_description)
+    role_family = role_classification["role_family"]
     category_guidance = CATEGORY_GUIDANCE[category]
     role_guidance = ROLE_GUIDANCE[role_family]
     emphasize, proof_avoid = _effective_proof_guidance(category, role_family)
@@ -815,6 +1068,14 @@ def build_dynamic_voice_profile(
         category_label = "Music / Live Events & Experiential"
         family_label = "Experiential Production / Live Event Production"
         voice_label = "Music + Experiential Production"
+    elif role_family == "paid_media":
+        category_label = (
+            "Music / Entertainment Operations"
+            if category == "music_entertainment_operations"
+            else category.replace("_", " ").title()
+        )
+        family_label = "Paid Media / Media Planning & Buying"
+        voice_label = f"Dynamic {category.replace('_', ' ').title()}"
     elif role_family == "product_marketing":
         category_label = (
             "Music / Entertainment Operations"
@@ -849,6 +1110,11 @@ def build_dynamic_voice_profile(
         family_label = "Strategic Operations" if is_music_operations else role_family.replace("_", " ").title()
         voice_label = "Music + Operational Transformation" if is_music_operations else f"Dynamic {category.replace('_', ' ').title()}"
     cover_letter_angles = _dedupe((*category_guidance["cover_letter_angle"], role_guidance["angle"]))
+    if role_family == "paid_media":
+        cover_letter_angles = [
+            "connect release-driven entertainment campaigns with dependable paid media execution across planning handoffs, setup, trafficking, and optimization",
+            ROLE_GUIDANCE["paid_media"]["angle"],
+        ]
     if role_family == "experiential_live_event_production":
         cover_letter_angles = [
             "connect experiential production with disciplined budgets, timelines, vendors, venues, and onsite execution",
@@ -860,6 +1126,9 @@ def build_dynamic_voice_profile(
         "source": "dynamic_inference",
         "company_category": category,
         "role_family": role_family,
+        "role_family_basis": role_classification["basis"],
+        "role_family_confidence_label": role_classification["confidence_label"],
+        "role_family_needs_confirmation": role_classification["needs_confirmation"],
         "seniority": explicit_seniority["label"],
         "seniority_source": explicit_seniority["source"],
         "tone": _dedupe((*category_guidance["tone"], *role_guidance["tone"])),
@@ -918,6 +1187,9 @@ def get_effective_voice_profile(
         "source": "known_profile",
         "company_category": category,
         "role_family": role_family,
+        "role_family_basis": dynamic["role_family_basis"],
+        "role_family_confidence_label": dynamic["role_family_confidence_label"],
+        "role_family_needs_confirmation": dynamic["role_family_needs_confirmation"],
         "tone": _dedupe(profile.get("tone", dynamic["tone"])),
         "cover_letter_angle": _dedupe(
             (*profile.get("cover_letter_angle", []), *dynamic["cover_letter_angle"])

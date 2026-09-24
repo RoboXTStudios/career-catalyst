@@ -11,10 +11,12 @@ from scripts.application_tracker import VALID_STATUSES, get_record_status, load_
 from scripts.cli import main
 from scripts.dynamic_role_intelligence import (
     build_dynamic_voice_profile,
+    classify_role_family,
     detect_company_voice,
     detect_role_family,
     get_effective_voice_profile,
     infer_company_context,
+    strip_posting_boilerplate,
 )
 from scripts.generate_application_note import (
     _application_note_content,
@@ -380,6 +382,123 @@ class DynamicRoleIntelligenceTests(unittest.TestCase):
             "Withdrawn / Closed",
         )
         self.assertFalse(by_id["playstation_director_ad_ops_invalid"]["show_on_dashboard"])
+
+
+SONY_MEDIA_FIXTURE = (
+    PROJECT_ROOT / "tests" / "fixtures" / "jobs" / "sony_music_director_media_commercial_music_group.md"
+)
+PAID_MEDIA_DUTIES = (
+    "Build media plans and lead media buying across CTV, programmatic, and paid social. "
+    "Manage DSPs and ad platforms, ad operations, flighting, and campaign optimization."
+)
+NEUTRAL_DUTIES = (
+    "What you'll do:\n"
+    "Coordinate special projects, prepare leadership updates, and track deliverables across teams.\n"
+    "Maintain project schedules and follow up on open items.\n"
+)
+BENEFITS_WITH_COMMUNITY = (
+    "What we give you:\n"
+    "An inclusive, collaborative, and global community where you can do your best work\n"
+    "Generous benefits and time off\n"
+)
+
+
+class PaidMediaRoleFamilyTests(unittest.TestCase):
+    def test_sony_director_media_posting_classifies_as_paid_media(self):
+        posting = SONY_MEDIA_FIXTURE.read_text(encoding="utf-8")
+        title = "Director, Media - Commercial Music Group"
+        classification = classify_role_family(title, posting)
+        self.assertEqual(classification["role_family"], "paid_media")
+        self.assertEqual(classification["basis"], "title")
+        self.assertFalse(classification["needs_confirmation"])
+        profile = get_effective_voice_profile("Sony Music Entertainment", title, posting)
+        self.assertEqual(profile["role_family"], "paid_media")
+        self.assertEqual(profile["role_family_label"], "Paid Media / Media Planning & Buying")
+        self.assertNotIn("community", " ".join(profile["tone"]).lower())
+
+    def test_sony_posting_is_not_community_growth_even_under_a_generic_title(self):
+        posting = SONY_MEDIA_FIXTURE.read_text(encoding="utf-8")
+        # Without the title rule, responsibilities still decide; the benefits
+        # line "global community" must never pick the family.
+        self.assertEqual(detect_role_family("Director", posting), "paid_media")
+
+    def test_community_only_in_benefits_does_not_produce_community_growth(self):
+        posting = "About Acme\nAcme is a proud community of makers.\n\n" + NEUTRAL_DUTIES + "\n" + BENEFITS_WITH_COMMUNITY
+        self.assertNotEqual(
+            detect_role_family("Director, Special Projects", posting), "community_growth"
+        )
+        # The same word in the actual responsibilities still counts.
+        with_duties = NEUTRAL_DUTIES + "Grow our creator community and member engagement.\n"
+        self.assertEqual(
+            detect_role_family("Director, Special Projects", with_duties), "community_growth"
+        )
+
+    def test_fallback_signals_use_whole_word_matching(self):
+        posting = NEUTRAL_DUTIES + "We value transformational leadership and communications.\n"
+        self.assertNotIn(
+            detect_role_family("Director, Special Projects", posting),
+            {"transformation_advisory", "community_growth"},
+        )
+
+    def test_paid_media_titles_are_detected_title_first(self):
+        for title in (
+            "Media Director",
+            "Head of Media",
+            "Director, Media",
+            "Senior Manager, Paid Media",
+            "Paid Social Manager",
+            "Media Planning Supervisor",
+            "Media Supervisor",
+            "Ad Operations Manager",
+            "Programmatic Lead",
+        ):
+            with self.subTest(title=title):
+                self.assertEqual(detect_role_family(title, PAID_MEDIA_DUTIES), "paid_media")
+
+    def test_other_media_titles_keep_their_existing_families(self):
+        for title in (
+            "Social Media Manager",
+            "Director, Media Relations",
+            "Digital Media Producer",
+            "Director, Media Operations",
+        ):
+            with self.subTest(title=title):
+                self.assertNotEqual(detect_role_family(title, PAID_MEDIA_DUTIES), "paid_media")
+                self.assertEqual(
+                    detect_role_family(title, PAID_MEDIA_DUTIES),
+                    detect_role_family(title, NEUTRAL_DUTIES),
+                )
+
+    def test_paid_media_responsibility_density_under_a_generic_title(self):
+        classification = classify_role_family("Senior Manager, Growth", PAID_MEDIA_DUTIES)
+        self.assertEqual(classification["role_family"], "paid_media")
+        self.assertEqual(classification["basis"], "responsibilities")
+
+    def test_boilerplate_sections_are_stripped_for_role_detection(self):
+        posting = (
+            "## About Acme\nAcme builds a global community.\n\n"
+            "## About the Role\nLead media plans.\n\n"
+            "## Benefits\nHealth, dental, and a supportive community.\n\n"
+            "## Responsibilities\n- Manage programmatic buys.\n\n"
+            "## Equal Opportunity Employer\nAcme does not discriminate.\n"
+            "Acme is an equal opportunity employer and considers applicants without regard to race.\n"
+        )
+        stripped = strip_posting_boilerplate(posting)
+        self.assertIn("Lead media plans.", stripped)
+        self.assertIn("Manage programmatic buys.", stripped)
+        self.assertNotIn("community", stripped.lower())
+        self.assertNotIn("discriminate", stripped.lower())
+
+    def test_single_line_posting_keeps_responsibilities_next_to_eeo_text(self):
+        posting = (
+            "We are Acme. Lead finance transformation workstreams and govern the PMO. "
+            "What we give you: A supportive global community and great benefits. "
+            "Acme is an equal opportunity employer and considers applicants without regard to race."
+        )
+        stripped = strip_posting_boilerplate(posting)
+        self.assertIn("finance transformation workstreams", stripped)
+        self.assertNotIn("community", stripped.lower())
+        self.assertNotIn("equal opportunity", stripped.lower())
 
 
 if __name__ == "__main__":
