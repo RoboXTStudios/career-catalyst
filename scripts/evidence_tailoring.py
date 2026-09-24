@@ -584,7 +584,11 @@ def _sentences(value: Any) -> list[str]:
 
 def _named_entity_weight(sentence: str, known_names: Sequence[str]) -> int:
     """Weight a sentence by the specifics it carries: figures, names, and tools."""
-    weight = 3 * len(_FIGURE_RE.findall(sentence))
+    # Calendar years ("2016 through 2026") are dates, not results figures.
+    weight = 3 * sum(
+        1 for figure in _FIGURE_RE.findall(sentence)
+        if not re.fullmatch(r"(?:19|20)\d{2}\+?", figure.strip())
+    )
     words = re.findall(r"[A-Za-z0-9][A-Za-z0-9+&'’.-]*", sentence)
     weight += sum(
         1 for index, word in enumerate(words)

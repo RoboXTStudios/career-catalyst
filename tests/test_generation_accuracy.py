@@ -118,6 +118,16 @@ def test_header_keeps_only_names_the_evidence_supports():
     assert dropped == ["Pixar", "Disney+"]
 
 
+def test_calendar_years_do_not_outrank_budget_figures():
+    project = dict(THEATRICAL_SAVED, results=(
+        "Delivered campaign operations for the full Disney Studios theatrical and Home Entertainment slate "
+        "from 2016 through 2026. Managed budgets that ranged from about $5M to about $25M per title across all Disney IPs."
+    ))
+    bullets = resume_project_bullets(project, {})
+    assert any("$5M" in bullet for bullet in bullets)
+    assert not any("from 2016 through 2026" in bullet for bullet in bullets)
+
+
 def test_bullets_keep_named_entities_and_figures_over_generic_results():
     fyc = resume_project_bullets(FYC_SAVED, {})
     assert any("Deadline and The Hollywood Reporter" in bullet for bullet in fyc)
