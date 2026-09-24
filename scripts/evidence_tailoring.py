@@ -574,6 +574,9 @@ _FIGURE_RE = re.compile(
     r"\$\s?\d[\d,.]*\s?(?:[KMB]|million|billion)?|\b\d[\d,.]*\s?(?:%|percent|x|[KMB]\b|million|billion)"
     r"|\b\d{2,}\+?(?=\s+[a-z])"
 )
+_BACK_REFERENCE_RE = re.compile(
+    r"^(?:This|That|These|Those|It|They|Such)\b|\b(?:those|these|such|the same)\s+(?:problems?|issues?|gaps?|needs?|challenges?|efforts?|changes?|steps?|goals?|teams?)\b"
+)
 _SENTENCE_START_WORDS = {"I", "The", "A", "An", "This", "That", "My", "We", "Our", "Each", "Every"}
 
 
@@ -582,20 +585,30 @@ def _sentences(value: Any) -> list[str]:
     return [part.strip() for part in re.split(r"(?<=[.!?])\s+(?=[A-Z0-9\"'“])", text) if part.strip()]
 
 
-def _named_entity_weight(sentence: str, known_names: Sequence[str]) -> int:
-    """Weight a sentence by the specifics it carries: figures, names, and tools."""
+def _named_entity_weight(sentence: str, known_names: Sequence[str], already_said: str = "") -> int:
+    """Weight a sentence by the specifics it carries: figures, names, and tools.
+
+    Specifics already present in ``already_said`` (the bullet chosen before
+    it) earn nothing, so the second bullet adds information instead of
+    restating the first.
+    """
+    said = already_said.lower()
+    said_words = set(re.findall(r"[a-z0-9][a-z0-9+&'’.-]*", said))
     # Calendar years ("2016 through 2026") are dates, not results figures.
     weight = 3 * sum(
         1 for figure in _FIGURE_RE.findall(sentence)
-        if not re.fullmatch(r"(?:19|20)\d{2}\+?", figure.strip())
+        if not re.fullmatch(r"(?:19|20)\d{2}\+?", figure.strip()) and figure.strip().lower() not in said
     )
     words = re.findall(r"[A-Za-z0-9][A-Za-z0-9+&'’.-]*", sentence)
     weight += sum(
         1 for index, word in enumerate(words)
         if index > 0 and (word[0].isupper() or word[0].isdigit()) and word not in _SENTENCE_START_WORDS
+        and word.lower() not in said_words
     )
     lowered = sentence.lower()
-    weight += 2 * sum(1 for name in known_names if name and name.lower() in lowered)
+    weight += 2 * sum(
+        1 for name in known_names if name and name.lower() in lowered and name.lower() not in said
+    )
     return weight
 
 
@@ -616,6 +629,9 @@ def entity_preserving_sentences(project: Mapping[str, Any], limit: int = 2) -> l
         for source, field in ((0, "actions"), (1, "results"))
         for position, sentence in enumerate(_sentences(project.get(field)))
         if not _PLACEHOLDER_NOTE_RE.search(sentence)
+        # A later sentence that points back ("Translated those problems ...")
+        # does not stand alone as a bullet.
+        and (position == 0 or not _BACK_REFERENCE_RE.search(sentence))
     ]
     if not candidates:
         return []
@@ -625,7 +641,10 @@ def entity_preserving_sentences(project: Mapping[str, Any], limit: int = 2) -> l
     chosen = [first]
     if rest and limit > 1:
         # Prefer an outcome sentence unless an action sentence is clearly more specific.
-        chosen.append(max(rest, key=lambda item: (_named_entity_weight(item[2], known), item[0], -item[1])))
+        chosen.append(max(
+            rest,
+            key=lambda item: (_named_entity_weight(item[2], known, first[2]), item[0], -item[1]),
+        ))
     chosen.sort(key=lambda item: (item[0], item[1]))
     return [sentence for _source, _position, sentence in chosen]
 

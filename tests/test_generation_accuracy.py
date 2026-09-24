@@ -118,6 +118,18 @@ def test_header_keeps_only_names_the_evidence_supports():
     assert dropped == ["Pixar", "Disney+"]
 
 
+def test_bullets_skip_sentences_that_point_back_to_unseen_context():
+    project = {
+        "actions": (
+            "Identified recurring campaign readiness and QA gaps across teams. "
+            "Translated those problems into a working CampaignOS prototype with a structured schema and QA logic."
+        ),
+        "results": "Established a testable product concept.",
+    }
+    bullets = resume_project_bullets(project, {})
+    assert not any("those problems" in bullet for bullet in bullets)
+
+
 def test_calendar_years_do_not_outrank_budget_figures():
     project = dict(THEATRICAL_SAVED, results=(
         "Delivered campaign operations for the full Disney Studios theatrical and Home Entertainment slate "
