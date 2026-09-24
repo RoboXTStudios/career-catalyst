@@ -72,6 +72,24 @@ def test_synonym_layer_links_fyc_to_award_nominations_and_trades_to_trade_media(
     assert "awards-season campaigns" in coverage["matched_labels"]
 
 
+def test_budget_ownership_does_not_cover_po_and_invoice_reconciliation():
+    budgets = {"id": "b", "title": "Release Campaigns", "results": "Managed budgets of about $5M to $25M per title."}
+    posting = normalized_posting({
+        "job_title": "Director, Media",
+        "company": "Acme",
+        "job_description": (
+            "What you'll do:\n"
+            "Aid in the financial reconciliation process (PO requests, invoice approvals)\n"
+            "Provide budget recaps and analyses each month\n"
+        ),
+    })
+    rows = match_evidence_to_requirements(posting, [budgets])["requirements"]
+    reconciliation = next(row for row in rows if row["text"].startswith("Aid in the financial"))
+    recaps = next(row for row in rows if row["text"].startswith("Provide budget recaps"))
+    assert not reconciliation["covered"]
+    assert recaps["covered"]
+
+
 def test_the_trade_desk_is_not_trade_media():
     assert "trade_media" not in concepts_in("Managed buys in The Trade Desk.")
     assert "programmatic" in concepts_in("Managed buys in The Trade Desk.")

@@ -68,9 +68,14 @@ CONCEPTS: dict[str, tuple[str, tuple[str, ...]]] = {
         "optimization", "optimizations", "optimize", "optimizing", "campaign flights",
         "a b testing", "test new ad products",
     )),
-    "budget_finance": ("budgets and financial reconciliation", (
-        "budget", "budgets", "budget recaps", "financial reconciliation", "invoice",
-        "invoices", "invoice approvals", "po requests", "purchase orders", "billing",
+    # Owning a budget is not the same work as processing POs and invoices.
+    "budget_management": ("budget management", (
+        "budget", "budgets", "budget recaps", "media spend", "spend management",
+    )),
+    "financial_reconciliation": ("PO and invoice reconciliation", (
+        "financial reconciliation", "reconciliation", "reconcile", "invoice", "invoices",
+        "invoice approvals", "po requests", "po creation", "purchase order", "purchase orders",
+        "billing", "accounts payable",
     )),
     "release_campaigns": ("release-driven entertainment campaigns", (
         "theatrical release", "theatrical releases", "release campaigns", "streaming launch",
