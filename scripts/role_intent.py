@@ -84,6 +84,32 @@ DYNAMIC_ROLE_WRITING = {
             ],
         },
     },
+    "paid_media": {
+        "headline": "Senior Media Operations Leader | Paid Media Execution | Measurement & Tracking | Entertainment",
+        "summary": (
+            "Senior media operations leader with enterprise entertainment experience across campaign activation, "
+            "platform governance, tagging, and measurement readiness for theatrical releases, streaming launches, and "
+            "franchise priorities. At OMG23 / OMD Entertainment, Omnicom Media Group, I led 10 direct reports and provided "
+            "strategic and operational leadership across an integrated 64-person organization spanning Ad Operations, "
+            "Creative Management, and Marketing Science and Analytics."
+        ),
+        "competency_priorities": [
+            "Media Operations", "Entertainment Marketing", "Measurement & Data Governance",
+            "MarTech Strategy", "Vendor Integration", "Quality Assurance",
+            "Workflow Governance", "Cross-Functional Leadership",
+        ],
+        "tools": {
+            "Marketing Technology & Measurement": [
+                "Google Marketing Platform", "CM360", "DV360", "Google Ads", "YouTube",
+                "The Trade Desk", "Meta Ads Manager", "TikTok Ads", "Innovid",
+                "DoubleVerify", "IAS",
+            ],
+            "Operations & Program Management": [
+                "Campaign Taxonomy", "Pixel and Tagging Strategy", "Measurement Readiness",
+                "Platform Governance", "Quality-Assurance Frameworks",
+            ],
+        },
+    },
     "music_partnerships_label_relations": {
         "headline": "Senior Operations & Entertainment Partnerships Leader | Media Operations | Creator Platforms",
         "summary": (
@@ -240,6 +266,24 @@ def _explicit_operational_guidance(
                 "MarTech campaign execution", "measurement readiness", "platform implementation",
                 "editorial leadership", "content systems", "Career Catalyst",
                 "generic tracking and training themes",
+            ],
+        )
+    if dynamic_family == "paid_media":
+        return (
+            "Plan, activate, and optimize paid media across social, CTV, programmatic, and traditional channels, "
+            "keeping campaign setup, trafficking, tracking and tagging, measurement, and partner coordination "
+            "dependable through release-driven and awards-season windows.",
+            [
+                "paid media execution", "campaign setup and activation", "trafficking and ad operations",
+                "measurement and tracking", "tagging quality", "campaign optimization",
+            ],
+            [
+                "release-driven campaign timing", "awards-season campaigns", "trade media",
+                "platform and vendor coordination", "cross-functional leadership",
+            ],
+            [
+                "community growth", "editorial storytelling", "Multiverse",
+                "nonprofit social impact", "unsupported media negotiation or buying-authority claims",
             ],
         )
     if dynamic_family == "strategy_gtm_operations" and campaign_management_title and any(
@@ -470,6 +514,7 @@ def build_role_intent(
         "music_partnerships_label_relations": "Music Partnerships & Label Relations",
         "experiential_live_event_production": "Experiential Production / Live Event Production",
         "strategy_gtm_operations": "Strategy & GTM Operations",
+        "paid_media": "Paid Media / Media Planning & Buying",
     }
     if dynamic_family in dynamic_package_labels:
         package_family = dynamic_family
@@ -539,10 +584,52 @@ def normalize_role_intelligence_overrides(value: Any) -> dict[str, Any]:
     return resolved
 
 
+ROLE_FAMILY_CHOICE_LABELS = {
+    "paid_media": "Paid Media / Media Planning & Buying",
+    "strategy_gtm_operations": "Strategy & GTM Operations",
+    "business_operations": "Business Operations",
+    "creative_marketing_ops": "Creative & Marketing Operations",
+    "product_marketing": "Product Marketing",
+    "product_strategy_ops": "Product Strategy & Operations",
+    "gtm_product_activation": "GTM Product Activation",
+    "transformation_advisory": "Transformation Advisory",
+    "ai_operations_systems": "AI Operations & Systems",
+    "streaming_strategy": "Streaming Strategy",
+    "music_content_strategy": "Music Content Strategy",
+    "editorial_content_strategy": "Editorial & Content Strategy",
+    "community_growth": "Community Growth",
+    "music_partnerships_label_relations": "Music Partnerships & Label Relations",
+    "experiential_live_event_production": "Experiential Production / Live Event Production",
+    "generic_senior_operator": "Senior Operations Leadership",
+}
+
+
+def _family_key(value: Any) -> str:
+    return "_".join(re.findall(r"[a-z0-9]+", str(value or "").lower()))
+
+
+def known_role_family(value: Any) -> str:
+    """Resolve a family key or its display label to a known role family."""
+    key = _family_key(value)
+    if not key:
+        return ""
+    for family, label in ROLE_FAMILY_CHOICE_LABELS.items():
+        if key in {family, _family_key(label)}:
+            return family
+    if any(_contains(key.replace("_", " "), phrase) for phrase in (
+        "paid media", "media planning", "media buying", "ad operations",
+    )):
+        return "paid_media"
+    return ""
+
+
 def _generation_family_for_override(
     overrides: Mapping[str, Any], inferred: Mapping[str, Any]
 ) -> str:
     """Map free-form editorial labels to an existing conservative writing profile."""
+    known = known_role_family(overrides.get("role_family"))
+    if known:
+        return known
     text = " ".join(
         str(overrides.get(field) or "")
         for field in ("category", "role_family", "primary_hiring_need", "leading_themes")
@@ -715,6 +802,7 @@ def reconcile_package_role_intelligence(
         "music_partnerships_label_relations": "Music Partnerships & Label Relations",
         "experiential_live_event_production": "Experiential Production / Live Event Production",
         "strategy_gtm_operations": "Strategy & GTM Operations",
+        "paid_media": "Paid Media / Media Planning & Buying",
     }
     label = str(
         (
@@ -776,6 +864,7 @@ def align_role_intent_to_effective_intelligence(
         "music_partnerships_label_relations": "Music Partnerships & Label Relations",
         "experiential_live_event_production": "Experiential Production / Live Event Production",
         "strategy_gtm_operations": "Strategy & GTM Operations",
+        "paid_media": "Paid Media / Media Planning & Buying",
     }
     resolved["package_role_family"] = family
     resolved["effective_role_family"] = str(

@@ -78,6 +78,8 @@ def _effective_role_family(
         return "experiential_live_event_production"
     if "strategy" in raw and "operations" in raw:
         return "strategy_gtm_operations"
+    if "paid media" in raw or raw == "paid_media":
+        return "paid_media"
     return raw.replace(" ", "_")
 
 

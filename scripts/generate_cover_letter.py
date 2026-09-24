@@ -482,6 +482,7 @@ def _remove_repeated_dynamic_closing(content: str, context: Dict[str, Any]) -> s
         "strategy_gtm_operations",
         "music_partnerships_label_relations",
         "experiential_live_event_production",
+        "paid_media",
         "product_strategy_ops",
         "product_marketing",
         "product_operations",
@@ -1422,6 +1423,13 @@ def _dynamic_cover_letter_content(context: Dict[str, Any]) -> str:
             "culture, innovation, music, and employee storytelling, and built a contributor framework "
             "that reached 400+ employees. Through RoboXT Studios, I continue to develop creative, "
             "photography, editorial, and web-publishing systems with an independent builder perspective."
+        )
+    elif role_family == "paid_media":
+        experience = (
+            f"At {public_omg23_name(context.get('career_data', {}))}, I led operations across Ad Operations, "
+            "Creative Management, and Marketing Science and Analytics for premium entertainment campaigns. That meant "
+            "keeping paid media setup, trafficking, tagging, measurement readiness, and optimization handoffs dependable "
+            "across theatrical releases and streaming launches, where release timing leaves little room for error."
         )
     elif role_family in {"product_strategy_ops", "gtm_product_activation", "product_marketing"}:
         experience = (

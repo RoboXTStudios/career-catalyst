@@ -159,6 +159,12 @@ def _intelligent_role_angle(
             "multiverse_editorial",
             "I combine community-minded communication with the planning, measurement, and operating discipline needed to sustain growth.",
         ),
+        "paid_media": (
+            "paid media execution, campaign setup and optimization, measurement and tracking, and release-driven campaign timing",
+            "keeping paid media plans, trafficking, tagging, and measurement aligned when release and awards-season windows leave little room for error",
+            "enterprise_campaign_delivery",
+            "I bring enterprise entertainment media operations experience across campaign activation, platform governance, tagging, and measurement readiness.",
+        ),
         "business_operations": (
             "ownership, capacity planning, decision cadence, and cross-functional delivery",
             "creating capacity visibility, clear ownership, and useful operating rhythms across business functions",
@@ -197,6 +203,7 @@ def _intelligent_role_angle(
         "ai_operations_systems": "business, product, or organizational operations leader",
         "streaming_strategy": "streaming, content strategy, or operations leader",
         "community_growth": "community, audience, or growth leader",
+        "paid_media": "media, paid media, or marketing leader",
         "business_operations": "business operations leader",
         "creative_marketing_ops": "creative or marketing operations leader",
         "generic_senior_operator": "hiring manager or relevant team lead",

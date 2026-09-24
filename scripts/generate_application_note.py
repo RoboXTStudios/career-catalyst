@@ -36,6 +36,7 @@ DYNAMIC_NOTE_FOCUS = {
     "ai_operations_systems": "matrix operations, capacity visibility, dashboards, automation, and governance",
     "streaming_strategy": "streaming, content and franchise priorities, audience context, and execution",
     "community_growth": "community trust, audience growth, content, measurement, and repeatable programs",
+    "paid_media": "paid media execution, campaign setup and optimization, measurement and tracking, and release-driven campaigns",
     "business_operations": "ownership, capacity planning, decision cadence, and cross-functional delivery",
     "creative_marketing_ops": "creative and marketing priorities, workflow, quality, capacity, and delivery",
     "generic_senior_operator": "strategic clarity, stakeholder alignment, scalable systems, and execution",

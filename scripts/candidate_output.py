@@ -479,6 +479,8 @@ def candidate_cover_letter(context: Mapping[str, Any]) -> str:
         return _music_partnerships_cover_letter(context, greeting, company, role)
     if role_family == "experiential_live_event_production":
         return _experiential_cover_letter(context, greeting, company, role)
+    if role_family == "paid_media":
+        return _paid_media_cover_letter(context, greeting, company, role)
     adjacency = domain_adjacency(parsed)
     if archetype == "product_operations":
         selected_projects = cover_letter_evidence_selection(context)
@@ -602,6 +604,46 @@ def _experiential_cover_letter(
         ]
     )
     validate_candidate_output(content, context="Generated experiential cover letter")
+    return content
+
+
+def _paid_media_cover_letter(
+    context: Mapping[str, Any], greeting: str, company: str, role: str
+) -> str:
+    """Ground a paid media letter in media operations, not community or editorial themes."""
+    parsed = context["parsed_job"]
+    projects = _selected_project_paragraphs(context, parsed)
+    content = "\n\n".join(
+        [
+            greeting,
+            (
+                f"The {role} role at {company} centers on paid media that has to land on time: plans that move "
+                "cleanly into setup and trafficking, tracking and tagging that hold up under measurement, and "
+                "optimization that keeps pace with release windows. That is the work I have supported and led "
+                "in entertainment media operations."
+            ),
+            (
+                "At OMG23 / OMD Entertainment, Omnicom Media Group, I advanced to Group Director, led 10 direct reports, "
+                "and provided strategic and operational leadership across an integrated 64-person organization spanning "
+                "Ad Operations, Creative Management, and Marketing Science and Analytics. I directed operational execution "
+                "for multimillion-dollar premium entertainment campaigns across theatrical releases, streaming launches, "
+                "and franchise priorities."
+            ),
+            (
+                "Much of that work lived in the platforms and handoffs behind paid media: campaign taxonomy, pixel and "
+                "tagging standards, measurement readiness, and vendor workflows across tools such as CM360, DV360, "
+                "The Trade Desk, and Meta Ads Manager. I built repeatable QA and governance so campaigns launched "
+                "correctly and could be measured and optimized once they were live."
+            ),
+            *projects,
+            (
+                f"I would bring {company} dependable paid media execution, careful measurement and tracking, and calm "
+                "coordination across media partners, creative, and analytics when timing matters most."
+            ),
+            "Best,\n\nTrisha Lynch",
+        ]
+    )
+    validate_candidate_output(content, context="Generated paid media cover letter")
     return content
 
 

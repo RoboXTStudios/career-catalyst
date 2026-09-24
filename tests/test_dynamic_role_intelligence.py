@@ -18,6 +18,10 @@ from scripts.dynamic_role_intelligence import (
     infer_company_context,
     strip_posting_boilerplate,
 )
+from scripts.role_intent import (
+    _generation_family_for_override,
+    known_role_family,
+)
 from scripts.generate_application_note import (
     _application_note_content,
     generate_application_note,
@@ -499,6 +503,17 @@ class PaidMediaRoleFamilyTests(unittest.TestCase):
         self.assertIn("finance transformation workstreams", stripped)
         self.assertNotIn("community", stripped.lower())
         self.assertNotIn("equal opportunity", stripped.lower())
+
+    def test_paid_media_override_maps_to_paid_media_writing(self):
+        self.assertEqual(known_role_family("Paid Media / Media Planning & Buying"), "paid_media")
+        self.assertEqual(known_role_family("paid_media"), "paid_media")
+        self.assertEqual(
+            _generation_family_for_override(
+                {"category": "Music / Entertainment", "role_family": "Paid Media / Media Planning & Buying"},
+                {"package_role_family": "community_growth"},
+            ),
+            "paid_media",
+        )
 
 
 if __name__ == "__main__":

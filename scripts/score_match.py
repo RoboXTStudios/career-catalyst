@@ -645,6 +645,13 @@ def _role_diagnostic_signals(
             "venue and logistics coordination",
             "onsite execution",
         ]
+    if family == "paid_media" or "paid media" in label:
+        return [
+            "paid media execution",
+            "campaign setup and optimization",
+            "measurement and tracking",
+            "release-driven campaign timing",
+        ]
     if family == "music_partnerships_label_relations" or "label relations" in label:
         return [
             "media operations",
