@@ -48,6 +48,8 @@ _PLACEHOLDER_PATTERNS = (
     r"(?:\bat|for|to|from)\s+Company\b",
     r"(?m)^\s*Company\s*$",
     r"(?m)^\s*<!--[^>]*company:\s*Company\s*-->\s*$",
+    # Author notes carried over from Evidence, e.g. "[confirm dates]".
+    r"(?i)\[\s*(?:confirm|add|insert|fill|verify|tbd|todo|placeholder|xx+)\b[^\]\n]*\]",
 )
 _EXPERIENTIAL_STALE_TERMS = (
     "martech",

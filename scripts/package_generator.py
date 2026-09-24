@@ -57,7 +57,7 @@ try:
     )
     from .tailor_resume import tailor_resume
     from .evidence_engine import evidence_projects_for_role
-    from .evidence_engine import load_evidence_projects
+    from .evidence_engine import evidence_placeholders, load_evidence_projects
     from .resume_foundation import load_resume_foundation
     from .evidence_tailoring import (
         evidence_score_contribution,
@@ -130,7 +130,7 @@ except ImportError:
     from score_match import persisted_match_fields, score_job_match
     from tailor_resume import tailor_resume
     from evidence_engine import evidence_projects_for_role
-    from evidence_engine import load_evidence_projects
+    from evidence_engine import evidence_placeholders, load_evidence_projects
     from resume_foundation import load_resume_foundation
     from evidence_tailoring import evidence_score_contribution, output_use_metadata
     from golden_resume import load_golden_resume
@@ -353,6 +353,13 @@ def preflight_package_generation(
             blocking_issues.append("Selected Evidence could not be resolved: " + ", ".join(missing_evidence))
         else:
             ready.append(f"Selected Evidence resolves ({len(selected_ids)} selected)")
+        for project in evidence_resolution["projects"]:
+            for placeholder in evidence_placeholders(project):
+                blocking_issues.append(
+                    f"Evidence \"{project.get('title') or project.get('id')}\" still has placeholder text "
+                    f"in {placeholder['field']}: {placeholder['text'][:120]} Fill it in or remove it "
+                    "before generating materials."
+                )
     except Exception as error:
         evidence_resolution = {
             "selected_ids": [],

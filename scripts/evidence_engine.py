@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 from pathlib import Path
 from typing import Any
 
@@ -532,6 +533,31 @@ def evidence_projects_for_role(application: dict[str, Any], project_root: str | 
         for project in resolution["projects"]
         if evidence_is_externally_usable(project)
     ]
+
+
+# A bracketed note left for the author ("[confirm dates]", "[Add any concrete
+# outcome ...]").  Markdown links "[text](url)" and footnote numbers are not.
+EVIDENCE_PLACEHOLDER_RE = re.compile(r"\[(?!\s*\d+\s*\])[^\[\]\n]{3,}\](?!\()")
+PLACEHOLDER_CHECK_FIELDS = (
+    "title", "client", "employer", "problem", "actions", "results", "skills",
+    "technologies", "tags",
+)
+
+
+def evidence_placeholders(project: dict[str, Any]) -> list[dict[str, str]]:
+    """Return unresolved bracketed placeholders in candidate-facing Evidence fields."""
+    found = []
+    for field in PLACEHOLDER_CHECK_FIELDS:
+        value = project.get(field)
+        values = value if isinstance(value, list) else [value]
+        for item in values:
+            for match in EVIDENCE_PLACEHOLDER_RE.finditer(str(item or "")):
+                found.append({"field": field, "text": match.group(0)})
+    for atomic in project.get("atomic_evidence") or []:
+        if isinstance(atomic, dict):
+            for match in EVIDENCE_PLACEHOLDER_RE.finditer(str(atomic.get("canonical_claim") or "")):
+                found.append({"field": f"atomic {atomic.get('stable_id') or ''}".strip(), "text": match.group(0)})
+    return found
 
 
 def evidence_is_externally_usable(project: dict[str, Any]) -> bool:
