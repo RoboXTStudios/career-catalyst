@@ -79,6 +79,7 @@ try:
         align_role_intent_to_effective_intelligence,
         build_role_intent,
         reconcile_package_role_intelligence,
+        role_family_confirmation_status,
         role_intent_snapshot,
     )
     from .role_state_resolver import (
@@ -148,6 +149,7 @@ except ImportError:
         align_role_intent_to_effective_intelligence,
         build_role_intent,
         reconcile_package_role_intelligence,
+        role_family_confirmation_status,
         role_intent_snapshot,
     )
     from role_state_resolver import (
@@ -366,6 +368,7 @@ def preflight_package_generation(
         ready.append("Compensation state is valid or not listed")
     if re.search(r"OMD Entertainment|OMG23\s*/\s*OMD Entertainment", str(application.get("company") or ""), re.I):
         auto_repairs.append("Canonical employer naming will be repaired in generated materials")
+    role_family_check: Dict[str, Any] = {}
     if health.get("path"):
         try:
             parsed_health_job = parse_job_description(Path(str(health["path"])))
@@ -380,6 +383,26 @@ def preflight_package_generation(
                 re.I,
             ):
                 auto_repairs.append("Canonical employer naming will be repaired in generated materials")
+            role_family_check = role_family_confirmation_status(
+                application,
+                get_effective_voice_profile(
+                    company_name=str(application.get("company") or parsed_health_job.get("company") or ""),
+                    job_title=str(application.get("role") or parsed_health_job.get("job_title") or ""),
+                    job_description=source_text,
+                ),
+            )
+            if role_family_check["resolved"]:
+                if role_family_check["required"]:
+                    ready.append(
+                        f"Role family {role_family_check['role_family_label']} "
+                        f"{'overridden' if role_family_check['resolution'] == 'override' else 'confirmed'}"
+                    )
+            else:
+                blocking_issues.append(
+                    f"Role family \"{role_family_check['role_family_label']}\" was inferred from fallback "
+                    f"keywords with {role_family_check['confidence_label']} confidence. Confirm it or "
+                    "set a role-family override before generating materials."
+                )
         except (OSError, JobParseError):
             pass
     auto_repairs[:] = list(dict.fromkeys(auto_repairs))
@@ -547,6 +570,7 @@ def preflight_package_generation(
             for project in evidence_resolution["projects"]
         ],
         "missing_evidence_ids": list(evidence_resolution["missing_ids"]),
+        "role_family_confirmation": role_family_check,
         "conflicts": [],
     }
 

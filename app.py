@@ -12,6 +12,7 @@ import re
 import subprocess
 import sys
 import tempfile
+from datetime import date
 from pathlib import Path
 from typing import Any, Dict
 
@@ -110,6 +111,7 @@ from scripts.package_generator import (
     resolve_job_reference,
 )
 from scripts.role_intent import (
+    ROLE_FAMILY_CHOICE_LABELS,
     apply_role_intelligence_overrides,
     build_role_intent,
     normalize_role_intelligence_overrides,
@@ -768,6 +770,16 @@ def update_dashboard_role(
         updates["role_intelligence_overrides"] = normalize_role_intelligence_overrides(
             values.get("role_intelligence_overrides")
         )
+    if "role_family_confirmation" in values:
+        confirmation = values.get("role_family_confirmation")
+        updates["role_family_confirmation"] = (
+            {
+                "role_family": str(confirmation.get("role_family") or ""),
+                "confirmed_on": str(confirmation.get("confirmed_on") or ""),
+            }
+            if isinstance(confirmation, dict) and str(confirmation.get("role_family") or "").strip()
+            else {}
+        )
     if "show_on_dashboard" in values:
         updates["show_on_dashboard"] = bool(values["show_on_dashboard"])
     if "source_verified" in values:
@@ -1048,9 +1060,16 @@ def _render_role_intelligence_editor(
                 value=str(overrides.get("category") or ""),
                 key=f"role_intelligence_category_{tracker_id}",
             )
-            role_family = st.text_input(
+            saved_family = str(overrides.get("role_family") or "")
+            family_options = ["", *ROLE_FAMILY_CHOICE_LABELS.values()]
+            if saved_family and saved_family not in family_options:
+                # Keep earlier free-form overrides selectable and unchanged.
+                family_options.append(saved_family)
+            role_family = st.selectbox(
                 "Role family",
-                value=str(overrides.get("role_family") or ""),
+                family_options,
+                index=family_options.index(saved_family),
+                format_func=lambda value: value or "Use inferred role family",
                 key=f"role_intelligence_role_family_{tracker_id}",
             )
             primary_need = st.text_area(
@@ -3184,6 +3203,12 @@ def _render_intelligence_preview(st: Any, intelligence: Dict[str, Any]) -> None:
             f"Source: **{str(intelligence['source']).replace('_', ' ')}**  |  "
             f"Confidence: **{intelligence.get('confidence_label', 'Medium')}**"
         )
+        if intelligence.get("role_family_confidence_label"):
+            basis = str(intelligence.get("role_family_basis") or "").replace("_", " ")
+            st.markdown(
+                f"Role family confidence: **{intelligence['role_family_confidence_label']}**"
+                + (f" (from {basis})" if basis else "")
+            )
         freshness = intelligence.get("freshness")
         if freshness:
             st.markdown(
@@ -3936,6 +3961,64 @@ def _render_generation_preflight(st: Any, preflight: Dict[str, Any]) -> None:
         )
 
 
+def _render_role_family_confirmation(
+    st: Any, tracker_id: str, application: Dict[str, Any], preflight: Dict[str, Any]
+) -> None:
+    """Ask the person to confirm or replace a low-confidence inferred role family."""
+    check = preflight.get("role_family_confirmation") or {}
+    if not check.get("required") or check.get("resolved"):
+        return
+    with st.container(border=True):
+        st.markdown("**Confirm role family before generating**")
+        st.warning(
+            f"Career Catalyst guessed **{check.get('role_family_label')}** from fallback keywords "
+            f"({check.get('confidence_label')} confidence). The résumé headline, hiring need, "
+            "Evidence ranking, and cover-letter angle all follow this choice."
+        )
+        columns = st.columns(2)
+        if columns[0].button(
+            f"Confirm {check.get('role_family_label')}",
+            key=f"role_family_confirm_{tracker_id}",
+            use_container_width=True,
+        ):
+            update_dashboard_role(
+                tracker_id,
+                {
+                    "role_family_confirmation": {
+                        "role_family": check.get("role_family"),
+                        "confirmed_on": date.today().isoformat(),
+                    }
+                },
+                PROJECT_ROOT,
+            )
+            st.session_state["dashboard_notice"] = "Role family confirmed."
+            st.rerun()
+        choices = [
+            label for family, label in ROLE_FAMILY_CHOICE_LABELS.items()
+            if family != check.get("role_family")
+        ]
+        replacement = columns[1].selectbox(
+            "Or choose the correct role family",
+            choices,
+            key=f"role_family_override_choice_{tracker_id}",
+        )
+        if columns[1].button(
+            "Save role family override",
+            key=f"role_family_override_save_{tracker_id}",
+            use_container_width=True,
+        ):
+            overrides = normalize_role_intelligence_overrides(
+                application.get("role_intelligence_overrides")
+            )
+            update_dashboard_role(
+                tracker_id,
+                {"role_intelligence_overrides": {**overrides, "role_family": replacement}},
+                PROJECT_ROOT,
+            )
+            st.session_state["dashboard_notice"] = f"Role family set to {replacement}."
+            st.rerun()
+
+
 def _render_generate_package(st: Any) -> None:
     st.markdown(
         '<h2 class="cc-section-heading">Generate Application Package</h2>',
@@ -3969,6 +4052,7 @@ def _render_generate_package(st: Any) -> None:
             }
         else:
             _render_generation_preflight(st, preflight)
+            _render_role_family_confirmation(st, tracker_id, application, preflight)
             if preflight.get("status") == "blocked":
                 return
     if st.session_state.get(recovery_key):

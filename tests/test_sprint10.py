@@ -23,6 +23,7 @@ from scripts.job_importer import (
     parse_imported_job,
 )
 from scripts.package_generator import generate_package
+from tests.fixture_support import confirm_tracker_role_family
 from scripts.prospect_intake import create_prospect
 
 
@@ -78,6 +79,7 @@ class Sprint10Tests(unittest.TestCase):
             },
             self.root,
         )
+        confirm_tracker_role_family("acme_director_operations", self.root)
         return job_path
 
     def test_unreachable_url_returns_manual_paste_fallback(self):
@@ -188,6 +190,7 @@ class Sprint10Tests(unittest.TestCase):
         parsed = {
             "job_title": "Director, Operations",
             "company": "Acme Entertainment",
+            "raw_text": DESCRIPTION,
         }
         output_dir = self.root / "exports"
         output_dir.mkdir(exist_ok=True)

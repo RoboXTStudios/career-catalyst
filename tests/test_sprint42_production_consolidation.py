@@ -41,6 +41,7 @@ from scripts.submission_readiness import (
     evaluate_voice_drift,
 )
 from scripts.tailor_resume import _include_github, render_base_resume
+from tests.fixture_support import confirm_tracker_role_family
 from tests.test_sprint35b_document_writing import _isolated_runtime
 from tests.test_sprint39_2_experiential_package_generation import (
     _reopened_live_nation_root,
@@ -414,6 +415,7 @@ def test_entertainment_package_preserves_selected_evidence_and_transaction(tmp_p
 
 def test_traditional_senior_operations_package_preserves_career_credibility(tmp_path: Path):
     root, tracker_id = _traditional_operations_runtime(tmp_path)
+    confirm_tracker_role_family(tracker_id, root)
     result = generate_package(tracker_id, root, export_root=tmp_path / "exports")
     quality = result["package_quality"]
     resume = Path(result["manifest"]["files"]["resume_text"]).read_text(encoding="utf-8")

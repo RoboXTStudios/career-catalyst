@@ -14,6 +14,7 @@ from scripts.package_quality import save_package_summary
 from scripts.parse_job import parse_job_description
 from scripts.tailor_resume import tailor_resume
 from scripts.text_cleanup import normalize_candidate_text
+from tests.fixture_support import confirm_tracker_role_family
 from tests.test_sprint34_application_reliability_gate import _write_openai_fixture_runtime
 
 
@@ -66,6 +67,7 @@ def test_openai_package_qa_normalizes_all_candidate_facing_text(tmp_path, monkey
     tracker = load_application_tracker(root)
     context = build_package_context("openai_program_manager_lead", tracker, root)
     score_before = context["match_report"]["match_score"]
+    confirm_tracker_role_family("openai_program_manager_lead", root)
     outputs = generate_package(
         "openai_program_manager_lead",
         root,

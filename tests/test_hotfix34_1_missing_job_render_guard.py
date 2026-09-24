@@ -7,6 +7,7 @@ import pytest
 
 import app
 from scripts.package_generator import PackageGenerationError, job_reference_health, preflight_package_generation
+from tests.fixture_support import with_confirmed_role_family
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -179,6 +180,7 @@ def test_valid_relinked_fixture_returns_ready(tmp_path: Path):
         encoding="utf-8",
     )
     application["job_file"] = str(posting.relative_to(tmp_path))
+    with_confirmed_role_family(application, tmp_path)
     preflight = preflight_package_generation(
         application["id"], {"applications": [application]}, tmp_path
     )

@@ -18,9 +18,12 @@ from scripts.dynamic_role_intelligence import (
     infer_company_context,
     strip_posting_boilerplate,
 )
+from scripts.package_generator import preflight_package_generation
+from scripts.parse_job import parse_job_description
 from scripts.role_intent import (
     _generation_family_for_override,
     known_role_family,
+    role_family_confirmation_status,
 )
 from scripts.generate_application_note import (
     _application_note_content,
@@ -504,6 +507,38 @@ class PaidMediaRoleFamilyTests(unittest.TestCase):
         self.assertNotIn("community", stripped.lower())
         self.assertNotIn("equal opportunity", stripped.lower())
 
+    def test_fallback_inference_requires_confirmation(self):
+        posting = NEUTRAL_DUTIES + "Grow our creator community and member engagement.\n"
+        profile = build_dynamic_voice_profile("Acme", "Director, Special Projects", posting)
+        self.assertEqual(profile["role_family"], "community_growth")
+        self.assertEqual(profile["role_family_basis"], "fallback_signal")
+        self.assertEqual(profile["role_family_confidence_label"], "Medium")
+        self.assertTrue(profile["role_family_needs_confirmation"])
+
+        pending = role_family_confirmation_status({}, profile)
+        self.assertTrue(pending["required"])
+        self.assertFalse(pending["resolved"])
+        confirmed = role_family_confirmation_status(
+            {"role_family_confirmation": {"role_family": "community_growth"}}, profile
+        )
+        self.assertTrue(confirmed["resolved"])
+        self.assertEqual(confirmed["resolution"], "confirmed")
+        stale = role_family_confirmation_status(
+            {"role_family_confirmation": {"role_family": "paid_media"}}, profile
+        )
+        self.assertFalse(stale["resolved"])
+        overridden = role_family_confirmation_status(
+            {"role_intelligence_overrides": {"role_family": "Paid Media / Media Planning & Buying"}},
+            profile,
+        )
+        self.assertTrue(overridden["resolved"])
+        self.assertEqual(overridden["resolution"], "override")
+
+    def test_title_based_family_does_not_require_confirmation(self):
+        profile = build_dynamic_voice_profile("Acme", "Media Director", PAID_MEDIA_DUTIES)
+        self.assertFalse(profile["role_family_needs_confirmation"])
+        self.assertFalse(role_family_confirmation_status({}, profile)["required"])
+
     def test_paid_media_override_maps_to_paid_media_writing(self):
         self.assertEqual(known_role_family("Paid Media / Media Planning & Buying"), "paid_media")
         self.assertEqual(known_role_family("paid_media"), "paid_media")
@@ -514,6 +549,48 @@ class PaidMediaRoleFamilyTests(unittest.TestCase):
             ),
             "paid_media",
         )
+
+    def test_preflight_blocks_generation_until_role_family_is_confirmed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "runtime"
+            for name in ("data", "config", "templates"):
+                shutil.copytree(PROJECT_ROOT / name, root / name)
+            job = root / "jobs" / "acme_special_projects.md"
+            job.parent.mkdir(parents=True)
+            job.write_text(
+                "# Director, Special Projects\n\nCompany: Acme\n\n## Job Description\n\n"
+                + NEUTRAL_DUTIES
+                + "Grow our creator community and member engagement across programs, events, and partner channels.\n"
+                + "Report on program health and share learnings with leadership every month.\n",
+                encoding="utf-8",
+            )
+            parsed = parse_job_description(job)
+            record = {
+                "id": "acme-special-projects",
+                "stable_slug": "acme-special-projects",
+                "company": parsed["company"],
+                "role": parsed["job_title"],
+                "status": "Prospect",
+                "job_file": str(job.relative_to(root)),
+                "evidence_project_ids": [],
+                "material_paths": {},
+            }
+            export_root = root / "qa_exports"
+
+            blocked = preflight_package_generation(
+                record["id"], {"applications": [record]}, root, export_root=export_root
+            )
+            self.assertEqual(blocked["status"], "blocked")
+            self.assertTrue(blocked["role_family_confirmation"]["required"])
+            self.assertTrue(
+                any("Confirm it or set a role-family override" in issue for issue in blocked["blocking_issues"])
+            )
+
+            confirmed = dict(record, role_family_confirmation={"role_family": "community_growth"})
+            ready = preflight_package_generation(
+                record["id"], {"applications": [confirmed]}, root, export_root=export_root
+            )
+            self.assertNotEqual(ready["status"], "blocked", ready["blocking_issues"])
 
 
 if __name__ == "__main__":

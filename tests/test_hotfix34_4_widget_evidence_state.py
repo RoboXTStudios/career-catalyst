@@ -6,7 +6,7 @@ from pathlib import Path
 import app
 import yaml
 
-from tests.fixture_support import replace_evidence_projects
+from tests.fixture_support import replace_evidence_projects, with_confirmed_role_family
 
 from scripts.evidence_engine import evidence_projects_for_role
 from scripts.package_generator import build_package_context, preflight_package_generation
@@ -203,7 +203,7 @@ def test_tracker_is_authoritative_for_evidence_aliases_and_stale_state():
 
 def test_openai_four_evidence_ids_flow_through_preflight_and_generation_context(tmp_path: Path):
     root = _runtime(tmp_path)
-    record = _record()
+    record = with_confirmed_role_family(_record(), root)
     tracker = {"applications": [record]}
 
     preflight = preflight_package_generation(record["id"], tracker, root)

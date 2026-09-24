@@ -623,6 +623,46 @@ def known_role_family(value: Any) -> str:
     return ""
 
 
+def role_family_confirmation_status(
+    application: Mapping[str, Any], intelligence: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Decide whether a low-confidence inferred role family must be confirmed.
+
+    Fallback inference (keyword guesses) is Medium or Low confidence.  Package
+    generation waits until the person either confirms the inferred family for
+    this posting or saves a role-family override.
+    """
+    family = str(intelligence.get("role_family") or "")
+    confidence = str(intelligence.get("role_family_confidence_label") or "High")
+    needs = bool(intelligence.get("role_family_needs_confirmation"))
+    overrides = normalize_role_intelligence_overrides(
+        application.get("role_intelligence_overrides")
+    )
+    confirmation = application.get("role_family_confirmation")
+    confirmed_family = (
+        str(confirmation.get("role_family") or "") if isinstance(confirmation, Mapping) else ""
+    )
+    if overrides.get("role_family"):
+        resolution = "override"
+    elif confirmed_family and confirmed_family == family:
+        resolution = "confirmed"
+    else:
+        resolution = ""
+    return {
+        "role_family": family,
+        "role_family_label": str(
+            intelligence.get("role_family_label")
+            or ROLE_FAMILY_CHOICE_LABELS.get(family)
+            or humanize_identifier(family)
+        ),
+        "basis": str(intelligence.get("role_family_basis") or ""),
+        "confidence_label": confidence,
+        "required": needs,
+        "resolved": (not needs) or bool(resolution),
+        "resolution": resolution,
+    }
+
+
 def _generation_family_for_override(
     overrides: Mapping[str, Any], inferred: Mapping[str, Any]
 ) -> str:

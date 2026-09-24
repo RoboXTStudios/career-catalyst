@@ -5,7 +5,7 @@ from pathlib import Path
 
 import yaml
 
-from tests.fixture_support import replace_evidence_projects
+from tests.fixture_support import replace_evidence_projects, with_confirmed_role_family
 
 from scripts.evidence_tailoring import evidence_score_contribution
 from scripts.score_match import score_job_match
@@ -67,6 +67,7 @@ def test_selected_evidence_limits_are_transparent(tmp_path: Path):
         "evidence_project_ids": [],
         "material_paths": {},
     }]}
+    with_confirmed_role_family(tracker["applications"][0], root)
     result = preflight_package_generation("generic", tracker, root, export_root=root / "qa_exports")
     assert result["status"] in {"ready", "repairable"}
     assert result["evidence_limits"] == {"ats_resume": 3, "styled_resume": 3, "cover_letter": 2}
