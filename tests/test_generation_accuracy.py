@@ -125,3 +125,25 @@ def test_bullets_keep_named_entities_and_figures_over_generic_results():
     theatrical = resume_project_bullets(THEATRICAL_SAVED, {})
     assert any("$5M" in bullet and "$25M" in bullet for bullet in theatrical)
     assert not any(bullet.startswith("Delivered campaign operations for the full slate") for bullet in theatrical)
+
+
+@pytest.mark.parametrize("text, expected", [
+    ("Over a decade of experience in media.", "Extensive experience in media."),
+    ("With 15+ years of experience leading teams.", "With extensive experience leading teams."),
+    ("Brings 12 years of expertise.", "Brings extensive experience."),
+    ("Delivered the full slate over a decade.", "Delivered the full slate over many years."),
+    ("A seasoned, decade-long career.", "An experienced, long-running career."),
+    ("20+ years in entertainment.", "Extensive experience in entertainment."),
+])
+def test_extended_age_signals_are_rewritten(text, expected):
+    from scripts.text_cleanup import normalize_candidate_text
+
+    assert normalize_candidate_text(text) == expected
+
+
+def test_age_signal_detection_ignores_ordinary_durations():
+    from scripts.resume_foundation import candidate_language_violations
+
+    assert candidate_language_violations("Brought more than a decade of expertise.")
+    assert candidate_language_violations("Leader with 15+ years in media.")
+    assert not candidate_language_violations("Managed 6 campaigns in 2 years with 10 direct reports.")

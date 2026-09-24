@@ -49,6 +49,7 @@ try:
     from .materials_library import find_exact_role_package, organize_package_outputs, portable_manifest_paths
     from .storage_paths import canonical_export_root, canonical_storage_path, legacy_material_paths, require_beneath_export_root
     from .filename_utils import company_display_name
+    from .text_cleanup import AGE_SIGNAL_RE
     from .parse_job import JobParseError, parse_job_description
     from .prospect_intake import add_prospect_from_job_file
     from .score_match import (
@@ -125,6 +126,7 @@ except ImportError:
     from materials_library import find_exact_role_package, organize_package_outputs, portable_manifest_paths
     from storage_paths import canonical_export_root, canonical_storage_path, legacy_material_paths, require_beneath_export_root
     from filename_utils import company_display_name
+    from text_cleanup import AGE_SIGNAL_RE
     from parse_job import JobParseError, parse_job_description
     from prospect_intake import add_prospect_from_job_file
     from score_match import persisted_match_fields, score_job_match
@@ -382,7 +384,7 @@ def preflight_package_generation(
             source_text = str(parsed_health_job.get("raw_text") or "")
             if "—" in source_text:
                 auto_repairs.append("Candidate-facing em dashes will be normalized before validation")
-            if re.search(r"20\+\s+years|nearly\s+two\s+decades|two\s+decades|seasoned|veteran", source_text, re.I):
+            if AGE_SIGNAL_RE.search(source_text):
                 auto_repairs.append("Age-signaling language will be normalized before validation")
             if re.search(
                 r"OMD Entertainment|OMG23\s*/\s*OMD Entertainment",
@@ -1041,9 +1043,7 @@ def _generate_package_in_place(
                 PUBLIC_OMG23_NAME in cover_text
                 or not re.search(r"\b(?:OMG23|OMD Entertainment)\b", cover_text)
             ) else "repaired",
-            "age_language_check": "passed" if not any(
-                phrase in cover_text.lower() for phrase in ("20+ years", "two decades", "seasoned", "veteran")
-            ) else "repaired",
+            "age_language_check": "passed" if not AGE_SIGNAL_RE.search(cover_text) else "repaired",
             "punctuation_check": "passed" if "—" not in cover_text else "failed",
             "page_length_result": "one page / within word limit",
         }

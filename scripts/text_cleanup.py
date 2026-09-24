@@ -153,6 +153,30 @@ def missing_subject_prose_fragments(text: str) -> list[str]:
     return fragments
 
 
+# Age-signaling phrasings and neutral rewrites, most specific first.  Tenure
+# stated as experience ("over a decade of experience", "15+ years") becomes
+# "extensive experience"; a project duration ("the slate over a decade")
+# keeps its meaning as "over many years".
+_DECADES = r"(?:a|one|two|three|several|multiple)\s+decades?"
+AGE_SIGNAL_REPLACEMENTS = (
+    (rf"\b(?:over|more than|nearly|almost|about|well over|close to)\s+{_DECADES}\s+of\s+(?:experience|expertise)\b", "extensive experience"),
+    (rf"\b{_DECADES}\s+of\s+(?:experience|expertise)\b", "extensive experience"),
+    (r"\b(?:[1-9]\d)\+?\s*(?:\+\s*)?years?\s+of\s+(?:experience|expertise)\b", "extensive experience"),
+    (r"\b(?:[1-9]\d)\+\s*years\b", "extensive experience"),
+    (r"\bnearly\s+two\s+decades\b", "extensive experience"),
+    (r"\btwo\s+decades\b", "extensive experience"),
+    (rf"\b(?:over|more than|nearly|almost|well over|close to)\s+{_DECADES}\b", "over many years"),
+    (r"\bdecades?-long\b", "long-running"),
+    (r"\blong-tenured\b", "experienced"),
+    (r"\bseasoned\b", "experienced"),
+    (r"\bveteran\b", "experienced"),
+)
+AGE_SIGNAL_RE = re.compile(
+    "|".join(f"(?:{pattern})" for pattern, _replacement in AGE_SIGNAL_REPLACEMENTS),
+    flags=re.IGNORECASE,
+)
+
+
 def normalize_candidate_text(text: str, *, employer: str = "") -> str:
     """Normalize non-factual candidate-facing language at the output boundary.
 
@@ -178,15 +202,20 @@ def normalize_candidate_text(text: str, *, employer: str = "") -> str:
         (r"\bOMG23\s*\(\s*Omnicom Media Group\s*\)", "OMG23 / OMD Entertainment, Omnicom Media Group"),
         (r"\bOMG23\s*/\s*OMD Entertainment(?:,\s*Omnicom Media Group)?\b", "OMG23 / OMD Entertainment, Omnicom Media Group"),
         (r"(?<!OMG23 / )\bOMD Entertainment\b", "OMG23 / OMD Entertainment, Omnicom Media Group"),
-        (r"\b20\+\s+years\b", "extensive experience"),
-        (r"\bnearly\s+two\s+decades\b", "extensive experience"),
-        (r"\btwo\s+decades(?:\s+of\s+experience)?\b", "extensive experience"),
-        (r"\bdecades\s+of\s+experience\b", "extensive experience"),
-        (r"\bseasoned\b", "experienced"),
-        (r"\bveteran\b", "experienced"),
+        *AGE_SIGNAL_REPLACEMENTS,
     )
     for pattern, replacement in replacements:
-        cleaned = re.sub(pattern, replacement, cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(
+            pattern,
+            lambda match, value=replacement: (
+                value[:1].upper() + value[1:]
+                if match.group(0)[:1].isupper()
+                or re.search(r"(?:^|[.!?]\s+|\n\s*(?:[-*]\s+)?)$", match.string[: match.start()])
+                else value
+            ),
+            cleaned,
+            flags=re.IGNORECASE,
+        )
     cleaned = re.sub(
         r"\bIn\s+(RoboXT Studios|Career Catalyst|CampaignOS)\s*,\s*(founded|led|built|created|designed)\b",
         r"At \1, I \2",
@@ -205,7 +234,11 @@ def normalize_candidate_text(text: str, *, employer: str = "") -> str:
         flags=re.IGNORECASE,
     )
     cleaned = normalize_campaignos_claims(cleaned)
-    cleaned = re.sub(r"\ba\s+experienced\b", "an experienced", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(
+        r"\b([Aa])\s+experienced\b",
+        lambda match: ("An" if match.group(1) == "A" else "an") + " experienced",
+        cleaned,
+    )
     cleaned = canonicalize_employer_mentions(cleaned, employer)
     return cleaned
 

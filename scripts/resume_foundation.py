@@ -9,9 +9,11 @@ from typing import Any, Optional, Union
 try:
     from .candidate_output import CandidateOutputError, validate_candidate_output
     from .load_data import DataLoadError, load_all_yaml
+    from .text_cleanup import AGE_SIGNAL_RE
 except ImportError:
     from candidate_output import CandidateOutputError, validate_candidate_output
     from load_data import DataLoadError, load_all_yaml
+    from text_cleanup import AGE_SIGNAL_RE
 
 
 PathInput = Optional[Union[str, Path]]
@@ -80,6 +82,11 @@ def candidate_language_violations(
         pattern = rf"(?<!\w){re.escape(phrase)}(?!\w)"
         if re.search(pattern, str(text or ""), flags=re.IGNORECASE):
             violations.append(phrase)
+    if age_signaling:
+        # Phrasings beyond the configured list ("over a decade", "15+ years").
+        for match in AGE_SIGNAL_RE.finditer(str(text or "")):
+            if match.group(0) not in violations:
+                violations.append(match.group(0))
     return violations
 
 
