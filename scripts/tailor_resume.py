@@ -24,6 +24,7 @@ try:
     from .evidence_tailoring import (
         candidate_project_reference_violations,
         project_kind,
+        project_header_line,
         project_title,
         public_artifact_selection,
         relevant_selected_evidence,
@@ -61,6 +62,7 @@ except ImportError:
     from evidence_tailoring import (
         candidate_project_reference_violations,
         project_kind,
+        project_header_line,
         project_title,
         public_artifact_selection,
         relevant_selected_evidence,
@@ -908,7 +910,11 @@ def _render_markdown(
     complete_foundation: bool = False,
     role_intent: Optional[Dict[str, Any]] = None,
     manual_evidence_selected: bool = False,
+    header_adjustments: Optional[List[str]] = None,
 ) -> str:
+    """Render the résumé; header names the Evidence does not support are reported
+    into ``header_adjustments`` when a list is supplied."""
+    header_adjustments = header_adjustments if header_adjustments is not None else []
     personal_brand = career_data["data"]["personal_brand"]
     candidate = personal_brand["candidate"]
     competencies = (
@@ -1060,11 +1066,12 @@ def _render_markdown(
         )
         lines.extend([f"## {project_heading}", ""])
     for project in associated_evidence_projects:
-        context = " · ".join(
-            str(value)
-            for value in (project.get("employer"), project.get("client") or project.get("business_unit"), project.get("project_type"))
-            if value
-        )
+        context, unsupported_names = project_header_line(project)
+        for name in unsupported_names:
+            header_adjustments.append(
+                f"{project_title(project)}: removed \"{name}\" from the header because the project's "
+                "Actions and Results do not mention it."
+            )
         lines.extend([f"### {project_title(project)}", "", context or "Verified role-associated evidence", ""])
         lines.extend(f"- {bullet}" for bullet in resume_project_bullets(project, parsed_job))
         lines.append("")
@@ -1201,6 +1208,7 @@ def tailor_resume(
     )
     resume_evidence_projects = evidence_selection["used_projects"]
     match_report = score_job_match(job_path, root, associated_evidence_projects, job_data_override=parsed_job)
+    header_adjustments: List[str] = []
     markdown = normalize_candidate_text(
         _render_markdown(
             career_data,
@@ -1210,6 +1218,7 @@ def tailor_resume(
             resume_evidence_projects,
             role_intent=shared_role_intent,
             manual_evidence_selected=manual_evidence_selected,
+            header_adjustments=header_adjustments,
         )
     )
     provenance_context = {
@@ -1285,7 +1294,8 @@ def tailor_resume(
             ]
             if rewrite_notes
             else []
-        ),
+        ) + header_adjustments,
+        "evidence_header_adjustments": header_adjustments,
         "banned_phrase_rewrites": rewrite_notes,
         "associated_evidence_project_titles": [
             str(project.get("title")) for project in (associated_evidence_projects or [])

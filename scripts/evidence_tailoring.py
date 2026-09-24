@@ -569,6 +569,113 @@ def _first_sentence(value: Any) -> str:
     return (match.group(1) if match else text).strip()
 
 
+_PLACEHOLDER_NOTE_RE = re.compile(r"\[(?!\s*\d+\s*\])[^\[\]\n]{3,}\](?!\()")
+_FIGURE_RE = re.compile(
+    r"\$\s?\d[\d,.]*\s?(?:[KMB]|million|billion)?|\b\d[\d,.]*\s?(?:%|percent|x|[KMB]\b|million|billion)"
+    r"|\b\d{2,}\+?(?=\s+[a-z])"
+)
+_SENTENCE_START_WORDS = {"I", "The", "A", "An", "This", "That", "My", "We", "Our", "Each", "Every"}
+
+
+def _sentences(value: Any) -> list[str]:
+    text = re.sub(r"\s+", " ", " ".join(_flatten([value]))).strip()
+    return [part.strip() for part in re.split(r"(?<=[.!?])\s+(?=[A-Z0-9\"'“])", text) if part.strip()]
+
+
+def _named_entity_weight(sentence: str, known_names: Sequence[str]) -> int:
+    """Weight a sentence by the specifics it carries: figures, names, and tools."""
+    weight = 3 * len(_FIGURE_RE.findall(sentence))
+    words = re.findall(r"[A-Za-z0-9][A-Za-z0-9+&'’.-]*", sentence)
+    weight += sum(
+        1 for index, word in enumerate(words)
+        if index > 0 and (word[0].isupper() or word[0].isdigit()) and word not in _SENTENCE_START_WORDS
+    )
+    lowered = sentence.lower()
+    weight += 2 * sum(1 for name in known_names if name and name.lower() in lowered)
+    return weight
+
+
+def entity_preserving_sentences(project: Mapping[str, Any], limit: int = 2) -> list[str]:
+    """Choose Actions/Results sentences that keep brands, outlets, platforms, and figures.
+
+    The first sentence of Results is often a generic summary; a later sentence
+    ("Managed budgets of about $5M to $25M per title") or a second Actions
+    sentence naming publications is the stronger, more specific claim.
+    """
+    known = [
+        str(value).strip(" .")
+        for value in _flatten([project.get("technologies"), project.get("tags")])
+        if len(str(value).strip()) > 2
+    ]
+    candidates = [
+        (source, position, sentence)
+        for source, field in ((0, "actions"), (1, "results"))
+        for position, sentence in enumerate(_sentences(project.get(field)))
+        if not _PLACEHOLDER_NOTE_RE.search(sentence)
+    ]
+    if not candidates:
+        return []
+    actions = [item for item in candidates if item[0] == 0]
+    first = max(actions or candidates, key=lambda item: (_named_entity_weight(item[2], known), -item[1]))
+    rest = [item for item in candidates if item is not first]
+    chosen = [first]
+    if rest and limit > 1:
+        # Prefer an outcome sentence unless an action sentence is clearly more specific.
+        chosen.append(max(rest, key=lambda item: (_named_entity_weight(item[2], known), item[0], -item[1])))
+    chosen.sort(key=lambda item: (item[0], item[1]))
+    return [sentence for _source, _position, sentence in chosen]
+
+
+_HEADER_LIST_RE = re.compile(r"^(?P<org>[^:(]+?)\s*(?::\s*(?P<colon>.+)|\((?:including\s+)?(?P<paren>[^)]+)\))\s*$")
+
+
+def _split_names(value: str) -> list[str]:
+    return [
+        part.strip(" .")
+        for part in re.split(r",\s*(?:and\s+)?|\s+and\s+", value)
+        if part.strip(" .")
+    ]
+
+
+def project_header_line(project: Mapping[str, Any]) -> tuple[str, list[str]]:
+    """Build the project context line using only names the Evidence itself supports.
+
+    Sub-brands listed in the client field ("The Walt Disney Company: Pixar,
+    Searchlight Pictures, and Disney+") must also appear in the project's own
+    claim text; unsupported names are dropped and returned for review.
+    """
+    body = " ".join(_flatten([
+        project.get("title"), project.get("problem"), project.get("actions"),
+        project.get("results"), project.get("tags"),
+        [item.get("canonical_claim") for item in project.get("atomic_evidence") or [] if isinstance(item, Mapping)],
+    ])).lower()
+    client = str(project.get("client") or project.get("business_unit") or "").strip()
+    dropped: list[str] = []
+    match = _HEADER_LIST_RE.match(client)
+    if match:
+        org = match.group("org").strip()
+        detail = (match.group("colon") or match.group("paren") or "").strip()
+        detail_match = re.match(r"^(?P<unit>[^()]+?)\s*\((?:including\s+)?(?P<names>[^)]+)\)$", detail)
+        unit = detail_match.group("unit").strip() if detail_match else ""
+        names = _split_names(detail_match.group("names") if detail_match else detail)
+        kept = [name for name in names if name.lower() in body]
+        dropped = [name for name in names if name.lower() not in body]
+        listed = (
+            kept[0] if len(kept) == 1
+            else f"{kept[0]} and {kept[1]}" if len(kept) == 2
+            else ", ".join(kept[:-1]) + f", and {kept[-1]}" if kept
+            else ""
+        )
+        if unit:
+            client = f"{org}: {unit}" + (f" (including {listed})" if listed else "")
+        else:
+            client = f"{org}: {listed}" if listed else org
+    line = " · ".join(
+        str(value) for value in (project.get("employer"), client, project.get("project_type")) if value
+    )
+    return line, dropped
+
+
 def resume_project_bullets(
     project: Mapping[str, Any], parsed_job: Mapping[str, Any]
 ) -> list[str]:
@@ -596,12 +703,8 @@ def resume_project_bullets(
     ]
     bullets = [
         sentence
-        for sentence in (
-            _first_sentence(project.get("actions")),
-            _first_sentence(project.get("results")),
-            *child_claims,
-        )
-        if sentence
+        for sentence in (*entity_preserving_sentences(project), *child_claims)
+        if sentence and not _PLACEHOLDER_NOTE_RE.search(sentence)
     ]
     return list(dict.fromkeys(bullets))[:2]
 
