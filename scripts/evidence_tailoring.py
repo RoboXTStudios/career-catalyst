@@ -679,11 +679,33 @@ def evidence_score_contribution(
         )
     else:
         explanation = "Selected Evidence matched additional verified role requirements."
+    coverage = after.get("requirement_coverage") or {}
+    requirement_rows = [
+        {
+            "text": str(row.get("text") or ""),
+            "coverage": str(row.get("coverage") or "none"),
+            "supporting_evidence": [
+                str(item.get("title") or "") for item in row.get("supporting_evidence") or []
+            ],
+            "matched_concepts": list(row.get("matched_concepts") or []),
+        }
+        for row in coverage.get("requirements") or []
+    ]
+    if requirement_rows and coverage.get("covered_count"):
+        explanation = (
+            f"Selected Evidence supports {int(coverage.get('covered_count') or 0)} of "
+            f"{len(requirement_rows)} parsed posting requirements. {explanation}"
+        )
     return {
         "before": before_score,
         "after": after_score,
         "delta": after_score - before_score,
         "matched_requirements": matched,
+        "requirement_coverage": {
+            "covered": int(coverage.get("covered_count") or 0),
+            "total": len(requirement_rows),
+            "requirements": requirement_rows,
+        } if requirement_rows else {},
         "explanation": explanation,
     }
 

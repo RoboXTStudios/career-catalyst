@@ -357,7 +357,7 @@ def test_selected_evidence_uses_existing_score_without_fixed_bonus(tmp_path: Pat
     assert irrelevant["match_score"] == before["match_score"]
     contribution = evidence_score_contribution(before, relevant)
     assert set(contribution) == {
-        "before", "after", "delta", "matched_requirements", "explanation"
+        "before", "after", "delta", "matched_requirements", "requirement_coverage", "explanation"
     }
 
 

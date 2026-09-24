@@ -3292,6 +3292,19 @@ def _render_tailoring_plan(st: Any, role_intent: Dict[str, Any]) -> None:
             st.markdown(f"**Current Evaluation Base Score:** {contribution.get('before', 0)}")
             st.markdown(f"**Current Evidence-Adjusted Match Score:** {contribution.get('after', 0)}")
             st.caption(str(contribution.get("explanation") or ""))
+            coverage = contribution.get("requirement_coverage") or {}
+            if coverage.get("requirements"):
+                with st.expander(
+                    f"Requirement coverage: {coverage['covered']} of {coverage['total']} posting requirements"
+                ):
+                    marks = {"full": "✓", "partial": "◐", "none": "○"}
+                    for row in coverage["requirements"]:
+                        supporting = ", ".join(row["supporting_evidence"]) or "No selected Evidence"
+                        st.markdown(
+                            f"{marks.get(row['coverage'], '○')} {html.escape(row['text'])}  \n"
+                            f"<span style='opacity:0.7'>{html.escape(supporting)}</span>",
+                            unsafe_allow_html=True,
+                        )
         if plan.get("resume_projects_used") or plan.get("cover_letter_projects_used") or plan.get("projects_not_used"):
             st.markdown(
                 "**Used in Résumé:** "

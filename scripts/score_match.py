@@ -17,6 +17,7 @@ try:
     from .load_data import DataLoadError
     from .resume_foundation import load_resume_foundation
     from .job_freshness import detect_job_freshness
+    from .requirement_matching import match_evidence_to_requirements, requirement_coverage_bonus
     from .parse_job import (
         extract_keywords,
         extract_qualifications,
@@ -36,6 +37,7 @@ except ImportError:
     from load_data import DataLoadError
     from resume_foundation import load_resume_foundation
     from job_freshness import detect_job_freshness
+    from requirement_matching import match_evidence_to_requirements, requirement_coverage_bonus
     from parse_job import (
         extract_keywords,
         extract_qualifications,
@@ -68,17 +70,6 @@ GENERIC_TERMS = {
 # Candidate-facing Evidence diagnostics are derived from semantic requirements,
 # not arbitrary one-word overlap. Numeric keyword contribution remains separate,
 # with common-word noise excluded before either candidate or Evidence matching.
-MEANINGFUL_EVIDENCE_REQUIREMENTS = (
-    "audience insights", "business operations", "campaign management",
-    "content strategy", "cross-functional collaboration", "delivery outcomes",
-    "cross-functional leadership", "executive communication",
-    "go-to-market strategy", "launch readiness", "marketing technology",
-    "measurement readiness", "partner enablement", "positioning and messaging",
-    "product adoption", "product education", "product launch", "product operations",
-    "product marketing", "sales enablement", "stakeholder alignment",
-    "workflow governance",
-)
-
 RESUME_PROFILE_KEYWORDS = {
     "executive_operations": (
         "strategy",
@@ -325,27 +316,6 @@ def _candidate_text(career_data: Dict[str, Any], associated_evidence_projects: O
 
 def _matched_keywords_for_text(keywords: Sequence[str], text: str, allow_partial: bool = False) -> List[str]:
     return [keyword for keyword in keywords if _keyword_matches_text(str(keyword), text, allow_partial)]
-
-
-def _meaningful_evidence_matches(parsed_job: Dict[str, Any], evidence_text: str) -> List[str]:
-    """Return semantic phrases explicitly present in both posting and Evidence."""
-    posting_text = "\n".join(
-        _flatten_strings(
-            [
-                parsed_job.get("job_title"), parsed_job.get("raw_text"),
-                parsed_job.get("job_description"), parsed_job.get("responsibilities"),
-                parsed_job.get("qualifications"), parsed_job.get("keywords"),
-            ]
-        )
-    )
-    normalized_posting = _normalize_text(posting_text)
-    normalized_evidence = _normalize_text(evidence_text)
-    return [
-        phrase
-        for phrase in MEANINGFUL_EVIDENCE_REQUIREMENTS
-        if _normalize_text(phrase) in normalized_posting
-        and _normalize_text(phrase) in normalized_evidence
-    ]
 
 
 def _score_from_count(matched_count: int, target_count: int) -> float:
@@ -845,6 +815,7 @@ def _decision_match_report(
     parsed_job: Dict[str, Any],
     legacy_report: Dict[str, Any],
     role_intelligence: Optional[Dict[str, Any]] = None,
+    evidence_bonus: int = 0,
 ) -> Dict[str, Any]:
     raw_text = str(parsed_job.get("raw_text") or "")
     title = str(parsed_job.get("job_title") or "")
@@ -873,7 +844,7 @@ def _decision_match_report(
     )
     if salary_score is None:
         weighted_score /= 0.92
-    score = round(weighted_score - (15 if non_fit_signals else 0))
+    score = round(weighted_score - (15 if non_fit_signals else 0)) + int(evidence_bonus)
     if freshness.get("is_closed"):
         score = min(score, 25)
     score = int(max(0, min(100, score)))
@@ -1010,14 +981,18 @@ def _score_parsed_job(
     top_experience = _top_matching_experience(career_data, keywords)
     evidence_text = _evidence_text(associated_evidence_projects)
     evidence_matches = _matched_keywords_for_text(keywords, evidence_text)
-    evidence_match_details = _meaningful_evidence_matches(parsed_job, evidence_text)
+    # Selected Evidence affects the score only through the posting requirements
+    # it supports, never through incidental keyword overlap.  Coverage can only
+    # grow as Evidence is added, so the adjusted score never drops below base.
+    coverage = match_evidence_to_requirements(parsed_job, associated_evidence_projects)
+    evidence_bonus = requirement_coverage_bonus(coverage) if associated_evidence_projects else 0
+    evidence_match_details = list(coverage["matched_labels"])
     missing_keywords = _missing_keywords(keywords, candidate_text)
 
     skill_score = _score_from_count(len(top_skills), 6)
     experience_matched_keywords = set()
     for item in top_experience:
         experience_matched_keywords.update(item["matched_keywords"])
-    experience_matched_keywords.update(evidence_matches)
     experience_score = _score_from_count(len(experience_matched_keywords), 8)
     project_score = _score_from_count(len(top_projects), 2)
     alignment_score = _alignment_score(career_data, parsed_job)
@@ -1043,11 +1018,22 @@ def _score_parsed_job(
         "associated_evidence_project_titles": [str(p.get("title")) for p in associated_evidence_projects if p.get("title")],
         "associated_evidence_matches": evidence_matches[:8],
         "associated_evidence_match_details": evidence_match_details[:8],
+        "requirement_coverage": coverage,
+        "evidence_requirement_bonus": evidence_bonus,
         "missing_keywords": missing_keywords,
         "recommended_resume_profile": _recommended_resume_profile(parsed_job),
         "tailoring_notes": [],
     }
-    report = _decision_match_report(parsed_job, report, role_intelligence)
+    report = _decision_match_report(parsed_job, report, role_intelligence, evidence_bonus)
+    if associated_evidence_projects and not coverage["covered_count"]:
+        # A Strong/High verdict must not sit next to "no Evidence-supported
+        # matches": say plainly that the selected Evidence supports nothing.
+        if report.get("confidence") == "High":
+            report["confidence"] = "Medium"
+        report["match_gaps"] = _dedupe([
+            "Selected Evidence does not support any parsed posting requirement; choose Evidence closer to the role.",
+            *report.get("match_gaps", []),
+        ])[:5]
     report["tailoring_notes"] = _tailoring_notes(
         report, top_skills, top_projects, top_experience
     )
