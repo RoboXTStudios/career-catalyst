@@ -249,3 +249,35 @@ def test_coverage_matrix_requirements_exclude_posting_boilerplate():
     for boilerplate in ("what we give you", "california pay range", "$115,000", "equal employment",
                         "global community", "pension", "about sony music"):
         assert not any(boilerplate in row for row in rows), boilerplate
+
+
+
+def test_coverage_matrix_grades_with_shared_concepts():
+    from scripts.golden_resume import load_golden_resume
+    from scripts.submission_readiness import build_requirement_coverage_matrix
+
+    inventory = load_golden_resume(ROOT)
+    parsed = parse_job_description(SONY_JOB)
+    fyc = {
+        "id": "fyc_ops",
+        "title": "Awards Season FYC Campaign Operations",
+        "actions": "Planned FYC media strategies around nomination and voting windows and placed trade media.",
+    }
+    guarded = {
+        "id": "media_ops",
+        "title": "Release Campaign Operations",
+        "actions": "Ran campaign setup and trafficking in CM360 and DV360.",
+        "guardrails": ["Does not imply awards campaign or trade media ownership."],
+    }
+
+    def awards_row(evidence):
+        matrix = build_requirement_coverage_matrix(parsed, inventory, evidence, "")
+        return next(r for r in matrix if "award nominations" in r["original_jd_wording"])
+
+    before = awards_row([])
+    after = awards_row([fyc])
+    assert before["coverage"] != "PROVEN"
+    assert after["coverage"] == "PROVEN"
+    assert "fyc_ops" in after["evidence_ids"]
+    # Guardrail text never supplies a concept.
+    assert "media_ops" not in awards_row([guarded])["evidence_ids"]

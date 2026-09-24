@@ -10,8 +10,34 @@ from typing import Any, Mapping, Sequence
 
 try:
     from .dynamic_role_intelligence import strip_posting_boilerplate
+    from .requirement_matching import CONTEXT_CONCEPTS, GENERIC_CONCEPTS, concept_label, concepts_in
 except ImportError:
     from dynamic_role_intelligence import strip_posting_boilerplate
+    from requirement_matching import CONTEXT_CONCEPTS, GENERIC_CONCEPTS, concept_label, concepts_in
+
+# Record fields that describe policy or provenance rather than claims; they
+# must not supply concepts ("does not imply sole platform ownership").
+_NON_CLAIM_FIELDS = frozenset({
+    "guardrails", "provenance", "notes", "links", "source", "source_path", "legacy_ids",
+    "atomic_evidence_ids", "supporting_evidence", "status", "confidence", "record_type",
+})
+
+
+def _claim_text(value: Any) -> list[str]:
+    if isinstance(value, Mapping):
+        return [
+            text
+            for key, nested in value.items()
+            if key not in _NON_CLAIM_FIELDS
+            for text in _claim_text(nested)
+        ]
+    if isinstance(value, (list, tuple, set)):
+        return [text for nested in value for text in _claim_text(nested)]
+    return [str(value)] if value not in (None, "") else []
+
+
+def _claim_concepts(record: Mapping[str, Any]) -> set[str]:
+    return concepts_in(" ".join(_claim_text(record)))
 
 
 STOP_WORDS = {
@@ -302,6 +328,20 @@ def _restricted_concept(requirement: str) -> str:
     return ""
 
 
+def _concept_matches(
+    supporting: list[tuple[Mapping[str, Any], set[str]]], specific: set[str]
+) -> list[tuple[int, str, Mapping[str, Any], list[str], list[str]]]:
+    """Rank concept-supporting records in the matrix's match-tuple shape."""
+    ranked = sorted(
+        supporting,
+        key=lambda item: (-len(item[1]), str(item[0].get("canonical_id") or item[0].get("id") or "")),
+    )
+    return [
+        (3 * len(shared), str(record.get("canonical_id") or record.get("id") or ""), record, sorted(shared), [])
+        for record, shared in ranked[:3]
+    ]
+
+
 def build_requirement_coverage_matrix(
     parsed_job: Mapping[str, Any],
     golden_resume: Mapping[str, Any],
@@ -320,9 +360,18 @@ def build_requirement_coverage_matrix(
         *[dict(item, record_type="selected_evidence") for item in selected_evidence],
     ]
     section_map = _sections(resume_text)
+    record_concepts = [(record, _claim_concepts(record)) for record in records]
     matrix: list[dict[str, Any]] = []
     for requirement in _requirements(parsed_job):
         normalized = requirement["normalized_requirement"]
+        # Concept matching (synonym layer) shared with Evidence scoring.
+        required = concepts_in(requirement["original_jd_wording"]) - CONTEXT_CONCEPTS
+        specific = required - GENERIC_CONCEPTS
+        supporting = [
+            (record, specific & concepts) for record, concepts in record_concepts if specific & concepts
+        ]
+        covered_specific = set().union(*(shared for _record, shared in supporting)) if supporting else set()
+        single_record_full = bool(specific) and any(shared >= specific for _record, shared in supporting)
         requirement_tokens = _tokens(normalized)
         restricted = _restricted_concept(normalized)
         matches: list[tuple[int, str, Mapping[str, Any], list[str], list[str]]] = []
@@ -347,6 +396,19 @@ def build_requirement_coverage_matrix(
             coverage = "NOT_SUPPORTED"
             explanation = f"Canonical evidence does not establish {restricted}; Career Catalyst must not insert this claim."
             strongest = []
+        elif single_record_full and not exact:
+            coverage = "PROVEN"
+            labels = ", ".join(concept_label(c) for c in sorted(specific))
+            explanation = f"One canonical record directly covers {labels}."
+            strongest = _concept_matches(supporting, specific) + strongest
+        elif covered_specific and not exact and not semantic:
+            coverage = "TRANSFERABLE"
+            labels = ", ".join(concept_label(c) for c in sorted(covered_specific))
+            missing = ", ".join(concept_label(c) for c in sorted(specific - covered_specific))
+            explanation = f"Canonical evidence covers {labels}" + (
+                f"; not established: {missing}." if missing else " across more than one record."
+            )
+            strongest = _concept_matches(supporting, specific) + strongest
         elif exact:
             coverage = "PROVEN"
             explanation = "Canonical career evidence directly supports the requirement."
@@ -385,7 +447,9 @@ def build_requirement_coverage_matrix(
             {
                 **requirement,
                 "coverage": coverage,
-                "evidence_ids": [identifier for _score, identifier, _record, _concepts, _direct in strongest if identifier],
+                "evidence_ids": list(dict.fromkeys(
+                    identifier for _score, identifier, _record, _concepts, _direct in strongest if identifier
+                ))[:3],
                 "evidence_source": sorted(
                     {
                         str(record.get("source_path") or record.get("source") or "canonical career data")
