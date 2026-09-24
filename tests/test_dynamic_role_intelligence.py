@@ -496,6 +496,24 @@ class PaidMediaRoleFamilyTests(unittest.TestCase):
         self.assertNotIn("community", stripped.lower())
         self.assertNotIn("discriminate", stripped.lower())
 
+    def test_about_company_section_keeps_the_role_description_only(self):
+        stripped = strip_posting_boilerplate(SONY_MEDIA_FIXTURE.read_text(encoding="utf-8"))
+        self.assertIn("lead paid advertising strategy, planning, optimization", stripped)
+        self.assertIn("reporting to the SVP of Media", stripped)
+        for company_text in ("flat disc record", "more than 70 countries", "member of the Sony family"):
+            self.assertNotIn(company_text, stripped)
+        self.assertNotIn("community", stripped.lower())
+
+    def test_benefits_sections_stay_dropped_even_when_they_address_you(self):
+        posting = (
+            "## About Acme\nAcme makes tools. In this role you will run paid social campaigns.\n\n"
+            "## Benefits\nYou'll enjoy full medical coverage and a supportive community.\n"
+        )
+        stripped = strip_posting_boilerplate(posting)
+        self.assertIn("you will run paid social campaigns", stripped)
+        self.assertNotIn("Acme makes tools", stripped)
+        self.assertNotIn("medical", stripped)
+
     def test_single_line_posting_keeps_responsibilities_next_to_eeo_text(self):
         posting = (
             "We are Acme. Lead finance transformation workstreams and govern the PMO. "

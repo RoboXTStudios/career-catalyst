@@ -648,6 +648,19 @@ def _without_boilerplate_sentences(line: str) -> str:
     )
 
 
+# Company-description sections may still contain the role summary; benefits,
+# EEO, and pay sections never do.
+_COMPANY_SECTION_HEADING_RE = re.compile(
+    r"^(?:about (?!(?:the |this )?(?:role|job|position|opportunity|team|you)\b)|who (?:we are|are we)|our company|our story|life at )",
+    flags=re.IGNORECASE,
+)
+_ROLE_DESCRIPTION_RE = re.compile(
+    r"\b(?:you will|you['’]ll|in this role|this role|the role|this position|reporting to|reports to|"
+    r"as part of (?:the|our) [\w\s-]{0,60}team|based in (?:our|the) [\w\s-]{0,40}office)\b",
+    flags=re.IGNORECASE,
+)
+
+
 def strip_posting_boilerplate(job_description: str = "") -> str:
     """Remove company, benefits, EEO, and legal/compensation boilerplate.
 
@@ -659,14 +672,24 @@ def strip_posting_boilerplate(job_description: str = "") -> str:
     text = _INLINE_HEADING_RE.sub(lambda match: f"\n{match.group(1)}:\n", original)
     lines = text.splitlines()
     kept: list[str] = []
-    skipping = False
+    skipping = ""
     for line in lines:
         if _looks_like_heading(line):
             heading = _heading_text(line)
             if _BOILERPLATE_HEADING_RE.match(heading) and not _ROLE_SECTION_HEADING_RE.match(heading):
-                skipping = True
+                skipping = "company" if _COMPANY_SECTION_HEADING_RE.match(heading) else "other"
                 continue
-            skipping = False
+            skipping = ""
+        if skipping == "company":
+            # Employers often describe the role inside "About [company]":
+            # "Based in our Los Angeles office ... lead paid advertising strategy."
+            role_sentences = [
+                sentence for sentence in re.split(r"(?<=[.!?])\s+", line)
+                if _ROLE_DESCRIPTION_RE.search(sentence)
+            ]
+            if role_sentences:
+                kept.append(_without_boilerplate_sentences(" ".join(role_sentences)))
+            continue
         if skipping:
             continue
         kept.append(_without_boilerplate_sentences(line))
