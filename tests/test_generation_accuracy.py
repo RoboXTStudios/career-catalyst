@@ -333,3 +333,39 @@ def test_letter_rewrites_paragraphs_that_repeat_resume_bullets():
     assert "10 direct reports" in rewritten and "64-person organization" in rewritten
     assert "release window" in rewritten
     assert len(rewritten.split()) <= len(letter.split())
+
+
+_CLOSER_RE = re.compile(r"\b(I would welcome|I would bring|That is the perspective I would bring)\b")
+
+
+def _body_paragraphs(letter: str) -> list:
+    parts = [p.strip() for p in re.split(r"\n\s*\n", letter.strip()) if p.strip()]
+    return [p for p in parts[1:] if not re.match(r"^(Best|Sincerely|Warmly|Thank you|Trisha Lynch)\b", p)]
+
+
+@pytest.mark.parametrize("job_name, company", [
+    ("sony_music_director_media_commercial_music_group.md", "Sony Music Entertainment"),
+    ("netflix_product_manager_emerging_formats_sanitized.md", "Netflix"),
+])
+def test_cover_letter_has_one_closing_paragraph(tmp_path: Path, job_name: str, company: str):
+    from scripts.generate_cover_letter import _expand_cover_letter, generate_cover_letter
+
+    root = tmp_path / "runtime"
+    for name in ("data", "config", "templates"):
+        shutil.copytree(ROOT / name, root / name)
+    (root / "jobs").mkdir()
+    job = root / "jobs" / job_name
+    shutil.copy2(ROOT / "tests" / "fixtures" / "jobs" / job_name, job)
+    letter = Path(generate_cover_letter(job, root)["txt_output_path"]).read_text(encoding="utf-8")
+    body = _body_paragraphs(letter)
+    assert _CLOSER_RE.search(body[-1]), body[-1]
+    assert not _CLOSER_RE.search(body[-2]), body[-2]
+
+    # Length repair must not append filler after the closer (the original bug).
+    closer = f"I would welcome the chance to learn how {company} is defining success for this role."
+    short = f"Dear {company} Hiring Team,\n\nI ran campaign operations.\n\n{closer}\n\nBest,\n\nTrisha Lynch"
+    context = {"parsed_job": {"company": company}, "role_family": "product_strategy_ops"}
+    expanded = _body_paragraphs(_expand_cover_letter(short, context, target=120))
+    assert expanded[-1] == closer
+    assert len([p for p in expanded if "perspective I would bring" in p]) <= 1
+    assert "perspective I would bring" not in expanded[-1]

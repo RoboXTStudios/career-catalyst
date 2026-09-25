@@ -427,9 +427,17 @@ def _expand_cover_letter(content: str, context: Dict[str, Any], target: int = 28
         return content
     paragraph = " ".join(additions)
     signoff = re.search(r"\n\n((?:Sincerely|Best|Warmly|Thank you)[\s\S]*)$", content.strip(), re.I)
+    body = content.strip()[: signoff.start()] if signoff else content.strip()
+    paragraphs = [part.strip() for part in re.split(r"\n\s*\n", body) if part.strip()]
+    # Expansion goes before the closing paragraph; appending it after the
+    # closer produced two back-to-back closings (Sony Music, Netflix).
+    if len(paragraphs) >= 3:
+        paragraphs.insert(len(paragraphs) - 1, paragraph)
+    else:
+        paragraphs.append(paragraph)
     if signoff:
-        return content[: signoff.start()].rstrip() + "\n\n" + paragraph + "\n\n" + signoff.group(1).strip()
-    return content.rstrip() + "\n\n" + paragraph
+        paragraphs.append(signoff.group(1).strip())
+    return "\n\n".join(paragraphs)
 
 
 def _trim_cover_letter(content: str, target: int = 325) -> str:
