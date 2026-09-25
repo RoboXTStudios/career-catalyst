@@ -30,6 +30,8 @@ try:
     from .evidence_tailoring import (
         candidate_project_reference_violations,
         cover_letter_project_paragraph,
+        entity_preserving_sentences,
+        resume_project_bullets,
         project_kind,
         project_title,
         public_artifact_selection,
@@ -83,6 +85,8 @@ except ImportError:
     from evidence_tailoring import (
         candidate_project_reference_violations,
         cover_letter_project_paragraph,
+        entity_preserving_sentences,
+        resume_project_bullets,
         project_kind,
         project_title,
         public_artifact_selection,
@@ -481,6 +485,140 @@ _GENERIC_CLOSING_RE = re.compile(
     r"[^.!?\n]*\bthrough line in my experience is building operating conditions\b[^.!?\n]*[.!?][ \t]*",
     flags=re.IGNORECASE,
 )
+
+
+_LEADERSHIP_REPEAT_RE = re.compile(
+    r"\bled 10 direct reports,? and provided strategic and operational leadership across an integrated "
+    r"64-person organization(?: spanning Ad Operations, Creative Management, and Marketing Science and Analytics)?",
+    flags=re.IGNORECASE,
+)
+_LETTER_LEADERSHIP = (
+    "managed 10 direct reports within an integrated 64-person organization that brought Ad Operations, "
+    "Creative Management, and Marketing Science and Analytics together"
+)
+# Letters describe projects without naming their titles; the résumé carries the titles.
+_PROJECT_OPENERS = (
+    "One example is the closest parallel to this role.",
+    "A second example adds another angle.",
+    "Another example is also relevant.",
+)
+
+
+def _letter_words(text: str) -> list[str]:
+    return re.findall(r"[a-z0-9$]+", str(text or "").lower())
+
+
+def _repeats_bullet(paragraph: str, bullet: str) -> bool:
+    """Same test the quality gate uses: most of a bullet's words appear in the paragraph."""
+    bullet_words = _letter_words(bullet)
+    if len(bullet_words) < 8:
+        return False
+    paragraph_words = set(_letter_words(paragraph))
+    return sum(1 for word in bullet_words if word in paragraph_words) / len(bullet_words) >= 0.85
+
+
+def _project_context_paragraph(
+    project: Dict[str, Any], parsed_job: Dict[str, Any], index: int, used: List[str]
+) -> Dict[str, str]:
+    """Describe a project with what the résumé omits: its problem, an unused
+    action or result, and the posting requirements it covers."""
+    problem = next(iter(re.split(r"(?<=[.!?])\s+", str(project.get("problem") or "").strip())), "").strip()
+    extra = next(
+        (
+            sentence
+            for field in ("actions", "results")
+            for sentence in re.split(r"(?<=[.!?])\s+", str(project.get(field) or "").strip())
+            if sentence and sentence not in used
+            and not re.search(r"\[[^\]]{3,}\]", sentence)
+            and not re.match(r"(?:This|That|These|Those|It|They)\b", sentence)
+            and not any(_repeats_bullet(sentence, bullet) for bullet in used)
+        ),
+        "",
+    )
+    if extra and not re.match(r"(?:I|We|My)\b", extra):
+        extra = "I " + extra[:1].lower() + extra[1:]
+    labels = match_evidence_to_requirements(parsed_job, [project])["matched_labels"][:2]
+    if len(labels) == 2:
+        link = (
+            f" It maps directly to two things this posting asks for: {labels[0]}, and {labels[1]}."
+            if index == 0
+            else f" That experience speaks to the posting's emphasis on {labels[0]}, as well as {labels[1]}."
+        )
+    elif labels:
+        link = f" It maps directly to the posting's focus on {labels[0]}."
+    else:
+        link = ""
+    opener = _PROJECT_OPENERS[min(index, len(_PROJECT_OPENERS) - 1)]
+    # Keep the letter within its word budget: the problem carries the context;
+    # an unused action or result is only needed when no problem is recorded.
+    body = problem or extra
+    return {
+        "full": " ".join(part for part in (opener, body) if part) + link,
+        "no_link": " ".join(part for part in (opener, body) if part),
+        "short": opener + link,
+    }
+
+
+def _rewrite_resume_repeats(
+    content: str, context: Dict[str, Any], max_words: Optional[int] = None
+) -> str:
+    """Rewrite letter paragraphs that restate résumé bullets.
+
+    The résumé already carries the leadership statement and each project's
+    strongest sentences; the letter should add context instead of repeating
+    them.  Facts are kept, only the wording and emphasis change.
+    """
+    parsed_job = context.get("parsed_job") or {}
+    projects = list(context.get("associated_evidence_projects") or [])
+    decision = context.get("cover_letter_evidence_selection") or {}
+    letter_ids = {
+        str(project.get("id") or project_title(project))
+        for project in decision.get("used_projects") or projects
+    }
+    project_bullets = [
+        (project, resume_project_bullets(project, parsed_job))
+        for project in projects
+        # Curated letter paragraphs (podcast, Career Catalyst) are written for
+        # the letter on purpose and keep their specifics.
+        if project_kind(project) not in {"podcast", "career_catalyst"}
+    ]
+    paragraphs = [p for p in re.split(r"\n\s*\n", str(content or "").strip()) if p.strip()]
+    rewritten: List[str] = []
+    project_index = 0
+    # Room to grow: the letter limit less a small margin for later normalization.
+    spare = (max_words - 10 - len(str(content or "").split())) if max_words else 0
+    for paragraph in paragraphs:
+        paragraph = _LEADERSHIP_REPEAT_RE.sub(_LETTER_LEADERSHIP, paragraph)
+        match = next(
+            (
+                (project, bullets)
+                for project, bullets in project_bullets
+                if any(_repeats_bullet(paragraph, bullet) for bullet in bullets)
+            ),
+            None,
+        )
+        if match and str(match[0].get("id") or project_title(match[0])) not in letter_ids:
+            # Never name a project the letter is not allocated; drop only the
+            # repeating sentences when the paragraph has something else to say.
+            sentences = re.split(r"(?<=[.!?])\s+", paragraph)
+            kept = [s for s in sentences if not any(_repeats_bullet(s, b) for b in match[1])]
+            if kept and len(kept) < len(sentences):
+                paragraph = " ".join(kept)
+            match = None
+        if match:
+            project, bullets = match
+            used = list(entity_preserving_sentences(project)) + list(bullets)
+            options = _project_context_paragraph(project, parsed_job, project_index, used)
+            budget = len(paragraph.split()) + max(0, spare)
+            # Stay within the letter's word limit.
+            paragraph = next(
+                (options[key] for key in ("full", "no_link", "short") if len(options[key].split()) <= budget),
+                options["short"],
+            )
+            spare = budget - len(paragraph.split())
+            project_index += 1
+        rewritten.append(paragraph)
+    return "\n\n".join(rewritten)
 
 
 def _join_labels(labels: List[str]) -> str:
@@ -1643,7 +1781,6 @@ def generate_cover_letter(
         _cover_letter_content(context), context
     )
     grounded_content = _remove_repeated_dynamic_closing(grounded_content, context)
-    grounded_content = _name_posting_requirements(grounded_content, context)
     role_family = str(
         (context.get("role_intent") or {}).get("package_role_family")
         or (context.get("role_intelligence") or {}).get("role_family")
@@ -1654,6 +1791,8 @@ def generate_cover_letter(
         if role_family in {"strategy_gtm_operations", "music_partnerships_label_relations"}
         else (250, 325)
     )
+    grounded_content = _name_posting_requirements(grounded_content, context)
+    grounded_content = _rewrite_resume_repeats(grounded_content, context, maximum_words)
     result = save_material(
         context,
         "Cover_Letter",

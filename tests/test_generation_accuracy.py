@@ -297,3 +297,39 @@ def test_matrix_needs_negotiation_evidence_and_ignores_partnered_across_lists():
     )
     row = next(r for r in matrix if r["original_jd_wording"].startswith("Traditional media planning and strong negotiation"))
     assert row["coverage"] != "PROVEN"
+
+
+def test_letter_rewrites_paragraphs_that_repeat_resume_bullets():
+    from scripts.generate_cover_letter import _rewrite_resume_repeats
+    from scripts.package_quality import cover_letter_review_items
+
+    parsed = parse_job_description(SONY_JOB)
+    project = {
+        "id": "theatrical",
+        "title": "Disney Studios Theatrical Campaign Operations",
+        "problem": "Every release needed paid campaigns set up, trafficked, measured, and reported within its release window.",
+        "actions": "Oversaw campaign execution for every Disney Studios theatrical release, including all Marvel Phase 5 films.",
+        "results": "Managed budgets that ranged from about $5M to about $25M per title across all Disney IPs.",
+    }
+    bullets = resume_project_bullets(project, parsed)
+    letter = "\n\n".join([
+        "Dear Sony Music Entertainment Hiring Team,",
+        "At OMG23 / OMD Entertainment, Omnicom Media Group, I led 10 direct reports and provided strategic and "
+        "operational leadership across an integrated 64-person organization spanning Ad Operations, Creative "
+        "Management, and Marketing Science and Analytics.",
+        "I " + bullets[0][:1].lower() + bullets[0][1:] + " " + bullets[1],
+        "Best,\n\nTrisha Lynch",
+    ])
+    resume = "\n".join(
+        ["- Led 10 direct reports and provided strategic and operational leadership across an integrated "
+         "64-person organization spanning Ad Operations, Creative Management, and Marketing Science and Analytics."]
+        + [f"- {bullet}" for bullet in bullets]
+    )
+    assert any("repeats a résumé bullet" in item for item in cover_letter_review_items(letter, resume, parsed))
+
+    rewritten = _rewrite_resume_repeats(letter, {"parsed_job": parsed, "associated_evidence_projects": [project]})
+    assert not any("repeats a résumé bullet" in item for item in cover_letter_review_items(rewritten, resume, parsed))
+    # Facts survive in new wording; the paragraph never grows.
+    assert "10 direct reports" in rewritten and "64-person organization" in rewritten
+    assert "release window" in rewritten
+    assert len(rewritten.split()) <= len(letter.split())
