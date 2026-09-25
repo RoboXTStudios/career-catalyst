@@ -267,6 +267,53 @@ def _follow_up_wait_days(record: Dict[str, Any]) -> int:
     return 5
 
 
+# Statuses that represent "waiting on the employer" rather than a resolved
+# outcome. If one of these sits unchanged past STALE_STATUS_THRESHOLD_DAYS
+# with no employer signal, it is functionally ghosted even though nothing
+# ever explicitly marked it so — see the Live Nation Director, Concert
+# Communications record, which sat at "Under Consideration" for two months
+# with zero human review after the status was set on 2026-07-13.
+WAITING_STATUSES = {"applied", "under consideration", "follow up"}
+STALE_STATUS_THRESHOLD_DAYS = 21
+
+
+def days_since_status_update(record: Dict[str, Any], today: Optional[date] = None) -> Optional[int]:
+    """Days since status_updated_at (or submitted_date as a fallback). None if neither is present/parseable."""
+    today = today or date.today()
+    for field in ("status_updated_at", "submitted_date"):
+        raw = record.get(field)
+        if not raw:
+            continue
+        try:
+            parsed = date.fromisoformat(str(raw).strip()[:10])
+            return (today - parsed).days
+        except ValueError:
+            continue
+    return None
+
+
+def is_stale_waiting_status(record: Dict[str, Any], today: Optional[date] = None) -> bool:
+    """True if a record is sitting in a 'waiting on employer' status well past a normal
+    response window, with no explicit employer signal recorded. This is the check that
+    would have caught the Live Nation record automatically instead of requiring a manual audit."""
+    status = normalize_tracker_value(record.get("status"))
+    if status not in WAITING_STATUSES:
+        return False
+    if _under_consideration_response_required(record):
+        # Employer explicitly asked for something — not silently stale, it's actionable.
+        return False
+    elapsed = days_since_status_update(record, today=today)
+    if elapsed is None:
+        return False
+    return elapsed >= STALE_STATUS_THRESHOLD_DAYS
+
+
+def stale_waiting_records(records: List[Dict[str, Any]], today: Optional[date] = None) -> List[Dict[str, Any]]:
+    """Returns every record that is likely silently stale, for surfacing in the dashboard
+    or a periodic review command."""
+    return [r for r in records if is_stale_waiting_status(r, today=today)]
+
+
 def _under_consideration_response_required(record: Dict[str, Any]) -> bool:
     if (
         record.get("response_required") is True
