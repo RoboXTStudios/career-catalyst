@@ -1,0 +1,1564 @@
+schema_version: 1
+profile_updated_at: '2026-07-18T00:00:00+00:00'
+migration:
+  status: initialized
+  source: user-confirmed Sprint 24 evidence plus existing structured career data
+  preserved_resume: true
+  notes:
+  - The resume remains unchanged and is one source within the broader Evidence Profile.
+evidence:
+- id: campaign_operations_leadership
+  title: Campaign Operations Leadership
+  description: Led enterprise campaign operations supporting Disney Studios Theatrical and Disney Streaming/DSS while coordinating creative, media, analytics, technology, and operations teams.
+  category: Campaign Operations
+  subcategory: Enterprise entertainment campaign operations
+  skills:
+  - campaign implementation
+  - campaign execution
+  - operational readiness
+  - stakeholder coordination
+  platforms: []
+  industries:
+  - Entertainment
+  - Advertising
+  clients:
+  - Disney Studios Theatrical
+  - Disney Streaming/DSS
+  evidence_type: User Confirmed
+  source: Conversation
+  source_reference: Career coaching July 2026
+  confidence: High
+  verification_status: User Confirmed
+  resume_visibility: Partially Represented
+  recommended_usage: &id001
+    resume: true
+    cover_letter: true
+    interview: true
+    linkedin: true
+    recruiter_messages: true
+    match_scoring: true
+    hiring_manager_lens: true
+    role_interpreter: true
+    application_strategy: true
+    career_analytics: true
+  recommended_usage_notes: []
+  career_period: OMG23 / OMD Entertainment
+  company: OMG23 / Omnicom Media Group
+  role: Group Director, Campaign Operations
+  years: null
+  related_evidence:
+  - advertising_technology
+  - google_youtube_platforms
+  - qa
+  - launch_readiness
+  - people_leadership
+  related_projects:
+  - Disney Studios Theatrical
+  - Disney Streaming/DSS
+  related_tools: []
+  technical_depth: Moderate
+  leadership_scope: Enterprise campaign operations and cross-functional leadership
+  customer_facing: Advertiser and stakeholder delivery
+  people_management: Formal team leadership
+  tags:
+  - campaign operations
+  - Disney
+  - delivery
+  - enterprise
+  - leadership
+  notes: []
+  provenance: &id002
+    where: Conversation
+    when: July 2026
+    how: Explicitly confirmed by the user for Sprint 24
+    confidence: High
+  last_updated: '2026-07-18T00:00:00+00:00'
+  created_at: '2026-07-18T00:00:00+00:00'
+  updated_at: '2026-07-18T00:00:00+00:00'
+  framing:
+    program_manager: Ran campaign operations for each Disney Studios theatrical and Home Entertainment release as a defined program, coordinating ad operations, creative management, and measurement teams against each title's release window, with budgets ranging from about $5M to about $25M per title.
+    operations_manager: Led enterprise campaign operations supporting Disney Studios Theatrical and Disney Streaming/DSS on an ongoing basis, building and running the operating structure that coordinated creative, media, analytics, technology, and operations teams across the full slate.
+- id: advertising_technology
+  title: Advertising Technology
+  description: Worked extensively with advertising technology platforms supporting campaign activation, execution, delivery, and measurement.
+  category: Advertising Technology
+  subcategory: Platform-side campaign operations
+  skills:
+  - campaign activation
+  - campaign implementation
+  - campaign delivery
+  - measurement
+  platforms:
+  - Google advertising platforms
+  - YouTube advertising platforms
+  industries:
+  - Advertising
+  - Entertainment
+  clients:
+  - Disney Studios Theatrical
+  - Disney Streaming/DSS
+  evidence_type: User Confirmed
+  source: Conversation
+  source_reference: Career coaching July 2026
+  confidence: High
+  verification_status: User Confirmed
+  resume_visibility: Partially Represented
+  recommended_usage: *id001
+  recommended_usage_notes: []
+  career_period: OMG23 / OMD Entertainment
+  company: OMG23 / Omnicom Media Group
+  role: Campaign Operations leadership
+  years: null
+  related_evidence:
+  - campaign_operations_leadership
+  - google_youtube_platforms
+  - cm360
+  - dv360
+  - measurement_readiness
+  - technical_troubleshooting
+  related_projects:
+  - Disney Studios Theatrical
+  - Disney Streaming/DSS
+  related_tools:
+  - CM360
+  - DV360
+  technical_depth: Moderate
+  leadership_scope: Operational leadership across advertising technology workflows
+  customer_facing: Advertiser delivery and stakeholder issue resolution
+  people_management: Supported through campaign operations teams
+  tags:
+  - adtech
+  - platform activation
+  - campaign reliability
+  notes:
+  - Do not imply software engineering or platform ownership.
+  provenance: *id002
+  last_updated: '2026-07-18T00:00:00+00:00'
+  created_at: '2026-07-18T00:00:00+00:00'
+  updated_at: '2026-07-18T00:00:00+00:00'
+- id: google_youtube_platforms
+  title: Google and YouTube Platforms
+  description: Translated Google and YouTube platform capabilities into campaign execution, operational readiness, measurement readiness, and advertiser delivery.
+  category: Platform Implementation
+  subcategory: Advertising platform activation
+  skills:
+  - platform activation
+  - operational readiness
+  - measurement readiness
+  - advertiser delivery
+  platforms:
+  - Google
+  - YouTube
+  industries:
+  - Advertising
+  - Entertainment
+  clients:
+  - Disney Studios Theatrical
+  - Disney Streaming/DSS
+  evidence_type: User Confirmed
+  source: Conversation
+  source_reference: Career coaching July 2026
+  confidence: High
+  verification_status: User Confirmed
+  resume_visibility: Partially Represented
+  recommended_usage: *id001
+  recommended_usage_notes: []
+  career_period: OMG23 / OMD Entertainment
+  company: OMG23 / Omnicom Media Group
+  role: Campaign Operations leadership
+  years: null
+  related_evidence:
+  - advertising_technology
+  - cm360
+  - dv360
+  - measurement_readiness
+  - cross_functional_technical_translation
+  related_projects:
+  - Disney Studios Theatrical
+  - Disney Streaming/DSS
+  related_tools:
+  - Google advertising platforms
+  - YouTube advertising platforms
+  technical_depth: Moderate
+  leadership_scope: Platform translation and operational leadership
+  customer_facing: Advertiser delivery
+  people_management: Not specified
+  tags:
+  - Google
+  - YouTube
+  - platform operations
+  - activation
+  notes:
+  - Do not imply Google or YouTube employment.
+  provenance: *id002
+  last_updated: '2026-07-18T00:00:00+00:00'
+  created_at: '2026-07-18T00:00:00+00:00'
+  updated_at: '2026-07-18T00:00:00+00:00'
+- id: cm360
+  title: Campaign Manager 360
+  description: Experience supporting CM360 implementation, campaign execution, trafficking workflows, QA, measurement validation, and delivery.
+  category: Platform Implementation
+  subcategory: Campaign Manager 360
+  skills:
+  - implementation support
+  - trafficking
+  - QA
+  - measurement validation
+  - campaign delivery
+  platforms:
+  - Campaign Manager 360
+  - CM360
+  industries:
+  - Advertising
+  - Entertainment
+  clients:
+  - Disney Studios Theatrical
+  - Disney Streaming/DSS
+  evidence_type: User Confirmed
+  source: Conversation
+  source_reference: Career coaching July 2026
+  confidence: High
+  verification_status: User Confirmed
+  resume_visibility: Not Included
+  recommended_usage:
+    resume: false
+    cover_letter: true
+    interview: true
+    linkedin: true
+    recruiter_messages: true
+    match_scoring: true
+    hiring_manager_lens: true
+    role_interpreter: true
+    application_strategy: true
+    career_analytics: true
+  recommended_usage_notes:
+  - Too tactical for the default resume; recommend selectively for relevant technical roles.
+  career_period: OMG23 / OMD Entertainment
+  company: OMG23 / Omnicom Media Group
+  role: Campaign Operations leadership
+  years: null
+  related_evidence:
+  - advertising_technology
+  - dv360
+  - measurement_readiness
+  - conversion_tracking
+  - qa
+  - launch_readiness
+  related_projects:
+  - Disney Studios Theatrical
+  - Disney Streaming/DSS
+  related_tools:
+  - CM360
+  technical_depth: Moderate
+  leadership_scope: Implementation support and operational oversight
+  customer_facing: Advertiser delivery support
+  people_management: Not specified
+  tags:
+  - CM360
+  - trafficking
+  - implementation
+  - campaign delivery
+  notes:
+  - Do not claim platform engineering ownership.
+  provenance: *id002
+  last_updated: '2026-07-18T00:00:00+00:00'
+  created_at: '2026-07-18T00:00:00+00:00'
+  updated_at: '2026-07-18T00:00:00+00:00'
+- id: dv360
+  title: DV360
+  description: Experience supporting DV360 workflows, campaign implementation, activation, optimization support, and operational readiness.
+  category: Programmatic
+  subcategory: Display & Video 360
+  skills:
+  - campaign implementation
+  - activation
+  - optimization support
+  - operational readiness
+  platforms:
+  - Display & Video 360
+  - DV360
+  industries:
+  - Advertising
+  - Entertainment
+  clients:
+  - Disney Studios Theatrical
+  - Disney Streaming/DSS
+  evidence_type: User Confirmed
+  source: Conversation
+  source_reference: Career coaching July 2026
+  confidence: High
+  verification_status: User Confirmed
+  resume_visibility: Not Included
+  recommended_usage:
+    resume: false
+    cover_letter: true
+    interview: true
+    linkedin: true
+    recruiter_messages: true
+    match_scoring: true
+    hiring_manager_lens: true
+    role_interpreter: true
+    application_strategy: true
+    career_analytics: true
+  recommended_usage_notes:
+  - Recommend for programmatic or technical advertising roles rather than every resume.
+  career_period: OMG23 / OMD Entertainment
+  company: OMG23 / Omnicom Media Group
+  role: Campaign Operations leadership
+  years: null
+  related_evidence:
+  - advertising_technology
+  - cm360
+  - measurement_readiness
+  - launch_readiness
+  related_projects:
+  - Disney Studios Theatrical
+  - Disney Streaming/DSS
+  related_tools:
+  - DV360
+  technical_depth: Moderate
+  leadership_scope: Programmatic workflow support and operational oversight
+  customer_facing: Advertiser delivery support
+  people_management: Not specified
+  tags:
+  - DV360
+  - programmatic
+  - activation
+  - optimization
+  notes: []
+  provenance: *id002
+  last_updated: '2026-07-18T00:00:00+00:00'
+  created_at: '2026-07-18T00:00:00+00:00'
+  updated_at: '2026-07-18T00:00:00+00:00'
+- id: measurement_readiness
+  title: Measurement Readiness
+  description: Led operational readiness around campaign measurement, tracking quality, reporting alignment, and launch validation.
+  category: Measurement
+  subcategory: Campaign measurement readiness
+  skills:
+  - tracking quality
+  - reporting alignment
+  - launch validation
+  - measurement readiness
+  platforms:
+  - CM360
+  - DV360
+  - Google
+  - YouTube
+  industries:
+  - Advertising
+  - Entertainment
+  clients:
+  - Disney Studios Theatrical
+  - Disney Streaming/DSS
+  evidence_type: User Confirmed
+  source: Conversation
+  source_reference: Career coaching July 2026
+  confidence: High
+  verification_status: User Confirmed
+  resume_visibility: Partially Represented
+  recommended_usage: *id001
+  recommended_usage_notes: []
+  career_period: OMG23 / OMD Entertainment
+  company: OMG23 / Omnicom Media Group
+  role: Campaign Operations leadership
+  years: null
+  related_evidence:
+  - conversion_tracking
+  - server_to_server_conversion_api
+  - qa
+  - launch_readiness
+  related_projects:
+  - Disney Studios Theatrical
+  - Disney Streaming/DSS
+  related_tools:
+  - CM360
+  - DV360
+  technical_depth: Moderate
+  leadership_scope: Measurement and launch-readiness leadership
+  customer_facing: Advertiser delivery
+  people_management: Not specified
+  tags:
+  - measurement
+  - validation
+  - tracking
+  - reporting
+  notes: []
+  provenance: *id002
+  last_updated: '2026-07-18T00:00:00+00:00'
+  created_at: '2026-07-18T00:00:00+00:00'
+  updated_at: '2026-07-18T00:00:00+00:00'
+- id: conversion_tracking
+  title: Conversion Tracking
+  description: Supported conversion tracking implementation, validation, QA, and troubleshooting.
+  category: Measurement
+  subcategory: Conversion measurement implementation
+  skills:
+  - conversion tracking
+  - implementation support
+  - validation
+  - QA
+  - troubleshooting
+  platforms:
+  - CM360
+  - Google advertising platforms
+  industries:
+  - Advertising
+  - Entertainment
+  clients:
+  - Disney Studios Theatrical
+  - Disney Streaming/DSS
+  evidence_type: User Confirmed
+  source: Conversation
+  source_reference: Career coaching July 2026
+  confidence: High
+  verification_status: User Confirmed
+  resume_visibility: Not Included
+  recommended_usage:
+    resume: false
+    cover_letter: true
+    interview: true
+    linkedin: true
+    recruiter_messages: true
+    match_scoring: true
+    hiring_manager_lens: true
+    role_interpreter: true
+    application_strategy: true
+    career_analytics: true
+  recommended_usage_notes:
+  - Recommend for technical advertising roles; otherwise keep for interview evidence.
+  career_period: OMG23 / OMD Entertainment
+  company: OMG23 / Omnicom Media Group
+  role: Campaign Operations leadership
+  years: null
+  related_evidence:
+  - measurement_readiness
+  - server_to_server_conversion_api
+  - qa
+  - technical_troubleshooting
+  related_projects:
+  - Disney Studios Theatrical
+  - Disney Streaming/DSS
+  related_tools:
+  - CM360
+  technical_depth: Moderate
+  leadership_scope: Implementation support and operational validation
+  customer_facing: Advertiser delivery support
+  people_management: Not specified
+  tags:
+  - conversion tracking
+  - validation
+  - QA
+  notes:
+  - Do not claim software development.
+  provenance: *id002
+  last_updated: '2026-07-18T00:00:00+00:00'
+  created_at: '2026-07-18T00:00:00+00:00'
+  updated_at: '2026-07-18T00:00:00+00:00'
+- id: server_to_server_conversion_api
+  title: Server-to-Server Conversion API
+  description: Supported implementation and operationalization of server-to-server Conversion API measurement supporting Disney privacy-safe reporting.
+  category: Platform Implementation
+  subcategory: Server-to-server conversion measurement
+  skills:
+  - implementation support
+  - operationalization
+  - conversion measurement
+  - privacy-safe reporting
+  platforms:
+  - Conversion API
+  industries:
+  - Advertising
+  - Entertainment
+  clients:
+  - Disney
+  evidence_type: User Confirmed
+  source: Conversation
+  source_reference: Career coaching July 2026
+  confidence: High
+  verification_status: User Confirmed
+  resume_visibility: Intentionally Omitted
+  recommended_usage:
+    resume: false
+    cover_letter: true
+    interview: true
+    linkedin: false
+    recruiter_messages: false
+    match_scoring: true
+    hiring_manager_lens: true
+    role_interpreter: true
+    application_strategy: true
+    career_analytics: true
+  recommended_usage_notes:
+  - Use selectively for technical roles and interviews; preserve the implementation-support boundary.
+  career_period: OMG23 / OMD Entertainment
+  company: OMG23 / Omnicom Media Group
+  role: Campaign Operations leadership
+  years: null
+  related_evidence:
+  - measurement_readiness
+  - conversion_tracking
+  - technical_troubleshooting
+  - cross_functional_technical_translation
+  related_projects:
+  - Disney privacy-safe reporting
+  related_tools:
+  - Conversion API
+  technical_depth: Moderate
+  leadership_scope: Implementation support and operational leadership
+  customer_facing: Advertiser measurement delivery
+  people_management: Not specified
+  tags:
+  - server-to-server
+  - conversion API
+  - privacy-safe measurement
+  - implementation support
+  notes:
+  - Do not claim software engineering
+  - API development
+  - or code ownership.
+  provenance: *id002
+  last_updated: '2026-07-18T00:00:00+00:00'
+  created_at: '2026-07-18T00:00:00+00:00'
+  updated_at: '2026-07-18T00:00:00+00:00'
+- id: qa
+  title: QA
+  description: Developed QA standards, launch readiness, implementation validation, campaign review processes, and operational quality controls.
+  category: QA
+  subcategory: Campaign and implementation quality
+  skills:
+  - QA standards
+  - implementation validation
+  - campaign review
+  - quality controls
+  platforms:
+  - CM360
+  - DV360
+  industries:
+  - Advertising
+  - Entertainment
+  clients:
+  - Disney Studios Theatrical
+  - Disney Streaming/DSS
+  evidence_type: User Confirmed
+  source: Conversation
+  source_reference: Career coaching July 2026
+  confidence: High
+  verification_status: User Confirmed
+  resume_visibility: Partially Represented
+  recommended_usage: *id001
+  recommended_usage_notes: []
+  career_period: OMG23 / OMD Entertainment
+  company: OMG23 / Omnicom Media Group
+  role: Campaign Operations leadership
+  years: null
+  related_evidence:
+  - measurement_readiness
+  - conversion_tracking
+  - launch_readiness
+  - workflow_design
+  - technical_troubleshooting
+  related_projects:
+  - Disney Studios Theatrical
+  - Disney Streaming/DSS
+  related_tools:
+  - Campaign checklists
+  - validation workflows
+  technical_depth: Moderate
+  leadership_scope: Quality standards and operational controls
+  customer_facing: Supports reliable advertiser outcomes
+  people_management: Team standards and review processes
+  tags:
+  - QA
+  - validation
+  - quality
+  - campaign review
+  notes: []
+  provenance: *id002
+  last_updated: '2026-07-18T00:00:00+00:00'
+  created_at: '2026-07-18T00:00:00+00:00'
+  updated_at: '2026-07-18T00:00:00+00:00'
+- id: technical_troubleshooting
+  title: Technical Troubleshooting
+  description: Diagnosed and coordinated resolution of campaign delivery, trafficking, reporting, measurement, implementation, and platform issues.
+  category: Technical Troubleshooting
+  subcategory: Advertising platform and campaign issue resolution
+  skills:
+  - diagnosis
+  - issue resolution
+  - escalation coordination
+  - trafficking
+  - reporting
+  - measurement
+  platforms:
+  - CM360
+  - DV360
+  - Google
+  - YouTube
+  industries:
+  - Advertising
+  - Entertainment
+  clients:
+  - Disney Studios Theatrical
+  - Disney Streaming/DSS
+  evidence_type: User Confirmed
+  source: Conversation
+  source_reference: Career coaching July 2026
+  confidence: High
+  verification_status: User Confirmed
+  resume_visibility: Not Included
+  recommended_usage:
+    resume: false
+    cover_letter: true
+    interview: true
+    linkedin: true
+    recruiter_messages: true
+    match_scoring: true
+    hiring_manager_lens: true
+    role_interpreter: true
+    application_strategy: true
+    career_analytics: true
+  recommended_usage_notes:
+  - Recommend selectively when troubleshooting is a material requirement.
+  career_period: OMG23 / OMD Entertainment
+  company: OMG23 / Omnicom Media Group
+  role: Campaign Operations leadership
+  years: null
+  related_evidence:
+  - advertising_technology
+  - conversion_tracking
+  - qa
+  - launch_readiness
+  - cross_functional_technical_translation
+  related_projects:
+  - Disney Studios Theatrical
+  - Disney Streaming/DSS
+  related_tools:
+  - CM360
+  - DV360
+  technical_depth: Moderate
+  leadership_scope: Diagnosis and cross-functional resolution leadership
+  customer_facing: Advertiser and stakeholder issue resolution
+  people_management: Coordinated specialists and delivery teams
+  tags:
+  - troubleshooting
+  - campaign delivery
+  - issue resolution
+  - escalation
+  notes:
+  - Do not imply code debugging or software engineering unless separately verified.
+  provenance: *id002
+  last_updated: '2026-07-18T00:00:00+00:00'
+  created_at: '2026-07-18T00:00:00+00:00'
+  updated_at: '2026-07-18T00:00:00+00:00'
+- id: launch_readiness
+  title: Launch Readiness
+  description: Built launch checklists, validation processes, operational readiness reviews, and escalation procedures.
+  category: Launch Readiness
+  subcategory: Campaign and platform launch controls
+  skills:
+  - launch checklists
+  - validation
+  - readiness reviews
+  - escalation procedures
+  platforms:
+  - CM360
+  - DV360
+  - Google
+  - YouTube
+  industries:
+  - Advertising
+  - Entertainment
+  clients:
+  - Disney Studios Theatrical
+  - Disney Streaming/DSS
+  evidence_type: User Confirmed
+  source: Conversation
+  source_reference: Career coaching July 2026
+  confidence: High
+  verification_status: User Confirmed
+  resume_visibility: Partially Represented
+  recommended_usage: *id001
+  recommended_usage_notes: []
+  career_period: OMG23 / OMD Entertainment
+  company: OMG23 / Omnicom Media Group
+  role: Campaign Operations leadership
+  years: null
+  related_evidence:
+  - measurement_readiness
+  - qa
+  - technical_troubleshooting
+  - workflow_design
+  related_projects:
+  - Disney Studios Theatrical
+  - Disney Streaming/DSS
+  related_tools:
+  - Launch checklists
+  - validation workflows
+  technical_depth: Moderate
+  leadership_scope: Launch-readiness process ownership
+  customer_facing: Supports reliable advertiser launches
+  people_management: Team readiness and escalation procedures
+  tags:
+  - launch
+  - readiness
+  - validation
+  - escalation
+  notes: []
+  provenance: *id002
+  last_updated: '2026-07-18T00:00:00+00:00'
+  created_at: '2026-07-18T00:00:00+00:00'
+  updated_at: '2026-07-18T00:00:00+00:00'
+  framing:
+    program_manager: Served as the senior Ad Operations representative on the Disney+ launch task force, partnering with Disney Technology and Disney Streaming Services to connect tracking, pixel implementation, measurement, and quality assurance ahead of launch.
+    operations_manager: Served as the senior Ad Operations representative on the Disney+ launch task force, partnering with Disney Technology and Disney Streaming Services on the governance, implementation standards, and readiness workflows that connected measurement and quality assurance to campaign execution.
+- id: workflow_design
+  title: Workflow Design
+  description: Designed scalable workflows, governance, implementation standards, handoff processes, and operational systems.
+  category: Workflow Design
+  subcategory: Scalable campaign operations systems
+  skills:
+  - workflow design
+  - governance
+  - implementation standards
+  - handoffs
+  - operating systems
+  platforms: []
+  industries:
+  - Advertising
+  - Entertainment
+  clients:
+  - Disney Studios Theatrical
+  - Disney Streaming/DSS
+  evidence_type: User Confirmed
+  source: Conversation
+  source_reference: Career coaching July 2026
+  confidence: High
+  verification_status: User Confirmed
+  resume_visibility: Partially Represented
+  recommended_usage: *id001
+  recommended_usage_notes: []
+  career_period: OMG23 / OMD Entertainment
+  company: OMG23 / Omnicom Media Group
+  role: Campaign Operations leadership
+  years: null
+  related_evidence:
+  - campaign_operations_leadership
+  - qa
+  - launch_readiness
+  - cross_functional_technical_translation
+  related_projects:
+  - Disney Studios Theatrical
+  - Disney Streaming/DSS
+  related_tools:
+  - Workflow systems
+  - governance standards
+  technical_depth: Moderate
+  leadership_scope: Cross-functional workflow and operating-system design
+  customer_facing: Supports stakeholder delivery
+  people_management: Team standards and adoption
+  tags:
+  - workflow
+  - governance
+  - implementation standards
+  - handoffs
+  notes: []
+  provenance: *id002
+  last_updated: '2026-07-18T00:00:00+00:00'
+  created_at: '2026-07-18T00:00:00+00:00'
+  updated_at: '2026-07-18T00:00:00+00:00'
+  framing:
+    program_manager: Coordinated a defined initiative moving Disney Performance Marketing's campaign tracking from spreadsheets to a shared Airtable system, connecting Disney and agency technology teams, testing workflows, and training users on the new process.
+    operations_manager: Designed and maintained the scalable workflows, governance, and handoff standards underpinning day-to-day campaign operations, including migrating the team from spreadsheet-based tracking to a shared Airtable system.
+- id: cross_functional_technical_translation
+  title: Cross-functional Technical Translation
+  description: Translated technical platform requirements into operational guidance for marketing, analytics, technology, creative, media, and leadership stakeholders.
+  category: Cross-functional Leadership
+  subcategory: Technical-to-operational translation
+  skills:
+  - technical translation
+  - operational guidance
+  - stakeholder communication
+  - platform requirements
+  platforms:
+  - CM360
+  - DV360
+  - Google
+  - YouTube
+  industries:
+  - Advertising
+  - Entertainment
+  clients:
+  - Disney Studios Theatrical
+  - Disney Streaming/DSS
+  evidence_type: User Confirmed
+  source: Conversation
+  source_reference: Career coaching July 2026
+  confidence: High
+  verification_status: User Confirmed
+  resume_visibility: Partially Represented
+  recommended_usage: *id001
+  recommended_usage_notes: []
+  career_period: OMG23 / OMD Entertainment
+  company: OMG23 / Omnicom Media Group
+  role: Campaign Operations leadership
+  years: null
+  related_evidence:
+  - advertising_technology
+  - google_youtube_platforms
+  - server_to_server_conversion_api
+  - technical_troubleshooting
+  - workflow_design
+  related_projects:
+  - Disney Studios Theatrical
+  - Disney Streaming/DSS
+  related_tools:
+  - CM360
+  - DV360
+  technical_depth: Moderate
+  leadership_scope: Cross-functional translation and issue-resolution leadership
+  customer_facing: Advertiser and senior stakeholder communication
+  people_management: Coordinated multi-disciplinary teams
+  tags:
+  - technical translation
+  - platform requirements
+  - cross-functional
+  - stakeholders
+  notes: []
+  provenance: *id002
+  last_updated: '2026-07-18T00:00:00+00:00'
+  created_at: '2026-07-18T00:00:00+00:00'
+  updated_at: '2026-07-18T00:00:00+00:00'
+- id: people_leadership
+  title: People Leadership
+  description: Led Supervisors, Senior Campaign Managers, Campaign Managers, and Coordinators responsible for campaign execution and platform implementation.
+  category: People Leadership
+  subcategory: Campaign operations team leadership
+  skills:
+  - people leadership
+  - coaching
+  - campaign execution leadership
+  - platform implementation oversight
+  platforms:
+  - CM360
+  - DV360
+  industries:
+  - Advertising
+  - Entertainment
+  clients:
+  - Disney Studios Theatrical
+  - Disney Streaming/DSS
+  evidence_type: User Confirmed
+  source: Conversation
+  source_reference: Career coaching July 2026
+  confidence: High
+  verification_status: User Confirmed
+  resume_visibility: Partially Represented
+  recommended_usage: *id001
+  recommended_usage_notes: []
+  career_period: OMG23 / OMD Entertainment
+  company: OMG23 / Omnicom Media Group
+  role: Group Director, Campaign Operations
+  years: null
+  related_evidence:
+  - campaign_operations_leadership
+  - advertising_technology
+  - qa
+  - launch_readiness
+  related_projects:
+  - Disney Studios Theatrical
+  - Disney Streaming/DSS
+  related_tools: []
+  technical_depth: Moderate
+  leadership_scope: Formal leadership of campaign operations practitioners
+  customer_facing: Led teams responsible for advertiser delivery
+  people_management: Supervisors, Senior Campaign Managers, Campaign Managers, and Coordinators
+  tags:
+  - people management
+  - coaching
+  - campaign managers
+  - technical operations team
+  notes:
+  - Do not relabel these roles as Solutions Engineers.
+  provenance: *id002
+  last_updated: '2026-07-18T00:00:00+00:00'
+  created_at: '2026-07-18T00:00:00+00:00'
+  updated_at: '2026-07-18T00:00:00+00:00'
+- id: career_catalyst_ai_product
+  title: Career Catalyst — AI Career Intelligence Platform
+  description: Conceived and directed iterative development of an AI-enabled career intelligence platform that interprets jobs, evaluates evidence, models hiring-manager priorities, scores alignment, recommends application strategies, and generates truthful role-specific materials.
+  category: AI Systems
+  subcategory: AI-enabled software product
+  skills:
+  - AI product ownership
+  - AI workflow design
+  - requirements architecture
+  - human-in-the-loop evaluation
+  - quality and safety review
+  - user acceptance testing
+  platforms:
+  - ChatGPT
+  - OpenAI Codex
+  - Git
+  - GitHub
+  industries:
+  - Career Technology
+  - Artificial Intelligence
+  clients: []
+  evidence_type: User Confirmed
+  source: Conversation
+  source_reference: Sprint 24 AI Product and Codex evidence, July 2026
+  confidence: High
+  verification_status: User Confirmed
+  resume_visibility: Partially Represented
+  recommended_usage: *id001
+  recommended_usage_notes:
+  - Position as substantial user-led AI product development
+  - not casual ChatGPT usage.
+  positioning_emphases:
+  - AI Product Owner
+  - AI Workflow and Operations
+  - AI Program Leadership
+  - Human-in-the-loop Product Design
+  - Responsible AI and Evaluation
+  - Product Operations and Transformation
+  career_period: Independent product development
+  company: Independent
+  role: Product Owner and Codex Implementation Director
+  years: null
+  related_evidence:
+  - career_catalyst_product_vision
+  - career_catalyst_requirements_engineering
+  - career_catalyst_ai_workflow_architecture
+  - career_catalyst_human_in_loop
+  - career_catalyst_ai_evaluation
+  - career_catalyst_failure_analysis
+  - career_catalyst_codex_delivery
+  - career_catalyst_software_delivery
+  - career_catalyst_product_testing
+  - career_catalyst_responsible_ai
+  related_projects:
+  - Career Catalyst
+  related_tools:
+  - ChatGPT
+  - OpenAI Codex
+  - Git
+  - GitHub
+  technical_depth: Moderate
+  leadership_scope: Product vision, requirements, implementation direction, evaluation, and release quality
+  customer_facing: Designed around real candidate and hiring workflows
+  people_management: AI-assisted implementation direction; no software-engineering team ownership claimed
+  tags:
+  - AI product
+  - product owner
+  - Codex
+  - human-in-the-loop
+  - responsible AI
+  - career intelligence
+  notes:
+  - Do not claim sole software engineering
+  - model training
+  - full-stack engineering
+  - or production API engineering.
+  provenance: &id003
+    where: Conversation
+    when: July 2026
+    how: Explicitly confirmed by the user in the Sprint 24 AI Product and Codex evidence specification
+    confidence: High
+  last_updated: '2026-07-18T00:00:00+00:00'
+  created_at: '2026-07-18T00:00:00+00:00'
+  updated_at: '2026-07-18T00:00:00+00:00'
+- id: career_catalyst_product_vision
+  title: Career Catalyst Product Vision and Strategy
+  description: Defined Career Catalyst as a career intelligence system rather than a basic resume or cover-letter generator.
+  category: AI Systems
+  subcategory: AI product strategy
+  skills:
+  - product vision
+  - product strategy
+  - domain modeling
+  - career intelligence
+  platforms:
+  - ChatGPT
+  - OpenAI Codex
+  industries:
+  - Career Technology
+  - Artificial Intelligence
+  clients: []
+  evidence_type: User Confirmed
+  source: Conversation
+  source_reference: Sprint 24 AI Product and Codex evidence, July 2026
+  confidence: High
+  verification_status: User Confirmed
+  resume_visibility: Not Included
+  recommended_usage: &id004
+    resume: false
+    cover_letter: true
+    interview: true
+    linkedin: true
+    recruiter_messages: true
+    match_scoring: true
+    hiring_manager_lens: true
+    role_interpreter: true
+    application_strategy: true
+    career_analytics: true
+  recommended_usage_notes:
+  - Use as supporting detail beneath the Career Catalyst product evidence.
+  positioning_emphases:
+  - AI Product Owner
+  - Product Operations and Transformation
+  career_period: Independent product development
+  company: Independent
+  role: Product Owner and Domain Expert
+  years: null
+  related_evidence:
+  - career_catalyst_ai_product
+  - career_catalyst_requirements_engineering
+  - career_catalyst_ai_workflow_architecture
+  related_projects:
+  - Career Catalyst
+  related_tools:
+  - ChatGPT
+  - OpenAI Codex
+  technical_depth: Moderate
+  leadership_scope: Product vision and domain strategy
+  customer_facing: User-centered product definition
+  people_management: Not specified
+  tags:
+  - AI product strategy
+  - product owner
+  - domain expert
+  notes: []
+  provenance: *id003
+  last_updated: '2026-07-18T00:00:00+00:00'
+  created_at: '2026-07-18T00:00:00+00:00'
+  updated_at: '2026-07-18T00:00:00+00:00'
+- id: career_catalyst_requirements_engineering
+  title: Career Catalyst Requirements Engineering
+  description: Converted real user needs and observed product failures into detailed implementation requirements, scoped sprint plans, acceptance criteria, safeguards, and regression tests.
+  category: Product Collaboration
+  subcategory: Requirements engineering
+  skills:
+  - requirements definition
+  - acceptance criteria
+  - sprint planning
+  - product requirements
+  - regression design
+  platforms:
+  - OpenAI Codex
+  - Git
+  - GitHub
+  industries:
+  - Career Technology
+  - Artificial Intelligence
+  clients: []
+  evidence_type: User Confirmed
+  source: Conversation
+  source_reference: Sprint 24 AI Product and Codex evidence, July 2026
+  confidence: High
+  verification_status: User Confirmed
+  resume_visibility: Not Included
+  recommended_usage: *id004
+  recommended_usage_notes: []
+  positioning_emphases:
+  - AI Product Owner
+  - AI Program Leadership
+  career_period: Independent product development
+  company: Independent
+  role: Requirements Architect
+  years: null
+  related_evidence:
+  - career_catalyst_ai_product
+  - career_catalyst_product_vision
+  - career_catalyst_codex_delivery
+  - career_catalyst_product_testing
+  related_projects:
+  - Career Catalyst
+  related_tools:
+  - OpenAI Codex
+  - Git
+  - GitHub
+  technical_depth: Moderate
+  leadership_scope: Scoped iterative development and acceptance criteria
+  customer_facing: Translated user needs into system requirements
+  people_management: Directed AI-assisted implementation
+  tags:
+  - requirements engineering
+  - acceptance criteria
+  - sprint planning
+  notes: []
+  provenance: *id003
+  last_updated: '2026-07-18T00:00:00+00:00'
+  created_at: '2026-07-18T00:00:00+00:00'
+  updated_at: '2026-07-18T00:00:00+00:00'
+- id: career_catalyst_ai_workflow_architecture
+  title: Career Catalyst AI Workflow Architecture
+  description: Designed a multi-stage reasoning workflow spanning job import, role interpretation, evidence and capability modeling, requirement alignment, scoring, strategy, generation, and quality gates.
+  category: Workflow Design
+  subcategory: AI reasoning and context architecture
+  skills:
+  - AI workflow design
+  - context engineering
+  - systems thinking
+  - data-model design
+  - workflow architecture
+  platforms:
+  - ChatGPT
+  - OpenAI Codex
+  industries:
+  - Career Technology
+  - Artificial Intelligence
+  clients: []
+  evidence_type: User Confirmed
+  source: Conversation
+  source_reference: Sprint 24 AI Product and Codex evidence, July 2026
+  confidence: High
+  verification_status: User Confirmed
+  resume_visibility: Not Included
+  recommended_usage: *id004
+  recommended_usage_notes: []
+  positioning_emphases:
+  - AI Workflow and Operations
+  - Human-in-the-loop Product Design
+  career_period: Independent product development
+  company: Independent
+  role: AI Workflow Designer and Context Designer
+  years: null
+  related_evidence:
+  - career_catalyst_ai_product
+  - career_catalyst_product_vision
+  - career_catalyst_human_in_loop
+  - career_catalyst_responsible_ai
+  related_projects:
+  - Career Catalyst
+  related_tools:
+  - ChatGPT
+  - OpenAI Codex
+  technical_depth: Moderate
+  leadership_scope: End-to-end reasoning and workflow architecture
+  customer_facing: Designed for reviewable candidate workflows
+  people_management: Not specified
+  tags:
+  - AI workflow
+  - context engineering
+  - systems thinking
+  - architecture
+  notes:
+  - Do not describe as cloud or software architecture.
+  provenance: *id003
+  last_updated: '2026-07-18T00:00:00+00:00'
+  created_at: '2026-07-18T00:00:00+00:00'
+  updated_at: '2026-07-18T00:00:00+00:00'
+- id: career_catalyst_human_in_loop
+  title: Career Catalyst Human-in-the-loop AI Design
+  description: Designed confirmation, override, edit, rejection, provenance, confidence, and unsupported-evidence controls so AI conclusions remain reviewable and truthful.
+  category: AI Systems
+  subcategory: Human-in-the-loop product design
+  skills:
+  - human-in-the-loop design
+  - confirmation workflows
+  - provenance
+  - confidence modeling
+  - safety controls
+  platforms:
+  - ChatGPT
+  - OpenAI Codex
+  industries:
+  - Career Technology
+  - Artificial Intelligence
+  clients: []
+  evidence_type: User Confirmed
+  source: Conversation
+  source_reference: Sprint 24 AI Product and Codex evidence, July 2026
+  confidence: High
+  verification_status: User Confirmed
+  resume_visibility: Not Included
+  recommended_usage: *id004
+  recommended_usage_notes: []
+  positioning_emphases:
+  - Human-in-the-loop Product Design
+  - Responsible AI and Evaluation
+  career_period: Independent product development
+  company: Independent
+  role: Human-in-the-loop Evaluator and Quality and Safety Reviewer
+  years: null
+  related_evidence:
+  - career_catalyst_ai_product
+  - career_catalyst_ai_workflow_architecture
+  - career_catalyst_ai_evaluation
+  - career_catalyst_responsible_ai
+  related_projects:
+  - Career Catalyst
+  related_tools:
+  - ChatGPT
+  - OpenAI Codex
+  technical_depth: Moderate
+  leadership_scope: Review, confirmation, confidence, and evidence-control design
+  customer_facing: User-review and correction workflows
+  people_management: Not specified
+  tags:
+  - human-in-the-loop
+  - confidence
+  - provenance
+  - review controls
+  notes: []
+  provenance: *id003
+  last_updated: '2026-07-18T00:00:00+00:00'
+  created_at: '2026-07-18T00:00:00+00:00'
+  updated_at: '2026-07-18T00:00:00+00:00'
+- id: career_catalyst_ai_evaluation
+  title: Career Catalyst AI Evaluation
+  description: Evaluated generated scores, role interpretations, cover letters, resumes, interview materials, and positioning recommendations against real job postings.
+  category: QA
+  subcategory: AI product and generated-content evaluation
+  skills:
+  - AI evaluation
+  - prompt evaluation
+  - generated-content evaluation
+  - qualitative testing
+  - truthfulness review
+  platforms:
+  - ChatGPT
+  - OpenAI Codex
+  industries:
+  - Career Technology
+  - Artificial Intelligence
+  clients: []
+  evidence_type: User Confirmed
+  source: Conversation
+  source_reference: Sprint 24 AI Product and Codex evidence, July 2026
+  confidence: High
+  verification_status: User Confirmed
+  resume_visibility: Not Included
+  recommended_usage: *id004
+  recommended_usage_notes: []
+  positioning_emphases:
+  - Responsible AI and Evaluation
+  - Human-in-the-loop Product Design
+  career_period: Independent product development
+  company: Independent
+  role: Human-in-the-loop Evaluator and User Acceptance Tester
+  years: null
+  related_evidence:
+  - career_catalyst_ai_product
+  - career_catalyst_human_in_loop
+  - career_catalyst_failure_analysis
+  - career_catalyst_product_testing
+  related_projects:
+  - Career Catalyst
+  related_tools:
+  - ChatGPT
+  - OpenAI Codex
+  technical_depth: Moderate
+  leadership_scope: Evaluation criteria and iterative output quality
+  customer_facing: Tested against real application use cases
+  people_management: Not specified
+  tags:
+  - AI evaluation
+  - output evaluation
+  - prompt evaluation
+  - quality
+  notes: []
+  provenance: *id003
+  last_updated: '2026-07-18T00:00:00+00:00'
+  created_at: '2026-07-18T00:00:00+00:00'
+  updated_at: '2026-07-18T00:00:00+00:00'
+- id: career_catalyst_failure_analysis
+  title: Career Catalyst AI Failure Analysis
+  description: Identified keyword dependence, resume-only assumptions, role confusion, generic fallback language, unsupported inferences, stale state, contradictory intelligence, and internal-to-public-material mismatches, then converted them into architectural and test improvements.
+  category: Technical Troubleshooting
+  subcategory: AI product failure analysis
+  skills:
+  - failure analysis
+  - debugging direction
+  - root-cause analysis
+  - product quality improvement
+  platforms:
+  - ChatGPT
+  - OpenAI Codex
+  - Git
+  industries:
+  - Career Technology
+  - Artificial Intelligence
+  clients: []
+  evidence_type: User Confirmed
+  source: Conversation
+  source_reference: Sprint 24 AI Product and Codex evidence, July 2026
+  confidence: High
+  verification_status: User Confirmed
+  resume_visibility: Not Included
+  recommended_usage: *id004
+  recommended_usage_notes: []
+  positioning_emphases:
+  - Responsible AI and Evaluation
+  - AI Program Leadership
+  career_period: Independent product development
+  company: Independent
+  role: Product Owner and Quality Reviewer
+  years: null
+  related_evidence:
+  - career_catalyst_ai_product
+  - career_catalyst_ai_evaluation
+  - career_catalyst_product_testing
+  - career_catalyst_responsible_ai
+  related_projects:
+  - Career Catalyst
+  related_tools:
+  - ChatGPT
+  - OpenAI Codex
+  - Git
+  technical_depth: Moderate
+  leadership_scope: Failure identification and improvement direction
+  customer_facing: Real use-case and output review
+  people_management: Directed AI-assisted remediation
+  tags:
+  - failure analysis
+  - root cause
+  - debugging
+  - AI quality
+  notes:
+  - Do not imply sole code debugging or software engineering.
+  provenance: *id003
+  last_updated: '2026-07-18T00:00:00+00:00'
+  created_at: '2026-07-18T00:00:00+00:00'
+  updated_at: '2026-07-18T00:00:00+00:00'
+- id: career_catalyst_codex_delivery
+  title: Career Catalyst Codex-directed Development
+  description: Directed Codex through scoped software-development sprints with explicit context, goals, architecture, implementation constraints, tests, and completion-report requirements.
+  category: AI Systems
+  subcategory: AI-assisted implementation direction
+  skills:
+  - Codex implementation direction
+  - structured prompting
+  - sprint-based development
+  - technical program leadership
+  platforms:
+  - OpenAI Codex
+  - Git
+  - GitHub
+  industries:
+  - Career Technology
+  - Artificial Intelligence
+  clients: []
+  evidence_type: User Confirmed
+  source: Conversation
+  source_reference: Sprint 24 AI Product and Codex evidence, July 2026
+  confidence: High
+  verification_status: User Confirmed
+  resume_visibility: Not Included
+  recommended_usage: *id004
+  recommended_usage_notes: []
+  positioning_emphases:
+  - AI Program Leadership
+  - AI Product Owner
+  career_period: Independent product development
+  company: Independent
+  role: Codex Implementation Director
+  years: null
+  related_evidence:
+  - career_catalyst_ai_product
+  - career_catalyst_requirements_engineering
+  - career_catalyst_software_delivery
+  - career_catalyst_product_testing
+  related_projects:
+  - Career Catalyst
+  related_tools:
+  - OpenAI Codex
+  - Git
+  - GitHub
+  technical_depth: Moderate
+  leadership_scope: Scoped and directed iterative AI-assisted implementation
+  customer_facing: Not specified
+  people_management: Directed an AI coding agent; no engineering-team management claimed
+  tags:
+  - Codex
+  - structured prompting
+  - implementation direction
+  - sprints
+  notes:
+  - Do not claim sole software engineering.
+  provenance: *id003
+  last_updated: '2026-07-18T00:00:00+00:00'
+  created_at: '2026-07-18T00:00:00+00:00'
+  updated_at: '2026-07-18T00:00:00+00:00'
+- id: career_catalyst_software_delivery
+  title: Career Catalyst Software Delivery Workflow
+  description: Participated in repository-based development using Git status review, selective staging, targeted testing, clean commits, push verification, and protection against broad or destructive changes.
+  category: Governance
+  subcategory: Git-based AI-assisted delivery
+  skills:
+  - Git workflow
+  - GitHub workflow
+  - selective staging
+  - targeted testing
+  - release verification
+  platforms:
+  - Git
+  - GitHub
+  - OpenAI Codex
+  industries:
+  - Career Technology
+  - Artificial Intelligence
+  clients: []
+  evidence_type: User Confirmed
+  source: Conversation
+  source_reference: Sprint 24 AI Product and Codex evidence, July 2026
+  confidence: High
+  verification_status: User Confirmed
+  resume_visibility: Not Included
+  recommended_usage: *id004
+  recommended_usage_notes: []
+  positioning_emphases:
+  - AI-assisted Software Delivery
+  - AI Program Leadership
+  career_period: Independent product development
+  company: Independent
+  role: Product Owner and Release Reviewer
+  years: null
+  related_evidence:
+  - career_catalyst_ai_product
+  - career_catalyst_codex_delivery
+  - career_catalyst_product_testing
+  related_projects:
+  - Career Catalyst
+  related_tools:
+  - Git
+  - GitHub
+  - OpenAI Codex
+  technical_depth: Moderate
+  leadership_scope: Repository workflow and release-quality participation
+  customer_facing: Not specified
+  people_management: Not specified
+  tags:
+  - Git
+  - GitHub
+  - release workflow
+  - testing
+  notes: []
+  provenance: *id003
+  last_updated: '2026-07-18T00:00:00+00:00'
+  created_at: '2026-07-18T00:00:00+00:00'
+  updated_at: '2026-07-18T00:00:00+00:00'
+- id: career_catalyst_product_testing
+  title: Career Catalyst Product Testing
+  description: Performed functional and qualitative user acceptance testing using imported roles, generated packages, UI workflows, scoring outputs, saved-state behavior, and regression scenarios.
+  category: QA
+  subcategory: User acceptance and regression testing
+  skills:
+  - user acceptance testing
+  - regression testing
+  - functional testing
+  - qualitative testing
+  - iterative debugging
+  platforms:
+  - OpenAI Codex
+  - Git
+  - GitHub
+  industries:
+  - Career Technology
+  - Artificial Intelligence
+  clients: []
+  evidence_type: User Confirmed
+  source: Conversation
+  source_reference: Sprint 24 AI Product and Codex evidence, July 2026
+  confidence: High
+  verification_status: User Confirmed
+  resume_visibility: Not Included
+  recommended_usage: *id004
+  recommended_usage_notes: []
+  positioning_emphases:
+  - Responsible AI and Evaluation
+  - AI Program Leadership
+  career_period: Independent product development
+  company: Independent
+  role: User Acceptance Tester and Quality Reviewer
+  years: null
+  related_evidence:
+  - career_catalyst_ai_product
+  - career_catalyst_requirements_engineering
+  - career_catalyst_ai_evaluation
+  - career_catalyst_failure_analysis
+  - career_catalyst_software_delivery
+  related_projects:
+  - Career Catalyst
+  related_tools:
+  - OpenAI Codex
+  - Git
+  - GitHub
+  technical_depth: Moderate
+  leadership_scope: Acceptance criteria and iterative product quality
+  customer_facing: Tested complete user workflows
+  people_management: Not specified
+  tags:
+  - UAT
+  - regression testing
+  - functional testing
+  - product quality
+  notes: []
+  provenance: *id003
+  last_updated: '2026-07-18T00:00:00+00:00'
+  created_at: '2026-07-18T00:00:00+00:00'
+  updated_at: '2026-07-18T00:00:00+00:00'
+- id: career_catalyst_responsible_ai
+  title: Career Catalyst Responsible AI Design
+  description: Established evidence, confidence, adjacency, truthfulness, and unsupported-claim rules that prevent fabricated experience and keep AI conclusions reviewable.
+  category: Governance
+  subcategory: Responsible AI and evidence controls
+  skills:
+  - responsible AI
+  - evidence provenance
+  - confidence modeling
+  - truthfulness controls
+  - hallucination prevention
+  platforms:
+  - ChatGPT
+  - OpenAI Codex
+  industries:
+  - Career Technology
+  - Artificial Intelligence
+  clients: []
+  evidence_type: User Confirmed
+  source: Conversation
+  source_reference: Sprint 24 AI Product and Codex evidence, July 2026
+  confidence: High
+  verification_status: User Confirmed
+  resume_visibility: Not Included
+  recommended_usage: *id004
+  recommended_usage_notes: []
+  positioning_emphases:
+  - Responsible AI and Evaluation
+  - Human-in-the-loop Product Design
+  career_period: Independent product development
+  company: Independent
+  role: Quality and Safety Reviewer
+  years: null
+  related_evidence:
+  - career_catalyst_ai_product
+  - career_catalyst_ai_workflow_architecture
+  - career_catalyst_human_in_loop
+  - career_catalyst_ai_evaluation
+  - career_catalyst_failure_analysis
+  related_projects:
+  - Career Catalyst
+  related_tools:
+  - ChatGPT
+  - OpenAI Codex
+  technical_depth: Moderate
+  leadership_scope: Responsible-AI workflow, evidence, and quality controls
+  customer_facing: Protects users from unsupported career claims
+  people_management: Not specified
+  tags:
+  - responsible AI
+  - truthfulness
+  - provenance
+  - confidence
+  - hallucination prevention
+  notes:
+  - Do not claim model governance
+  - model training
+  - or regulatory AI compliance ownership.
+  provenance: *id003
+  last_updated: '2026-07-18T00:00:00+00:00'
+  created_at: '2026-07-18T00:00:00+00:00'
+  updated_at: '2026-07-18T00:00:00+00:00'
+discoveries: []

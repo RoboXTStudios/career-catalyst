@@ -100,8 +100,11 @@ class GenerateMaterialsTests(unittest.TestCase):
     def test_cover_letter_uses_calibrated_voice(self):
         content = self.contents["cover_letter"]
 
-        self.assertIn("milestones, dependencies, risks", content)
         self.assertIn("shared priorities, clear ownership", content)
+        # Evidence framing (data/evidence_profile.yml) supplies the proof paragraph.
+        self.assertIn("senior Ad Operations representative on the Disney+ launch task force", content)
+        for overstated in ("launch-readiness function", "every Disney Studios and Disney+ campaign", "competing agency", "end-to-end"):
+            self.assertNotIn(overstated, content)
 
     def test_messages_and_note_contain_company(self):
         for name in ("recruiter", "hiring_manager", "application_note"):

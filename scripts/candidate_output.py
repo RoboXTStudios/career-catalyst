@@ -560,8 +560,14 @@ def candidate_cover_letter(context: Mapping[str, Any]) -> str:
             "campaign_operations_leadership", "workflow_design", "launch_readiness"
         )
     ):
-        execution = " ".join((framing["campaign_operations_leadership"], framing["workflow_design"]))
-        proof = framing["launch_readiness"]
+        # Framing is written as résumé bullets; letters need a first-person subject.
+        def first_person(bullet: str) -> str:
+            return f"I {bullet[0].lower()}{bullet[1:]}"
+
+        execution = " ".join(
+            first_person(framing[key]) for key in ("campaign_operations_leadership", "workflow_design")
+        )
+        proof = first_person(framing["launch_readiness"])
     content = "\n\n".join((greeting, opening, leadership, execution, proof, closing, "Best,\n\nTrisha Lynch"))
     validate_candidate_output(content, context="Generated cover letter")
     return content
