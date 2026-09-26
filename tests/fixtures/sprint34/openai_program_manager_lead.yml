@@ -4,10 +4,18 @@ role: Program Manager, Lead
 selected_evidence_ids: [career_catalyst, governance_qa_delivery, omg23_disney_leadership, roboxt_studios]
 # This sanitized posting intentionally does not reproduce the live OpenAI
 # prospect's historical calibration. Its score is calculated from this fixture.
+#
+# base_score/evidence_contribution/final_score were repinned after
+# scripts/score_match.py commit 7080e2b ("Score Evidence by requirement
+# coverage so adding Evidence never lowers it", 2026-09-24) changed how
+# selected Evidence contributes to the adjusted score: it now adds a bonus
+# (up to +12) based on weighted requirement coverage instead of contributing
+# 0. This fixture predates that change; these are the current, intentional
+# values, not a regression.
 expected:
-  base_score: 75
-  evidence_contribution: 0
-  final_score: 75
+  base_score: 73
+  evidence_contribution: 12
+  final_score: 85
   resume_limit: 3
   cover_letter_limit: 2
   canonical_employer: OMG23 / OMD Entertainment, Omnicom Media Group

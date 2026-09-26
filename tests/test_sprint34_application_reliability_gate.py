@@ -87,9 +87,11 @@ def test_sanitized_fixture_catalog_covers_required_regressions():
     # This sanitized posting is intentionally not a copy of the live prospect.
     # Its score must be calibrated to its own deterministic inputs, not to a
     # historical production score that included different posting content.
-    assert expected["base_score"] == 75
-    assert expected["evidence_contribution"] == 0
-    assert expected["final_score"] == 75
+    # Repinned after scripts/score_match.py commit 7080e2b changed selected
+    # Evidence from contributing 0 to adding a requirement-coverage bonus.
+    assert expected["base_score"] == 73
+    assert expected["evidence_contribution"] == 12
+    assert expected["final_score"] == 85
     assert fixtures["3cloud_senior_director_digital_workplace"]["missing_job_file"] is True
     assert fixtures["netflix_product_manager"]["formal_product_manager_title_claim"] is False
     assert fixtures["generic_new_prospect"]["compensation"] == "not_listed"
@@ -164,6 +166,15 @@ def _write_openai_fixture_runtime(root: Path) -> None:
                 ],
                 "compensation_disclosure_state": "not_listed",
                 "material_paths": {},
+                # Sparse fixture postings infer role family from fallback
+                # keywords at only Medium confidence, which a later
+                # preflight gate (scripts/package_generator.py,
+                # role_family_confirmation_status) blocks generation on
+                # until it is confirmed or overridden. This fixture predates
+                # that gate; confirm the inferred family explicitly so
+                # generate_package() still runs, the same way a person
+                # would confirm it once in the app.
+                "role_family_confirmation": {"role_family": "transformation_advisory"},
             }
         ]
     }
@@ -192,10 +203,18 @@ def test_sanitized_openai_score_is_deterministic_and_unchanged_by_generation(tmp
         "jobs/openai_program_manager_lead.md", root, projects
     )
     contribution = evidence_score_contribution(baseline, adjusted)
-    assert baseline["match_score"] == expected["base_score"] == 75
-    assert contribution["delta"] == expected["evidence_contribution"] == 0
-    assert contribution["matched_requirements"] == ["delivery outcomes", "product operations"]
-    assert adjusted["match_score"] == expected["final_score"] == 75
+    # Evidence now adds a requirement-coverage bonus (scripts/score_match.py
+    # commit 7080e2b) instead of contributing 0, so the base and adjusted
+    # scores differ. See the fixture file for why these values changed.
+    assert baseline["match_score"] == expected["base_score"] == 73
+    assert contribution["delta"] == expected["evidence_contribution"] == 12
+    assert contribution["matched_requirements"] == [
+        "platform governance and QA",
+        "delivery outcomes",
+        "product operations",
+        "processes, workflows, and trackers",
+    ]
+    assert adjusted["match_score"] == expected["final_score"] == 85
 
     generate_package(
         "openai_program_manager_lead",
@@ -206,7 +225,7 @@ def test_sanitized_openai_score_is_deterministic_and_unchanged_by_generation(tmp
     after = score_job_match(
         "jobs/openai_program_manager_lead.md", root, projects
     )
-    assert after["match_score"] == adjusted["match_score"] == expected["final_score"] == 75
+    assert after["match_score"] == adjusted["match_score"] == expected["final_score"] == 85
 
 
 def test_high_scoring_role_remains_high_scoring_through_generation(tmp_path: Path):
