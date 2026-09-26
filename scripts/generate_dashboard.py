@@ -784,6 +784,29 @@ def _matching_package(
     return None
 
 
+_REBASABLE_TOP_LEVEL_DIRECTORIES = ("exports", "jobs", "data")
+
+
+def _rebased_under_root(path: Path, root: Path) -> Optional[Path]:
+    """Re-anchor a stored package path under the current project root.
+
+    Tracker and manifest records persist absolute paths from whichever
+    checkout generated them. When the root being rendered now is a
+    different location (a relocated checkout, a restored backup, or an
+    isolated copy such as a test fixture), the stale absolute string still
+    happens to resolve if the original checkout is still present, silently
+    leaking that other location's path instead of the current one. Re-derive
+    the path from its known project-relative suffix (its position after
+    "exports", "jobs", or "data") and re-root it under the current root
+    instead of trusting the absolute string outright.
+    """
+    parts = path.parts
+    for index, part in enumerate(parts):
+        if part in _REBASABLE_TOP_LEVEL_DIRECTORIES:
+            return root.joinpath(*parts[index:])
+    return None
+
+
 def _merge_tracker(
     packages: List[Dict[str, Any]],
     tracker: List[Dict[str, Any]],
@@ -834,7 +857,16 @@ def _merge_tracker(
             manifest_paths = dict(application.get("material_paths") or {})
         for label, path_value in manifest_paths.items():
             path = Path(str(path_value))
-            resolved = (path if path.is_absolute() else root / path).resolve()
+            if path.is_absolute():
+                rebased = _rebased_under_root(path, root)
+                candidate = (
+                    rebased
+                    if rebased is not None and rebased.resolve().is_file()
+                    else path
+                )
+            else:
+                candidate = root / path
+            resolved = candidate.resolve()
             if resolved.is_file():
                 package["files"][str(label)] = resolved
         package["has_exact_material_manifest"] = bool(manifest_paths)
