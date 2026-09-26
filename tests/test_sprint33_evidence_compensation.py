@@ -6,6 +6,7 @@ from pathlib import Path
 
 import app
 from scripts.evidence_tailoring import (
+    cover_letter_project_paragraph,
     output_use_metadata,
     public_artifact_selection,
     select_evidence_for_artifact,
@@ -47,6 +48,7 @@ SELECTED_EVIDENCE = [
     {
         "id": "floodlight_content_governance",
         "title": "Floodlight Content Governance",
+        "problem": "A distributed team needed consistent content governance and clearer employee communications workflows across a growing digital workplace.",
         "actions": "Led digital workplace content governance and employee communications workflows.",
         "results": "Improved cross-functional publishing clarity and stakeholder adoption.",
         "skills": ["Content Governance", "Employee Communications"],
@@ -54,6 +56,7 @@ SELECTED_EVIDENCE = [
     {
         "id": "sharepoint_information_architecture",
         "title": "SharePoint Information Architecture",
+        "problem": "Distributed teams lacked a governed, consistently structured source for shared content, creating duplicate and outdated files.",
         "actions": "Designed SharePoint information architecture, permissions, and content standards.",
         "results": "Created a clearer governed source for distributed teams.",
         "technologies": ["SharePoint"],
@@ -61,6 +64,7 @@ SELECTED_EVIDENCE = [
     {
         "id": "teams_adoption_enablement",
         "title": "Microsoft Teams Adoption Enablement",
+        "problem": "Cross-functional teams were slow to adopt Microsoft Teams, limiting collaboration and stakeholder training.",
         "actions": "Led Microsoft Teams adoption, stakeholder training, and peer enablement.",
         "results": "Improved collaboration practices across cross-functional teams.",
         "technologies": ["Microsoft Teams"],
@@ -68,6 +72,7 @@ SELECTED_EVIDENCE = [
     {
         "id": "ai_product_experiment",
         "title": "AI Product Experiment",
+        "problem": "A separate use case needed a verified, testable AI product prototype before further investment.",
         "actions": "Defined AI product requirements and iterative quality tests.",
         "results": "Produced a verified prototype for a separate use case.",
         "skills": ["AI Product Development"],
@@ -77,6 +82,7 @@ SELECTED_EVIDENCE = [
 GENERIC_UNSELECTED = {
     "id": "generic_airtable_workflow",
     "title": "Generic Airtable Workflow",
+    "problem": "Routine status tracking was scattered across spreadsheets with no shared workflow.",
     "actions": "Built a generic Airtable workflow and status dashboard.",
     "results": "Improved routine tracking.",
     "technologies": ["Airtable"],
@@ -121,15 +127,18 @@ def test_cover_letter_uses_strongest_selected_evidence_without_generic_substitut
         "Best,\n\nTrisha Lynch"
     )
     grounded = _ground_cover_letter_in_selected_evidence(base, context)
-    assert "Floodlight Content Governance" in grounded
-    assert any(
-        title in grounded
-        for title in (
-            "SharePoint Information Architecture",
-            "Microsoft Teams Adoption Enablement",
-        )
-    )
+    # Cover letters describe projects in natural first-person prose without
+    # naming their titles (the résumé carries the titles), so verify the
+    # strongest selected evidence actually shows up by checking its real
+    # generated paragraph text rather than a literal title string.
+    used_ids = {project["id"] for project in cover["used_projects"]}
+    assert used_ids == {"floodlight_content_governance", "teams_adoption_enablement"}
+    for project in cover["used_projects"]:
+        paragraph = cover_letter_project_paragraph(project, DIGITAL_WORKPLACE_POSTING)
+        assert paragraph
+        assert paragraph in grounded
     assert "Generic Airtable Workflow" not in grounded
+    assert "generic airtable workflow" not in grounded.lower()
     assert "unsupported" not in grounded.lower()
 
 
@@ -208,8 +217,12 @@ def test_real_resume_and_cover_generators_share_selected_evidence_service(tmp_pa
     assert len(cover["cover_letter_projects_used"]) == 2
     for title in resume["resume_projects_used"]:
         assert title in resume_text
+    # Cover letters describe projects in prose without naming their titles
+    # (the résumé carries the titles), so verify each used project actually
+    # shows up by checking its distinguishing problem statement instead.
+    projects_by_title = {project["title"]: project for project in SELECTED_EVIDENCE}
     for title in cover["cover_letter_projects_used"]:
-        assert title in cover_text
+        assert projects_by_title[title]["problem"] in cover_text
     assert "CampaignOS" not in resume_text
     assert "Generic Airtable Workflow" not in cover_text
     assert cover["evidence_selection"]["omitted"]
