@@ -203,6 +203,45 @@ class ManifestAndArchiveTests(unittest.TestCase):
             )
             self.assertFalse(payload["archived"])
 
+    def test_manifest_never_caches_a_stale_copy_of_tracker_status(self):
+        """The tracker's own status field is the single source of truth.
+
+        The package manifest used to snapshot status/applied_date/status_date
+        at generation or move time, so it could silently disagree with the
+        tracker after a later status change that didn't trigger a move. The
+        manifest must never carry those fields at all.
+        """
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "message.txt"
+            source.write_text("hello", encoding="utf-8")
+            application = _application(status="Applied")
+            result = organize_package_outputs(
+                root, application, {"recruiter_message": str(source)}
+            )
+            for key in ("status", "applied_date", "status_date"):
+                self.assertNotIn(key, result["manifest"])
+
+            found = find_exact_role_package(root, application)
+            on_disk = json.loads(
+                (found["folder"] / "manifest.json").read_text(encoding="utf-8")
+            )
+            for key in ("status", "applied_date", "status_date"):
+                self.assertNotIn(key, on_disk)
+
+            # A later status change with no matching regeneration must not
+            # leave (or resurrect) a stale copy when the package is moved.
+            changed_application = _application(status="Interviewing")
+            archived = move_role_package(root, changed_application, archive=True)
+            self.assertTrue(archived["moved"])
+            for key in ("status", "applied_date", "status_date"):
+                self.assertNotIn(key, archived["manifest"])
+            on_disk_after_move = json.loads(
+                (archived["folder"] / "manifest.json").read_text(encoding="utf-8")
+            )
+            for key in ("status", "applied_date", "status_date"):
+                self.assertNotIn(key, on_disk_after_move)
+
     def test_missing_exact_package_returns_clear_state(self):
         with tempfile.TemporaryDirectory() as temporary:
             result = move_role_package(Path(temporary), _application(), archive=True)

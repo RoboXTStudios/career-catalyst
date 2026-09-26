@@ -455,12 +455,7 @@ def write_role_manifest(
         "role_title": str(
             application.get("role") or application.get("job_title") or ""
         ),
-        "status": str(application.get("status") or ""),
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "applied_date": str(
-            application.get("submitted_date") or application.get("applied_date") or ""
-        ),
-        "status_date": str(application.get("status_date") or ""),
         "source_url": str(
             application.get("canonical_apply_url")
             or application.get("official_url")
@@ -910,7 +905,9 @@ def move_role_package(
     manifest_path = target / "manifest.json"
     payload = json.loads(manifest_path.read_text(encoding="utf-8"))
     payload["archived"] = archive
-    payload["status"] = str(application.get("status") or payload.get("status") or "")
+    payload.pop("status", None)
+    payload.pop("applied_date", None)
+    payload.pop("status_date", None)
     payload["archive_reason"] = archive_reason if archive else ""
     payload["files"] = {
         key: str((target / Path(value).name).resolve())
