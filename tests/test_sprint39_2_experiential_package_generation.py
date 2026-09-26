@@ -97,7 +97,16 @@ def test_reopened_live_nation_generates_experiential_package_in_isolation(tmp_pa
     context = build_package_context(tracker_id, tracker, root)
     assert context["match_report"]["match_score"] == 62
     assert context["baseline_match_report"]["match_score"] == 62
-    assert context["evidence_score_contribution"]["delta"] == 0
+    # This canary's canonical_score stub returns an incomplete match report
+    # whenever Evidence is associated, so build_package_context falls back to
+    # the tracker's saved score (scripts/package_generator.py,
+    # evaluation_unavailable handling). scripts/evidence_tailoring.py commit
+    # df5ac3f made evidence_score_contribution() return delta=None (not 0) in
+    # that fallback case, since a retained saved score is not a fresh
+    # zero-contribution evaluation - it's an unknown one. That commit
+    # predates this test; None is the current, correct value here.
+    assert context["match_report"]["evaluation_unavailable"] is True
+    assert context["evidence_score_contribution"]["delta"] is None
     assert context["role_intelligence"]["role_family"] == "experiential_live_event_production"
     assert "production" in context["role_intent"]["primary_hiring_need"].lower()
 
